@@ -76,7 +76,7 @@ public class RandomAvatarController {
      * 直接返回随机马赛克图片流
      */
     @GetMapping("/getRandomAvatar")
-    public void getAvatar(HttpServletResponse response) throws IOException {
+    public void getAvatar(HttpServletResponse response) throws Exception {
 
         //设置输出文件格式
         response.setContentType("image/png");
@@ -92,7 +92,7 @@ public class RandomAvatarController {
         // 随机颜色
         Color mainColor = getRandomColor();
         // 随机生成有效块坐标集合
-        double randomRadioNum = Math.round(new Random().nextDouble() * 100) / 100.0;
+        double randomRadioNum = randomDecimalNumber();
         System.out.println("randomRadioNum:" + randomRadioNum);
         List<Point> pointList = getRandomPointList(randomRadioNum);
         // 填充图形
@@ -137,7 +137,7 @@ public class RandomAvatarController {
         // 随机颜色
         Color mainColor = getRandomColor();
         // 随机生成有效块坐标集合
-        double randomRadioNum = Math.round(new Random().nextDouble() * 100) / 100.0;
+        double randomRadioNum = randomDecimalNumber();
         System.out.println("randomRadioNum:" + randomRadioNum);
         List<Point> pointList = getRandomPointList(randomRadioNum);
         // 填充图形
@@ -157,7 +157,8 @@ public class RandomAvatarController {
      * 生成随机马赛克图片，保存后返回图片地址信息（暂时不做）
      */
     @GetMapping("/getRandomAvatarUrl")
-    public AjaxResult getAvatarUrl(HttpServletResponse response) throws IOException {
+    public AjaxResult getAvatarUrl(HttpServletResponse response) throws Exception {
+//    public AjaxResult getAvatarUrl(HttpServletResponse response) throws IOException {
 
         // 得到图片缓冲区
         BufferedImage bi = new BufferedImage
@@ -174,7 +175,7 @@ public class RandomAvatarController {
         Color mainColor = getRandomColor();
 
         // 随机生成有效块坐标集合
-        double randomRadioNum = Math.round(new Random().nextDouble() * 100) / 100.0;
+        double randomRadioNum = randomDecimalNumber();
         System.out.println("randomRadioNum:" + randomRadioNum);
         List<Point> pointList = getRandomPointList(randomRadioNum);
 
@@ -243,6 +244,20 @@ public class RandomAvatarController {
         }
 
         return Base64.getEncoder().encodeToString(data);
+    }
+
+    /**
+     * 生成一个随机两位小数，范围是0.25-0.75
+     *
+     * @return Double
+     * @throws Exception
+     */
+    private static Double randomDecimalNumber() throws Exception {
+        Random random = new Random();
+        double randomDecimal = random.nextDouble() * 0.5 + 0.25;
+        randomDecimal = Math.round(randomDecimal * 100) / 100.0;
+        return randomDecimal;
+//        return Math.round((new Random().nextDouble() * 0.75 + 0.25) * 100) / 100.0;
     }
 
 
