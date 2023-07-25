@@ -344,9 +344,9 @@ public class RandomAvatarController {
             Double lowDecimal = new Double("0.4");
             Double highDecimal = new Double("0.6");
             randomDecimal = Math.round(randomDecimal * 100) / 100.0;
-            if (isNeedMoreMosaic.equals('Y') && randomDecimal.compareTo(highDecimal) < 0) {
+            if (isNeedMoreMosaic.equals("Y") && randomDecimal.compareTo(highDecimal) < 0) {
                 return randomDecimalNumber(isNeedMoreMosaic);
-            } else if (isNeedMoreMosaic.equals('N') && randomDecimal.compareTo(lowDecimal) > 0) {
+            } else if (isNeedMoreMosaic.equals("N") && randomDecimal.compareTo(lowDecimal) > 0) {
                 return randomDecimalNumber(isNeedMoreMosaic);
             } else {
                 return randomDecimal;
