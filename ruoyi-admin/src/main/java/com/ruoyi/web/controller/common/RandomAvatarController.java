@@ -93,6 +93,7 @@ public class RandomAvatarController {
         int avatarHeight = avatarHeightValue != null && !avatarHeightValue.isEmpty() ? Integer.parseInt(avatarHeightValue) : IMG_HEIGHT;
         int avatarPadding = avatarPaddingValue != null && !avatarPaddingValue.isEmpty() ? Integer.parseInt(avatarPaddingValue) : PADDING;
         int avatarBlockNum = avatarBlockNumValue != null && !avatarBlockNumValue.isEmpty() ? Integer.parseInt(avatarBlockNumValue) : BLOCK_NUM;
+        String isNeedMoreMosaicDefault = isNeedMoreMosaic != null && !isNeedMoreMosaic.isEmpty() ? isNeedMoreMosaic : "F";
 
         // 设置输出文件格式
         response.setContentType("image/png");
@@ -114,7 +115,7 @@ public class RandomAvatarController {
         // 随机生成有效块坐标集合
         double randomRadioNum = 0;
         try {
-            randomRadioNum = randomDecimalNumber(isNeedMoreMosaic);
+            randomRadioNum = randomDecimalNumber(isNeedMoreMosaicDefault);
         } catch (Exception e) {
             e.printStackTrace();
         }
@@ -195,7 +196,12 @@ public class RandomAvatarController {
         Color mainColor = getRandomColor();
 
         // 随机生成有效块坐标集合
-        double randomRadioNum = randomDecimalNumber(isNeedMoreMosaic);
+        double randomRadioNum;
+        if (isNeedMoreMosaic != null && !isNeedMoreMosaic.isEmpty()) {
+            randomRadioNum = randomDecimalNumber(isNeedMoreMosaic);
+        } else {
+            randomRadioNum = randomDecimalNumber("F");
+        }
         System.out.println("randomRadioNum:" + randomRadioNum);
         System.out.println("========================================");
         List<Point> pointList = getRandomPointList(randomRadioNum, avatarBlockNum);
@@ -245,7 +251,6 @@ public class RandomAvatarController {
         BufferedImage bi = new BufferedImage
                 (avatarWidth, avatarHeight, BufferedImage.TYPE_INT_RGB);
 
-        // 得到它的绘制环境(这张图片的笔)
         Graphics2D g2 = (Graphics2D) bi.getGraphics();
 
         // 设置背景颜色
@@ -256,7 +261,12 @@ public class RandomAvatarController {
         Color mainColor = getRandomColor();
 
         // 随机生成有效块坐标集合
-        double randomRadioNum = randomDecimalNumber(isNeedMoreMosaic);
+        double randomRadioNum;
+        if (isNeedMoreMosaic != null && !isNeedMoreMosaic.isEmpty()) {
+            randomRadioNum = randomDecimalNumber(isNeedMoreMosaic);
+        } else {
+            randomRadioNum = randomDecimalNumber("F");
+        }
         System.out.println("randomRadioNum:" + randomRadioNum);
         System.out.println("========================================");
         List<Point> pointList = getRandomPointList(randomRadioNum, avatarBlockNum);
@@ -333,7 +343,7 @@ public class RandomAvatarController {
     /**
      * 生成一个随机两位小数，范围是0.2-0.85
      *
-     * @param isNeedMoreMosaic 需要更多马赛克还是更少
+     * @param isNeedMoreMosaic 需要更多马赛克还是更少，可选值：F/Y/N，F-随机、Y-0.6~0.85之间、N-0.2~0.4之间
      * @return Double
      * @throws Exception
      */
@@ -363,11 +373,15 @@ public class RandomAvatarController {
      * @return Boolean
      * @throws Exception
      */
-    private static Boolean isRightABN(String avatarBlockNum) {
-        if (Integer.parseInt(avatarBlockNum) > 4 && Integer.parseInt(avatarBlockNum) < 11) {
-            return true;
+    private static Boolean isRightABN(String avatarBlockNum) throws Exception {
+        try {
+            if (Integer.parseInt(avatarBlockNum) > 4 && Integer.parseInt(avatarBlockNum) < 11) {
+                return true;
+            }
+            return false;
+        } catch (Exception e) {
+            throw new Exception("校验参数异常");
         }
-        return false;
     }
 
     /**
