@@ -23,13 +23,13 @@ public class Fx67llLottorySettingServiceImpl implements IFx67llLottorySettingSer
     /**
      * 查询固定追号配置
      * 
-     * @param userId 固定追号配置主键
+     * @param settingId 固定追号配置主键
      * @return 固定追号配置
      */
     @Override
-    public Fx67llLottorySetting selectFx67llLottorySettingByUserId(Long userId)
+    public Fx67llLottorySetting selectFx67llLottorySettingBySettingId(Long settingId)
     {
-        return fx67llLottorySettingMapper.selectFx67llLottorySettingByUserId(userId);
+        return fx67llLottorySettingMapper.selectFx67llLottorySettingBySettingId(settingId);
     }
 
     /**
@@ -73,24 +73,24 @@ public class Fx67llLottorySettingServiceImpl implements IFx67llLottorySettingSer
     /**
      * 批量删除固定追号配置
      * 
-     * @param userIds 需要删除的固定追号配置主键
+     * @param settingIds 需要删除的固定追号配置主键
      * @return 结果
      */
     @Override
-    public int deleteFx67llLottorySettingByUserIds(Long[] userIds)
+    public int deleteFx67llLottorySettingBySettingIds(Long[] settingIds)
     {
-        return fx67llLottorySettingMapper.deleteFx67llLottorySettingByUserIds(userIds);
+        return fx67llLottorySettingMapper.deleteFx67llLottorySettingBySettingIds(settingIds);
     }
 
     /**
      * 删除固定追号配置信息
      * 
-     * @param userId 固定追号配置主键
+     * @param settingId 固定追号配置主键
      * @return 结果
      */
     @Override
-    public int deleteFx67llLottorySettingByUserId(Long userId)
+    public int deleteFx67llLottorySettingBySettingId(Long settingId)
     {
-        return fx67llLottorySettingMapper.deleteFx67llLottorySettingByUserId(userId);
+        return fx67llLottorySettingMapper.deleteFx67llLottorySettingBySettingId(settingId);
     }
 }

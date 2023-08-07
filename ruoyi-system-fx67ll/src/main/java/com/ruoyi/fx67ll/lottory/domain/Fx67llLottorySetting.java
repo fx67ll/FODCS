@@ -15,16 +15,28 @@ public class Fx67llLottorySetting extends BaseEntity
 {
     private static final long serialVersionUID = 1L;
 
+    /** 生成配置主键 */
+    private Long settingId;
+
     /** 用户ID */
     private Long userId;
 
     /** 个人彩票生成配置 */
     @Excel(name = "个人彩票生成配置")
-    private String chaseNumber;
+    private String lottorySetting;
 
     /** 删除标志（0代表存在 2代表删除） */
     private String delFlag;
 
+    public void setSettingId(Long settingId) 
+    {
+        this.settingId = settingId;
+    }
+
+    public Long getSettingId() 
+    {
+        return settingId;
+    }
     public void setUserId(Long userId) 
     {
         this.userId = userId;
@@ -34,14 +46,14 @@ public class Fx67llLottorySetting extends BaseEntity
     {
         return userId;
     }
-    public void setChaseNumber(String chaseNumber) 
+    public void setLottorySetting(String lottorySetting) 
     {
-        this.chaseNumber = chaseNumber;
+        this.lottorySetting = lottorySetting;
     }
 
-    public String getChaseNumber() 
+    public String getLottorySetting() 
     {
-        return chaseNumber;
+        return lottorySetting;
     }
     public void setDelFlag(String delFlag) 
     {
@@ -56,8 +68,9 @@ public class Fx67llLottorySetting extends BaseEntity
     @Override
     public String toString() {
         return new ToStringBuilder(this,ToStringStyle.MULTI_LINE_STYLE)
+            .append("settingId", getSettingId())
             .append("userId", getUserId())
-            .append("chaseNumber", getChaseNumber())
+            .append("lottorySetting", getLottorySetting())
             .append("delFlag", getDelFlag())
             .append("createBy", getCreateBy())
             .append("createTime", getCreateTime())

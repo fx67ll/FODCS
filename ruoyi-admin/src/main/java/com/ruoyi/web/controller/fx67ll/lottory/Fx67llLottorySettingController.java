@@ -63,10 +63,10 @@ public class Fx67llLottorySettingController extends BaseController
      * 获取固定追号配置详细信息
      */
     @PreAuthorize("@ss.hasPermi('lottory:setting:query')")
-    @GetMapping(value = "/{userId}")
-    public AjaxResult getInfo(@PathVariable("userId") Long userId)
+    @GetMapping(value = "/{settingId}")
+    public AjaxResult getInfo(@PathVariable("settingId") Long settingId)
     {
-        return success(fx67llLottorySettingService.selectFx67llLottorySettingByUserId(userId));
+        return success(fx67llLottorySettingService.selectFx67llLottorySettingBySettingId(settingId));
     }
 
     /**
@@ -96,9 +96,9 @@ public class Fx67llLottorySettingController extends BaseController
      */
     @PreAuthorize("@ss.hasPermi('lottory:setting:remove')")
     @Log(title = "固定追号配置", businessType = BusinessType.DELETE)
-	@DeleteMapping("/{userIds}")
-    public AjaxResult remove(@PathVariable Long[] userIds)
+	@DeleteMapping("/{settingIds}")
+    public AjaxResult remove(@PathVariable Long[] settingIds)
     {
-        return toAjax(fx67llLottorySettingService.deleteFx67llLottorySettingByUserIds(userIds));
+        return toAjax(fx67llLottorySettingService.deleteFx67llLottorySettingBySettingIds(settingIds));
     }
 }
