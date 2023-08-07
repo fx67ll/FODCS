@@ -22,7 +22,6 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
     <select id="selectFx67llLottorySettingList" parameterType="Fx67llLottorySetting" resultMap="Fx67llLottorySettingResult">
         <include refid="selectFx67llLottorySettingVo"/>
         <where>  
-            <if test="settingId != null "> and setting_id = #{settingId}</if>
             <if test="userId != null "> and user_id = #{userId}</if>
             <if test="delFlag != null  and delFlag != ''"> and del_flag = #{delFlag}</if>
             <if test="createBy != null  and createBy != ''"> and create_by like concat('%', #{createBy}, '%')</if>
