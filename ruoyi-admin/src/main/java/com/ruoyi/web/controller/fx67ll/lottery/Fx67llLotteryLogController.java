@@ -1,4 +1,4 @@
-package com.ruoyi.fx67ll.lottory.controller;
+package com.ruoyi.fx67ll.lottery.controller;
 
 import java.util.List;
 import javax.servlet.http.HttpServletResponse;
@@ -16,8 +16,8 @@ import com.ruoyi.common.annotation.Log;
 import com.ruoyi.common.core.controller.BaseController;
 import com.ruoyi.common.core.domain.AjaxResult;
 import com.ruoyi.common.enums.BusinessType;
-import com.ruoyi.fx67ll.lottory.domain.Fx67llLottoryLog;
-import com.ruoyi.fx67ll.lottory.service.IFx67llLottoryLogService;
+import com.ruoyi.fx67ll.lottery.domain.Fx67llLotteryLog;
+import com.ruoyi.fx67ll.lottery.service.IFx67llLotteryLogService;
 import com.ruoyi.common.utils.poi.ExcelUtil;
 import com.ruoyi.common.core.page.TableDataInfo;
 
@@ -28,77 +28,77 @@ import com.ruoyi.common.core.page.TableDataInfo;
  * @date 2023-08-07
  */
 @RestController
-@RequestMapping("/lottory/log")
-public class Fx67llLottoryLogController extends BaseController
+@RequestMapping("/lottery/log")
+public class Fx67llLotteryLogController extends BaseController
 {
     @Autowired
-    private IFx67llLottoryLogService fx67llLottoryLogService;
+    private IFx67llLotteryLogService fx67llLotteryLogService;
 
     /**
      * 查询每日号码记录列表
      */
-    @PreAuthorize("@ss.hasPermi('lottory:log:list')")
+    @PreAuthorize("@ss.hasPermi('lottery:log:list')")
     @GetMapping("/list")
-    public TableDataInfo list(Fx67llLottoryLog fx67llLottoryLog)
+    public TableDataInfo list(Fx67llLotteryLog fx67llLotteryLog)
     {
         startPage();
-        List<Fx67llLottoryLog> list = fx67llLottoryLogService.selectFx67llLottoryLogList(fx67llLottoryLog);
+        List<Fx67llLotteryLog> list = fx67llLotteryLogService.selectFx67llLotteryLogList(fx67llLotteryLog);
         return getDataTable(list);
     }
 
     /**
      * 导出每日号码记录列表
      */
-    @PreAuthorize("@ss.hasPermi('lottory:log:export')")
+    @PreAuthorize("@ss.hasPermi('lottery:log:export')")
     @Log(title = "每日号码记录", businessType = BusinessType.EXPORT)
     @PostMapping("/export")
-    public void export(HttpServletResponse response, Fx67llLottoryLog fx67llLottoryLog)
+    public void export(HttpServletResponse response, Fx67llLotteryLog fx67llLotteryLog)
     {
-        List<Fx67llLottoryLog> list = fx67llLottoryLogService.selectFx67llLottoryLogList(fx67llLottoryLog);
-        ExcelUtil<Fx67llLottoryLog> util = new ExcelUtil<Fx67llLottoryLog>(Fx67llLottoryLog.class);
+        List<Fx67llLotteryLog> list = fx67llLotteryLogService.selectFx67llLotteryLogList(fx67llLotteryLog);
+        ExcelUtil<Fx67llLotteryLog> util = new ExcelUtil<Fx67llLotteryLog>(Fx67llLotteryLog.class);
         util.exportExcel(response, list, "每日号码记录数据");
     }
 
     /**
      * 获取每日号码记录详细信息
      */
-    @PreAuthorize("@ss.hasPermi('lottory:log:query')")
-    @GetMapping(value = "/{lottoryId}")
-    public AjaxResult getInfo(@PathVariable("lottoryId") Long lottoryId)
+    @PreAuthorize("@ss.hasPermi('lottery:log:query')")
+    @GetMapping(value = "/{lotteryId}")
+    public AjaxResult getInfo(@PathVariable("lotteryId") Long lotteryId)
     {
-        return success(fx67llLottoryLogService.selectFx67llLottoryLogByLottoryId(lottoryId));
+        return success(fx67llLotteryLogService.selectFx67llLotteryLogByLotteryId(lotteryId));
     }
 
     /**
      * 新增每日号码记录
      */
-    @PreAuthorize("@ss.hasPermi('lottory:log:add')")
+    @PreAuthorize("@ss.hasPermi('lottery:log:add')")
     @Log(title = "每日号码记录", businessType = BusinessType.INSERT)
     @PostMapping
-    public AjaxResult add(@RequestBody Fx67llLottoryLog fx67llLottoryLog)
+    public AjaxResult add(@RequestBody Fx67llLotteryLog fx67llLotteryLog)
     {
-        return toAjax(fx67llLottoryLogService.insertFx67llLottoryLog(fx67llLottoryLog));
+        return toAjax(fx67llLotteryLogService.insertFx67llLotteryLog(fx67llLotteryLog));
     }
 
     /**
      * 修改每日号码记录
      */
-    @PreAuthorize("@ss.hasPermi('lottory:log:edit')")
+    @PreAuthorize("@ss.hasPermi('lottery:log:edit')")
     @Log(title = "每日号码记录", businessType = BusinessType.UPDATE)
     @PutMapping
-    public AjaxResult edit(@RequestBody Fx67llLottoryLog fx67llLottoryLog)
+    public AjaxResult edit(@RequestBody Fx67llLotteryLog fx67llLotteryLog)
     {
-        return toAjax(fx67llLottoryLogService.updateFx67llLottoryLog(fx67llLottoryLog));
+        return toAjax(fx67llLotteryLogService.updateFx67llLotteryLog(fx67llLotteryLog));
     }
 
     /**
      * 删除每日号码记录
      */
-    @PreAuthorize("@ss.hasPermi('lottory:log:remove')")
+    @PreAuthorize("@ss.hasPermi('lottery:log:remove')")
     @Log(title = "每日号码记录", businessType = BusinessType.DELETE)
-	@DeleteMapping("/{lottoryIds}")
-    public AjaxResult remove(@PathVariable Long[] lottoryIds)
+	@DeleteMapping("/{lotteryIds}")
+    public AjaxResult remove(@PathVariable Long[] lotteryIds)
     {
-        return toAjax(fx67llLottoryLogService.deleteFx67llLottoryLogByLottoryIds(lottoryIds));
+        return toAjax(fx67llLotteryLogService.deleteFx67llLotteryLogByLotteryIds(lotteryIds));
     }
 }

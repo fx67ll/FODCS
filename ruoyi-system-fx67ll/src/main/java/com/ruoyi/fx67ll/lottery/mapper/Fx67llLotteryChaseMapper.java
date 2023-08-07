@@ -1,7 +1,7 @@
-package com.ruoyi.fx67ll.lottory.mapper;
+package com.ruoyi.fx67ll.lottery.mapper;
 
 import java.util.List;
-import com.ruoyi.fx67ll.lottory.domain.Fx67llLottoryChase;
+import com.ruoyi.fx67ll.lottery.domain.Fx67llLotteryChase;
 
 /**
  * 固定追号配置Mapper接口
@@ -9,7 +9,7 @@ import com.ruoyi.fx67ll.lottory.domain.Fx67llLottoryChase;
  * @author fx67ll
  * @date 2023-08-07
  */
-public interface Fx67llLottoryChaseMapper 
+public interface Fx67llLotteryChaseMapper 
 {
     /**
      * 查询固定追号配置
@@ -17,31 +17,31 @@ public interface Fx67llLottoryChaseMapper
      * @param chaseId 固定追号配置主键
      * @return 固定追号配置
      */
-    public Fx67llLottoryChase selectFx67llLottoryChaseByChaseId(Long chaseId);
+    public Fx67llLotteryChase selectFx67llLotteryChaseByChaseId(Long chaseId);
 
     /**
      * 查询固定追号配置列表
      * 
-     * @param fx67llLottoryChase 固定追号配置
+     * @param fx67llLotteryChase 固定追号配置
      * @return 固定追号配置集合
      */
-    public List<Fx67llLottoryChase> selectFx67llLottoryChaseList(Fx67llLottoryChase fx67llLottoryChase);
+    public List<Fx67llLotteryChase> selectFx67llLotteryChaseList(Fx67llLotteryChase fx67llLotteryChase);
 
     /**
      * 新增固定追号配置
      * 
-     * @param fx67llLottoryChase 固定追号配置
+     * @param fx67llLotteryChase 固定追号配置
      * @return 结果
      */
-    public int insertFx67llLottoryChase(Fx67llLottoryChase fx67llLottoryChase);
+    public int insertFx67llLotteryChase(Fx67llLotteryChase fx67llLotteryChase);
 
     /**
      * 修改固定追号配置
      * 
-     * @param fx67llLottoryChase 固定追号配置
+     * @param fx67llLotteryChase 固定追号配置
      * @return 结果
      */
-    public int updateFx67llLottoryChase(Fx67llLottoryChase fx67llLottoryChase);
+    public int updateFx67llLotteryChase(Fx67llLotteryChase fx67llLotteryChase);
 
     /**
      * 删除固定追号配置
@@ -49,7 +49,7 @@ public interface Fx67llLottoryChaseMapper
      * @param chaseId 固定追号配置主键
      * @return 结果
      */
-    public int deleteFx67llLottoryChaseByChaseId(Long chaseId);
+    public int deleteFx67llLotteryChaseByChaseId(Long chaseId);
 
     /**
      * 批量删除固定追号配置
@@ -57,5 +57,5 @@ public interface Fx67llLottoryChaseMapper
      * @param chaseIds 需要删除的数据主键集合
      * @return 结果
      */
-    public int deleteFx67llLottoryChaseByChaseIds(Long[] chaseIds);
+    public int deleteFx67llLotteryChaseByChaseIds(Long[] chaseIds);
 }

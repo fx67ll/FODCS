@@ -1,4 +1,4 @@
-package com.ruoyi.fx67ll.lottory.domain;
+package com.ruoyi.fx67ll.lottery.domain;
 
 import org.apache.commons.lang3.builder.ToStringBuilder;
 import org.apache.commons.lang3.builder.ToStringStyle;
@@ -6,12 +6,12 @@ import com.ruoyi.common.annotation.Excel;
 import com.ruoyi.common.core.domain.BaseEntity;
 
 /**
- * 固定追号配置对象 fx67ll_lottory_setting
+ * 固定追号配置对象 fx67ll_lottery_setting
  * 
  * @author fx67ll
  * @date 2023-08-07
  */
-public class Fx67llLottorySetting extends BaseEntity
+public class Fx67llLotterySetting extends BaseEntity
 {
     private static final long serialVersionUID = 1L;
 
@@ -23,7 +23,7 @@ public class Fx67llLottorySetting extends BaseEntity
 
     /** 个人彩票生成配置 */
     @Excel(name = "个人彩票生成配置")
-    private String lottorySetting;
+    private String lotterySetting;
 
     /** 删除标志（0代表存在 2代表删除） */
     private String delFlag;
@@ -46,14 +46,14 @@ public class Fx67llLottorySetting extends BaseEntity
     {
         return userId;
     }
-    public void setLottorySetting(String lottorySetting) 
+    public void setLotterySetting(String lotterySetting) 
     {
-        this.lottorySetting = lottorySetting;
+        this.lotterySetting = lotterySetting;
     }
 
-    public String getLottorySetting() 
+    public String getLotterySetting() 
     {
-        return lottorySetting;
+        return lotterySetting;
     }
     public void setDelFlag(String delFlag) 
     {
@@ -70,7 +70,7 @@ public class Fx67llLottorySetting extends BaseEntity
         return new ToStringBuilder(this,ToStringStyle.MULTI_LINE_STYLE)
             .append("settingId", getSettingId())
             .append("userId", getUserId())
-            .append("lottorySetting", getLottorySetting())
+            .append("lotterySetting", getLotterySetting())
             .append("delFlag", getDelFlag())
             .append("createBy", getCreateBy())
             .append("createTime", getCreateTime())

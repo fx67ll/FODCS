@@ -2,12 +2,12 @@
 <!DOCTYPE mapper
 PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
 "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
-<mapper namespace="com.ruoyi.fx67ll.lottory.mapper.Fx67llLottorySettingMapper">
+<mapper namespace="com.ruoyi.fx67ll.lottery.mapper.Fx67llLotterySettingMapper">
     
-    <resultMap type="Fx67llLottorySetting" id="Fx67llLottorySettingResult">
+    <resultMap type="Fx67llLotterySetting" id="Fx67llLotterySettingResult">
         <result property="settingId"    column="setting_id"    />
         <result property="userId"    column="user_id"    />
-        <result property="lottorySetting"    column="lottory_setting"    />
+        <result property="lotterySetting"    column="lottery_setting"    />
         <result property="delFlag"    column="del_flag"    />
         <result property="createBy"    column="create_by"    />
         <result property="createTime"    column="create_time"    />
@@ -15,12 +15,12 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         <result property="updateTime"    column="update_time"    />
     </resultMap>
 
-    <sql id="selectFx67llLottorySettingVo">
-        select setting_id, user_id, lottory_setting, del_flag, create_by, create_time, update_by, update_time from fx67ll_lottory_setting
+    <sql id="selectFx67llLotterySettingVo">
+        select setting_id, user_id, lottery_setting, del_flag, create_by, create_time, update_by, update_time from fx67ll_lottery_setting
     </sql>
 
-    <select id="selectFx67llLottorySettingList" parameterType="Fx67llLottorySetting" resultMap="Fx67llLottorySettingResult">
-        <include refid="selectFx67llLottorySettingVo"/>
+    <select id="selectFx67llLotterySettingList" parameterType="Fx67llLotterySetting" resultMap="Fx67llLotterySettingResult">
+        <include refid="selectFx67llLotterySettingVo"/>
         <where>  
             <if test="userId != null "> and user_id = #{userId}</if>
             <if test="delFlag != null  and delFlag != ''"> and del_flag = #{delFlag}</if>
@@ -31,16 +31,16 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         </where>
     </select>
     
-    <select id="selectFx67llLottorySettingBySettingId" parameterType="Long" resultMap="Fx67llLottorySettingResult">
-        <include refid="selectFx67llLottorySettingVo"/>
+    <select id="selectFx67llLotterySettingBySettingId" parameterType="Long" resultMap="Fx67llLotterySettingResult">
+        <include refid="selectFx67llLotterySettingVo"/>
         where setting_id = #{settingId}
     </select>
         
-    <insert id="insertFx67llLottorySetting" parameterType="Fx67llLottorySetting" useGeneratedKeys="true" keyProperty="settingId">
-        insert into fx67ll_lottory_setting
+    <insert id="insertFx67llLotterySetting" parameterType="Fx67llLotterySetting" useGeneratedKeys="true" keyProperty="settingId">
+        insert into fx67ll_lottery_setting
         <trim prefix="(" suffix=")" suffixOverrides=",">
             <if test="userId != null">user_id,</if>
-            <if test="lottorySetting != null and lottorySetting != ''">lottory_setting,</if>
+            <if test="lotterySetting != null and lotterySetting != ''">lottery_setting,</if>
             <if test="delFlag != null">del_flag,</if>
             <if test="createBy != null">create_by,</if>
             <if test="createTime != null">create_time,</if>
@@ -49,7 +49,7 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
          </trim>
         <trim prefix="values (" suffix=")" suffixOverrides=",">
             <if test="userId != null">#{userId},</if>
-            <if test="lottorySetting != null and lottorySetting != ''">#{lottorySetting},</if>
+            <if test="lotterySetting != null and lotterySetting != ''">#{lotterySetting},</if>
             <if test="delFlag != null">#{delFlag},</if>
             <if test="createBy != null">#{createBy},</if>
             <if test="createTime != null">#{createTime},</if>
@@ -58,11 +58,11 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
          </trim>
     </insert>
 
-    <update id="updateFx67llLottorySetting" parameterType="Fx67llLottorySetting">
-        update fx67ll_lottory_setting
+    <update id="updateFx67llLotterySetting" parameterType="Fx67llLotterySetting">
+        update fx67ll_lottery_setting
         <trim prefix="SET" suffixOverrides=",">
             <if test="userId != null">user_id = #{userId},</if>
-            <if test="lottorySetting != null and lottorySetting != ''">lottory_setting = #{lottorySetting},</if>
+            <if test="lotterySetting != null and lotterySetting != ''">lottery_setting = #{lotterySetting},</if>
             <if test="delFlag != null">del_flag = #{delFlag},</if>
             <if test="createBy != null">create_by = #{createBy},</if>
             <if test="createTime != null">create_time = #{createTime},</if>
@@ -72,12 +72,12 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         where setting_id = #{settingId}
     </update>
 
-    <delete id="deleteFx67llLottorySettingBySettingId" parameterType="Long">
-        delete from fx67ll_lottory_setting where setting_id = #{settingId}
+    <delete id="deleteFx67llLotterySettingBySettingId" parameterType="Long">
+        delete from fx67ll_lottery_setting where setting_id = #{settingId}
     </delete>
 
-    <delete id="deleteFx67llLottorySettingBySettingIds" parameterType="String">
-        delete from fx67ll_lottory_setting where setting_id in 
+    <delete id="deleteFx67llLotterySettingBySettingIds" parameterType="String">
+        delete from fx67ll_lottery_setting where setting_id in
         <foreach item="settingId" collection="array" open="(" separator="," close=")">
             #{settingId}
         </foreach>

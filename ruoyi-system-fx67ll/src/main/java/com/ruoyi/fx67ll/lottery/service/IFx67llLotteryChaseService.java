@@ -1,8 +1,8 @@
-package com.ruoyi.fx67ll.lottory.service;
+package com.ruoyi.fx67ll.lottery.service;
 
 import java.util.List;
-import com.ruoyi.fx67ll.lottory.domain.Fx67llLottoryChase;
-import com.ruoyi.fx67ll.lottory.domain.Fx67llLottorySetting;
+import com.ruoyi.fx67ll.lottery.domain.Fx67llLotteryChase;
+import com.ruoyi.fx67ll.lottery.domain.Fx67llLotterySetting;
 
 /**
  * 固定追号配置Service接口
@@ -10,7 +10,7 @@ import com.ruoyi.fx67ll.lottory.domain.Fx67llLottorySetting;
  * @author fx67ll
  * @date 2023-08-07
  */
-public interface IFx67llLottoryChaseService 
+public interface IFx67llLotteryChaseService 
 {
     /**
      * 查询固定追号配置
@@ -18,31 +18,31 @@ public interface IFx67llLottoryChaseService
      * @param chaseId 固定追号配置主键
      * @return 固定追号配置
      */
-    public Fx67llLottoryChase selectFx67llLottoryChaseByChaseId(Long chaseId);
+    public Fx67llLotteryChase selectFx67llLotteryChaseByChaseId(Long chaseId);
 
     /**
      * 查询固定追号配置列表
      * 
-     * @param fx67llLottoryChase 固定追号配置
+     * @param fx67llLotteryChase 固定追号配置
      * @return 固定追号配置集合
      */
-    public List<Fx67llLottoryChase> selectFx67llLottoryChaseList(Fx67llLottoryChase fx67llLottoryChase);
+    public List<Fx67llLotteryChase> selectFx67llLotteryChaseList(Fx67llLotteryChase fx67llLotteryChase);
 
     /**
      * 新增固定追号配置
      * 
-     * @param fx67llLottoryChase 固定追号配置
+     * @param fx67llLotteryChase 固定追号配置
      * @return 结果
      */
-    public int insertFx67llLottoryChase(Fx67llLottoryChase fx67llLottoryChase);
+    public int insertFx67llLotteryChase(Fx67llLotteryChase fx67llLotteryChase);
 
     /**
      * 修改固定追号配置
      * 
-     * @param fx67llLottoryChase 固定追号配置
+     * @param fx67llLotteryChase 固定追号配置
      * @return 结果
      */
-    public int updateFx67llLottoryChase(Fx67llLottoryChase fx67llLottoryChase);
+    public int updateFx67llLotteryChase(Fx67llLotteryChase fx67llLotteryChase);
 
     /**
      * 批量删除固定追号配置
@@ -50,7 +50,7 @@ public interface IFx67llLottoryChaseService
      * @param chaseIds 需要删除的固定追号配置主键集合
      * @return 结果
      */
-    public int deleteFx67llLottoryChaseByChaseIds(Long[] chaseIds);
+    public int deleteFx67llLotteryChaseByChaseIds(Long[] chaseIds);
 
     /**
      * 删除固定追号配置信息
@@ -58,7 +58,7 @@ public interface IFx67llLottoryChaseService
      * @param chaseId 固定追号配置主键
      * @return 结果
      */
-    public int deleteFx67llLottoryChaseByChaseId(Long chaseId);
+    public int deleteFx67llLotteryChaseByChaseId(Long chaseId);
 
     /**
      * 固定追号配置Service接口
@@ -66,7 +66,7 @@ public interface IFx67llLottoryChaseService
      * @author fx67ll
      * @date 2023-08-07
      */
-    interface IFx67llLottorySettingService
+    interface IFx67llLotterySettingService
     {
         /**
          * 查询固定追号配置
@@ -74,31 +74,31 @@ public interface IFx67llLottoryChaseService
          * @param settingId 固定追号配置主键
          * @return 固定追号配置
          */
-        public Fx67llLottorySetting selectFx67llLottorySettingBySettingId(Long settingId);
+        public Fx67llLotterySetting selectFx67llLotterySettingBySettingId(Long settingId);
 
         /**
          * 查询固定追号配置列表
          *
-         * @param fx67llLottorySetting 固定追号配置
+         * @param fx67llLotterySetting 固定追号配置
          * @return 固定追号配置集合
          */
-        public List<Fx67llLottorySetting> selectFx67llLottorySettingList(Fx67llLottorySetting fx67llLottorySetting);
+        public List<Fx67llLotterySetting> selectFx67llLotterySettingList(Fx67llLotterySetting fx67llLotterySetting);
 
         /**
          * 新增固定追号配置
          *
-         * @param fx67llLottorySetting 固定追号配置
+         * @param fx67llLotterySetting 固定追号配置
          * @return 结果
          */
-        public int insertFx67llLottorySetting(Fx67llLottorySetting fx67llLottorySetting);
+        public int insertFx67llLotterySetting(Fx67llLotterySetting fx67llLotterySetting);
 
         /**
          * 修改固定追号配置
          *
-         * @param fx67llLottorySetting 固定追号配置
+         * @param fx67llLotterySetting 固定追号配置
          * @return 结果
          */
-        public int updateFx67llLottorySetting(Fx67llLottorySetting fx67llLottorySetting);
+        public int updateFx67llLotterySetting(Fx67llLotterySetting fx67llLotterySetting);
 
         /**
          * 批量删除固定追号配置
@@ -106,7 +106,7 @@ public interface IFx67llLottoryChaseService
          * @param settingIds 需要删除的固定追号配置主键集合
          * @return 结果
          */
-        public int deleteFx67llLottorySettingBySettingIds(Long[] settingIds);
+        public int deleteFx67llLotterySettingBySettingIds(Long[] settingIds);
 
         /**
          * 删除固定追号配置信息
@@ -114,6 +114,6 @@ public interface IFx67llLottoryChaseService
          * @param settingId 固定追号配置主键
          * @return 结果
          */
-        public int deleteFx67llLottorySettingBySettingId(Long settingId);
+        public int deleteFx67llLotterySettingBySettingId(Long settingId);
     }
 }

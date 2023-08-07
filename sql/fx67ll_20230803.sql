@@ -1,9 +1,9 @@
 -- ----------------------------
 -- 1、号码日志记录表
 -- ----------------------------
-drop table if exists fx67ll_lottory_log;
-create table fx67ll_lottory_log (
-  lottory_id           bigint(20)      not null auto_increment    comment '号码日志主键',
+drop table if exists fx67ll_lottery_log;
+create table fx67ll_lottery_log (
+  lottery_id           bigint(20)      not null auto_increment    comment '号码日志主键',
   record_number        varchar(1023)   default ''        comment '当日购买号码',
   chase_number         varchar(1023)   default ''                 comment '当日固定追号',
   winning_number       varchar(14)     default ''                 comment '当日中奖号码',
@@ -16,15 +16,15 @@ create table fx67ll_lottory_log (
   create_time 	       datetime                                   comment '记录创建时间',
   update_by            varchar(64)     default ''                 comment '记录更新者',
   update_time          datetime                                   comment '记录更新时间',
-  primary key (lottory_id)
+  primary key (lottery_id)
 ) engine=innodb auto_increment=1 comment = '号码日志记录表';
 
 
 -- ----------------------------
 -- 2、固定追号配置表
 -- ----------------------------
-drop table if exists fx67ll_lottory_chase;
-create table fx67ll_lottory_chase (
+drop table if exists fx67ll_lottery_chase;
+create table fx67ll_lottery_chase (
   chase_id          bigint(20)      not null auto_increment    comment '固定追号主键',
   chase_number      varchar(1023)   default ''                 comment '每日固定追号',
   number_type       int(1)                                     comment '固定追号的彩票类型（1大乐透 2双色球）',
@@ -43,11 +43,11 @@ create table fx67ll_lottory_chase (
 -- ----------------------------
 -- 3、个人彩票生成配置表
 -- ----------------------------
-drop table if exists fx67ll_lottory_setting;
-create table fx67ll_lottory_setting (
+drop table if exists fx67ll_lottery_setting;
+create table fx67ll_lottery_setting (
   setting_id        bigint(20)      not null auto_increment    comment '生成配置主键',
   user_id           bigint(20)                                 comment '用户ID',
-  lottory_setting   varchar(1023)   default ''                 comment '个人彩票生成配置',
+  lottery_setting   varchar(1023)   default ''                 comment '个人彩票生成配置',
   del_flag          char(1)         default '0'                comment '删除标志（0代表存在 2代表删除）',
   create_by         varchar(64)     default ''                 comment '记录创建者',
   create_time 	    datetime                                   comment '记录创建时间',

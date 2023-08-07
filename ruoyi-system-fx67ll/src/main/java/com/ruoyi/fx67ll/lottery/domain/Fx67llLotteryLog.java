@@ -1,4 +1,4 @@
-package com.ruoyi.fx67ll.lottory.domain;
+package com.ruoyi.fx67ll.lottery.domain;
 
 import org.apache.commons.lang3.builder.ToStringBuilder;
 import org.apache.commons.lang3.builder.ToStringStyle;
@@ -6,33 +6,41 @@ import com.ruoyi.common.annotation.Excel;
 import com.ruoyi.common.core.domain.BaseEntity;
 
 /**
- * 固定追号配置对象 fx67ll_lottory_chase
+ * 每日号码记录对象 fx67ll_lottery_log
  * 
  * @author fx67ll
  * @date 2023-08-07
  */
-public class Fx67llLottoryChase extends BaseEntity
+public class Fx67llLotteryLog extends BaseEntity
 {
     private static final long serialVersionUID = 1L;
 
-    /** 固定追号主键 */
-    private Long chaseId;
+    /** 号码日志主键 */
+    private Long lotteryId;
 
-    /** 每日固定追号 */
-    @Excel(name = "每日固定追号")
+    /** 当日购买号码 */
+    @Excel(name = "当日购买号码")
+    private String recordNumber;
+
+    /** 当日固定追号 */
+    @Excel(name = "当日固定追号")
     private String chaseNumber;
 
-    /** 固定追号的彩票类型（1大乐透 2双色球） */
-    @Excel(name = "固定追号的彩票类型", readConverterExp = "1=大乐透,2=双色球")
+    /** 当日中奖号码 */
+    @Excel(name = "当日中奖号码")
+    private String winningNumber;
+
+    /** 当日购买的彩票类型（1大乐透 2双色球） */
+    @Excel(name = "当日购买的彩票类型", readConverterExp = "1=大乐透,2=双色球")
     private Integer numberType;
 
-    /** 星期几的固定追号（1周一 2周二 3周三 4周四 5周五 6周六 7周日） */
-    @Excel(name = "星期几的固定追号", readConverterExp = "1=周一,2=周二,3=周三,4=周四,5=周五,6=周六,7=周日")
+    /** 星期几（1周一 2周二 3周三 4周四 5周五 6周六 7周日） */
+    @Excel(name = "星期几", readConverterExp = "1=周一,2=周二,3=周三,4=周四,5=周五,6=周六,7=周日")
     private Integer weekType;
 
-    /** 排序 */
-    @Excel(name = "排序")
-    private Long sort;
+    /** 是否有追加购买（Y是 N否） */
+    @Excel(name = "是否有追加购买", readConverterExp = "Y=是,N=否")
+    private String hasMorePurchases;
 
     /** 删除标志（0代表存在 2代表删除） */
     private String delFlag;
@@ -40,14 +48,23 @@ public class Fx67llLottoryChase extends BaseEntity
     /** 用户ID */
     private Long userId;
 
-    public void setChaseId(Long chaseId) 
+    public void setLotteryId(Long lotteryId) 
     {
-        this.chaseId = chaseId;
+        this.lotteryId = lotteryId;
     }
 
-    public Long getChaseId() 
+    public Long getLotteryId() 
     {
-        return chaseId;
+        return lotteryId;
+    }
+    public void setRecordNumber(String recordNumber) 
+    {
+        this.recordNumber = recordNumber;
+    }
+
+    public String getRecordNumber() 
+    {
+        return recordNumber;
     }
     public void setChaseNumber(String chaseNumber) 
     {
@@ -57,6 +74,15 @@ public class Fx67llLottoryChase extends BaseEntity
     public String getChaseNumber() 
     {
         return chaseNumber;
+    }
+    public void setWinningNumber(String winningNumber) 
+    {
+        this.winningNumber = winningNumber;
+    }
+
+    public String getWinningNumber() 
+    {
+        return winningNumber;
     }
     public void setNumberType(Integer numberType) 
     {
@@ -76,14 +102,14 @@ public class Fx67llLottoryChase extends BaseEntity
     {
         return weekType;
     }
-    public void setSort(Long sort) 
+    public void setHasMorePurchases(String hasMorePurchases) 
     {
-        this.sort = sort;
+        this.hasMorePurchases = hasMorePurchases;
     }
 
-    public Long getSort() 
+    public String getHasMorePurchases() 
     {
-        return sort;
+        return hasMorePurchases;
     }
     public void setDelFlag(String delFlag) 
     {
@@ -107,11 +133,13 @@ public class Fx67llLottoryChase extends BaseEntity
     @Override
     public String toString() {
         return new ToStringBuilder(this,ToStringStyle.MULTI_LINE_STYLE)
-            .append("chaseId", getChaseId())
+            .append("lotteryId", getLotteryId())
+            .append("recordNumber", getRecordNumber())
             .append("chaseNumber", getChaseNumber())
+            .append("winningNumber", getWinningNumber())
             .append("numberType", getNumberType())
             .append("weekType", getWeekType())
-            .append("sort", getSort())
+            .append("hasMorePurchases", getHasMorePurchases())
             .append("delFlag", getDelFlag())
             .append("userId", getUserId())
             .append("createBy", getCreateBy())

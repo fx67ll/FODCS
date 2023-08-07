@@ -28,7 +28,7 @@ insert into sys_dict_type values(8,  '通知状态', 'sys_notice_status',   '0',
 insert into sys_dict_type values(9,  '操作类型', 'sys_oper_type',       '0', 'admin', sysdate(), '', null, '操作类型列表');
 insert into sys_dict_type values(10, '系统状态', 'sys_common_status',   '0', 'admin', sysdate(), '', null, '登录状态列表');
 -- 彩票管理枚举项
-insert into sys_dict_type values(11, '彩票类型', 'fx67ll_lottory_type', '0', 'admin', sysdate(), '', null, '彩票类型列表');
+insert into sys_dict_type values(11, '彩票类型', 'fx67ll_lottery_type', '0', 'admin', sysdate(), '', null, '彩票类型列表');
 insert into sys_dict_type values(12, '星期枚举', 'sys_week_type',       '0', 'admin', sysdate(), '', null, '星期枚举列表');
 
 
@@ -87,8 +87,8 @@ insert into sys_dict_data values(29, 2,  '失败',     '1',       'sys_common_st
 insert into sys_dict_data values(28, 1,  '成功',     '0',       'sys_common_status',   '',   'primary', 'N', '0', 'admin', sysdate(), '', null, '正常状态');
 insert into sys_dict_data values(29, 2,  '失败',     '1',       'sys_common_status',   '',   'danger',  'N', '0', 'admin', sysdate(), '', null, '停用状态');
 -- 彩票管理枚举项插入值
-insert into sys_dict_data values(30, 1,  '大乐透',   '1',       'fx67ll_lottory_type', '',   '',        'N', '0', 'admin', sysdate(), '', null, '大乐透');
-insert into sys_dict_data values(31, 2,  '双色球',   '2',       'fx67ll_lottory_type', '',   '',        'N', '0', 'admin', sysdate(), '', null, '双色球');
+insert into sys_dict_data values(30, 1,  '大乐透',   '1',       'fx67ll_lottery_type', '',   '',        'N', '0', 'admin', sysdate(), '', null, '大乐透');
+insert into sys_dict_data values(31, 2,  '双色球',   '2',       'fx67ll_lottery_type', '',   '',        'N', '0', 'admin', sysdate(), '', null, '双色球');
 insert into sys_dict_data values(32, 1,  '星期一',   '1',       'sys_week_type',       '',   '',        'N', '0', 'admin', sysdate(), '', null, '星期一');
 insert into sys_dict_data values(33, 2,  '星期二',   '2',       'sys_week_type',       '',   '',        'N', '0', 'admin', sysdate(), '', null, '星期二');
 insert into sys_dict_data values(34, 3,  '星期三',   '3',       'sys_week_type',       '',   '',        'N', '0', 'admin', sysdate(), '', null, '星期三');

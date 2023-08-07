@@ -1,4 +1,4 @@
-package com.ruoyi.web.controller.fx67ll.lottory;
+package com.ruoyi.web.controller.fx67ll.lottery;
 
 import java.util.List;
 import javax.servlet.http.HttpServletResponse;
@@ -16,8 +16,8 @@ import com.ruoyi.common.annotation.Log;
 import com.ruoyi.common.core.controller.BaseController;
 import com.ruoyi.common.core.domain.AjaxResult;
 import com.ruoyi.common.enums.BusinessType;
-import com.ruoyi.fx67ll.lottory.domain.Fx67llLottorySetting;
-import com.ruoyi.fx67ll.lottory.service.IFx67llLottorySettingService;
+import com.ruoyi.fx67ll.lottery.domain.Fx67llLotterySetting;
+import com.ruoyi.fx67ll.lottery.service.IFx67llLotterySettingService;
 import com.ruoyi.common.utils.poi.ExcelUtil;
 import com.ruoyi.common.core.page.TableDataInfo;
 
@@ -28,77 +28,77 @@ import com.ruoyi.common.core.page.TableDataInfo;
  * @date 2023-08-07
  */
 @RestController
-@RequestMapping("/lottory/setting")
-public class Fx67llLottorySettingController extends BaseController
+@RequestMapping("/lottery/setting")
+public class Fx67llLotterySettingController extends BaseController
 {
     @Autowired
-    private IFx67llLottorySettingService fx67llLottorySettingService;
+    private IFx67llLotterySettingService fx67llLotterySettingService;
 
     /**
      * 查询固定追号配置列表
      */
-    @PreAuthorize("@ss.hasPermi('lottory:setting:list')")
+    @PreAuthorize("@ss.hasPermi('lottery:setting:list')")
     @GetMapping("/list")
-    public TableDataInfo list(Fx67llLottorySetting fx67llLottorySetting)
+    public TableDataInfo list(Fx67llLotterySetting fx67llLotterySetting)
     {
         startPage();
-        List<Fx67llLottorySetting> list = fx67llLottorySettingService.selectFx67llLottorySettingList(fx67llLottorySetting);
+        List<Fx67llLotterySetting> list = fx67llLotterySettingService.selectFx67llLotterySettingList(fx67llLotterySetting);
         return getDataTable(list);
     }
 
     /**
      * 导出固定追号配置列表
      */
-    @PreAuthorize("@ss.hasPermi('lottory:setting:export')")
+    @PreAuthorize("@ss.hasPermi('lottery:setting:export')")
     @Log(title = "固定追号配置", businessType = BusinessType.EXPORT)
     @PostMapping("/export")
-    public void export(HttpServletResponse response, Fx67llLottorySetting fx67llLottorySetting)
+    public void export(HttpServletResponse response, Fx67llLotterySetting fx67llLotterySetting)
     {
-        List<Fx67llLottorySetting> list = fx67llLottorySettingService.selectFx67llLottorySettingList(fx67llLottorySetting);
-        ExcelUtil<Fx67llLottorySetting> util = new ExcelUtil<Fx67llLottorySetting>(Fx67llLottorySetting.class);
+        List<Fx67llLotterySetting> list = fx67llLotterySettingService.selectFx67llLotterySettingList(fx67llLotterySetting);
+        ExcelUtil<Fx67llLotterySetting> util = new ExcelUtil<Fx67llLotterySetting>(Fx67llLotterySetting.class);
         util.exportExcel(response, list, "固定追号配置数据");
     }
 
     /**
      * 获取固定追号配置详细信息
      */
-    @PreAuthorize("@ss.hasPermi('lottory:setting:query')")
+    @PreAuthorize("@ss.hasPermi('lottery:setting:query')")
     @GetMapping(value = "/{settingId}")
     public AjaxResult getInfo(@PathVariable("settingId") Long settingId)
     {
-        return success(fx67llLottorySettingService.selectFx67llLottorySettingBySettingId(settingId));
+        return success(fx67llLotterySettingService.selectFx67llLotterySettingBySettingId(settingId));
     }
 
     /**
      * 新增固定追号配置
      */
-    @PreAuthorize("@ss.hasPermi('lottory:setting:add')")
+    @PreAuthorize("@ss.hasPermi('lottery:setting:add')")
     @Log(title = "固定追号配置", businessType = BusinessType.INSERT)
     @PostMapping
-    public AjaxResult add(@RequestBody Fx67llLottorySetting fx67llLottorySetting)
+    public AjaxResult add(@RequestBody Fx67llLotterySetting fx67llLotterySetting)
     {
-        return toAjax(fx67llLottorySettingService.insertFx67llLottorySetting(fx67llLottorySetting));
+        return toAjax(fx67llLotterySettingService.insertFx67llLotterySetting(fx67llLotterySetting));
     }
 
     /**
      * 修改固定追号配置
      */
-    @PreAuthorize("@ss.hasPermi('lottory:setting:edit')")
+    @PreAuthorize("@ss.hasPermi('lottery:setting:edit')")
     @Log(title = "固定追号配置", businessType = BusinessType.UPDATE)
     @PutMapping
-    public AjaxResult edit(@RequestBody Fx67llLottorySetting fx67llLottorySetting)
+    public AjaxResult edit(@RequestBody Fx67llLotterySetting fx67llLotterySetting)
     {
-        return toAjax(fx67llLottorySettingService.updateFx67llLottorySetting(fx67llLottorySetting));
+        return toAjax(fx67llLotterySettingService.updateFx67llLotterySetting(fx67llLotterySetting));
     }
 
     /**
      * 删除固定追号配置
      */
-    @PreAuthorize("@ss.hasPermi('lottory:setting:remove')")
+    @PreAuthorize("@ss.hasPermi('lottery:setting:remove')")
     @Log(title = "固定追号配置", businessType = BusinessType.DELETE)
 	@DeleteMapping("/{settingIds}")
     public AjaxResult remove(@PathVariable Long[] settingIds)
     {
-        return toAjax(fx67llLottorySettingService.deleteFx67llLottorySettingBySettingIds(settingIds));
+        return toAjax(fx67llLotterySettingService.deleteFx67llLotterySettingBySettingIds(settingIds));
     }
 }
