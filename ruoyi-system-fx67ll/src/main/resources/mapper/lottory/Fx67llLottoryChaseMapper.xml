@@ -29,10 +29,12 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
             <if test="numberType != null "> and number_type = #{numberType}</if>
             <if test="weekType != null "> and week_type = #{weekType}</if>
             <if test="sort != null "> and sort = #{sort}</if>
-            <if test="createBy != null  and createBy != ''"> and create_by = #{createBy}</if>
-            <if test="createTime != null "> and create_time = #{createTime}</if>
-            <if test="updateBy != null  and updateBy != ''"> and update_by = #{updateBy}</if>
-            <if test="updateTime != null "> and update_time = #{updateTime}</if>
+            <if test="delFlag != null  and delFlag != ''"> and del_flag = #{delFlag}</if>
+            <if test="userId != null "> and user_id = #{userId}</if>
+            <if test="createBy != null  and createBy != ''"> and create_by like concat('%', #{createBy}, '%')</if>
+            <if test="params.beginCreateTime != null and params.beginCreateTime != '' and params.endCreateTime != null and params.endCreateTime != ''"> and create_time between #{params.beginCreateTime} and #{params.endCreateTime}</if>
+            <if test="updateBy != null  and updateBy != ''"> and update_by like concat('%', #{updateBy}, '%')</if>
+            <if test="params.beginUpdateTime != null and params.beginUpdateTime != '' and params.endUpdateTime != null and params.endUpdateTime != ''"> and update_time between #{params.beginUpdateTime} and #{params.endUpdateTime}</if>
         </where>
     </select>
     
@@ -48,9 +50,9 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
             <if test="numberType != null">number_type,</if>
             <if test="weekType != null">week_type,</if>
             <if test="sort != null">sort,</if>
-            <if test="delFlag != null and delFlag != ''">del_flag,</if>
+            <if test="delFlag != null">del_flag,</if>
             <if test="userId != null">user_id,</if>
-            <if test="createBy != null and createBy != ''">create_by,</if>
+            <if test="createBy != null">create_by,</if>
             <if test="createTime != null">create_time,</if>
             <if test="updateBy != null">update_by,</if>
             <if test="updateTime != null">update_time,</if>
@@ -60,9 +62,9 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
             <if test="numberType != null">#{numberType},</if>
             <if test="weekType != null">#{weekType},</if>
             <if test="sort != null">#{sort},</if>
-            <if test="delFlag != null and delFlag != ''">#{delFlag},</if>
+            <if test="delFlag != null">#{delFlag},</if>
             <if test="userId != null">#{userId},</if>
-            <if test="createBy != null and createBy != ''">#{createBy},</if>
+            <if test="createBy != null">#{createBy},</if>
             <if test="createTime != null">#{createTime},</if>
             <if test="updateBy != null">#{updateBy},</if>
             <if test="updateTime != null">#{updateTime},</if>
@@ -76,9 +78,9 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
             <if test="numberType != null">number_type = #{numberType},</if>
             <if test="weekType != null">week_type = #{weekType},</if>
             <if test="sort != null">sort = #{sort},</if>
-            <if test="delFlag != null and delFlag != ''">del_flag = #{delFlag},</if>
+            <if test="delFlag != null">del_flag = #{delFlag},</if>
             <if test="userId != null">user_id = #{userId},</if>
-            <if test="createBy != null and createBy != ''">create_by = #{createBy},</if>
+            <if test="createBy != null">create_by = #{createBy},</if>
             <if test="createTime != null">create_time = #{createTime},</if>
             <if test="updateBy != null">update_by = #{updateBy},</if>
             <if test="updateTime != null">update_time = #{updateTime},</if>
