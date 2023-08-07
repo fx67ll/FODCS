@@ -1,0 +1,85 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.ruoyi.fx67ll.lottory.mapper.Fx67llLottorySettingMapper">
+
+    <resultMap type="Fx67llLottorySetting" id="Fx67llLottorySettingResult">
+        <result property="userId" column="user_id"/>
+        <result property="chaseNumber" column="chase_number"/>
+        <result property="delFlag" column="del_flag"/>
+        <result property="createBy" column="create_by"/>
+        <result property="createTime" column="create_time"/>
+        <result property="updateBy" column="update_by"/>
+        <result property="updateTime" column="update_time"/>
+    </resultMap>
+
+    <sql id="selectFx67llLottorySettingVo">
+        select user_id, chase_number, del_flag, create_by, create_time, update_by, update_time
+        from fx67ll_lottory_setting
+    </sql>
+
+    <select id="selectFx67llLottorySettingList" parameterType="Fx67llLottorySetting"
+            resultMap="Fx67llLottorySettingResult">
+        <include refid="selectFx67llLottorySettingVo"/>
+        <where>
+            <if test="chaseNumber != null  and chaseNumber != ''">and chase_number = #{chaseNumber}</if>
+            <if test="createBy != null  and createBy != ''">and create_by = #{createBy}</if>
+            <if test="createTime != null ">and create_time = #{createTime}</if>
+            <if test="updateBy != null  and updateBy != ''">and update_by = #{updateBy}</if>
+            <if test="updateTime != null ">and update_time = #{updateTime}</if>
+        </where>
+    </select>
+
+    <select id="selectFx67llLottorySettingByUserId" parameterType="Long" resultMap="Fx67llLottorySettingResult">
+        <include refid="selectFx67llLottorySettingVo"/>
+        where user_id = #{userId}
+    </select>
+
+    <insert id="insertFx67llLottorySetting" parameterType="Fx67llLottorySetting" useGeneratedKeys="true"
+            keyProperty="userId">
+        insert into fx67ll_lottory_setting
+        <trim prefix="(" suffix=")" suffixOverrides=",">
+            <if test="chaseNumber != null and chaseNumber != ''">chase_number,</if>
+            <if test="delFlag != null and delFlag != ''">del_flag,</if>
+            <if test="createBy != null and createBy != ''">create_by,</if>
+            <if test="createTime != null">create_time,</if>
+            <if test="updateBy != null">update_by,</if>
+            <if test="updateTime != null">update_time,</if>
+        </trim>
+        <trim prefix="values (" suffix=")" suffixOverrides=",">
+            <if test="chaseNumber != null and chaseNumber != ''">#{chaseNumber},</if>
+            <if test="delFlag != null and delFlag != ''">#{delFlag},</if>
+            <if test="createBy != null and createBy != ''">#{createBy},</if>
+            <if test="createTime != null">#{createTime},</if>
+            <if test="updateBy != null">#{updateBy},</if>
+            <if test="updateTime != null">#{updateTime},</if>
+        </trim>
+    </insert>
+
+    <update id="updateFx67llLottorySetting" parameterType="Fx67llLottorySetting">
+        update fx67ll_lottory_setting
+        <trim prefix="SET" suffixOverrides=",">
+            <if test="chaseNumber != null and chaseNumber != ''">chase_number = #{chaseNumber},</if>
+            <if test="delFlag != null and delFlag != ''">del_flag = #{delFlag},</if>
+            <if test="createBy != null and createBy != ''">create_by = #{createBy},</if>
+            <if test="createTime != null">create_time = #{createTime},</if>
+            <if test="updateBy != null">update_by = #{updateBy},</if>
+            <if test="updateTime != null">update_time = #{updateTime},</if>
+        </trim>
+        where user_id = #{userId}
+    </update>
+
+    <delete id="deleteFx67llLottorySettingByUserId" parameterType="Long">
+        delete
+        from fx67ll_lottory_setting
+        where user_id = #{userId}
+    </delete>
+
+    <delete id="deleteFx67llLottorySettingByUserIds" parameterType="String">
+        delete from fx67ll_lottory_setting where user_id in
+        <foreach item="userId" collection="array" open="(" separator="," close=")">
+            #{userId}
+        </foreach>
+    </delete>
+</mapper>
