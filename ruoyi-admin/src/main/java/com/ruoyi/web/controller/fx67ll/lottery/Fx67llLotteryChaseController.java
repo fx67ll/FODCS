@@ -2,6 +2,7 @@ package com.ruoyi.web.controller.fx67ll.lottery;
 
 import java.util.List;
 import javax.servlet.http.HttpServletResponse;
+
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -23,14 +24,13 @@ import com.ruoyi.common.core.page.TableDataInfo;
 
 /**
  * 固定追号配置Controller
- * 
+ *
  * @author fx67ll
  * @date 2023-08-07
  */
 @RestController
 @RequestMapping("/lottery/chase")
-public class Fx67llLotteryChaseController extends BaseController
-{
+public class Fx67llLotteryChaseController extends BaseController {
     @Autowired
     private IFx67llLotteryChaseService fx67llLotteryChaseService;
 
@@ -39,8 +39,19 @@ public class Fx67llLotteryChaseController extends BaseController
      */
     @PreAuthorize("@ss.hasPermi('lottery:chase:list')")
     @GetMapping("/list")
-    public TableDataInfo list(Fx67llLotteryChase fx67llLotteryChase)
-    {
+    public TableDataInfo list(Fx67llLotteryChase fx67llLotteryChase) {
+        startPage();
+        List<Fx67llLotteryChase> list = fx67llLotteryChaseService.selectFx67llLotteryChaseList(fx67llLotteryChase);
+        return getDataTable(list);
+    }
+
+    /**
+     * 提供给APP查询固定追号配置列表
+     */
+//    如果只放开SecurityConfig中允许匿名请求的配置，不放开这里的权限配置，会返回获取用户信息异常的错误
+//    @PreAuthorize("@ss.hasPermi('lottery:chase:list')")
+    @GetMapping("/getLotteryChaseListForApp")
+    public TableDataInfo getLotteryChaseListForApp(Fx67llLotteryChase fx67llLotteryChase) {
         startPage();
         List<Fx67llLotteryChase> list = fx67llLotteryChaseService.selectFx67llLotteryChaseList(fx67llLotteryChase);
         return getDataTable(list);
@@ -52,8 +63,7 @@ public class Fx67llLotteryChaseController extends BaseController
     @PreAuthorize("@ss.hasPermi('lottery:chase:export')")
     @Log(title = "固定追号配置", businessType = BusinessType.EXPORT)
     @PostMapping("/export")
-    public void export(HttpServletResponse response, Fx67llLotteryChase fx67llLotteryChase)
-    {
+    public void export(HttpServletResponse response, Fx67llLotteryChase fx67llLotteryChase) {
         List<Fx67llLotteryChase> list = fx67llLotteryChaseService.selectFx67llLotteryChaseList(fx67llLotteryChase);
         ExcelUtil<Fx67llLotteryChase> util = new ExcelUtil<Fx67llLotteryChase>(Fx67llLotteryChase.class);
         util.exportExcel(response, list, "固定追号配置数据");
@@ -64,8 +74,7 @@ public class Fx67llLotteryChaseController extends BaseController
      */
     @PreAuthorize("@ss.hasPermi('lottery:chase:query')")
     @GetMapping(value = "/{chaseId}")
-    public AjaxResult getInfo(@PathVariable("chaseId") Long chaseId)
-    {
+    public AjaxResult getInfo(@PathVariable("chaseId") Long chaseId) {
         return success(fx67llLotteryChaseService.selectFx67llLotteryChaseByChaseId(chaseId));
     }
 
@@ -75,8 +84,7 @@ public class Fx67llLotteryChaseController extends BaseController
     @PreAuthorize("@ss.hasPermi('lottery:chase:add')")
     @Log(title = "固定追号配置", businessType = BusinessType.INSERT)
     @PostMapping
-    public AjaxResult add(@RequestBody Fx67llLotteryChase fx67llLotteryChase)
-    {
+    public AjaxResult add(@RequestBody Fx67llLotteryChase fx67llLotteryChase) {
         return toAjax(fx67llLotteryChaseService.insertFx67llLotteryChase(fx67llLotteryChase));
     }
 
@@ -86,8 +94,7 @@ public class Fx67llLotteryChaseController extends BaseController
     @PreAuthorize("@ss.hasPermi('lottery:chase:edit')")
     @Log(title = "固定追号配置", businessType = BusinessType.UPDATE)
     @PutMapping
-    public AjaxResult edit(@RequestBody Fx67llLotteryChase fx67llLotteryChase)
-    {
+    public AjaxResult edit(@RequestBody Fx67llLotteryChase fx67llLotteryChase) {
         return toAjax(fx67llLotteryChaseService.updateFx67llLotteryChase(fx67llLotteryChase));
     }
 
@@ -96,9 +103,8 @@ public class Fx67llLotteryChaseController extends BaseController
      */
     @PreAuthorize("@ss.hasPermi('lottery:chase:remove')")
     @Log(title = "固定追号配置", businessType = BusinessType.DELETE)
-	@DeleteMapping("/{chaseIds}")
-    public AjaxResult remove(@PathVariable Long[] chaseIds)
-    {
+    @DeleteMapping("/{chaseIds}")
+    public AjaxResult remove(@PathVariable Long[] chaseIds) {
         return toAjax(fx67llLotteryChaseService.deleteFx67llLotteryChaseByChaseIds(chaseIds));
     }
 }

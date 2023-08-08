@@ -1,7 +1,8 @@
-package com.ruoyi.fx67ll.lottery.controller;
+package com.ruoyi.web.controller.fx67ll.lottery;
 
 import java.util.List;
 import javax.servlet.http.HttpServletResponse;
+
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -23,14 +24,13 @@ import com.ruoyi.common.core.page.TableDataInfo;
 
 /**
  * 每日号码记录Controller
- * 
+ *
  * @author fx67ll
  * @date 2023-08-07
  */
 @RestController
 @RequestMapping("/lottery/log")
-public class Fx67llLotteryLogController extends BaseController
-{
+public class Fx67llLotteryLogController extends BaseController {
     @Autowired
     private IFx67llLotteryLogService fx67llLotteryLogService;
 
@@ -39,8 +39,7 @@ public class Fx67llLotteryLogController extends BaseController
      */
     @PreAuthorize("@ss.hasPermi('lottery:log:list')")
     @GetMapping("/list")
-    public TableDataInfo list(Fx67llLotteryLog fx67llLotteryLog)
-    {
+    public TableDataInfo list(Fx67llLotteryLog fx67llLotteryLog) {
         startPage();
         List<Fx67llLotteryLog> list = fx67llLotteryLogService.selectFx67llLotteryLogList(fx67llLotteryLog);
         return getDataTable(list);
@@ -52,21 +51,10 @@ public class Fx67llLotteryLogController extends BaseController
     @PreAuthorize("@ss.hasPermi('lottery:log:export')")
     @Log(title = "每日号码记录", businessType = BusinessType.EXPORT)
     @PostMapping("/export")
-    public void export(HttpServletResponse response, Fx67llLotteryLog fx67llLotteryLog)
-    {
+    public void export(HttpServletResponse response, Fx67llLotteryLog fx67llLotteryLog) {
         List<Fx67llLotteryLog> list = fx67llLotteryLogService.selectFx67llLotteryLogList(fx67llLotteryLog);
         ExcelUtil<Fx67llLotteryLog> util = new ExcelUtil<Fx67llLotteryLog>(Fx67llLotteryLog.class);
         util.exportExcel(response, list, "每日号码记录数据");
-    }
-
-    /**
-     * 获取每日号码记录详细信息
-     */
-    @PreAuthorize("@ss.hasPermi('lottery:log:query')")
-    @GetMapping(value = "/{lotteryId}")
-    public AjaxResult getInfo(@PathVariable("lotteryId") Long lotteryId)
-    {
-        return success(fx67llLotteryLogService.selectFx67llLotteryLogByLotteryId(lotteryId));
     }
 
     /**
@@ -75,8 +63,18 @@ public class Fx67llLotteryLogController extends BaseController
     @PreAuthorize("@ss.hasPermi('lottery:log:add')")
     @Log(title = "每日号码记录", businessType = BusinessType.INSERT)
     @PostMapping
-    public AjaxResult add(@RequestBody Fx67llLotteryLog fx67llLotteryLog)
-    {
+    public AjaxResult add(@RequestBody Fx67llLotteryLog fx67llLotteryLog) {
+        return toAjax(fx67llLotteryLogService.insertFx67llLotteryLog(fx67llLotteryLog));
+    }
+
+    /**
+     * 提供给APP新增每日号码记录
+     */
+//    如果只放开SecurityConfig中允许匿名请求的配置，不放开这里的权限配置，会返回获取用户信息异常的错误
+//    @PreAuthorize("@ss.hasPermi('lottery:log:add')")
+    @Log(title = "每日号码记录", businessType = BusinessType.INSERT)
+    @PostMapping("/addLotteryLogForApp")
+    public AjaxResult addLotteryLogForApp(@RequestBody Fx67llLotteryLog fx67llLotteryLog) {
         return toAjax(fx67llLotteryLogService.insertFx67llLotteryLog(fx67llLotteryLog));
     }
 
@@ -86,8 +84,7 @@ public class Fx67llLotteryLogController extends BaseController
     @PreAuthorize("@ss.hasPermi('lottery:log:edit')")
     @Log(title = "每日号码记录", businessType = BusinessType.UPDATE)
     @PutMapping
-    public AjaxResult edit(@RequestBody Fx67llLotteryLog fx67llLotteryLog)
-    {
+    public AjaxResult edit(@RequestBody Fx67llLotteryLog fx67llLotteryLog) {
         return toAjax(fx67llLotteryLogService.updateFx67llLotteryLog(fx67llLotteryLog));
     }
 
@@ -96,9 +93,8 @@ public class Fx67llLotteryLogController extends BaseController
      */
     @PreAuthorize("@ss.hasPermi('lottery:log:remove')")
     @Log(title = "每日号码记录", businessType = BusinessType.DELETE)
-	@DeleteMapping("/{lotteryIds}")
-    public AjaxResult remove(@PathVariable Long[] lotteryIds)
-    {
+    @DeleteMapping("/{lotteryIds}")
+    public AjaxResult remove(@PathVariable Long[] lotteryIds) {
         return toAjax(fx67llLotteryLogService.deleteFx67llLotteryLogByLotteryIds(lotteryIds));
     }
 }

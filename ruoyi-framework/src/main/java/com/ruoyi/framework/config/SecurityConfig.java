@@ -112,7 +112,10 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
                 // 随机生成马赛克头像，可匿名访问
                 .antMatchers("/getRandomAvatar").permitAll()
                 // 为彩票管理开放部分api
-                .antMatchers("/lottery/chase/list", "/lottery/setting/**", "/lottery/log").permitAll()
+                .antMatchers("/lottery/chase/getLotteryChaseListForApp",
+                        "/lottery/setting/getLotterySettingConfigForApp/**",
+                        "/lottery/setting/editLotterySettingConfigForApp",
+                        "/lottery/log/addLotteryLogForApp").permitAll()
                 // 静态资源，可匿名访问
                 .antMatchers(HttpMethod.GET, "/", "/*.html", "/**/*.html", "/**/*.css", "/**/*.js", "/profile/**").permitAll()
                 .antMatchers("/swagger-ui.html", "/swagger-resources/**", "/webjars/**", "/*/api-docs", "/druid/**").permitAll()
