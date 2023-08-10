@@ -1,49 +1,70 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <!DOCTYPE mapper
-PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
-"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="com.ruoyi.fx67ll.lottery.mapper.Fx67llLotteryChaseMapper">
-    
+
     <resultMap type="Fx67llLotteryChase" id="Fx67llLotteryChaseResult">
-        <result property="chaseId"    column="chase_id"    />
-        <result property="chaseNumber"    column="chase_number"    />
-        <result property="numberType"    column="number_type"    />
-        <result property="weekType"    column="week_type"    />
-        <result property="sort"    column="sort"    />
-        <result property="delFlag"    column="del_flag"    />
-        <result property="userId"    column="user_id"    />
-        <result property="createBy"    column="create_by"    />
-        <result property="createTime"    column="create_time"    />
-        <result property="updateBy"    column="update_by"    />
-        <result property="updateTime"    column="update_time"    />
+        <result property="chaseId" column="chase_id"/>
+        <result property="chaseNumber" column="chase_number"/>
+        <result property="numberType" column="number_type"/>
+        <result property="weekType" column="week_type"/>
+        <result property="sort" column="sort"/>
+        <result property="delFlag" column="del_flag"/>
+        <result property="userId" column="user_id"/>
+        <result property="createBy" column="create_by"/>
+        <result property="createTime" column="create_time"/>
+        <result property="updateBy" column="update_by"/>
+        <result property="updateTime" column="update_time"/>
     </resultMap>
 
     <sql id="selectFx67llLotteryChaseVo">
-        select chase_id, chase_number, number_type, week_type, sort, del_flag, user_id, create_by, create_time, update_by, update_time from fx67ll_lottery_chase
+        select chase_id,
+               chase_number,
+               number_type,
+               week_type,
+               sort,
+               del_flag,
+               user_id,
+               create_by,
+               create_time,
+               update_by,
+               update_time
+        from fx67ll_lottery_chase
     </sql>
 
     <select id="selectFx67llLotteryChaseList" parameterType="Fx67llLotteryChase" resultMap="Fx67llLotteryChaseResult">
         <include refid="selectFx67llLotteryChaseVo"/>
-        <where>  
-            <if test="chaseNumber != null  and chaseNumber != ''"> and chase_number = #{chaseNumber}</if>
-            <if test="numberType != null "> and number_type = #{numberType}</if>
-            <if test="weekType != null "> and week_type = #{weekType}</if>
-            <if test="sort != null "> and sort = #{sort}</if>
-            <if test="delFlag != null  and delFlag != ''"> and del_flag = #{delFlag}</if>
-            <if test="userId != null "> and user_id = #{userId}</if>
-            <if test="createBy != null  and createBy != ''"> and create_by like concat('%', #{createBy}, '%')</if>
-            <if test="params.beginCreateTime != null and params.beginCreateTime != '' and params.endCreateTime != null and params.endCreateTime != ''"> and create_time between #{params.beginCreateTime} and #{params.endCreateTime}</if>
-            <if test="updateBy != null  and updateBy != ''"> and update_by like concat('%', #{updateBy}, '%')</if>
-            <if test="params.beginUpdateTime != null and params.beginUpdateTime != '' and params.endUpdateTime != null and params.endUpdateTime != ''"> and update_time between #{params.beginUpdateTime} and #{params.endUpdateTime}</if>
+        <where>
+            <if test="chaseNumber != null  and chaseNumber != ''">and chase_number = #{chaseNumber}</if>
+            <if test="numberType != null ">and number_type = #{numberType}</if>
+            <if test="weekType != null ">and week_type = #{weekType}</if>
+            <if test="sort != null ">and sort = #{sort}</if>
+            <if test="delFlag != null  and delFlag != ''">and del_flag = #{delFlag}</if>
+            <if test="userId != null ">and user_id = #{userId}</if>
+            <if test="createBy != null  and createBy != ''">and create_by like concat('%', #{createBy}, '%')</if>
+            <if test="params.beginCreateTime != null and params.beginCreateTime != '' and params.endCreateTime != null and params.endCreateTime != ''">
+                and create_time between #{params.beginCreateTime} and #{params.endCreateTime}
+            </if>
+            <if test="updateBy != null  and updateBy != ''">and update_by like concat('%', #{updateBy}, '%')</if>
+            <if test="params.beginUpdateTime != null and params.beginUpdateTime != '' and params.endUpdateTime != null and params.endUpdateTime != ''">
+                and update_time between #{params.beginUpdateTime} and #{params.endUpdateTime}
+            </if>
         </where>
     </select>
-    
+
+    <select id="selectFx67llLotteryChaseListByUserId" parameterType="Long" resultMap="Fx67llLotteryChaseResult">
+        <include refid="selectFx67llLotteryChaseVo"/>
+        where user_id = #{userId}
+    </select>
+
     <select id="selectFx67llLotteryChaseByChaseId" parameterType="Long" resultMap="Fx67llLotteryChaseResult">
         <include refid="selectFx67llLotteryChaseVo"/>
         where chase_id = #{chaseId}
     </select>
-        
-    <insert id="insertFx67llLotteryChase" parameterType="Fx67llLotteryChase" useGeneratedKeys="true" keyProperty="chaseId">
+
+    <insert id="insertFx67llLotteryChase" parameterType="Fx67llLotteryChase" useGeneratedKeys="true"
+            keyProperty="chaseId">
         insert into fx67ll_lottery_chase
         <trim prefix="(" suffix=")" suffixOverrides=",">
             <if test="chaseNumber != null and chaseNumber != ''">chase_number,</if>
@@ -56,7 +77,7 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
             <if test="createTime != null">create_time,</if>
             <if test="updateBy != null">update_by,</if>
             <if test="updateTime != null">update_time,</if>
-         </trim>
+        </trim>
         <trim prefix="values (" suffix=")" suffixOverrides=",">
             <if test="chaseNumber != null and chaseNumber != ''">#{chaseNumber},</if>
             <if test="numberType != null">#{numberType},</if>
@@ -68,7 +89,7 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
             <if test="createTime != null">#{createTime},</if>
             <if test="updateBy != null">#{updateBy},</if>
             <if test="updateTime != null">#{updateTime},</if>
-         </trim>
+        </trim>
     </insert>
 
     <update id="updateFx67llLotteryChase" parameterType="Fx67llLotteryChase">
@@ -89,7 +110,9 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
     </update>
 
     <delete id="deleteFx67llLotteryChaseByChaseId" parameterType="Long">
-        delete from fx67ll_lottery_chase where chase_id = #{chaseId}
+        delete
+        from fx67ll_lottery_chase
+        where chase_id = #{chaseId}
     </delete>
 
     <delete id="deleteFx67llLotteryChaseByChaseIds" parameterType="String">

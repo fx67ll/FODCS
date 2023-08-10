@@ -28,6 +28,14 @@ public interface Fx67llLotteryChaseMapper
     public List<Fx67llLotteryChase> selectFx67llLotteryChaseList(Fx67llLotteryChase fx67llLotteryChase);
 
     /**
+     * 通过 UserId 查询固定追号配置列表
+     *
+     * @param userId 用户主键
+     * @return 固定追号配置集合
+     */
+    public List<Fx67llLotteryChase> selectFx67llLotteryChaseListByUserId(Long userId);
+
+    /**
      * 新增固定追号配置
      * 
      * @param fx67llLotteryChase 固定追号配置

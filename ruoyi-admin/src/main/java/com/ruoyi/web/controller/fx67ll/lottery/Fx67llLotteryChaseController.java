@@ -3,6 +3,7 @@ package com.ruoyi.web.controller.fx67ll.lottery;
 import java.util.List;
 import javax.servlet.http.HttpServletResponse;
 
+import com.ruoyi.common.utils.SecurityUtils;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -46,14 +47,14 @@ public class Fx67llLotteryChaseController extends BaseController {
     }
 
     /**
-     * 提供给APP查询固定追号配置列表
+     * 提供给 APP 查询固定追号配置列表
      */
 //    如果只放开SecurityConfig中允许匿名请求的配置，不放开这里的权限配置，会返回获取用户信息异常的错误
 //    @PreAuthorize("@ss.hasPermi('lottery:chase:list')")
     @GetMapping("/getLotteryChaseListForApp")
-    public TableDataInfo getLotteryChaseListForApp(Fx67llLotteryChase fx67llLotteryChase) {
+    public TableDataInfo getLotteryChaseListForApp() {
         startPage();
-        List<Fx67llLotteryChase> list = fx67llLotteryChaseService.selectFx67llLotteryChaseList(fx67llLotteryChase);
+        List<Fx67llLotteryChase> list = fx67llLotteryChaseService.selectFx67llLotteryChaseListByUserId(SecurityUtils.getUserId());
         return getDataTable(list);
     }
 
