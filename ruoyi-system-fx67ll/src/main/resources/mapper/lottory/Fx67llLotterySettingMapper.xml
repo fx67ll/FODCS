@@ -1,42 +1,61 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <!DOCTYPE mapper
-PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
-"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="com.ruoyi.fx67ll.lottery.mapper.Fx67llLotterySettingMapper">
-    
+
     <resultMap type="Fx67llLotterySetting" id="Fx67llLotterySettingResult">
-        <result property="settingId"    column="setting_id"    />
-        <result property="userId"    column="user_id"    />
-        <result property="lotterySetting"    column="lottery_setting"    />
-        <result property="delFlag"    column="del_flag"    />
-        <result property="createBy"    column="create_by"    />
-        <result property="createTime"    column="create_time"    />
-        <result property="updateBy"    column="update_by"    />
-        <result property="updateTime"    column="update_time"    />
+        <result property="settingId" column="setting_id"/>
+        <result property="userId" column="user_id"/>
+        <result property="lotterySetting" column="lottery_setting"/>
+        <result property="delFlag" column="del_flag"/>
+        <result property="createBy" column="create_by"/>
+        <result property="createTime" column="create_time"/>
+        <result property="updateBy" column="update_by"/>
+        <result property="updateTime" column="update_time"/>
     </resultMap>
 
     <sql id="selectFx67llLotterySettingVo">
-        select setting_id, user_id, lottery_setting, del_flag, create_by, create_time, update_by, update_time from fx67ll_lottery_setting
+        select setting_id,
+               user_id,
+               lottery_setting,
+               del_flag,
+               create_by,
+               create_time,
+               update_by,
+               update_time
+        from fx67ll_lottery_setting
     </sql>
 
-    <select id="selectFx67llLotterySettingList" parameterType="Fx67llLotterySetting" resultMap="Fx67llLotterySettingResult">
+    <select id="selectFx67llLotterySettingList" parameterType="Fx67llLotterySetting"
+            resultMap="Fx67llLotterySettingResult">
         <include refid="selectFx67llLotterySettingVo"/>
-        <where>  
-            <if test="userId != null "> and user_id = #{userId}</if>
-            <if test="delFlag != null  and delFlag != ''"> and del_flag = #{delFlag}</if>
-            <if test="createBy != null  and createBy != ''"> and create_by like concat('%', #{createBy}, '%')</if>
-            <if test="params.beginCreateTime != null and params.beginCreateTime != '' and params.endCreateTime != null and params.endCreateTime != ''"> and create_time between #{params.beginCreateTime} and #{params.endCreateTime}</if>
-            <if test="updateBy != null  and updateBy != ''"> and update_by like concat('%', #{updateBy}, '%')</if>
-            <if test="params.beginUpdateTime != null and params.beginUpdateTime != '' and params.endUpdateTime != null and params.endUpdateTime != ''"> and update_time between #{params.beginUpdateTime} and #{params.endUpdateTime}</if>
+        <where>
+            <if test="userId != null ">and user_id = #{userId}</if>
+            <if test="delFlag != null  and delFlag != ''">and del_flag = #{delFlag}</if>
+            <if test="createBy != null  and createBy != ''">and create_by like concat('%', #{createBy}, '%')</if>
+            <if test="params.beginCreateTime != null and params.beginCreateTime != '' and params.endCreateTime != null and params.endCreateTime != ''">
+                and create_time between #{params.beginCreateTime} and #{params.endCreateTime}
+            </if>
+            <if test="updateBy != null  and updateBy != ''">and update_by like concat('%', #{updateBy}, '%')</if>
+            <if test="params.beginUpdateTime != null and params.beginUpdateTime != '' and params.endUpdateTime != null and params.endUpdateTime != ''">
+                and update_time between #{params.beginUpdateTime} and #{params.endUpdateTime}
+            </if>
         </where>
     </select>
-    
+
     <select id="selectFx67llLotterySettingBySettingId" parameterType="Long" resultMap="Fx67llLotterySettingResult">
         <include refid="selectFx67llLotterySettingVo"/>
         where setting_id = #{settingId}
     </select>
-        
-    <insert id="insertFx67llLotterySetting" parameterType="Fx67llLotterySetting" useGeneratedKeys="true" keyProperty="settingId">
+
+    <select id="selectFx67llLotterySettingByUserId" parameterType="Long" resultMap="Fx67llLotterySettingResult">
+        <include refid="selectFx67llLotterySettingVo"/>
+        where user_id = #{userId}
+    </select>
+
+    <insert id="insertFx67llLotterySetting" parameterType="Fx67llLotterySetting" useGeneratedKeys="true"
+            keyProperty="settingId">
         insert into fx67ll_lottery_setting
         <trim prefix="(" suffix=")" suffixOverrides=",">
             <if test="userId != null">user_id,</if>
@@ -46,7 +65,7 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
             <if test="createTime != null">create_time,</if>
             <if test="updateBy != null">update_by,</if>
             <if test="updateTime != null">update_time,</if>
-         </trim>
+        </trim>
         <trim prefix="values (" suffix=")" suffixOverrides=",">
             <if test="userId != null">#{userId},</if>
             <if test="lotterySetting != null and lotterySetting != ''">#{lotterySetting},</if>
@@ -55,7 +74,7 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
             <if test="createTime != null">#{createTime},</if>
             <if test="updateBy != null">#{updateBy},</if>
             <if test="updateTime != null">#{updateTime},</if>
-         </trim>
+        </trim>
     </insert>
 
     <update id="updateFx67llLotterySetting" parameterType="Fx67llLotterySetting">
@@ -73,7 +92,9 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
     </update>
 
     <delete id="deleteFx67llLotterySettingBySettingId" parameterType="Long">
-        delete from fx67ll_lottery_setting where setting_id = #{settingId}
+        delete
+        from fx67ll_lottery_setting
+        where setting_id = #{settingId}
     </delete>
 
     <delete id="deleteFx67llLotterySettingBySettingIds" parameterType="String">

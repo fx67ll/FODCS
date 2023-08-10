@@ -1,27 +1,35 @@
 package com.ruoyi.fx67ll.lottery.mapper;
 
 import java.util.List;
+
 import com.ruoyi.fx67ll.lottery.domain.Fx67llLotterySetting;
 
 /**
  * 固定追号配置Mapper接口
- * 
+ *
  * @author fx67ll
  * @date 2023-08-07
  */
-public interface Fx67llLotterySettingMapper 
-{
+public interface Fx67llLotterySettingMapper {
     /**
      * 查询固定追号配置
-     * 
+     *
      * @param settingId 固定追号配置主键
      * @return 固定追号配置
      */
     public Fx67llLotterySetting selectFx67llLotterySettingBySettingId(Long settingId);
 
     /**
+     * 通过 UserId 查询固定追号配置
+     *
+     * @param userId 用户主键
+     * @return 固定追号配置
+     */
+    public Fx67llLotterySetting selectFx67llLotterySettingByUserId(Long userId);
+
+    /**
      * 查询固定追号配置列表
-     * 
+     *
      * @param fx67llLotterySetting 固定追号配置
      * @return 固定追号配置集合
      */
@@ -29,7 +37,7 @@ public interface Fx67llLotterySettingMapper
 
     /**
      * 新增固定追号配置
-     * 
+     *
      * @param fx67llLotterySetting 固定追号配置
      * @return 结果
      */
@@ -37,7 +45,7 @@ public interface Fx67llLotterySettingMapper
 
     /**
      * 修改固定追号配置
-     * 
+     *
      * @param fx67llLotterySetting 固定追号配置
      * @return 结果
      */
@@ -45,7 +53,7 @@ public interface Fx67llLotterySettingMapper
 
     /**
      * 删除固定追号配置
-     * 
+     *
      * @param settingId 固定追号配置主键
      * @return 结果
      */
@@ -53,7 +61,7 @@ public interface Fx67llLotterySettingMapper
 
     /**
      * 批量删除固定追号配置
-     * 
+     *
      * @param settingIds 需要删除的数据主键集合
      * @return 结果
      */

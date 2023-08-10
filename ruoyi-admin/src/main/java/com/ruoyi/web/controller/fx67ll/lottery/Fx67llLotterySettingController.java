@@ -3,6 +3,7 @@ package com.ruoyi.web.controller.fx67ll.lottery;
 import java.util.List;
 import javax.servlet.http.HttpServletResponse;
 
+import com.ruoyi.common.utils.SecurityUtils;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -67,13 +68,13 @@ public class Fx67llLotterySettingController extends BaseController {
     }
 
     /**
-     * 提供给APP获取固定追号配置详细信息
+     * 提供给 APP 获取固定追号配置详细信息
      */
 //    如果只放开SecurityConfig中允许匿名请求的配置，不放开这里的权限配置，会返回获取用户信息异常的错误
 //    @PreAuthorize("@ss.hasPermi('lottery:setting:query')")
-    @GetMapping(value = "/getLotterySettingConfigForApp/{settingId}")
-    public AjaxResult getLotterySettingConfigForApp(@PathVariable("settingId") Long settingId) {
-        return success(fx67llLotterySettingService.selectFx67llLotterySettingBySettingId(settingId));
+    @GetMapping(value = "/getLotterySettingConfigForApp")
+    public AjaxResult getLotterySettingConfigForApp() {
+        return success(fx67llLotterySettingService.selectFx67llLotterySettingByUserId(SecurityUtils.getUserId()));
     }
 
     /**
@@ -97,7 +98,7 @@ public class Fx67llLotterySettingController extends BaseController {
     }
 
     /**
-     * 提供给APP修改固定追号配置
+     * 提供给 APP 修改固定追号配置
      */
 //    如果只放开SecurityConfig中允许匿名请求的配置，不放开这里的权限配置，会返回获取用户信息异常的错误
 //    @PreAuthorize("@ss.hasPermi('lottery:setting:edit')")

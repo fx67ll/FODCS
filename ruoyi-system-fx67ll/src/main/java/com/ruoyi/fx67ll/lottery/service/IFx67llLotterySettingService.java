@@ -20,6 +20,14 @@ public interface IFx67llLotterySettingService
     public Fx67llLotterySetting selectFx67llLotterySettingBySettingId(Long settingId);
 
     /**
+     * 通过 UserId 查询固定追号配置
+     *
+     * @param userId 用户主键
+     * @return 固定追号配置
+     */
+    public Fx67llLotterySetting selectFx67llLotterySettingByUserId(Long userId);
+
+    /**
      * 查询固定追号配置列表
      * 
      * @param fx67llLotterySetting 固定追号配置
