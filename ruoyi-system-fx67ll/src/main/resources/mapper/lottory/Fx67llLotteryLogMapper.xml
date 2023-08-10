@@ -1,58 +1,86 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <!DOCTYPE mapper
-PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
-"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="com.ruoyi.fx67ll.lottery.mapper.Fx67llLotteryLogMapper">
-    
+
     <resultMap type="Fx67llLotteryLog" id="Fx67llLotteryLogResult">
-        <result property="lotteryId"    column="lottery_id"    />
-        <result property="recordNumber"    column="record_number"    />
-        <result property="chaseNumber"    column="chase_number"    />
-        <result property="winningNumber"    column="winning_number"    />
-        <result property="numberType"    column="number_type"    />
-        <result property="weekType"    column="week_type"    />
-        <result property="hasMorePurchases"    column="has_more_purchases"    />
-        <result property="delFlag"    column="del_flag"    />
-        <result property="userId"    column="user_id"    />
-        <result property="createBy"    column="create_by"    />
-        <result property="createTime"    column="create_time"    />
-        <result property="updateBy"    column="update_by"    />
-        <result property="updateTime"    column="update_time"    />
+        <result property="lotteryId" column="lottery_id"/>
+        <result property="recordNumber" column="record_number"/>
+        <result property="chaseNumber" column="chase_number"/>
+        <result property="winningNumber" column="winning_number"/>
+        <result property="isWin" column="is_win"/>
+        <result property="winningPrice" column="winning_price"/>
+        <result property="numberType" column="number_type"/>
+        <result property="weekType" column="week_type"/>
+        <result property="hasMorePurchases" column="has_more_purchases"/>
+        <result property="delFlag" column="del_flag"/>
+        <result property="userId" column="user_id"/>
+        <result property="createBy" column="create_by"/>
+        <result property="createTime" column="create_time"/>
+        <result property="updateBy" column="update_by"/>
+        <result property="updateTime" column="update_time"/>
     </resultMap>
 
     <sql id="selectFx67llLotteryLogVo">
-        select lottery_id, record_number, chase_number, winning_number, number_type, week_type, has_more_purchases, del_flag, user_id, create_by, create_time, update_by, update_time from fx67ll_lottery_log
+        select lottery_id,
+               record_number,
+               chase_number,
+               winning_number,
+               is_win,
+               winning_price,
+               number_type,
+               week_type,
+               has_more_purchases,
+               del_flag,
+               user_id,
+               create_by,
+               create_time,
+               update_by,
+               update_time
+        from fx67ll_lottery_log
     </sql>
 
     <select id="selectFx67llLotteryLogList" parameterType="Fx67llLotteryLog" resultMap="Fx67llLotteryLogResult">
         <include refid="selectFx67llLotteryLogVo"/>
-        <where>  
-            <if test="recordNumber != null  and recordNumber != ''"> and record_number = #{recordNumber}</if>
-            <if test="chaseNumber != null  and chaseNumber != ''"> and chase_number = #{chaseNumber}</if>
-            <if test="winningNumber != null  and winningNumber != ''"> and winning_number = #{winningNumber}</if>
-            <if test="numberType != null "> and number_type = #{numberType}</if>
-            <if test="weekType != null "> and week_type = #{weekType}</if>
-            <if test="hasMorePurchases != null  and hasMorePurchases != ''"> and has_more_purchases = #{hasMorePurchases}</if>
-            <if test="delFlag != null  and delFlag != ''"> and del_flag = #{delFlag}</if>
-            <if test="userId != null "> and user_id = #{userId}</if>
-            <if test="createBy != null  and createBy != ''"> and create_by like concat('%', #{createBy}, '%')</if>
-            <if test="params.beginCreateTime != null and params.beginCreateTime != '' and params.endCreateTime != null and params.endCreateTime != ''"> and create_time between #{params.beginCreateTime} and #{params.endCreateTime}</if>
-            <if test="updateBy != null  and updateBy != ''"> and update_by like concat('%', #{updateBy}, '%')</if>
-            <if test="params.beginUpdateTime != null and params.beginUpdateTime != '' and params.endUpdateTime != null and params.endUpdateTime != ''"> and update_time between #{params.beginUpdateTime} and #{params.endUpdateTime}</if>
+        <where>
+            <if test="recordNumber != null  and recordNumber != ''">and record_number = #{recordNumber}</if>
+            <if test="chaseNumber != null  and chaseNumber != ''">and chase_number = #{chaseNumber}</if>
+            <if test="winningNumber != null  and winningNumber != ''">and winning_number = #{winningNumber}</if>
+            <if test="isWin != null  and isWin != ''">and is_win = #{isWin}</if>
+            <if test="numberType != null ">and number_type = #{numberType}</if>
+            <if test="weekType != null ">and week_type = #{weekType}</if>
+            <if test="hasMorePurchases != null  and hasMorePurchases != ''">and has_more_purchases =
+                #{hasMorePurchases}
+            </if>
+            <if test="delFlag != null  and delFlag != ''">and del_flag = #{delFlag}</if>
+            <if test="userId != null ">and user_id = #{userId}</if>
+            <if test="createBy != null  and createBy != ''">and create_by = #{createBy}</if>
+            <if test="createTime != null ">and create_time = #{createTime}</if>
+            <if test="updateBy != null  and updateBy != ''">and update_by = #{updateBy}</if>
+            <if test="updateTime != null ">and update_time = #{updateTime}</if>
         </where>
     </select>
-    
+
+    <select id="selectFx67llLotteryLogListByUserId" parameterType="Long" resultMap="Fx67llLotteryLogResult">
+        <include refid="selectFx67llLotteryLogVo"/>
+        where user_id = #{userId}
+    </select>
+
     <select id="selectFx67llLotteryLogByLotteryId" parameterType="Long" resultMap="Fx67llLotteryLogResult">
         <include refid="selectFx67llLotteryLogVo"/>
         where lottery_id = #{lotteryId}
     </select>
-        
-    <insert id="insertFx67llLotteryLog" parameterType="Fx67llLotteryLog" useGeneratedKeys="true" keyProperty="lotteryId">
+
+    <insert id="insertFx67llLotteryLog" parameterType="Fx67llLotteryLog" useGeneratedKeys="true"
+            keyProperty="lotteryId">
         insert into fx67ll_lottery_log
         <trim prefix="(" suffix=")" suffixOverrides=",">
             <if test="recordNumber != null and recordNumber != ''">record_number,</if>
             <if test="chaseNumber != null">chase_number,</if>
             <if test="winningNumber != null">winning_number,</if>
+            <if test="isWin != null">is_win,</if>
+            <if test="winningPrice != null">winning_price,</if>
             <if test="numberType != null">number_type,</if>
             <if test="weekType != null">week_type,</if>
             <if test="hasMorePurchases != null and hasMorePurchases != ''">has_more_purchases,</if>
@@ -62,11 +90,13 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
             <if test="createTime != null">create_time,</if>
             <if test="updateBy != null">update_by,</if>
             <if test="updateTime != null">update_time,</if>
-         </trim>
+        </trim>
         <trim prefix="values (" suffix=")" suffixOverrides=",">
             <if test="recordNumber != null and recordNumber != ''">#{recordNumber},</if>
             <if test="chaseNumber != null">#{chaseNumber},</if>
             <if test="winningNumber != null">#{winningNumber},</if>
+            <if test="isWin != null">#{isWin},</if>
+            <if test="winningPrice != null">#{winningPrice},</if>
             <if test="numberType != null">#{numberType},</if>
             <if test="weekType != null">#{weekType},</if>
             <if test="hasMorePurchases != null and hasMorePurchases != ''">#{hasMorePurchases},</if>
@@ -76,7 +106,7 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
             <if test="createTime != null">#{createTime},</if>
             <if test="updateBy != null">#{updateBy},</if>
             <if test="updateTime != null">#{updateTime},</if>
-         </trim>
+        </trim>
     </insert>
 
     <update id="updateFx67llLotteryLog" parameterType="Fx67llLotteryLog">
@@ -85,9 +115,12 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
             <if test="recordNumber != null and recordNumber != ''">record_number = #{recordNumber},</if>
             <if test="chaseNumber != null">chase_number = #{chaseNumber},</if>
             <if test="winningNumber != null">winning_number = #{winningNumber},</if>
+            <if test="isWin != null">is_win = #{isWin},</if>
+            <if test="winningPrice != null">winning_price = #{winningPrice},</if>
             <if test="numberType != null">number_type = #{numberType},</if>
             <if test="weekType != null">week_type = #{weekType},</if>
-            <if test="hasMorePurchases != null and hasMorePurchases != ''">has_more_purchases = #{hasMorePurchases},</if>
+            <if test="hasMorePurchases != null and hasMorePurchases != ''">has_more_purchases = #{hasMorePurchases},
+            </if>
             <if test="delFlag != null">del_flag = #{delFlag},</if>
             <if test="userId != null">user_id = #{userId},</if>
             <if test="createBy != null">create_by = #{createBy},</if>
@@ -99,7 +132,9 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
     </update>
 
     <delete id="deleteFx67llLotteryLogByLotteryId" parameterType="Long">
-        delete from fx67ll_lottery_log where lottery_id = #{lotteryId}
+        delete
+        from fx67ll_lottery_log
+        where lottery_id = #{lotteryId}
     </delete>
 
     <delete id="deleteFx67llLotteryLogByLotteryIds" parameterType="String">

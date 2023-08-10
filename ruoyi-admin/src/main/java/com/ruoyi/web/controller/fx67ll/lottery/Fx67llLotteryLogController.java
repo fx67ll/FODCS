@@ -3,6 +3,7 @@ package com.ruoyi.web.controller.fx67ll.lottery;
 import java.util.List;
 import javax.servlet.http.HttpServletResponse;
 
+import com.ruoyi.common.utils.SecurityUtils;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -46,6 +47,19 @@ public class Fx67llLotteryLogController extends BaseController {
     }
 
     /**
+     * 提供给 APP 查询每日号码记录列表
+     */
+//    如果只放开SecurityConfig中允许匿名请求的配置，不放开这里的权限配置，会返回获取用户信息异常的错误
+//    @PreAuthorize("@ss.hasPermi('lottery:log:list')")
+    @GetMapping("/getLotteryLogListForApp")
+    public TableDataInfo getLotteryLogListForApp() {
+        startPage();
+        List<Fx67llLotteryLog> list = fx67llLotteryLogService.selectFx67llLotteryLogListByUserId(SecurityUtils.getUserId());
+        return getDataTable(list);
+    }
+
+
+    /**
      * 导出每日号码记录列表
      */
     @PreAuthorize("@ss.hasPermi('lottery:log:export')")
@@ -55,6 +69,15 @@ public class Fx67llLotteryLogController extends BaseController {
         List<Fx67llLotteryLog> list = fx67llLotteryLogService.selectFx67llLotteryLogList(fx67llLotteryLog);
         ExcelUtil<Fx67llLotteryLog> util = new ExcelUtil<Fx67llLotteryLog>(Fx67llLotteryLog.class);
         util.exportExcel(response, list, "每日号码记录数据");
+    }
+
+    /**
+     * 获取每日号码记录详细信息
+     */
+    @PreAuthorize("@ss.hasPermi('lottery:log:query')")
+    @GetMapping(value = "/{lotteryId}")
+    public AjaxResult getInfo(@PathVariable("lotteryId") Long lotteryId) {
+        return success(fx67llLotteryLogService.selectFx67llLotteryLogByLotteryId(lotteryId));
     }
 
     /**
@@ -68,7 +91,7 @@ public class Fx67llLotteryLogController extends BaseController {
     }
 
     /**
-     * 提供给APP新增每日号码记录
+     * 提供给 APP 新增每日号码记录
      */
 //    如果只放开SecurityConfig中允许匿名请求的配置，不放开这里的权限配置，会返回获取用户信息异常的错误
 //    @PreAuthorize("@ss.hasPermi('lottery:log:add')")

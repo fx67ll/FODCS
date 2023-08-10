@@ -28,6 +28,14 @@ public interface IFx67llLotteryLogService
     public List<Fx67llLotteryLog> selectFx67llLotteryLogList(Fx67llLotteryLog fx67llLotteryLog);
 
     /**
+     * 通过 UserId 查询每日号码记录列表
+     *
+     * @param userId 用户主键
+     * @return 每日号码记录集合
+     */
+    public List<Fx67llLotteryLog> selectFx67llLotteryLogListByUserId(Long userId);
+
+    /**
      * 新增每日号码记录
      * 
      * @param fx67llLotteryLog 每日号码记录
