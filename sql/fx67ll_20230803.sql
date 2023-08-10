@@ -4,9 +4,11 @@
 drop table if exists fx67ll_lottery_log;
 create table fx67ll_lottery_log (
   lottery_id           bigint(20)      not null auto_increment    comment '号码日志主键',
-  record_number        varchar(1023)   default ''        comment '当日购买号码',
+  record_number        varchar(1023)   default ''                 comment '当日购买号码',
   chase_number         varchar(1023)   default ''                 comment '当日固定追号',
   winning_number       varchar(14)     default ''                 comment '当日中奖号码',
+  is_win               char(1)         default 'N'                comment '是否中奖（Y是 N否）',
+  winning_price        varchar(10)     default '0'                comment '中奖金额',
   number_type          int(1)                                     comment '当日购买的彩票类型（1大乐透 2双色球）',
   week_type            int(1)                                     comment '星期几（1周一 2周二 3周三 4周四 5周五 6周六 7周日）',
   has_more_purchases   char(1)         default 'N'                comment '是否有追加购买（Y是 N否）',
