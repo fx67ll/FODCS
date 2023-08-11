@@ -14,10 +14,9 @@ import javax.imageio.stream.ImageOutputStream;
 import java.awt.*;
 import java.awt.image.BufferedImage;
 
-import java.util.ArrayList;
-import java.util.Base64;
+import java.text.SimpleDateFormat;
+import java.util.*;
 import java.util.List;
-import java.util.Random;
 
 /**
  * 生成随机马赛克头像
@@ -120,6 +119,11 @@ public class RandomAvatarController {
             e.printStackTrace();
         }
         System.out.println("randomRadioNum:" + randomRadioNum);
+        try {
+            logNowTime();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
         System.out.println("========================================");
         List<Point> pointList = getRandomPointList(randomRadioNum, avatarBlockNum);
 
@@ -203,6 +207,7 @@ public class RandomAvatarController {
             randomRadioNum = randomDecimalNumber("F");
         }
         System.out.println("randomRadioNum:" + randomRadioNum);
+        logNowTime();
         System.out.println("========================================");
         List<Point> pointList = getRandomPointList(randomRadioNum, avatarBlockNum);
 
@@ -268,6 +273,7 @@ public class RandomAvatarController {
             randomRadioNum = randomDecimalNumber("F");
         }
         System.out.println("randomRadioNum:" + randomRadioNum);
+        logNowTime();
         System.out.println("========================================");
         List<Point> pointList = getRandomPointList(randomRadioNum, avatarBlockNum);
 
@@ -286,6 +292,23 @@ public class RandomAvatarController {
         AjaxResult ajax = AjaxResult.success();
         ajax.put("test", "fx67ll");
         return ajax;
+    }
+
+
+    /**
+     * 打印当前系统时间
+     */
+    private static void logNowTime() throws Exception {
+        try {
+            // 创建日期对象
+            Date date = new Date();
+            // 创建日期格式化对象，指定格式为 "yyyy-MM-dd HH:mm:ss"
+            SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+            // 使用格式化对象将日期对象格式化为字符串，并打印输出
+            System.out.println(sdf.format(date));
+        } catch (Exception e) {
+            throw new Exception("打印当前系统时间操作失败");
+        }
     }
 
     /**
