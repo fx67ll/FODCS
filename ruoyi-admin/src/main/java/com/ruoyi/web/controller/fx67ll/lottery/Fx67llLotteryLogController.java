@@ -52,9 +52,9 @@ public class Fx67llLotteryLogController extends BaseController {
 //    如果只放开SecurityConfig中允许匿名请求的配置，不放开这里的权限配置，会返回获取用户信息异常的错误
 //    @PreAuthorize("@ss.hasPermi('lottery:log:list')")
     @GetMapping("/getLotteryLogListForApp")
-    public TableDataInfo getLotteryLogListForApp() {
+    public TableDataInfo getLotteryLogListForApp(Fx67llLotteryLog fx67llLotteryLog) {
         startPage();
-        List<Fx67llLotteryLog> list = fx67llLotteryLogService.selectFx67llLotteryLogListByUserId(SecurityUtils.getUserId());
+        List<Fx67llLotteryLog> list = fx67llLotteryLogService.selectFx67llLotteryLogListByUserId(fx67llLotteryLog);
         return getDataTable(list);
     }
 
