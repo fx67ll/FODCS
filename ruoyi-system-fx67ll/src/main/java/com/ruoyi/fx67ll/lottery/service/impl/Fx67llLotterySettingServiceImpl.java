@@ -75,7 +75,6 @@ public class Fx67llLotterySettingServiceImpl implements IFx67llLotterySettingSer
      */
     @Override
     public int updateFx67llLotterySetting(Fx67llLotterySetting fx67llLotterySetting) {
-        fx67llLotterySetting.setUserId(SecurityUtils.getUserId());
         fx67llLotterySetting.setUpdateBy(SecurityUtils.getUsername());
         fx67llLotterySetting.setUpdateTime(DateUtils.getNowDate());
         return fx67LlLotterySettingMapper.updateFx67llLotterySetting(fx67llLotterySetting);

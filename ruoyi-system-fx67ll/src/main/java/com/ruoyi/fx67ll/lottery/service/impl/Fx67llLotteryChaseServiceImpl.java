@@ -76,7 +76,6 @@ public class Fx67llLotteryChaseServiceImpl implements IFx67llLotteryChaseService
      */
     @Override
     public int updateFx67llLotteryChase(Fx67llLotteryChase fx67llLotteryChase) {
-        fx67llLotteryChase.setUserId(SecurityUtils.getUserId());
         fx67llLotteryChase.setUpdateBy(SecurityUtils.getUsername());
         fx67llLotteryChase.setUpdateTime(DateUtils.getNowDate());
         return fx67llLotteryChaseMapper.updateFx67llLotteryChase(fx67llLotteryChase);
