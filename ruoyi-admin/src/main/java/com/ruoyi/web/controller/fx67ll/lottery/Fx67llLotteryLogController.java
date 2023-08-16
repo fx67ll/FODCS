@@ -3,7 +3,6 @@ package com.ruoyi.web.controller.fx67ll.lottery;
 import java.util.List;
 import javax.servlet.http.HttpServletResponse;
 
-import com.ruoyi.common.utils.SecurityUtils;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -120,4 +119,16 @@ public class Fx67llLotteryLogController extends BaseController {
     public AjaxResult remove(@PathVariable Long[] lotteryIds) {
         return toAjax(fx67llLotteryLogService.deleteFx67llLotteryLogByLotteryIds(lotteryIds));
     }
+
+    /**
+     * 提供给 APP 删除每日号码记录
+     */
+//    如果只放开SecurityConfig中允许匿名请求的配置，不放开这里的权限配置，会返回获取用户信息异常的错误
+//    @PreAuthorize("@ss.hasPermi('lottery:log:remove')")
+    @Log(title = "每日号码记录", businessType = BusinessType.DELETE)
+    @DeleteMapping("/deleteLogByIdForApp/{lotteryId}")
+    public AjaxResult deleteLogByIdForApp(@PathVariable Long lotteryId) {
+        return toAjax(fx67llLotteryLogService.deleteFx67llLotteryLogByLotteryIdForApp(lotteryId));
+    }
+
 }

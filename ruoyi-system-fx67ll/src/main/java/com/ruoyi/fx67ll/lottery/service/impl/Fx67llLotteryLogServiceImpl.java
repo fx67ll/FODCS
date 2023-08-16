@@ -96,6 +96,17 @@ public class Fx67llLotteryLogServiceImpl implements IFx67llLotteryLogService {
     }
 
     /**
+     * 批量删除每日号码记录
+     *
+     * @param lotteryId 需要删除的每日号码记录主键
+     * @return 结果
+     */
+    @Override
+    public int deleteFx67llLotteryLogByLotteryIdForApp(Long lotteryId) {
+        return fx67llLotteryLogMapper.deleteFx67llLotteryLogByLotteryId(lotteryId);
+    }
+
+    /**
      * 删除每日号码记录信息
      *
      * @param lotteryId 每日号码记录主键

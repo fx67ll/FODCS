@@ -29,6 +29,7 @@ public interface Fx67llLotteryLogMapper {
 
     /**
      * 通过 UserId 查询每日号码记录列表
+     * 暂时不需要
      *
      * @param fx67llLotteryLog 每日号码记录
      * @return 每日号码记录集合

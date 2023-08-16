@@ -63,6 +63,7 @@
         </where>
     </select>
 
+    <!--暂时不需要-->
     <select id="selectFx67llLotteryLogListByUserId" parameterType="Long" resultMap="Fx67llLotteryLogResult">
         <include refid="selectFx67llLotteryLogVo"/>
         where user_id = #{userId}
