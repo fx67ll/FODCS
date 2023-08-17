@@ -1,0 +1,121 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.ruoyi.fx67ll.dortmund.mapper.Fx67llDortmundExtraMapper">
+
+    <resultMap type="Fx67llDortmundExtra" id="Fx67llDortmundExtraResult">
+        <result property="extraId" column="extra_id"/>
+        <result property="extraMoney" column="extra_money"/>
+        <result property="isWin" column="is_win"/>
+        <result property="winMoney" column="win_money"/>
+        <result property="extraRemark" column="extra_remark"/>
+        <result property="delFlag" column="del_flag"/>
+        <result property="userId" column="user_id"/>
+        <result property="createBy" column="create_by"/>
+        <result property="createTime" column="create_time"/>
+        <result property="updateBy" column="update_by"/>
+        <result property="updateTime" column="update_time"/>
+    </resultMap>
+
+    <sql id="selectFx67llDortmundExtraVo">
+        select extra_id,
+               extra_money,
+               is_win,
+               win_money,
+               extra_remark,
+               del_flag,
+               user_id,
+               create_by,
+               create_time,
+               update_by,
+               update_time
+        from fx67ll_dortmund_extra
+    </sql>
+
+    <select id="selectFx67llDortmundExtraList" parameterType="Fx67llDortmundExtra"
+            resultMap="Fx67llDortmundExtraResult">
+        <include refid="selectFx67llDortmundExtraVo"/>
+        <where>
+            <if test="extraMoney != null  and extraMoney != ''">and extra_money = #{extraMoney}</if>
+            <if test="isWin != null  and isWin != ''">and is_win = #{isWin}</if>
+            <if test="winMoney != null  and winMoney != ''">and win_money = #{winMoney}</if>
+            <if test="extraRemark != null  and extraRemark != ''">and extra_remark = #{extraRemark}</if>
+            <if test="delFlag != null  and delFlag != ''">and del_flag = #{delFlag}</if>
+            <if test="userId != null ">and user_id = #{userId}</if>
+            <if test="createBy != null  and createBy != ''">and create_by like concat('%', #{createBy}, '%')</if>
+            <if test="params.beginCreateTime != null and params.beginCreateTime != '' and params.endCreateTime != null and params.endCreateTime != ''">
+                and create_time between #{params.beginCreateTime} and #{params.endCreateTime}
+            </if>
+            <if test="updateBy != null  and updateBy != ''">and update_by like concat('%', #{updateBy}, '%')</if>
+            <if test="params.beginUpdateTime != null and params.beginUpdateTime != '' and params.endUpdateTime != null and params.endUpdateTime != ''">
+                and update_time between #{params.beginUpdateTime} and #{params.endUpdateTime}
+            </if>
+        </where>
+        order by STR_TO_DATE(create_time, "%Y-%m-%d %H:%i:%s") desc
+    </select>
+
+    <select id="selectFx67llDortmundExtraByExtraId" parameterType="Long" resultMap="Fx67llDortmundExtraResult">
+        <include refid="selectFx67llDortmundExtraVo"/>
+        where extra_id = #{extraId}
+    </select>
+
+    <insert id="insertFx67llDortmundExtra" parameterType="Fx67llDortmundExtra" useGeneratedKeys="true"
+            keyProperty="extraId">
+        insert into fx67ll_dortmund_extra
+        <trim prefix="(" suffix=")" suffixOverrides=",">
+            <if test="extraMoney != null and extraMoney != ''">extra_money,</if>
+            <if test="isWin != null and isWin != ''">is_win,</if>
+            <if test="winMoney != null and winMoney != ''">win_money,</if>
+            <if test="extraRemark != null">extra_remark,</if>
+            <if test="delFlag != null">del_flag,</if>
+            <if test="userId != null">user_id,</if>
+            <if test="createBy != null">create_by,</if>
+            <if test="createTime != null">create_time,</if>
+            <if test="updateBy != null">update_by,</if>
+            <if test="updateTime != null">update_time,</if>
+        </trim>
+        <trim prefix="values (" suffix=")" suffixOverrides=",">
+            <if test="extraMoney != null and extraMoney != ''">#{extraMoney},</if>
+            <if test="isWin != null and isWin != ''">#{isWin},</if>
+            <if test="winMoney != null and winMoney != ''">#{winMoney},</if>
+            <if test="extraRemark != null">#{extraRemark},</if>
+            <if test="delFlag != null">#{delFlag},</if>
+            <if test="userId != null">#{userId},</if>
+            <if test="createBy != null">#{createBy},</if>
+            <if test="createTime != null">#{createTime},</if>
+            <if test="updateBy != null">#{updateBy},</if>
+            <if test="updateTime != null">#{updateTime},</if>
+        </trim>
+    </insert>
+
+    <update id="updateFx67llDortmundExtra" parameterType="Fx67llDortmundExtra">
+        update fx67ll_dortmund_extra
+        <trim prefix="SET" suffixOverrides=",">
+            <if test="extraMoney != null and extraMoney != ''">extra_money = #{extraMoney},</if>
+            <if test="isWin != null and isWin != ''">is_win = #{isWin},</if>
+            <if test="winMoney != null and winMoney != ''">win_money = #{winMoney},</if>
+            <if test="extraRemark != null">extra_remark = #{extraRemark},</if>
+            <if test="delFlag != null">del_flag = #{delFlag},</if>
+            <if test="userId != null">user_id = #{userId},</if>
+            <if test="createBy != null">create_by = #{createBy},</if>
+            <if test="createTime != null">create_time = #{createTime},</if>
+            <if test="updateBy != null">update_by = #{updateBy},</if>
+            <if test="updateTime != null">update_time = #{updateTime},</if>
+        </trim>
+        where extra_id = #{extraId}
+    </update>
+
+    <delete id="deleteFx67llDortmundExtraByExtraId" parameterType="Long">
+        delete
+        from fx67ll_dortmund_extra
+        where extra_id = #{extraId}
+    </delete>
+
+    <delete id="deleteFx67llDortmundExtraByExtraIds" parameterType="String">
+        delete from fx67ll_dortmund_extra where extra_id in
+        <foreach item="extraId" collection="array" open="(" separator="," close=")">
+            #{extraId}
+        </foreach>
+    </delete>
+</mapper>
