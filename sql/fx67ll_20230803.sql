@@ -65,9 +65,9 @@ create table fx67ll_lottery_setting (
 drop table if exists fx67ll_dortmund_extra;
 create table fx67ll_dortmund_extra (
   extra_id          bigint(20)        not null auto_increment    comment '外快记录主键',
-  extra_money       varchar(23)       default 0                  comment '当前外快总金额',
+  extra_money       varchar(23)       default '0'                 comment '当前外快总金额',
   is_win            char(1)           default 'N'                comment '是否盈利（Y是 N否）',
-  win_money         varchar(23)       default 0                  comment '外快盈亏金额',
+  win_money         varchar(23)       default '0'                 comment '外快盈亏金额',
   extra_remark      varchar(1023)     default ''                 comment '外快盈亏备注',
   del_flag          char(1)           default '0'                comment '删除标志（0代表存在 2代表删除）',
   user_id           bigint(20)                                   comment '用户ID',
