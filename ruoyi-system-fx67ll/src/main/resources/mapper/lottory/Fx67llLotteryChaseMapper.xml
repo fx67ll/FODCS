@@ -53,14 +53,14 @@
         </where>
     </select>
 
-    <select id="selectFx67llLotteryChaseListByUserId" parameterType="Long" resultMap="Fx67llLotteryChaseResult">
-        <include refid="selectFx67llLotteryChaseVo"/>
-        where user_id = #{userId}
-    </select>
-
     <select id="selectFx67llLotteryChaseByChaseId" parameterType="Long" resultMap="Fx67llLotteryChaseResult">
         <include refid="selectFx67llLotteryChaseVo"/>
         where chase_id = #{chaseId}
+    </select>
+
+    <select id="selectFx67llLotteryChaseListByUserId" parameterType="Long" resultMap="Fx67llLotteryChaseResult">
+        <include refid="selectFx67llLotteryChaseVo"/>
+        where user_id = #{userId}
     </select>
 
     <insert id="insertFx67llLotteryChase" parameterType="Fx67llLotteryChase" useGeneratedKeys="true"

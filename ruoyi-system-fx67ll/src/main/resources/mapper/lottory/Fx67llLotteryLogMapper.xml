@@ -61,17 +61,19 @@
             <if test="updateBy != null  and updateBy != ''">and update_by = #{updateBy}</if>
             <if test="updateTime != null ">and update_time = #{updateTime}</if>
         </where>
+        order by STR_TO_DATE(create_time, "%Y-%m-%d %H:%i:%s") desc
+    </select>
+
+    <select id="selectFx67llLotteryLogByLotteryId" parameterType="Long" resultMap="Fx67llLotteryLogResult">
+        <include refid="selectFx67llLotteryLogVo"/>
+        where lottery_id = #{lotteryId}
     </select>
 
     <!--暂时不需要-->
     <select id="selectFx67llLotteryLogListByUserId" parameterType="Long" resultMap="Fx67llLotteryLogResult">
         <include refid="selectFx67llLotteryLogVo"/>
         where user_id = #{userId}
-    </select>
-
-    <select id="selectFx67llLotteryLogByLotteryId" parameterType="Long" resultMap="Fx67llLotteryLogResult">
-        <include refid="selectFx67llLotteryLogVo"/>
-        where lottery_id = #{lotteryId}
+        order by STR_TO_DATE(create_time, "%Y-%m-%d %H:%i:%s") desc
     </select>
 
     <insert id="insertFx67llLotteryLog" parameterType="Fx67llLotteryLog" useGeneratedKeys="true"
