@@ -48,7 +48,7 @@ create table fx67ll_lottery_chase (
 drop table if exists fx67ll_lottery_setting;
 create table fx67ll_lottery_setting (
   setting_id        bigint(20)        not null auto_increment    comment '生成配置主键',
-  lottery_setting   varchar(19999)   default ''                 comment '个人彩票生成配置',
+  lottery_setting   varchar(19999)    default ''                 comment '个人彩票生成配置',
   del_flag          char(1)           default '0'                comment '删除标志（0代表存在 2代表删除）',
   user_id           bigint(20)                                   comment '用户ID',
   create_by         varchar(64)       default ''                 comment '记录创建者',
@@ -58,3 +58,22 @@ create table fx67ll_lottery_setting (
   primary key (setting_id)
 ) engine=innodb auto_increment=1 comment = '个人彩票生成配置表';
 
+
+-- ----------------------------
+-- 4、外快盈亏记录表
+-- ----------------------------
+drop table if exists fx67ll_dortmund_extra;
+create table fx67ll_dortmund_extra (
+  extra_id          bigint(20)        not null auto_increment    comment '外快记录主键',
+  extra_money       varchar(23)       default 0                  comment '当前外快总金额',
+  is_win            char(1)           default 'N'                comment '是否盈利（Y是 N否）',
+  win_money         varchar(23)       default 0                  comment '外快盈亏金额',
+  extra_remark      varchar(1023)     default ''                 comment '外快盈亏备注',
+  del_flag          char(1)           default '0'                comment '删除标志（0代表存在 2代表删除）',
+  user_id           bigint(20)                                   comment '用户ID',
+  create_by         varchar(64)       default ''                 comment '记录创建者',
+  create_time 	    datetime                                     comment '记录创建时间',
+  update_by         varchar(64)       default ''                 comment '记录更新者',
+  update_time       datetime                                     comment '记录更新时间',
+  primary key (extra_id)
+) engine=innodb auto_increment=1 comment = '外快盈亏记录表';
