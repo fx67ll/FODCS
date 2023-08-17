@@ -56,6 +56,14 @@ public class BaseController
     }
 
     /**
+     * 提供给 APP 设置请求分页数据
+     */
+    protected void startPageForApp()
+    {
+        PageUtils.startPageForApp();
+    }
+
+    /**
      * 设置请求排序数据
      */
     protected void startOrderBy()

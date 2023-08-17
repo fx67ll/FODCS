@@ -52,7 +52,7 @@ public class Fx67llLotteryLogController extends BaseController {
 //    @PreAuthorize("@ss.hasPermi('lottery:log:list')")
     @GetMapping("/getLotteryLogListForApp")
     public TableDataInfo getLotteryLogListForApp(Fx67llLotteryLog fx67llLotteryLog) {
-        startPage();
+        startPageForApp();
         List<Fx67llLotteryLog> list = fx67llLotteryLogService.selectFx67llLotteryLogListByUserId(fx67llLotteryLog);
         return getDataTable(list);
     }

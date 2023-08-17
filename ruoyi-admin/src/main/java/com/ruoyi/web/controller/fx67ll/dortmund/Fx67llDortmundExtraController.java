@@ -52,7 +52,7 @@ public class Fx67llDortmundExtraController extends BaseController {
 //    @PreAuthorize("@ss.hasPermi('dortmund:extra:list')")
     @GetMapping("/getExtraListForApp")
     public TableDataInfo getExtraListForApp(Fx67llDortmundExtra fx67llDortmundExtra) {
-        startPage();
+        startPageForApp();
         List<Fx67llDortmundExtra> list = fx67llDortmundExtraService.selectFx67llDortmundExtraList(fx67llDortmundExtra);
         return getDataTable(list);
     }
