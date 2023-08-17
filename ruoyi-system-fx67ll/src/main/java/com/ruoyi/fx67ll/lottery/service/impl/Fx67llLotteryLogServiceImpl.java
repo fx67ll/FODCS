@@ -78,7 +78,6 @@ public class Fx67llLotteryLogServiceImpl implements IFx67llLotteryLogService {
      */
     @Override
     public int updateFx67llLotteryLog(Fx67llLotteryLog fx67llLotteryLog) {
-        fx67llLotteryLog.setUserId(SecurityUtils.getUserId());
         fx67llLotteryLog.setUpdateBy(SecurityUtils.getUsername());
         fx67llLotteryLog.setUpdateTime(DateUtils.getNowDate());
         return fx67llLotteryLogMapper.updateFx67llLotteryLog(fx67llLotteryLog);
