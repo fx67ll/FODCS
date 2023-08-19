@@ -9,7 +9,7 @@ import com.ruoyi.common.core.domain.BaseEntity;
  * 外快盈亏记录对象 fx67ll_dortmund_extra
  *
  * @author fx67ll
- * @date 2023-08-17
+ * @date 2023-08-19
  */
 public class Fx67llDortmundExtra extends BaseEntity {
     private static final long serialVersionUID = 1L;
@@ -38,6 +38,18 @@ public class Fx67llDortmundExtra extends BaseEntity {
     private String winMoney;
 
     /**
+     * 当前投入本金
+     */
+    @Excel(name = "当前投入本金")
+    private String seedMoney;
+
+    /**
+     * 目标金额
+     */
+    @Excel(name = "目标金额")
+    private String targetMoney;
+
+    /**
      * 外快盈亏备注
      */
     @Excel(name = "外快盈亏备注")
@@ -51,6 +63,7 @@ public class Fx67llDortmundExtra extends BaseEntity {
     /**
      * 用户ID
      */
+    @Excel(name = "用户ID")
     private Long userId;
 
     public void setExtraId(Long extraId) {
@@ -85,6 +98,22 @@ public class Fx67llDortmundExtra extends BaseEntity {
         return winMoney;
     }
 
+    public void setSeedMoney(String seedMoney) {
+        this.seedMoney = seedMoney;
+    }
+
+    public String getSeedMoney() {
+        return seedMoney;
+    }
+
+    public void setTargetMoney(String targetMoney) {
+        this.targetMoney = targetMoney;
+    }
+
+    public String getTargetMoney() {
+        return targetMoney;
+    }
+
     public void setExtraRemark(String extraRemark) {
         this.extraRemark = extraRemark;
     }
@@ -116,6 +145,8 @@ public class Fx67llDortmundExtra extends BaseEntity {
                 .append("extraMoney", getExtraMoney())
                 .append("isWin", getIsWin())
                 .append("winMoney", getWinMoney())
+                .append("seedMoney", getSeedMoney())
+                .append("targetMoney", getTargetMoney())
                 .append("extraRemark", getExtraRemark())
                 .append("delFlag", getDelFlag())
                 .append("userId", getUserId())
