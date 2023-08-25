@@ -3,6 +3,7 @@ package com.ruoyi.fx67ll.dortmund.service;
 import java.util.List;
 
 import com.ruoyi.fx67ll.dortmund.domain.Fx67llDortmundExtra;
+import com.ruoyi.fx67ll.lottery.domain.Fx67llLotteryLog;
 
 /**
  * 外快盈亏记录Service接口
@@ -26,6 +27,14 @@ public interface IFx67llDortmundExtraService {
      * @return 外快盈亏记录集合
      */
     public List<Fx67llDortmundExtra> selectFx67llDortmundExtraList(Fx67llDortmundExtra fx67llDortmundExtra);
+
+    /**
+     * 通过 UserId 查询每日号码记录列表
+     *
+     * @param fx67llDortmundExtra 外快盈亏记录
+     * @return 外快盈亏记录集合
+     */
+    public List<Fx67llDortmundExtra> selectFx67llDortmundExtraListByUserId(Fx67llDortmundExtra fx67llDortmundExtra);
 
     /**
      * 新增外快盈亏记录

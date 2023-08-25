@@ -4,6 +4,7 @@ import java.util.List;
 
 import com.ruoyi.common.utils.DateUtils;
 import com.ruoyi.common.utils.SecurityUtils;
+import com.ruoyi.fx67ll.lottery.domain.Fx67llLotteryLog;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import com.ruoyi.fx67ll.dortmund.mapper.Fx67llDortmundExtraMapper;
@@ -40,6 +41,18 @@ public class Fx67llDortmundExtraServiceImpl implements IFx67llDortmundExtraServi
      */
     @Override
     public List<Fx67llDortmundExtra> selectFx67llDortmundExtraList(Fx67llDortmundExtra fx67llDortmundExtra) {
+        return fx67llDortmundExtraMapper.selectFx67llDortmundExtraList(fx67llDortmundExtra);
+    }
+
+    /**
+     * 查询外快盈亏记录列表
+     *
+     * @param fx67llDortmundExtra 外快盈亏记录
+     * @return 外快盈亏记录
+     */
+    @Override
+    public List<Fx67llDortmundExtra> selectFx67llDortmundExtraListByUserId(Fx67llDortmundExtra fx67llDortmundExtra) {
+        fx67llDortmundExtra.setUserId(SecurityUtils.getUserId());
         return fx67llDortmundExtraMapper.selectFx67llDortmundExtraList(fx67llDortmundExtra);
     }
 

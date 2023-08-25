@@ -53,7 +53,7 @@ public class Fx67llDortmundExtraController extends BaseController {
     @GetMapping("/getExtraListForApp")
     public TableDataInfo getExtraListForApp(Fx67llDortmundExtra fx67llDortmundExtra) {
         startPageForApp();
-        List<Fx67llDortmundExtra> list = fx67llDortmundExtraService.selectFx67llDortmundExtraList(fx67llDortmundExtra);
+        List<Fx67llDortmundExtra> list = fx67llDortmundExtraService.selectFx67llDortmundExtraListByUserId(fx67llDortmundExtra);
         return getDataTable(list);
     }
 
