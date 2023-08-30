@@ -79,3 +79,15 @@ create table fx67ll_dortmund_extra (
   update_time       datetime                                     comment '记录更新时间',
   primary key (extra_id)
 ) engine=innodb auto_increment=1 comment = '外快盈亏记录表';
+
+
+-- ----------------------------
+-- 4、秘钥配置表
+-- ----------------------------
+drop table if exists fx67ll_secret_key;
+create TABLE fx67ll_secret_key (
+  secret_id         bigint(20)       not null auto_increment    comment '秘钥主键',
+  secret_key        varchar(1023)                               comment '秘钥键',
+  secret_value      varchar(1023)                               comment '秘钥值',
+  primary key (secret_id)
+) engine=innodb auto_increment=1 comment = '秘钥配置表';
