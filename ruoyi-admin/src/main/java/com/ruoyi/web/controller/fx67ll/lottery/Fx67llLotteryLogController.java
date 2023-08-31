@@ -131,7 +131,7 @@ public class Fx67llLotteryLogController extends BaseController {
 //    如果只放开SecurityConfig中允许匿名请求的配置，不放开这里的权限配置，会返回获取用户信息异常的错误
 //    @PreAuthorize("@ss.hasPermi('lottery:log:edit')")
     @Log(title = "每日号码记录", businessType = BusinessType.UPDATE)
-    @PostMapping("/editLotteryLogForApp")
+    @PutMapping("/editLotteryLogForApp")
     public AjaxResult editLotteryLogForApp(@RequestBody Fx67llLotteryLog fx67llLotteryLog) {
         if (fx67llLotteryLogService.selectFx67llLotteryLogByLotteryId(fx67llLotteryLog.getLotteryId()).getUserId() != SecurityUtils.getUserId()) {
             return warn("此记录非本人创建，禁止修改！");
