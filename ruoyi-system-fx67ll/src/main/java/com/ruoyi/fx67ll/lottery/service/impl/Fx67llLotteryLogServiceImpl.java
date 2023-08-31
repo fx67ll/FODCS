@@ -95,7 +95,7 @@ public class Fx67llLotteryLogServiceImpl implements IFx67llLotteryLogService {
     }
 
     /**
-     * 批量删除每日号码记录
+     * 提供给 APP 删除每日号码记录信息
      *
      * @param lotteryId 需要删除的每日号码记录主键
      * @return 结果
