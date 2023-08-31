@@ -51,10 +51,11 @@ public class Fx67llSecretKeyServiceImpl implements IFx67llSecretKeyService {
     @Override
     public List<Fx67llSecretKey> selectFx67llSecretKeyListForApp(Fx67llSecretKey fx67llSecretKey) {
         // 禁止获取cryptoSaltKey的值
-        if (fx67llSecretKey.getSecretKey().isEmpty() || fx67llSecretKey.getSecretKey() == "cryptoSaltKey") {
+        if (fx67llSecretKey.getSecretKey() == null || fx67llSecretKey.getSecretKey().equals("cryptoSaltKey")) {
             return fx67llSecretKeyMapper.selectFx67llSecretKeyListForNull();
+        } else {
+            return fx67llSecretKeyMapper.selectFx67llSecretKeyList(fx67llSecretKey);
         }
-        return fx67llSecretKeyMapper.selectFx67llSecretKeyList(fx67llSecretKey);
     }
 
     /**

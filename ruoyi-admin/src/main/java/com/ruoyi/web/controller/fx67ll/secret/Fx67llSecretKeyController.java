@@ -53,6 +53,7 @@ public class Fx67llSecretKeyController extends BaseController {
 //    @PreAuthorize("@ss.hasPermi('secret:key:list')")
     @GetMapping("/getSecretKeyConfigForApp")
     public TableDataInfo getSecretKeyConfigForApp(Fx67llSecretKey fx67llSecretKey) {
+//        禁止查询参数为"cryptoSaltKey"的配置信息
         if (fx67llSecretKey.getSecretKey() == null || fx67llSecretKey.getSecretKey().equals("cryptoSaltKey")) {
             return getDataTable(new ArrayList<>());
         } else {
