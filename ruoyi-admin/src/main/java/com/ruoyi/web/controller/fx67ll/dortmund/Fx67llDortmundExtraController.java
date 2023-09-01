@@ -3,6 +3,7 @@ package com.ruoyi.web.controller.fx67ll.dortmund;
 import java.util.List;
 import javax.servlet.http.HttpServletResponse;
 
+import com.ruoyi.common.utils.SecurityUtils;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -127,6 +128,10 @@ public class Fx67llDortmundExtraController extends BaseController {
     @Log(title = "每日号码记录", businessType = BusinessType.DELETE)
     @DeleteMapping("/deleteExtraByIdForApp/{extraId}")
     public AjaxResult deleteExtraByIdForApp(@PathVariable Long extraId) {
-        return toAjax(fx67llDortmundExtraService.deleteFx67llDortmundExtraByExtraId(extraId));
+        if (fx67llDortmundExtraService.selectFx67llDortmundExtraByExtraId(extraId).getUserId() != SecurityUtils.getUserId()) {
+            return warn("此记录非本人创建，禁止删除！");
+        } else {
+            return toAjax(fx67llDortmundExtraService.deleteFx67llDortmundExtraByExtraId(extraId));
+        }
     }
 }
