@@ -111,6 +111,23 @@ public class Fx67llSecretKeyController extends BaseController {
     @Log(title = "秘钥配置", businessType = BusinessType.DELETE)
     @DeleteMapping("/{secretIds}")
     public AjaxResult remove(@PathVariable Long[] secretIds) {
-        return toAjax(fx67llSecretKeyService.deleteFx67llSecretKeyBySecretIds(secretIds));
+        if (hasForbiddenDeleteValue(secretIds, 1)) {
+            return warn("禁止删除配置项：cryptoSaltKey! ");
+        } else {
+            return toAjax(fx67llSecretKeyService.deleteFx67llSecretKeyBySecretIds(secretIds));
+        }
     }
+
+    /**
+     * 判断是否含有不允许删除
+     */
+    private static boolean hasForbiddenDeleteValue(Long[] array, long targetValue) {
+        for (Long element : array) {
+            if (element != null && element.equals(targetValue)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
 }
