@@ -9,7 +9,7 @@ import com.ruoyi.common.core.domain.BaseEntity;
  * 外快盈亏记录对象 fx67ll_dortmund_extra
  *
  * @author fx67ll
- * @date 2023-08-19
+ * @date 2023-09-14
  */
 public class Fx67llDortmundExtra extends BaseEntity {
     private static final long serialVersionUID = 1L;
@@ -42,6 +42,12 @@ public class Fx67llDortmundExtra extends BaseEntity {
      */
     @Excel(name = "当前投入本金")
     private String seedMoney;
+
+    /**
+     * 已经落单为安的盈利金额
+     */
+    @Excel(name = "已经落单为安的盈利金额")
+    private String saveMoney;
 
     /**
      * 目标金额
@@ -110,6 +116,14 @@ public class Fx67llDortmundExtra extends BaseEntity {
         this.targetMoney = targetMoney;
     }
 
+    public void setSaveMoney(String saveMoney) {
+        this.saveMoney = saveMoney;
+    }
+
+    public String getSaveMoney() {
+        return saveMoney;
+    }
+
     public String getTargetMoney() {
         return targetMoney;
     }
@@ -146,6 +160,7 @@ public class Fx67llDortmundExtra extends BaseEntity {
                 .append("isWin", getIsWin())
                 .append("winMoney", getWinMoney())
                 .append("seedMoney", getSeedMoney())
+                .append("saveMoney", getSaveMoney())
                 .append("targetMoney", getTargetMoney())
                 .append("extraRemark", getExtraRemark())
                 .append("delFlag", getDelFlag())

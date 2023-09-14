@@ -69,6 +69,7 @@ create table fx67ll_dortmund_extra (
   is_win            char(1)           default 'N'                comment '是否盈利（Y是 N否）',
   win_money         varchar(23)       default '0'                comment '外快盈亏金额',
   seed_money        varchar(23)       default '0'                comment '当前投入本金',
+  save_money        varchar(23)       default '0'                comment '已经落单为安的盈利金额',
   target_money      varchar(23)       default '0'                comment '目标金额',
   extra_remark      varchar(1023)     default ''                 comment '外快盈亏备注',
   del_flag          char(1)           default '0'                comment '删除标志（0代表存在 2代表删除）',
@@ -80,6 +81,8 @@ create table fx67ll_dortmund_extra (
   primary key (extra_id)
 ) engine=innodb auto_increment=1 comment = '外快盈亏记录表';
 
+ALTER TABLE fx67ll_dortmund_extra
+ADD COLUMN save_money varchar(23) DEFAULT '0' COMMENT '已经落单为安的盈利金额';
 
 -- ----------------------------
 -- 4、秘钥配置表
