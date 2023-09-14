@@ -44,9 +44,9 @@ public class Fx67llDortmundExtra extends BaseEntity {
     private String seedMoney;
 
     /**
-     * 已经落单为安的盈利金额
+     * 已经落袋为安的盈利金额
      */
-    @Excel(name = "已经落单为安的盈利金额")
+    @Excel(name = "已经落袋为安的盈利金额")
     private String saveMoney;
 
     /**
