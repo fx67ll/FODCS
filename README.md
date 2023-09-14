@@ -3,6 +3,9 @@ fx67ll One Data Center Server
 
 欢迎访问 [fx67ll's 管理系统](https://vip.fx67ll.com) ~
 
+## 0.2.10.20230914
+* 优化外快盈亏记录接口
+
 ## 0.2.9.20230902
 * 优化提供个人秘钥配置的接口
 
