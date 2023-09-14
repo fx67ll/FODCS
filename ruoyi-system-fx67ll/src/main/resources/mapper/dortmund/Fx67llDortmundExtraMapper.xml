@@ -57,6 +57,7 @@
             <if test="updateTime != null ">and update_time = #{updateTime}</if>
             <if test="saveMoney != null  and saveMoney != ''">and save_money = #{saveMoney}</if>
         </where>
+        order by STR_TO_DATE(create_time, "%Y-%m-%d %H:%i:%s") desc
     </select>
 
     <select id="selectFx67llDortmundExtraByExtraId" parameterType="Long" resultMap="Fx67llDortmundExtraResult">
