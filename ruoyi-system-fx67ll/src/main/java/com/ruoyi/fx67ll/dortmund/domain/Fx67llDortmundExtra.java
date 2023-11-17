@@ -72,6 +72,26 @@ public class Fx67llDortmundExtra extends BaseEntity {
     @Excel(name = "用户ID")
     private Long userId;
 
+    /**
+     * 创建开始时间
+     */
+    private String beginCreateTime;
+
+    /**
+     * 创建结束时间
+     */
+    private String endCreateTime;
+
+    /**
+     * 更新开始时间
+     */
+    private String beginUpdateTime;
+
+    /**
+     * 更新结束时间
+     */
+    private String endUpdateTime;
+
     public void setExtraId(Long extraId) {
         this.extraId = extraId;
     }
@@ -152,6 +172,38 @@ public class Fx67llDortmundExtra extends BaseEntity {
         return userId;
     }
 
+    public String getBeginCreateTime() {
+        return beginCreateTime;
+    }
+
+    public void setBeginCreateTime(String beginCreateTime) {
+        this.beginCreateTime = beginCreateTime;
+    }
+
+    public String getEndCreateTime() {
+        return endCreateTime;
+    }
+
+    public void setEndCreateTime(String endCreateTime) {
+        this.endCreateTime = endCreateTime;
+    }
+
+    public String getBeginUpdateTime() {
+        return beginUpdateTime;
+    }
+
+    public void setBeginUpdateTime(String beginUpdateTime) {
+        this.beginUpdateTime = beginUpdateTime;
+    }
+
+    public String getEndUpdateTime() {
+        return endUpdateTime;
+    }
+
+    public void setEndUpdateTime(String endUpdateTime) {
+        this.endUpdateTime = endUpdateTime;
+    }
+
     @Override
     public String toString() {
         return new ToStringBuilder(this, ToStringStyle.MULTI_LINE_STYLE)
@@ -167,8 +219,12 @@ public class Fx67llDortmundExtra extends BaseEntity {
                 .append("userId", getUserId())
                 .append("createBy", getCreateBy())
                 .append("createTime", getCreateTime())
+                .append("beginCreateTime", getBeginCreateTime())
+                .append("endCreateTime", getEndCreateTime())
                 .append("updateBy", getUpdateBy())
                 .append("updateTime", getUpdateTime())
+                .append("beginUpdateTime", getBeginUpdateTime())
+                .append("endUpdateTime", getEndUpdateTime())
                 .toString();
     }
 }

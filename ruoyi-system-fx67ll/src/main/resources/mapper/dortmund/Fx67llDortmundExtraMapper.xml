@@ -52,9 +52,13 @@
             <if test="delFlag != null  and delFlag != ''">and del_flag = #{delFlag}</if>
             <if test="userId != null ">and user_id = #{userId}</if>
             <if test="createBy != null  and createBy != ''">and create_by = #{createBy}</if>
-            <if test="createTime != null ">and create_time = #{createTime}</if>
+            <if test="beginCreateTime != null and endCreateTime != ''">and create_time between #{beginCreateTime} and
+                #{endCreateTime}
+            </if>
             <if test="updateBy != null  and updateBy != ''">and update_by = #{updateBy}</if>
-            <if test="updateTime != null ">and update_time = #{updateTime}</if>
+            <if test="beginUpdateTime != null and endUpdateTime != ''">and update_time between #{beginUpdateTime} and
+                #{endUpdateTime}
+            </if>
             <if test="saveMoney != null  and saveMoney != ''">and save_money = #{saveMoney}</if>
         </where>
         order by STR_TO_DATE(create_time, "%Y-%m-%d %H:%i:%s") desc
