@@ -51,7 +51,6 @@ public class GenController extends BaseController {
     @GetMapping("/list")
     public TableDataInfo genList(GenTable genTable) {
         startPage();
-        System.out.println("11111111111111111111111111111111111111111111111111111111111" + SecurityUtils.getUsername());
         genTable.setFunctionAuthor(SecurityUtils.getUsername());
         List<GenTable> list = genTableService.selectGenTableList(genTable);
         return getDataTable(list);
