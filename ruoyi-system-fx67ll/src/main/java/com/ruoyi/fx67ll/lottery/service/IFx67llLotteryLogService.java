@@ -60,9 +60,9 @@ public interface IFx67llLotteryLogService {
     public int deleteFx67llLotteryLogByLotteryIds(Long[] lotteryIds);
 
     /**
-     * 批量删除每日号码记录
+     * 删除每日号码记录信息
      *
-     * @param lotteryId 需要删除的每日号码记录主键集合
+     * @param lotteryId 每日号码记录主键
      * @return 结果
      */
     public int deleteFx67llLotteryLogByLotteryIdForApp(Long lotteryId);

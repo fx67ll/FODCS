@@ -50,7 +50,7 @@ public class Fx67llLotterySettingController extends BaseController {
      * 导出号码生成配置列表
      */
     @PreAuthorize("@ss.hasPermi('lottery:setting:export')")
-    @Log(title = "号码生成配置", businessType = BusinessType.EXPORT)
+    @Log(title = "导出号码生成配置列表", businessType = BusinessType.EXPORT)
     @PostMapping("/export")
     public void export(HttpServletResponse response, Fx67llLotterySetting fx67llLotterySetting) {
         List<Fx67llLotterySetting> list = fx67llLotterySettingService.selectFx67llLotterySettingList(fx67llLotterySetting);
@@ -81,7 +81,7 @@ public class Fx67llLotterySettingController extends BaseController {
      * 新增号码生成配置
      */
     @PreAuthorize("@ss.hasPermi('lottery:setting:add')")
-    @Log(title = "号码生成配置", businessType = BusinessType.INSERT)
+    @Log(title = "新增号码生成配置", businessType = BusinessType.INSERT)
     @PostMapping
     public AjaxResult add(@RequestBody Fx67llLotterySetting fx67llLotterySetting) {
         return toAjax(fx67llLotterySettingService.insertFx67llLotterySetting(fx67llLotterySetting));
@@ -92,7 +92,7 @@ public class Fx67llLotterySettingController extends BaseController {
      */
 //    如果只放开SecurityConfig中允许匿名请求的配置，不放开这里的权限配置，会返回获取用户信息异常的错误
 //    @PreAuthorize("@ss.hasPermi('lottery:setting:add')")
-    @Log(title = "号码生成配置", businessType = BusinessType.INSERT)
+    @Log(title = "提供给 APP 新增号码生成配置", businessType = BusinessType.INSERT)
     @PostMapping("/addLotterySettingConfigForApp")
     public AjaxResult addLotterySettingConfigForApp(@RequestBody Fx67llLotterySetting fx67llLotterySetting) {
         return toAjax(fx67llLotterySettingService.insertFx67llLotterySetting(fx67llLotterySetting));
@@ -102,7 +102,7 @@ public class Fx67llLotterySettingController extends BaseController {
      * 修改号码生成配置
      */
     @PreAuthorize("@ss.hasPermi('lottery:setting:edit')")
-    @Log(title = "号码生成配置", businessType = BusinessType.UPDATE)
+    @Log(title = "修改号码生成配置", businessType = BusinessType.UPDATE)
     @PutMapping
     public AjaxResult edit(@RequestBody Fx67llLotterySetting fx67llLotterySetting) {
         return toAjax(fx67llLotterySettingService.updateFx67llLotterySetting(fx67llLotterySetting));
@@ -113,7 +113,7 @@ public class Fx67llLotterySettingController extends BaseController {
      */
 //    如果只放开SecurityConfig中允许匿名请求的配置，不放开这里的权限配置，会返回获取用户信息异常的错误
 //    @PreAuthorize("@ss.hasPermi('lottery:setting:edit')")
-    @Log(title = "号码生成配置", businessType = BusinessType.UPDATE)
+    @Log(title = "提供给 APP 修改号码生成配置", businessType = BusinessType.UPDATE)
     @PutMapping("/editLotterySettingConfigForApp")
     public AjaxResult editLotterySettingConfigForApp(@RequestBody Fx67llLotterySetting fx67llLotterySetting) {
         return toAjax(fx67llLotterySettingService.updateFx67llLotterySetting(fx67llLotterySetting));
@@ -123,7 +123,7 @@ public class Fx67llLotterySettingController extends BaseController {
      * 删除号码生成配置
      */
     @PreAuthorize("@ss.hasPermi('lottery:setting:remove')")
-    @Log(title = "号码生成配置", businessType = BusinessType.DELETE)
+    @Log(title = "删除号码生成配置", businessType = BusinessType.DELETE)
     @DeleteMapping("/{settingIds}")
     public AjaxResult remove(@PathVariable Long[] settingIds) {
         return toAjax(fx67llLotterySettingService.deleteFx67llLotterySettingBySettingIds(settingIds));

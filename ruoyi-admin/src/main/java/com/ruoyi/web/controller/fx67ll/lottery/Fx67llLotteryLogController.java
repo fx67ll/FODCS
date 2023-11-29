@@ -63,7 +63,7 @@ public class Fx67llLotteryLogController extends BaseController {
      * 导出每日号码记录列表
      */
     @PreAuthorize("@ss.hasPermi('lottery:log:export')")
-    @Log(title = "每日号码记录", businessType = BusinessType.EXPORT)
+    @Log(title = "导出每日号码记录列表", businessType = BusinessType.EXPORT)
     @PostMapping("/export")
     public void export(HttpServletResponse response, Fx67llLotteryLog fx67llLotteryLog) {
         List<Fx67llLotteryLog> list = fx67llLotteryLogService.selectFx67llLotteryLogList(fx67llLotteryLog);
@@ -98,7 +98,7 @@ public class Fx67llLotteryLogController extends BaseController {
      * 新增每日号码记录
      */
     @PreAuthorize("@ss.hasPermi('lottery:log:add')")
-    @Log(title = "每日号码记录", businessType = BusinessType.INSERT)
+    @Log(title = "新增每日号码记录", businessType = BusinessType.INSERT)
     @PostMapping
     public AjaxResult add(@RequestBody Fx67llLotteryLog fx67llLotteryLog) {
         return toAjax(fx67llLotteryLogService.insertFx67llLotteryLog(fx67llLotteryLog));
@@ -109,7 +109,7 @@ public class Fx67llLotteryLogController extends BaseController {
      */
 //    如果只放开SecurityConfig中允许匿名请求的配置，不放开这里的权限配置，会返回获取用户信息异常的错误
 //    @PreAuthorize("@ss.hasPermi('lottery:log:add')")
-    @Log(title = "每日号码记录", businessType = BusinessType.INSERT)
+    @Log(title = "提供给 APP 新增每日号码记录", businessType = BusinessType.INSERT)
     @PostMapping("/addLotteryLogForApp")
     public AjaxResult addLotteryLogForApp(@RequestBody Fx67llLotteryLog fx67llLotteryLog) {
         return toAjax(fx67llLotteryLogService.insertFx67llLotteryLog(fx67llLotteryLog));
@@ -119,7 +119,7 @@ public class Fx67llLotteryLogController extends BaseController {
      * 修改每日号码记录
      */
     @PreAuthorize("@ss.hasPermi('lottery:log:edit')")
-    @Log(title = "每日号码记录", businessType = BusinessType.UPDATE)
+    @Log(title = "修改每日号码记录", businessType = BusinessType.UPDATE)
     @PutMapping
     public AjaxResult edit(@RequestBody Fx67llLotteryLog fx67llLotteryLog) {
         return toAjax(fx67llLotteryLogService.updateFx67llLotteryLog(fx67llLotteryLog));
@@ -130,7 +130,7 @@ public class Fx67llLotteryLogController extends BaseController {
      */
 //    如果只放开SecurityConfig中允许匿名请求的配置，不放开这里的权限配置，会返回获取用户信息异常的错误
 //    @PreAuthorize("@ss.hasPermi('lottery:log:edit')")
-    @Log(title = "每日号码记录", businessType = BusinessType.UPDATE)
+    @Log(title = "提供给 APP 修改每日号码记录", businessType = BusinessType.UPDATE)
     @PutMapping("/editLotteryLogForApp")
     public AjaxResult editLotteryLogForApp(@RequestBody Fx67llLotteryLog fx67llLotteryLog) {
         if (fx67llLotteryLogService.selectFx67llLotteryLogByLotteryId(fx67llLotteryLog.getLotteryId()).getUserId() != SecurityUtils.getUserId()) {
@@ -144,7 +144,7 @@ public class Fx67llLotteryLogController extends BaseController {
      * 删除每日号码记录
      */
     @PreAuthorize("@ss.hasPermi('lottery:log:remove')")
-    @Log(title = "每日号码记录", businessType = BusinessType.DELETE)
+    @Log(title = "删除每日号码记录", businessType = BusinessType.DELETE)
     @DeleteMapping("/{lotteryIds}")
     public AjaxResult remove(@PathVariable Long[] lotteryIds) {
         return toAjax(fx67llLotteryLogService.deleteFx67llLotteryLogByLotteryIds(lotteryIds));
@@ -155,7 +155,7 @@ public class Fx67llLotteryLogController extends BaseController {
      */
 //    如果只放开SecurityConfig中允许匿名请求的配置，不放开这里的权限配置，会返回获取用户信息异常的错误
 //    @PreAuthorize("@ss.hasPermi('lottery:log:remove')")
-    @Log(title = "每日号码记录", businessType = BusinessType.DELETE)
+    @Log(title = "提供给 APP 删除每日号码记录", businessType = BusinessType.DELETE)
     @DeleteMapping("/deleteLogByIdForApp/{lotteryId}")
     public AjaxResult deleteLogByIdForApp(@PathVariable Long lotteryId) {
         if (fx67llLotteryLogService.selectFx67llLotteryLogByLotteryId(lotteryId).getUserId() != SecurityUtils.getUserId()) {

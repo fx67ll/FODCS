@@ -62,7 +62,7 @@ public class Fx67llLotteryChaseController extends BaseController {
      * 导出固定追号配置列表
      */
     @PreAuthorize("@ss.hasPermi('lottery:chase:export')")
-    @Log(title = "固定追号配置", businessType = BusinessType.EXPORT)
+    @Log(title = "导出固定追号配置列表", businessType = BusinessType.EXPORT)
     @PostMapping("/export")
     public void export(HttpServletResponse response, Fx67llLotteryChase fx67llLotteryChase) {
         List<Fx67llLotteryChase> list = fx67llLotteryChaseService.selectFx67llLotteryChaseList(fx67llLotteryChase);
@@ -83,7 +83,7 @@ public class Fx67llLotteryChaseController extends BaseController {
      * 新增固定追号配置
      */
     @PreAuthorize("@ss.hasPermi('lottery:chase:add')")
-    @Log(title = "固定追号配置", businessType = BusinessType.INSERT)
+    @Log(title = "新增固定追号配置", businessType = BusinessType.INSERT)
     @PostMapping
     public AjaxResult add(@RequestBody Fx67llLotteryChase fx67llLotteryChase) {
         return toAjax(fx67llLotteryChaseService.insertFx67llLotteryChase(fx67llLotteryChase));
@@ -93,7 +93,7 @@ public class Fx67llLotteryChaseController extends BaseController {
      * 修改固定追号配置
      */
     @PreAuthorize("@ss.hasPermi('lottery:chase:edit')")
-    @Log(title = "固定追号配置", businessType = BusinessType.UPDATE)
+    @Log(title = "修改固定追号配置", businessType = BusinessType.UPDATE)
     @PutMapping
     public AjaxResult edit(@RequestBody Fx67llLotteryChase fx67llLotteryChase) {
         return toAjax(fx67llLotteryChaseService.updateFx67llLotteryChase(fx67llLotteryChase));
@@ -103,7 +103,7 @@ public class Fx67llLotteryChaseController extends BaseController {
      * 删除固定追号配置
      */
     @PreAuthorize("@ss.hasPermi('lottery:chase:remove')")
-    @Log(title = "固定追号配置", businessType = BusinessType.DELETE)
+    @Log(title = "删除固定追号配置", businessType = BusinessType.DELETE)
     @DeleteMapping("/{chaseIds}")
     public AjaxResult remove(@PathVariable Long[] chaseIds) {
         return toAjax(fx67llLotteryChaseService.deleteFx67llLotteryChaseByChaseIds(chaseIds));

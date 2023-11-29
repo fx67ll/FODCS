@@ -67,7 +67,7 @@ public class Fx67llSecretKeyController extends BaseController {
      * 导出秘钥配置列表
      */
     @PreAuthorize("@ss.hasPermi('secret:key:export')")
-    @Log(title = "秘钥配置", businessType = BusinessType.EXPORT)
+    @Log(title = "导出秘钥配置列表", businessType = BusinessType.EXPORT)
     @PostMapping("/export")
     public void export(HttpServletResponse response, Fx67llSecretKey fx67llSecretKey) {
         List<Fx67llSecretKey> list = fx67llSecretKeyService.selectFx67llSecretKeyList(fx67llSecretKey);
@@ -88,7 +88,7 @@ public class Fx67llSecretKeyController extends BaseController {
      * 新增秘钥配置
      */
     @PreAuthorize("@ss.hasPermi('secret:key:add')")
-    @Log(title = "秘钥配置", businessType = BusinessType.INSERT)
+    @Log(title = "新增秘钥配置", businessType = BusinessType.INSERT)
     @PostMapping
     public AjaxResult add(@RequestBody Fx67llSecretKey fx67llSecretKey) {
         return toAjax(fx67llSecretKeyService.insertFx67llSecretKey(fx67llSecretKey));
@@ -98,7 +98,7 @@ public class Fx67llSecretKeyController extends BaseController {
      * 修改秘钥配置
      */
     @PreAuthorize("@ss.hasPermi('secret:key:edit')")
-    @Log(title = "秘钥配置", businessType = BusinessType.UPDATE)
+    @Log(title = "修改秘钥配置", businessType = BusinessType.UPDATE)
     @PutMapping
     public AjaxResult edit(@RequestBody Fx67llSecretKey fx67llSecretKey) {
         return toAjax(fx67llSecretKeyService.updateFx67llSecretKey(fx67llSecretKey));
@@ -108,7 +108,7 @@ public class Fx67llSecretKeyController extends BaseController {
      * 删除秘钥配置
      */
     @PreAuthorize("@ss.hasPermi('secret:key:remove')")
-    @Log(title = "秘钥配置", businessType = BusinessType.DELETE)
+    @Log(title = "删除秘钥配置", businessType = BusinessType.DELETE)
     @DeleteMapping("/{secretIds}")
     public AjaxResult remove(@PathVariable Long[] secretIds) {
         if (hasForbiddenDeleteValue(secretIds, 1)) {

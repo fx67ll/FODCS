@@ -62,7 +62,7 @@ public class Fx67llDortmundExtraController extends BaseController {
      * 导出外快盈亏记录列表
      */
     @PreAuthorize("@ss.hasPermi('dortmund:extra:export')")
-    @Log(title = "外快盈亏记录", businessType = BusinessType.EXPORT)
+    @Log(title = "导出外快盈亏记录列表", businessType = BusinessType.EXPORT)
     @PostMapping("/export")
     public void export(HttpServletResponse response, Fx67llDortmundExtra fx67llDortmundExtra) {
         List<Fx67llDortmundExtra> list = fx67llDortmundExtraService.selectFx67llDortmundExtraList(fx67llDortmundExtra);
@@ -83,7 +83,7 @@ public class Fx67llDortmundExtraController extends BaseController {
      * 新增外快盈亏记录
      */
     @PreAuthorize("@ss.hasPermi('dortmund:extra:add')")
-    @Log(title = "外快盈亏记录", businessType = BusinessType.INSERT)
+    @Log(title = "新增外快盈亏记录", businessType = BusinessType.INSERT)
     @PostMapping
     public AjaxResult add(@RequestBody Fx67llDortmundExtra fx67llDortmundExtra) {
         return toAjax(fx67llDortmundExtraService.insertFx67llDortmundExtra(fx67llDortmundExtra));
@@ -94,7 +94,7 @@ public class Fx67llDortmundExtraController extends BaseController {
      */
 //    如果只放开SecurityConfig中允许匿名请求的配置，不放开这里的权限配置，会返回获取用户信息异常的错误
 //    @PreAuthorize("@ss.hasPermi('dortmund:extra:add')")
-    @Log(title = "外快盈亏记录", businessType = BusinessType.INSERT)
+    @Log(title = "提供给 APP 新增外快盈亏记录", businessType = BusinessType.INSERT)
     @PostMapping("/addExtraForApp")
     public AjaxResult addExtraForApp(@RequestBody Fx67llDortmundExtra fx67llDortmundExtra) {
         return toAjax(fx67llDortmundExtraService.insertFx67llDortmundExtra(fx67llDortmundExtra));
@@ -104,7 +104,7 @@ public class Fx67llDortmundExtraController extends BaseController {
      * 修改外快盈亏记录
      */
     @PreAuthorize("@ss.hasPermi('dortmund:extra:edit')")
-    @Log(title = "外快盈亏记录", businessType = BusinessType.UPDATE)
+    @Log(title = "修改外快盈亏记录", businessType = BusinessType.UPDATE)
     @PutMapping
     public AjaxResult edit(@RequestBody Fx67llDortmundExtra fx67llDortmundExtra) {
         return toAjax(fx67llDortmundExtraService.updateFx67llDortmundExtra(fx67llDortmundExtra));
@@ -114,7 +114,7 @@ public class Fx67llDortmundExtraController extends BaseController {
      * 删除外快盈亏记录
      */
     @PreAuthorize("@ss.hasPermi('dortmund:extra:remove')")
-    @Log(title = "外快盈亏记录", businessType = BusinessType.DELETE)
+    @Log(title = "删除外快盈亏记录", businessType = BusinessType.DELETE)
     @DeleteMapping("/{extraIds}")
     public AjaxResult remove(@PathVariable Long[] extraIds) {
         return toAjax(fx67llDortmundExtraService.deleteFx67llDortmundExtraByExtraIds(extraIds));
@@ -125,7 +125,7 @@ public class Fx67llDortmundExtraController extends BaseController {
      */
 //    如果只放开SecurityConfig中允许匿名请求的配置，不放开这里的权限配置，会返回获取用户信息异常的错误
 //    @PreAuthorize("@ss.hasPermi('dortmund:extra:remove')")
-    @Log(title = "每日号码记录", businessType = BusinessType.DELETE)
+    @Log(title = "提供给 APP 删除外快盈亏记录", businessType = BusinessType.DELETE)
     @DeleteMapping("/deleteExtraByIdForApp/{extraId}")
     public AjaxResult deleteExtraByIdForApp(@PathVariable Long extraId) {
         if (fx67llDortmundExtraService.selectFx67llDortmundExtraByExtraId(extraId).getUserId() != SecurityUtils.getUserId()) {
