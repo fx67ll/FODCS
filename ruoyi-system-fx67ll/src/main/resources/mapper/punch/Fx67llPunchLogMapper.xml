@@ -1,0 +1,101 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.ruoyi.fx67ll.punch.mapper.Fx67llPunchLogMapper">
+
+    <resultMap type="Fx67llPunchLog" id="Fx67llPunchLogResult">
+        <result property="punchId" column="punch_id"/>
+        <result property="punchType" column="punch_type"/>
+        <result property="delFlag" column="del_flag"/>
+        <result property="userId" column="user_id"/>
+        <result property="createBy" column="create_by"/>
+        <result property="createTime" column="create_time"/>
+        <result property="updateBy" column="update_by"/>
+        <result property="updateTime" column="update_time"/>
+    </resultMap>
+
+    <sql id="selectFx67llPunchLogVo">
+        select punch_id,
+               punch_type,
+               del_flag,
+               user_id,
+               create_by,
+               create_time,
+               update_by,
+               update_time
+        from fx67ll_punch_log
+    </sql>
+
+    <select id="selectFx67llPunchLogList" parameterType="Fx67llPunchLog" resultMap="Fx67llPunchLogResult">
+        <include refid="selectFx67llPunchLogVo"/>
+        <where>
+            <if test="punchType != null  and punchType != ''">and punch_type = #{punchType}</if>
+            <if test="delFlag != null  and delFlag != ''">and del_flag = #{delFlag}</if>
+            <if test="userId != null ">and user_id = #{userId}</if>
+            <if test="createBy != null  and createBy != ''">and create_by = #{createBy}</if>
+            <if test="beginCreateTime != null and endCreateTime != ''">and create_time between #{beginCreateTime} and
+                #{endCreateTime}
+            </if>
+            <if test="updateBy != null  and updateBy != ''">and update_by = #{updateBy}</if>
+            <if test="beginUpdateTime != null and endUpdateTime != ''">and update_time between #{beginUpdateTime} and
+                #{endUpdateTime}
+            </if>
+        </where>
+        order by STR_TO_DATE(create_time, "%Y-%m-%d %H:%i:%s") desc
+    </select>
+
+    <select id="selectFx67llPunchLogByPunchId" parameterType="Long" resultMap="Fx67llPunchLogResult">
+        <include refid="selectFx67llPunchLogVo"/>
+        where punch_id = #{punchId}
+    </select>
+
+    <insert id="insertFx67llPunchLog" parameterType="Fx67llPunchLog" useGeneratedKeys="true" keyProperty="punchId">
+        insert into fx67ll_punch_log
+        <trim prefix="(" suffix=")" suffixOverrides=",">
+            <if test="punchType != null and punchType != ''">punch_type,</if>
+            <if test="delFlag != null">del_flag,</if>
+            <if test="userId != null">user_id,</if>
+            <if test="createBy != null">create_by,</if>
+            <if test="createTime != null">create_time,</if>
+            <if test="updateBy != null">update_by,</if>
+            <if test="updateTime != null">update_time,</if>
+        </trim>
+        <trim prefix="values (" suffix=")" suffixOverrides=",">
+            <if test="punchType != null and punchType != ''">#{punchType},</if>
+            <if test="delFlag != null">#{delFlag},</if>
+            <if test="userId != null">#{userId},</if>
+            <if test="createBy != null">#{createBy},</if>
+            <if test="createTime != null">#{createTime},</if>
+            <if test="updateBy != null">#{updateBy},</if>
+            <if test="updateTime != null">#{updateTime},</if>
+        </trim>
+    </insert>
+
+    <update id="updateFx67llPunchLog" parameterType="Fx67llPunchLog">
+        update fx67ll_punch_log
+        <trim prefix="SET" suffixOverrides=",">
+            <if test="punchType != null and punchType != ''">punch_type = #{punchType},</if>
+            <if test="delFlag != null">del_flag = #{delFlag},</if>
+            <if test="userId != null">user_id = #{userId},</if>
+            <if test="createBy != null">create_by = #{createBy},</if>
+            <if test="createTime != null">create_time = #{createTime},</if>
+            <if test="updateBy != null">update_by = #{updateBy},</if>
+            <if test="updateTime != null">update_time = #{updateTime},</if>
+        </trim>
+        where punch_id = #{punchId}
+    </update>
+
+    <delete id="deleteFx67llPunchLogByPunchId" parameterType="Long">
+        delete
+        from fx67ll_punch_log
+        where punch_id = #{punchId}
+    </delete>
+
+    <delete id="deleteFx67llPunchLogByPunchIds" parameterType="String">
+        delete from fx67ll_punch_log where punch_id in
+        <foreach item="punchId" collection="array" open="(" separator="," close=")">
+            #{punchId}
+        </foreach>
+    </delete>
+</mapper>
