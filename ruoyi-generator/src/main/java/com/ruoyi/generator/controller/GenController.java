@@ -51,7 +51,7 @@ public class GenController extends BaseController {
     @GetMapping("/list")
     public TableDataInfo genList(GenTable genTable) {
         startPage();
-        genTable.setFunctionAuthor(SecurityUtils.getUsername());
+        genTable.setCreateBy(SecurityUtils.getUsername());
         List<GenTable> list = genTableService.selectGenTableList(genTable);
         return getDataTable(list);
     }

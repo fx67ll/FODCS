@@ -80,7 +80,7 @@
     <select id="selectGenTableList" parameterType="GenTable" resultMap="GenTableResult">
         <include refid="selectGenTableVo"/>
         <where>
-            function_author = #{functionAuthor}
+            create_by = #{createBy}
             <if test="tableName != null and tableName != ''">
                 AND lower(table_name) like lower(concat('%', #{tableName}, '%'))
             </if>
