@@ -94,3 +94,21 @@ create TABLE fx67ll_secret_key (
   secret_value      varchar(1023)                               comment '秘钥值',
   primary key (secret_id)
 ) engine=innodb auto_increment=1 comment = '秘钥配置表';
+
+
+-- ----------------------------
+-- 5、打卡记录表
+-- ----------------------------
+drop table if exists fx67ll_punch_log;
+create table fx67ll_punch_log (
+  punch_id             bigint(20)      not null auto_increment    comment '打卡记录主键',
+  punch_type           char(1)                                    comment '打卡类型（1代表上班 2代表下班）',
+  del_flag             char(1)         default '0'                comment '删除标志（0代表存在 2代表删除）',
+  user_id              bigint(20)                                 comment '用户ID',
+  create_by            varchar(64)     default ''                 comment '记录创建者',
+  create_time 	       datetime                                   comment '记录创建时间',
+  update_by            varchar(64)     default ''                 comment '记录更新者',
+  update_time          datetime                                   comment '记录更新时间',
+  primary key (punch_id)
+) engine=innodb auto_increment=1 comment = '打卡记录表';
+

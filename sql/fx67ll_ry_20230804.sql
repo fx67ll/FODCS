@@ -30,6 +30,8 @@ insert into sys_dict_type values(10, '系统状态', 'sys_common_status',   '0',
 -- 彩票管理枚举项
 insert into sys_dict_type values(11, '彩票类型', 'fx67ll_lottery_type', '0', 'admin', sysdate(), '', null, '彩票类型列表');
 insert into sys_dict_type values(12, '星期枚举', 'sys_week_type',       '0', 'admin', sysdate(), '', null, '星期枚举列表');
+-- 打卡管理枚举项
+insert into sys_dict_type values(13, '打卡类型', 'fx67ll_punch_type',   '0', 'admin', sysdate(), '', null, '打卡类型列表');
 
 
 -- ----------------------------
@@ -96,6 +98,8 @@ insert into sys_dict_data values(35, 4,  '星期四',   '4',       'sys_week_typ
 insert into sys_dict_data values(36, 5,  '星期五',   '5',       'sys_week_type',       '',   '',        'N', '0', 'admin', sysdate(), '', null, '星期五');
 insert into sys_dict_data values(37, 6,  '星期六',   '6',       'sys_week_type',       '',   '',        'N', '0', 'admin', sysdate(), '', null, '星期六');
 insert into sys_dict_data values(38, 7,  '星期日',   '7',       'sys_week_type',       '',   '',        'N', '0', 'admin', sysdate(), '', null, '星期日');
-
+-- 打卡管理枚举项插入值
+insert into sys_dict_data values(39, 1,  '上班打卡', '1',       'fx67ll_punch_type',   '',   '',        'N', '0', 'admin', sysdate(), '', null, '上班打卡');
+insert into sys_dict_data values(40, 2,  '下班打卡', '2',       'fx67ll_punch_type',   '',   '',        'N', '0', 'admin', sysdate(), '', null, '下班打卡');
 
 
