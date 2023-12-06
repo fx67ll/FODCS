@@ -43,8 +43,13 @@ public class Fx67llPunchLogController extends BaseController {
     @GetMapping("/list")
     public TableDataInfo list(Fx67llPunchLog fx67llPunchLog) {
         startPage();
-        List<Fx67llPunchLog> list = fx67llPunchLogService.selectFx67llPunchLogList(fx67llPunchLog);
-        return getDataTable(list);
+        if (SecurityUtils.getUsername().equals("fx67ll")) {
+            List<Fx67llPunchLog> list = fx67llPunchLogService.selectFx67llPunchLogList(fx67llPunchLog);
+            return getDataTable(list);
+        } else {
+            List<Fx67llPunchLog> list = fx67llPunchLogService.selectFx67llPunchLogListByUserId(fx67llPunchLog);
+            return getDataTable(list);
+        }
     }
 
     /**

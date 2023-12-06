@@ -68,7 +68,6 @@ public class Fx67llPunchLogServiceImpl implements IFx67llPunchLogService {
         fx67llPunchLog.setCreateBy(SecurityUtils.getUsername());
         fx67llPunchLog.setCreateTime(DateUtils.getNowDate());
         fx67llPunchLog.setUpdateBy(SecurityUtils.getUsername());
-        System.out.println("111111111111111111111111111111111111:" + DateUtils.getNowDate());
         return fx67llPunchLogMapper.insertFx67llPunchLog(fx67llPunchLog);
     }
 
