@@ -103,6 +103,7 @@ drop table if exists fx67ll_punch_log;
 create table fx67ll_punch_log (
   punch_id             bigint(20)      not null auto_increment    comment '打卡记录主键',
   punch_type           char(1)                                    comment '打卡类型（1代表上班 2代表下班）',
+  punch_remark         varchar(1023)   default ''                 comment '打卡记录备注',
   del_flag             char(1)         default '0'                comment '删除标志（0代表存在 2代表删除）',
   user_id              bigint(20)                                 comment '用户ID',
   create_by            varchar(64)     default ''                 comment '记录创建者',

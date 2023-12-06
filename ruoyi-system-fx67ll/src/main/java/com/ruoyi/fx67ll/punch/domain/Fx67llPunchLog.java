@@ -26,6 +26,12 @@ public class Fx67llPunchLog extends BaseEntity {
     private String punchType;
 
     /**
+     * 打卡记录备注
+     */
+    @Excel(name = "打卡记录备注")
+    private String punchRemark;
+
+    /**
      * 删除标志（0代表存在 2代表删除）
      */
     private String delFlag;
@@ -34,7 +40,6 @@ public class Fx67llPunchLog extends BaseEntity {
      * 用户ID
      */
     private Long userId;
-
 
     /**
      * 创建开始时间
@@ -70,6 +75,14 @@ public class Fx67llPunchLog extends BaseEntity {
 
     public String getPunchType() {
         return punchType;
+    }
+
+    public void setPunchRemark(String punchRemark) {
+        this.punchRemark = punchRemark;
+    }
+
+    public String getPunchRemark() {
+        return punchRemark;
     }
 
     public void setDelFlag(String delFlag) {
@@ -125,6 +138,7 @@ public class Fx67llPunchLog extends BaseEntity {
         return new ToStringBuilder(this, ToStringStyle.MULTI_LINE_STYLE)
                 .append("punchId", getPunchId())
                 .append("punchType", getPunchType())
+                .append("punchRemark", getPunchRemark())
                 .append("delFlag", getDelFlag())
                 .append("userId", getUserId())
                 .append("createBy", getCreateBy())

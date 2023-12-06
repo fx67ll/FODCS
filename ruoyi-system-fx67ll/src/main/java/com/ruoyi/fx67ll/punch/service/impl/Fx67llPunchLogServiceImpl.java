@@ -51,7 +51,7 @@ public class Fx67llPunchLogServiceImpl implements IFx67llPunchLogService {
      * @return 打卡记录
      */
     @Override
-    public List<Fx67llPunchLog>  selectFx67llPunchLogListByUserId(Fx67llPunchLog fx67llPunchLog) {
+    public List<Fx67llPunchLog> selectFx67llPunchLogListByUserId(Fx67llPunchLog fx67llPunchLog) {
         fx67llPunchLog.setUserId(SecurityUtils.getUserId());
         return fx67llPunchLogMapper.selectFx67llPunchLogList(fx67llPunchLog);
     }
@@ -67,6 +67,8 @@ public class Fx67llPunchLogServiceImpl implements IFx67llPunchLogService {
         fx67llPunchLog.setUserId(SecurityUtils.getUserId());
         fx67llPunchLog.setCreateBy(SecurityUtils.getUsername());
         fx67llPunchLog.setCreateTime(DateUtils.getNowDate());
+        fx67llPunchLog.setUpdateBy(SecurityUtils.getUsername());
+        System.out.println("111111111111111111111111111111111111:" + DateUtils.getNowDate());
         return fx67llPunchLogMapper.insertFx67llPunchLog(fx67llPunchLog);
     }
 
@@ -79,7 +81,6 @@ public class Fx67llPunchLogServiceImpl implements IFx67llPunchLogService {
     @Override
     public int updateFx67llPunchLog(Fx67llPunchLog fx67llPunchLog) {
         fx67llPunchLog.setUpdateBy(SecurityUtils.getUsername());
-        fx67llPunchLog.setUpdateTime(DateUtils.getNowDate());
         return fx67llPunchLogMapper.updateFx67llPunchLog(fx67llPunchLog);
     }
 

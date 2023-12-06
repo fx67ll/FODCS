@@ -7,6 +7,7 @@
     <resultMap type="Fx67llPunchLog" id="Fx67llPunchLogResult">
         <result property="punchId" column="punch_id"/>
         <result property="punchType" column="punch_type"/>
+        <result property="punchRemark" column="punch_remark"/>
         <result property="delFlag" column="del_flag"/>
         <result property="userId" column="user_id"/>
         <result property="createBy" column="create_by"/>
@@ -18,6 +19,7 @@
     <sql id="selectFx67llPunchLogVo">
         select punch_id,
                punch_type,
+               punch_remark,
                del_flag,
                user_id,
                create_by,
@@ -42,7 +44,7 @@
                 #{endUpdateTime}
             </if>
         </where>
-        order by STR_TO_DATE(create_time, "%Y-%m-%d %H:%i:%s") desc
+        order by STR_TO_DATE(update_time, "%Y-%m-%d %H:%i:%s") desc
     </select>
 
     <select id="selectFx67llPunchLogByPunchId" parameterType="Long" resultMap="Fx67llPunchLogResult">
@@ -54,6 +56,7 @@
         insert into fx67ll_punch_log
         <trim prefix="(" suffix=")" suffixOverrides=",">
             <if test="punchType != null and punchType != ''">punch_type,</if>
+            <if test="punchRemark != null">punch_remark,</if>
             <if test="delFlag != null">del_flag,</if>
             <if test="userId != null">user_id,</if>
             <if test="createBy != null">create_by,</if>
@@ -63,6 +66,7 @@
         </trim>
         <trim prefix="values (" suffix=")" suffixOverrides=",">
             <if test="punchType != null and punchType != ''">#{punchType},</if>
+            <if test="punchRemark != null">#{punchRemark},</if>
             <if test="delFlag != null">#{delFlag},</if>
             <if test="userId != null">#{userId},</if>
             <if test="createBy != null">#{createBy},</if>
@@ -76,6 +80,7 @@
         update fx67ll_punch_log
         <trim prefix="SET" suffixOverrides=",">
             <if test="punchType != null and punchType != ''">punch_type = #{punchType},</if>
+            <if test="punchRemark != null">punch_remark = #{punchRemark},</if>
             <if test="delFlag != null">del_flag = #{delFlag},</if>
             <if test="userId != null">user_id = #{userId},</if>
             <if test="createBy != null">create_by = #{createBy},</if>
