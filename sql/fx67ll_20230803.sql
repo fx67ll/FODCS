@@ -113,3 +113,33 @@ create table fx67ll_punch_log (
   primary key (punch_id)
 ) engine=innodb auto_increment=1 comment = '打卡记录表';
 
+
+-- ----------------------------
+-- 5-1、统计每个用户当月的工作总时长
+-- ----------------------------
+SELECT 
+    update_by AS user_id,
+    DATE_FORMAT(update_time, '%Y-%m') AS punch_month,
+    SUM(TIME_TO_SEC(TIMEDIFF(
+        (SELECT MAX(update_time) FROM fx67ll_punch_log WHERE DATE(update_time) = DATE(a.update_time) AND update_by = a.update_by),
+        (SELECT MIN(update_time) FROM fx67ll_punch_log WHERE DATE(update_time) = DATE(a.update_time) AND update_by = a.update_by)
+    ))) / 3600 AS total_work_hours,
+    SUM(TIMESTAMPDIFF(MINUTE, 
+        (SELECT MIN(update_time) FROM fx67ll_punch_log WHERE DATE(update_time) = DATE(a.update_time)), 
+        (SELECT MAX(update_time) FROM fx67ll_punch_log WHERE DATE(update_time) = DATE(a.update_time))
+    )) AS total_work_minutes,
+	SUM(TIME_TO_SEC(TIMEDIFF(
+        (SELECT MAX(update_time) FROM fx67ll_punch_log AS start_time 
+         WHERE DATE(start_time.update_time) = DATE(a.update_time) 
+         AND start_time.user_id = a.user_id),
+        (SELECT MIN(update_time) FROM fx67ll_punch_log AS end_time 
+         WHERE DATE(end_time.update_time) = DATE(a.update_time) 
+         AND end_time.user_id = a.user_id)
+    ))) AS total_work_seconds
+FROM 
+    fx67ll_punch_log a
+GROUP BY 
+    user_id, punch_month;
+
+    
+   
