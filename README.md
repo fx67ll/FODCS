@@ -3,6 +3,9 @@ fx67ll One Data Center Server
 
 欢迎访问 [fx67ll's 管理系统](https://vip.fx67ll.com) ~
 
+## 0.2.15.20231213
+* 新增打卡工时统计接口
+
 ## 0.2.14.20231206
 * 优化打卡记录接口  
 
