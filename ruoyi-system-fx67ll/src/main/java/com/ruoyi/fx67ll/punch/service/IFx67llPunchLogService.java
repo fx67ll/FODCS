@@ -4,6 +4,7 @@ import java.util.List;
 
 import com.ruoyi.fx67ll.lottery.domain.Fx67llLotteryLog;
 import com.ruoyi.fx67ll.punch.domain.Fx67llPunchLog;
+import com.ruoyi.fx67ll.punch.domain.Fx67llPunchLogTotal;
 
 /**
  * 打卡记录Service接口
@@ -21,20 +22,28 @@ public interface IFx67llPunchLogService {
     public Fx67llPunchLog selectFx67llPunchLogByPunchId(Long punchId);
 
     /**
-     * 通过 UserId 查询每日号码记录列表
-     *
-     * @param Fx67llPunchLog 每日号码记录
-     * @return 每日号码记录集合
-     */
-    public List<Fx67llPunchLog> selectFx67llPunchLogListByUserId(Fx67llPunchLog fx67llPunchLog);
-
-    /**
      * 查询打卡记录列表
      *
      * @param fx67llPunchLog 打卡记录
      * @return 打卡记录集合
      */
     public List<Fx67llPunchLog> selectFx67llPunchLogList(Fx67llPunchLog fx67llPunchLog);
+
+    /**
+     * 通过 UserId 查询每日号码记录列表
+     *
+     * @param fx67llPunchLog 每日号码记录
+     * @return 每日号码记录集合
+     */
+    public List<Fx67llPunchLog> selectFx67llPunchLogListByUserId(Fx67llPunchLog fx67llPunchLog);
+
+    /**
+     * 查询打卡工时统计
+     *
+     * @param fx67llPunchLog 打卡记录
+     * @return 打卡工时统计集合
+     */
+    public List<Fx67llPunchLogTotal> selectFx67llPunchLogTotalTime(Fx67llPunchLog fx67llPunchLog);
 
     /**
      * 新增打卡记录

@@ -4,7 +4,6 @@ import java.util.List;
 import javax.servlet.http.HttpServletResponse;
 
 import com.ruoyi.common.utils.SecurityUtils;
-import com.ruoyi.fx67ll.lottery.domain.Fx67llLotteryLog;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -20,6 +19,7 @@ import com.ruoyi.common.core.controller.BaseController;
 import com.ruoyi.common.core.domain.AjaxResult;
 import com.ruoyi.common.enums.BusinessType;
 import com.ruoyi.fx67ll.punch.domain.Fx67llPunchLog;
+import com.ruoyi.fx67ll.punch.domain.Fx67llPunchLogTotal;
 import com.ruoyi.fx67ll.punch.service.IFx67llPunchLogService;
 import com.ruoyi.common.utils.poi.ExcelUtil;
 import com.ruoyi.common.core.page.TableDataInfo;
@@ -61,6 +61,20 @@ public class Fx67llPunchLogController extends BaseController {
     public TableDataInfo getPunchLogListForApp(Fx67llPunchLog fx67llPunchLog) {
         startPageForApp();
         List<Fx67llPunchLog> list = fx67llPunchLogService.selectFx67llPunchLogListByUserId(fx67llPunchLog);
+        return getDataTable(list);
+    }
+
+    /**
+     * 查询打卡工时统计
+     */
+    @PreAuthorize("@ss.hasPermi('punch:log:total')")
+    @GetMapping("/getWorkTotalTime")
+    public TableDataInfo getWorkTotalTime(Fx67llPunchLog fx67llPunchLog) {
+        startPageForApp();
+        if (!SecurityUtils.getUsername().equals("fx67ll")) {
+            fx67llPunchLog.setUpdateBy(SecurityUtils.getUsername());
+        }
+        List<Fx67llPunchLogTotal> list = fx67llPunchLogService.selectFx67llPunchLogTotalTime(fx67llPunchLog);
         return getDataTable(list);
     }
 

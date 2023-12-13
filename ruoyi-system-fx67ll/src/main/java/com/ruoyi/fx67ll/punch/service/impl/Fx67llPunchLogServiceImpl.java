@@ -5,6 +5,7 @@ import java.util.List;
 import com.ruoyi.common.utils.DateUtils;
 import com.ruoyi.common.utils.SecurityUtils;
 import com.ruoyi.fx67ll.lottery.domain.Fx67llLotteryLog;
+import com.ruoyi.fx67ll.punch.domain.Fx67llPunchLogTotal;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import com.ruoyi.fx67ll.punch.mapper.Fx67llPunchLogMapper;
@@ -54,6 +55,17 @@ public class Fx67llPunchLogServiceImpl implements IFx67llPunchLogService {
     public List<Fx67llPunchLog> selectFx67llPunchLogListByUserId(Fx67llPunchLog fx67llPunchLog) {
         fx67llPunchLog.setUserId(SecurityUtils.getUserId());
         return fx67llPunchLogMapper.selectFx67llPunchLogList(fx67llPunchLog);
+    }
+
+    /**
+     * 查询打卡工时统计
+     *
+     * @param fx67llPunchLog 打卡记录
+     * @return 打卡工时统计
+     */
+    @Override
+    public List<Fx67llPunchLogTotal> selectFx67llPunchLogTotalTime(Fx67llPunchLog fx67llPunchLog) {
+        return fx67llPunchLogMapper.selectFx67llPunchLogTotalTime(fx67llPunchLog);
     }
 
     /**

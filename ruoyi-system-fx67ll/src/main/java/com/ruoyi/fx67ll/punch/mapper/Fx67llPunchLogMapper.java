@@ -3,6 +3,7 @@ package com.ruoyi.fx67ll.punch.mapper;
 import java.util.List;
 
 import com.ruoyi.fx67ll.punch.domain.Fx67llPunchLog;
+import com.ruoyi.fx67ll.punch.domain.Fx67llPunchLogTotal;
 
 /**
  * 打卡记录Mapper接口
@@ -26,6 +27,14 @@ public interface Fx67llPunchLogMapper {
      * @return 打卡记录集合
      */
     public List<Fx67llPunchLog> selectFx67llPunchLogList(Fx67llPunchLog fx67llPunchLog);
+
+    /**
+     * 查询打卡工时统计
+     *
+     * @param fx67llPunchLog 打卡记录
+     * @return 打卡工时统计集合
+     */
+    public List<Fx67llPunchLogTotal> selectFx67llPunchLogTotalTime(Fx67llPunchLog fx67llPunchLog);
 
     /**
      * 新增打卡记录
