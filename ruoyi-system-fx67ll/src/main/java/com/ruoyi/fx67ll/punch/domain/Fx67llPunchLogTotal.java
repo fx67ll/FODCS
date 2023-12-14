@@ -30,6 +30,13 @@ public class Fx67llPunchLogTotal {
     private Double totalWorkMinutes;
     private Double totalWorkSeconds;
 
+    /**
+     * 当月日均工时
+     */
+    private Integer totalPunchDays;
+    private Integer totalWorkDays;
+    private Double workHoursPerDay;
+
     public String getPunchUser() {
         return punchUser;
     }
@@ -70,6 +77,30 @@ public class Fx67llPunchLogTotal {
         this.totalWorkSeconds = totalWorkSeconds;
     }
 
+    public Integer getTotalPunchDays() {
+        return totalPunchDays;
+    }
+
+    public void setTotalPunchDays(Integer totalPunchDays) {
+        this.totalPunchDays = totalPunchDays;
+    }
+
+    public Integer getTotalWorkDays() {
+        return totalWorkDays;
+    }
+
+    public void setTotalWorkDays(Integer totalWorkDays) {
+        this.totalWorkDays = totalWorkDays;
+    }
+
+    public Double getWorkHoursPerDay() {
+        return workHoursPerDay;
+    }
+
+    public void setWorkHoursPerDay(Double workHoursPerDay) {
+        this.workHoursPerDay = workHoursPerDay;
+    }
+
     @Override
     public String toString() {
         return new ToStringBuilder(this, ToStringStyle.MULTI_LINE_STYLE)
@@ -78,6 +109,9 @@ public class Fx67llPunchLogTotal {
                 .append("totalWorkHours", getTotalWorkHours())
                 .append("totalWorkMinutes", getTotalWorkMinutes())
                 .append("totalWorkSeconds", getTotalWorkSeconds())
+                .append("totalPunchDays", getTotalPunchDays())
+                .append("totalWorkDays", getTotalWorkDays())
+                .append("workHoursPerDay", getWorkHoursPerDay())
                 .toString();
     }
 }

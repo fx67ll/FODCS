@@ -22,6 +22,9 @@
         <result property="totalWorkHours" column="total_work_hours"/>
         <result property="totalWorkMinutes" column="total_work_minutes"/>
         <result property="totalWorkSeconds" column="total_work_seconds"/>
+        <result property="totalPunchDays" column="total_punch_days"/>
+        <result property="totalWorkDays" column="total_work_days"/>
+        <result property="workHoursPerDay" column="work_hours_per_day"/>
     </resultMap>
 
     <sql id="selectFx67llPunchLogVo">
@@ -64,20 +67,24 @@
         SELECT
         fx67ll_punch_log_result.punch_user,
         fx67ll_punch_log_result.punch_month,
-        SUM(TIME_TO_SEC(TIMEDIFF( fx67ll_punch_log_result.max_punch_time, fx67ll_punch_log_result.min_punch_time ))) /
-        3600 AS total_work_hours,
-        SUM(TIMESTAMPDIFF(MINUTE, fx67ll_punch_log_result.min_punch_time, fx67ll_punch_log_result.max_punch_time )) AS
-        total_work_minutes,
-        SUM(TIME_TO_SEC(TIMEDIFF( fx67ll_punch_log_result.max_punch_time, fx67ll_punch_log_result.min_punch_time ))) AS
-        total_work_seconds
+        SUM(TIME_TO_SEC(TIMEDIFF( fx67ll_punch_log_result.max_punch_time, fx67ll_punch_log_result.min_punch_time ))) / 3600 AS total_work_hours,
+        SUM(TIMESTAMPDIFF(MINUTE, fx67ll_punch_log_result.min_punch_time, fx67ll_punch_log_result.max_punch_time )) AS total_work_minutes,
+        SUM(TIME_TO_SEC(TIMEDIFF( fx67ll_punch_log_result.max_punch_time, fx67ll_punch_log_result.min_punch_time ))) AS total_work_seconds,
+        COUNT(*) AS total_punch_days,
+        COUNT(max_punch_time) AS total_work_days,
+        SUM(TIME_TO_SEC(TIMEDIFF( fx67ll_punch_log_result.max_punch_time, fx67ll_punch_log_result.min_punch_time ))) / 3600 / COUNT(max_punch_time) AS work_hours_per_day
         FROM
         (
         SELECT
         update_by AS punch_user,
         DATE_FORMAT(update_time, '%Y-%m') AS punch_month,
         DATE(update_time) AS punch_day,
-        MAX(update_time) AS max_punch_time,
-        MIN(update_time) AS min_punch_time
+        IF(MAX(update_time) != MIN(update_time),
+        MAX(update_time),
+        NULL) AS max_punch_time,
+        IF(MAX(update_time) != MIN(update_time),
+        MIN(update_time),
+        NULL) AS min_punch_time
         FROM
         fx67ll_punch_log
         <where>
@@ -86,9 +93,11 @@
         GROUP BY
         punch_user,
         punch_month,
-        punch_day)
+        punch_day
+        )
         AS fx67ll_punch_log_result
-        GROUP BY punch_user
+        GROUP BY
+        punch_user
     </select>
 
     <insert id="insertFx67llPunchLog" parameterType="Fx67llPunchLog" useGeneratedKeys="true" keyProperty="punchId">
