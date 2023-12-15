@@ -5,6 +5,7 @@ import java.util.List;
 import com.ruoyi.common.utils.DateUtils;
 import com.ruoyi.common.utils.SecurityUtils;
 import com.ruoyi.fx67ll.lottery.domain.Fx67llLotteryLog;
+import com.ruoyi.fx67ll.punch.domain.Fx67llPunchLogLost;
 import com.ruoyi.fx67ll.punch.domain.Fx67llPunchLogTotal;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -75,7 +76,7 @@ public class Fx67llPunchLogServiceImpl implements IFx67llPunchLogService {
      * @return 缺卡记录
      */
     @Override
-    public List<Fx67llPunchLogTotal> selectFx67llPunchLostLog(Fx67llPunchLog fx67llPunchLog) {
+    public List<Fx67llPunchLogLost> selectFx67llPunchLostLog(Fx67llPunchLog fx67llPunchLog) {
         return fx67llPunchLogMapper.selectFx67llPunchLostLog(fx67llPunchLog);
     }
 

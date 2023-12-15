@@ -20,6 +20,7 @@ import com.ruoyi.common.core.domain.AjaxResult;
 import com.ruoyi.common.enums.BusinessType;
 import com.ruoyi.fx67ll.punch.domain.Fx67llPunchLog;
 import com.ruoyi.fx67ll.punch.domain.Fx67llPunchLogTotal;
+import com.ruoyi.fx67ll.punch.domain.Fx67llPunchLogLost;
 import com.ruoyi.fx67ll.punch.service.IFx67llPunchLogService;
 import com.ruoyi.common.utils.poi.ExcelUtil;
 import com.ruoyi.common.core.page.TableDataInfo;
@@ -88,7 +89,7 @@ public class Fx67llPunchLogController extends BaseController {
         if (!SecurityUtils.getUsername().equals("fx67ll")) {
             fx67llPunchLog.setUpdateBy(SecurityUtils.getUsername());
         }
-        List<Fx67llPunchLogTotal> list = fx67llPunchLogService.selectFx67llPunchLostLog(fx67llPunchLog);
+        List<Fx67llPunchLogLost> list = fx67llPunchLogService.selectFx67llPunchLostLog(fx67llPunchLog);
         return getDataTable(list);
     }
 

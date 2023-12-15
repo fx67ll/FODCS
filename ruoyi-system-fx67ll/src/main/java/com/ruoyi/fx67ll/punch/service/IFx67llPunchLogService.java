@@ -4,6 +4,7 @@ import java.util.List;
 
 import com.ruoyi.fx67ll.lottery.domain.Fx67llLotteryLog;
 import com.ruoyi.fx67ll.punch.domain.Fx67llPunchLog;
+import com.ruoyi.fx67ll.punch.domain.Fx67llPunchLogLost;
 import com.ruoyi.fx67ll.punch.domain.Fx67llPunchLogTotal;
 
 /**
@@ -51,7 +52,7 @@ public interface IFx67llPunchLogService {
      * @param fx67llPunchLog 打卡记录
      * @return 缺卡记录集合
      */
-    public List<Fx67llPunchLogTotal> selectFx67llPunchLostLog(Fx67llPunchLog fx67llPunchLog);
+    public List<Fx67llPunchLogLost> selectFx67llPunchLostLog(Fx67llPunchLog fx67llPunchLog);
 
     /**
      * 新增打卡记录

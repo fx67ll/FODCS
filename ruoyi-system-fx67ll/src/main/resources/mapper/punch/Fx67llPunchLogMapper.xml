@@ -102,7 +102,7 @@
         punch_user
     </select>
 
-    <resultMap type="Fx67llPunchLogTotal" id="Fx67llPunchLostLogResult">
+    <resultMap type="Fx67llPunchLogLost" id="Fx67llPunchLostLogResult">
         <result property="punchUser" column="punch_user"/>
         <result property="punchMonth" column="punch_month"/>
         <result property="punchDay" column="punch_day"/>

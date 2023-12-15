@@ -3,6 +3,7 @@ package com.ruoyi.fx67ll.punch.mapper;
 import java.util.List;
 
 import com.ruoyi.fx67ll.punch.domain.Fx67llPunchLog;
+import com.ruoyi.fx67ll.punch.domain.Fx67llPunchLogLost;
 import com.ruoyi.fx67ll.punch.domain.Fx67llPunchLogTotal;
 
 /**
@@ -42,7 +43,7 @@ public interface Fx67llPunchLogMapper {
      * @param fx67llPunchLog 打卡记录
      * @return 缺卡记录集合
      */
-    public List<Fx67llPunchLogTotal> selectFx67llPunchLostLog(Fx67llPunchLog fx67llPunchLog);
+    public List<Fx67llPunchLogLost> selectFx67llPunchLostLog(Fx67llPunchLog fx67llPunchLog);
 
     /**
      * 新增打卡记录
