@@ -1,6 +1,5 @@
 package com.ruoyi.fx67ll.punch.domain;
 
-import com.fasterxml.jackson.annotation.JsonInclude;
 import com.ruoyi.common.annotation.Excel;
 import org.apache.commons.lang3.builder.ToStringBuilder;
 import org.apache.commons.lang3.builder.ToStringStyle;
@@ -27,31 +26,16 @@ public class Fx67llPunchLogTotal {
     /**
      * 当月打卡总工时
      */
-    @JsonInclude(JsonInclude.Include.NON_NULL)
     private Double totalWorkHours;
-    @JsonInclude(JsonInclude.Include.NON_NULL)
     private Double totalWorkMinutes;
-    @JsonInclude(JsonInclude.Include.NON_NULL)
     private Double totalWorkSeconds;
 
     /**
      * 当月日均工时
      */
-    @JsonInclude(JsonInclude.Include.NON_NULL)
     private Integer totalPunchDays;
-    @JsonInclude(JsonInclude.Include.NON_NULL)
     private Integer totalWorkDays;
-    @JsonInclude(JsonInclude.Include.NON_NULL)
     private Double workHoursPerDay;
-
-    /**
-     * 当月缺卡记录的日期和类型
-     */
-    @JsonInclude(JsonInclude.Include.NON_NULL)
-    private String punchDay;
-    @JsonInclude(JsonInclude.Include.NON_NULL)
-    private String lostPunchType;
-
 
     public String getPunchUser() {
         return punchUser;
@@ -117,23 +101,6 @@ public class Fx67llPunchLogTotal {
         this.workHoursPerDay = workHoursPerDay;
     }
 
-    public String getPunchDay() {
-        return punchDay;
-    }
-
-    public void setPunchDay(String punchDay) {
-        this.punchDay = punchDay;
-    }
-
-    public String getLostPunchType() {
-        return lostPunchType;
-    }
-
-    public void setLostPunchType(String lostPunchType) {
-        this.lostPunchType = lostPunchType;
-    }
-
-
     @Override
     public String toString() {
         return new ToStringBuilder(this, ToStringStyle.MULTI_LINE_STYLE)
@@ -145,8 +112,6 @@ public class Fx67llPunchLogTotal {
                 .append("totalPunchDays", getTotalPunchDays())
                 .append("totalWorkDays", getTotalWorkDays())
                 .append("workHoursPerDay", getWorkHoursPerDay())
-                .append("punchDay", getPunchDay())
-                .append("lostPunchType", getLostPunchType())
                 .toString();
     }
 }
