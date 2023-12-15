@@ -1,5 +1,6 @@
 package com.ruoyi.fx67ll.punch.domain;
 
+import com.fasterxml.jackson.annotation.JsonInclude;
 import org.apache.commons.lang3.builder.ToStringBuilder;
 import org.apache.commons.lang3.builder.ToStringStyle;
 import com.ruoyi.common.annotation.Excel;
@@ -60,6 +61,12 @@ public class Fx67llPunchLog extends BaseEntity {
      * 更新结束时间
      */
     private String endUpdateTime;
+
+    /**
+     * 打卡统计月份
+     */
+    @JsonInclude(JsonInclude.Include.NON_NULL)
+    private String punchMonth;
 
     public void setPunchId(Long punchId) {
         this.punchId = punchId;
@@ -132,6 +139,15 @@ public class Fx67llPunchLog extends BaseEntity {
     public void setEndUpdateTime(String endUpdateTime) {
         this.endUpdateTime = endUpdateTime;
     }
+
+    public String getPunchMonth() {
+        return punchMonth;
+    }
+
+    public void setPunchMonth(String punchMonth) {
+        this.punchMonth = punchMonth;
+    }
+
 
     @Override
     public String toString() {
