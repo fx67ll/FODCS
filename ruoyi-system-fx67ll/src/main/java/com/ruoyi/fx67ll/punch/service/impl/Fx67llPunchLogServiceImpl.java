@@ -69,6 +69,17 @@ public class Fx67llPunchLogServiceImpl implements IFx67llPunchLogService {
     }
 
     /**
+     * 查询缺卡记录
+     *
+     * @param fx67llPunchLog 打卡记录
+     * @return 缺卡记录
+     */
+    @Override
+    public List<Fx67llPunchLogTotal> selectFx67llPunchLostLog(Fx67llPunchLog fx67llPunchLog) {
+        return fx67llPunchLogMapper.selectFx67llPunchLostLog(fx67llPunchLog);
+    }
+
+    /**
      * 新增打卡记录
      *
      * @param fx67llPunchLog 打卡记录

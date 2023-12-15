@@ -46,6 +46,14 @@ public interface IFx67llPunchLogService {
     public List<Fx67llPunchLogTotal> selectFx67llPunchLogTotalTime(Fx67llPunchLog fx67llPunchLog);
 
     /**
+     * 查询缺卡记录
+     *
+     * @param fx67llPunchLog 打卡记录
+     * @return 缺卡记录集合
+     */
+    public List<Fx67llPunchLogTotal> selectFx67llPunchLostLog(Fx67llPunchLog fx67llPunchLog);
+
+    /**
      * 新增打卡记录
      *
      * @param fx67llPunchLog 打卡记录

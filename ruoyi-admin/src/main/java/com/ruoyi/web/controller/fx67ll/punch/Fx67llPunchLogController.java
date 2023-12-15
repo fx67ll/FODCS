@@ -79,6 +79,20 @@ public class Fx67llPunchLogController extends BaseController {
     }
 
     /**
+     * 查询缺卡记录
+     */
+    @PreAuthorize("@ss.hasPermi('punch:log:total')")
+    @GetMapping("/getPunchLostLog")
+    public TableDataInfo getPunchLostLog(Fx67llPunchLog fx67llPunchLog) {
+        startPageForApp();
+        if (!SecurityUtils.getUsername().equals("fx67ll")) {
+            fx67llPunchLog.setUpdateBy(SecurityUtils.getUsername());
+        }
+        List<Fx67llPunchLogTotal> list = fx67llPunchLogService.selectFx67llPunchLostLog(fx67llPunchLog);
+        return getDataTable(list);
+    }
+
+    /**
      * 导出打卡记录列表
      */
     @PreAuthorize("@ss.hasPermi('punch:log:export')")

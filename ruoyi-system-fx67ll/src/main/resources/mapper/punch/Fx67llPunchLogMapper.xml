@@ -16,17 +16,6 @@
         <result property="updateTime" column="update_time"/>
     </resultMap>
 
-    <resultMap type="Fx67llPunchLogTotal" id="Fx67llPunchLogTotalResult">
-        <result property="punchUser" column="punch_user"/>
-        <result property="punchMonth" column="punch_month"/>
-        <result property="totalWorkHours" column="total_work_hours"/>
-        <result property="totalWorkMinutes" column="total_work_minutes"/>
-        <result property="totalWorkSeconds" column="total_work_seconds"/>
-        <result property="totalPunchDays" column="total_punch_days"/>
-        <result property="totalWorkDays" column="total_work_days"/>
-        <result property="workHoursPerDay" column="work_hours_per_day"/>
-    </resultMap>
-
     <sql id="selectFx67llPunchLogVo">
         select punch_id,
                punch_type,
@@ -63,22 +52,35 @@
         where punch_id = #{punchId}
     </select>
 
+    <resultMap type="Fx67llPunchLogTotal" id="Fx67llPunchLogTotalResult">
+        <result property="punchUser" column="punch_user"/>
+        <result property="punchMonth" column="punch_month"/>
+        <result property="totalWorkHours" column="total_work_hours"/>
+        <result property="totalWorkMinutes" column="total_work_minutes"/>
+        <result property="totalWorkSeconds" column="total_work_seconds"/>
+        <result property="totalPunchDays" column="total_punch_days"/>
+        <result property="totalWorkDays" column="total_work_days"/>
+        <result property="workHoursPerDay" column="work_hours_per_day"/>
+    </resultMap>
+
     <select id="selectFx67llPunchLogTotalTime" parameterType="Fx67llPunchLog" resultMap="Fx67llPunchLogTotalResult">
-        SELECT
-        fx67ll_punch_log_result.punch_user,
+        SELECT fx67ll_punch_log_result.punch_user,
         fx67ll_punch_log_result.punch_month,
-        SUM(TIME_TO_SEC(TIMEDIFF( fx67ll_punch_log_result.max_punch_time, fx67ll_punch_log_result.min_punch_time ))) / 3600 AS total_work_hours,
-        SUM(TIMESTAMPDIFF(MINUTE, fx67ll_punch_log_result.min_punch_time, fx67ll_punch_log_result.max_punch_time )) AS total_work_minutes,
-        SUM(TIME_TO_SEC(TIMEDIFF( fx67ll_punch_log_result.max_punch_time, fx67ll_punch_log_result.min_punch_time ))) AS total_work_seconds,
+        SUM(TIME_TO_SEC(TIMEDIFF(fx67ll_punch_log_result.max_punch_time,
+        fx67ll_punch_log_result.min_punch_time))) / 3600 AS total_work_hours,
+        SUM(TIMESTAMPDIFF(MINUTE, fx67ll_punch_log_result.min_punch_time,
+        fx67ll_punch_log_result.max_punch_time)) AS total_work_minutes,
+        SUM(TIME_TO_SEC(TIMEDIFF(fx67ll_punch_log_result.max_punch_time,
+        fx67ll_punch_log_result.min_punch_time))) AS total_work_seconds,
         COUNT(*) AS total_punch_days,
         COUNT(max_punch_time) AS total_work_days,
-        SUM(TIME_TO_SEC(TIMEDIFF( fx67ll_punch_log_result.max_punch_time, fx67ll_punch_log_result.min_punch_time ))) / 3600 / COUNT(max_punch_time) AS work_hours_per_day
-        FROM
-        (
-        SELECT
-        update_by AS punch_user,
+        SUM(TIME_TO_SEC(TIMEDIFF(fx67ll_punch_log_result.max_punch_time,
+        fx67ll_punch_log_result.min_punch_time))) / 3600 /
+        COUNT(max_punch_time) AS work_hours_per_day
+        FROM (
+        SELECT update_by AS punch_user,
         DATE_FORMAT(update_time, '%Y-%m') AS punch_month,
-        DATE(update_time) AS punch_day,
+        DATE (update_time) AS punch_day,
         IF(MAX(update_time) != MIN(update_time),
         MAX(update_time),
         NULL) AS max_punch_time,
@@ -97,7 +99,50 @@
         )
         AS fx67ll_punch_log_result
         GROUP BY
-        punch_user
+        punch_user;
+    </select>
+
+    <resultMap type="Fx67llPunchLogTotal" id="Fx67llPunchLostLogResult">
+        <result property="punchUser" column="punch_user"/>
+        <result property="punchMonth" column="punch_month"/>
+        <result property="punchDay" column="punch_day"/>
+        <result property="lostPunchType" column="lost_punch_type"/>
+    </resultMap>
+
+    <select id="selectFx67llPunchLostLog" parameterType="Fx67llPunchLog" resultMap="Fx67llPunchLostLogResult">
+        SELECT fx67ll_punch_log_result.punch_user AS punch_user,
+        fx67ll_punch_log_result.punch_month AS punch_month,
+        fx67ll_punch_log_result.punch_day AS punch_day,
+        IF(fx67ll_punch_log_result.punch_type = '2',
+        '上班缺卡',
+        '下班缺卡') AS lost_punch_type
+        FROM (
+        SELECT punch_type AS punch_type,
+        update_by AS punch_user,
+        DATE_FORMAT(update_time, '%Y-%m') AS punch_month,
+        DATE (update_time) AS punch_day,
+        IF(punch_type = '2',
+        MAX(update_time),
+        MIN(update_time)) AS punch_time FROM
+        fx67ll_punch_log
+        <where>
+            <if test="updateBy != null  and updateBy != ''">and update_by = #{updateBy}</if>
+            <if test="punchMonth != null  and punchMonth != ''">and punch_month = #{punchMonth}</if>
+        </where>
+        GROUP BY
+        punch_type,
+        punch_user,
+        punch_month,
+        punch_day
+        )
+        AS fx67ll_punch_log_result
+        GROUP BY
+        punch_user,
+        punch_day
+        HAVING
+        COUNT(CASE WHEN punch_type = '1' THEN 1 END) = 0
+        OR
+        COUNT(CASE WHEN punch_type = '2' THEN 1 END) = 0
     </select>
 
     <insert id="insertFx67llPunchLog" parameterType="Fx67llPunchLog" useGeneratedKeys="true" keyProperty="punchId">
