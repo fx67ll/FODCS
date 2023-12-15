@@ -127,7 +127,6 @@
         fx67ll_punch_log
         <where>
             <if test="updateBy != null  and updateBy != ''">and update_by = #{updateBy}</if>
-            <if test="punchMonth != null  and punchMonth != ''">and punch_month = #{punchMonth}</if>
         </where>
         GROUP BY
         punch_type,
@@ -136,6 +135,9 @@
         punch_day
         )
         AS fx67ll_punch_log_result
+        <where>
+            <if test="punchMonth != null  and punchMonth != ''">and punch_month = #{punchMonth}</if>
+        </where>
         GROUP BY
         punch_user,
         punch_day
