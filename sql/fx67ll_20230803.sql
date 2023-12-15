@@ -149,5 +149,43 @@ AS fx67ll_punch_log_result
 GROUP BY
 	punch_user;
 
+
+-- ----------------------------
+-- 5-2、统计每个用户当月的只打了一次卡的缺卡记录
+-- ----------------------------
+SELECT
+	fx67ll_punch_log_result.punch_user AS punch_user,
+	fx67ll_punch_log_result.punch_month AS punch_month,
+	fx67ll_punch_log_result.punch_day AS punch_day,
+	IF(fx67ll_punch_log_result.punch_type = '2',
+	'上班缺卡',
+	'下班缺卡') AS lost_punch_type
+FROM
+	(
+	SELECT
+		punch_type AS punch_type,
+		update_by AS punch_user,
+		DATE_FORMAT(update_time, '%Y-%m') AS punch_month,
+		DATE(update_time) AS punch_day,
+		IF(punch_type = '2',
+		MAX(update_time),
+		MIN(update_time)) AS punch_time
+	FROM
+		fx67ll_punch_log
+	GROUP BY
+		punch_type,
+		punch_user,
+		punch_month,
+		punch_day
+	) 
+AS fx67ll_punch_log_result
+GROUP BY 
+	punch_user,
+	punch_day
+HAVING
+	COUNT(CASE WHEN punch_type = '1' THEN 1 END) = 0
+	OR COUNT(CASE WHEN punch_type = '2' THEN 1 END) = 0;
+
+
     
    
