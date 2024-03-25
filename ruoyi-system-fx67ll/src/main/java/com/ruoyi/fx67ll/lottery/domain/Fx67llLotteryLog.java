@@ -22,6 +22,12 @@ public class Fx67llLotteryLog extends BaseEntity {
     /**
      * 当日购买号码
      */
+    @Excel(name = "彩票期号")
+    private String dateCode;
+
+    /**
+     * 当日购买号码
+     */
     @Excel(name = "当日购买号码")
     private String recordNumber;
 
@@ -97,6 +103,14 @@ public class Fx67llLotteryLog extends BaseEntity {
      * 更新结束时间
      */
     private String endUpdateTime;
+
+    public void setDateCode(String dateCode) {
+        this.dateCode = dateCode;
+    }
+
+    public String getDateCode() {
+        return dateCode;
+    }
 
     public void setLotteryId(Long lotteryId) {
         this.lotteryId = lotteryId;
@@ -222,6 +236,7 @@ public class Fx67llLotteryLog extends BaseEntity {
     public String toString() {
         return new ToStringBuilder(this, ToStringStyle.MULTI_LINE_STYLE)
                 .append("lotteryId", getLotteryId())
+                .append("dateCode", getDateCode())
                 .append("recordNumber", getRecordNumber())
                 .append("chaseNumber", getChaseNumber())
                 .append("winningNumber", getWinningNumber())

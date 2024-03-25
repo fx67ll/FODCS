@@ -4,6 +4,7 @@
 drop table if exists fx67ll_lottery_log;
 create table fx67ll_lottery_log (
   lottery_id           bigint(20)      not null auto_increment    comment '号码日志主键',
+  date_code            varchar(10)     default ''                 comment '彩票期号',
   record_number        varchar(1023)   default ''                 comment '当日购买号码',
   chase_number         varchar(1023)   default ''                 comment '当日固定追号',
   winning_number       varchar(44)     default ''                 comment '当日中奖号码',
