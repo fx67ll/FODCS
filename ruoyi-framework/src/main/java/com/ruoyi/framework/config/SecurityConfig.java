@@ -111,6 +111,11 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
                 .antMatchers("/login", "/register", "/captchaImage").permitAll()
                 // 随机生成马赛克头像，可匿名访问
                 .antMatchers("/getRandomAvatar").permitAll()
+                // 随机返回图片，可匿名访问
+//                .antMatchers("/getRandomImage").hasIpAddress("0:0:0:0:0:0:0:1")
+//                .antMatchers("/getRandomImage").hasIpAddress("123.60.188.134")
+//                .antMatchers("/getRandomImage").hasIpAddress("211.149.128.130")
+                .antMatchers("/getRandomImage").permitAll()
                 // 获取配置密钥，可匿名访问
                 .antMatchers("/secret/key/getSecretKeyConfigForApp").permitAll()
                 // 静态资源，可匿名访问
