@@ -52,6 +52,8 @@
     <select id="selectFx67llLotterySettingByUserId" parameterType="Long" resultMap="Fx67llLotterySettingResult">
         <include refid="selectFx67llLotterySettingVo"/>
         where user_id = #{userId}
+        order by create_time asc
+        limit 1
     </select>
 
     <insert id="insertFx67llLotterySetting" parameterType="Fx67llLotterySetting" useGeneratedKeys="true"
