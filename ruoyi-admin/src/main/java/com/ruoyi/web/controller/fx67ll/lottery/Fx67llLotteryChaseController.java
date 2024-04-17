@@ -51,8 +51,21 @@ public class Fx67llLotteryChaseController extends BaseController {
      */
 //    如果只放开SecurityConfig中允许匿名请求的配置，不放开这里的权限配置，会返回获取用户信息异常的错误
 //    @PreAuthorize("@ss.hasPermi('lottery:chase:list')")
-    @GetMapping("/getLotteryChaseListForApp")
-    public TableDataInfo getLotteryChaseListForApp() {
+    @GetMapping("/getLotteryChaseSettingsForApp")
+    public TableDataInfo getLotteryChaseSettingsForApp(Fx67llLotteryChase fx67llLotteryChase) {
+        startPage();
+        fx67llLotteryChase.setUserId(SecurityUtils.getUserId());
+        List<Fx67llLotteryChase> list = fx67llLotteryChaseService.selectFx67llLotteryChaseList(fx67llLotteryChase);
+        return getDataTable(list);
+    }
+
+    /**
+     * 提供给 APP 查询固定追号配置列表
+     */
+//    如果只放开SecurityConfig中允许匿名请求的配置，不放开这里的权限配置，会返回获取用户信息异常的错误
+//    @PreAuthorize("@ss.hasPermi('lottery:chase:list')")
+    @GetMapping("/getLotteryChaseSettingsByUserIdForApp")
+    public TableDataInfo getLotteryChaseSettingsByUserIdForApp() {
         startPage();
         List<Fx67llLotteryChase> list = fx67llLotteryChaseService.selectFx67llLotteryChaseListByUserId(SecurityUtils.getUserId());
         return getDataTable(list);
