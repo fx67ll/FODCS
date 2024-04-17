@@ -81,7 +81,13 @@ public class CommonController
             String filePath = RuoYiConfig.getUploadPath();
             // 上传并返回新文件名称
             String fileName = FileUploadUtils.upload(filePath, file);
-            String url = serverConfig.getUrl() + fileName;
+            System.out.println("=====================================");
+            System.out.println("监测到的上传地址前缀是：" + serverConfig.getUrl());
+            System.out.println("代码实际返回的上传地址前缀是：" + RuoYiConfig.getFilePrefixUrl());
+            System.out.println("=====================================");
+            // String url = serverConfig.getUrl() + fileName;
+            // String url = "https://vip.fx67ll.com/vip-api" + fileName;
+            String url = RuoYiConfig.getFilePrefixUrl() + fileName;
             AjaxResult ajax = AjaxResult.success();
             ajax.put("url", url);
             ajax.put("fileName", fileName);
@@ -113,7 +119,13 @@ public class CommonController
             {
                 // 上传并返回新文件名称
                 String fileName = FileUploadUtils.upload(filePath, file);
-                String url = serverConfig.getUrl() + fileName;
+                System.out.println("=====================================");
+                System.out.println("监测到的上传地址前缀是：" + serverConfig.getUrl());
+                System.out.println("代码实际返回的上传地址前缀是：" + RuoYiConfig.getFilePrefixUrl());
+                System.out.println("=====================================");
+                // String url = serverConfig.getUrl() + fileName;
+                // String url = "https://vip.fx67ll.com/vip-api" + fileName;
+                String url = RuoYiConfig.getFilePrefixUrl() + fileName;
                 urls.add(url);
                 fileNames.add(fileName);
                 newFileNames.add(FileUtils.getName(fileName));

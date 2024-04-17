@@ -27,6 +27,9 @@ public class RuoYiConfig
     /** 上传路径 */
     private static String profile;
 
+    /** 上传之后返回的前缀地址 */
+    private static String filePrefixUrl;
+
     /** 获取地址开关 */
     private static boolean addressEnabled;
 
@@ -81,6 +84,14 @@ public class RuoYiConfig
     public void setProfile(String profile)
     {
         RuoYiConfig.profile = profile;
+    }
+
+    public static String getFilePrefixUrl() {
+        return filePrefixUrl;
+    }
+
+    public void setFilePrefixUrl(String filePrefixUrl) {
+        RuoYiConfig.filePrefixUrl = filePrefixUrl;
     }
 
     public static boolean isAddressEnabled()
