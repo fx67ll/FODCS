@@ -148,7 +148,8 @@ FROM
 	) 
 AS fx67ll_punch_log_result
 GROUP BY
-	punch_user;
+	punch_user,
+	punch_month;
 
 
 -- ----------------------------
