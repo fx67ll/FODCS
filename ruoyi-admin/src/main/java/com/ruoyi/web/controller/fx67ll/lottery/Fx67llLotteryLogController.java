@@ -19,6 +19,7 @@ import com.ruoyi.common.core.controller.BaseController;
 import com.ruoyi.common.core.domain.AjaxResult;
 import com.ruoyi.common.enums.BusinessType;
 import com.ruoyi.fx67ll.lottery.domain.Fx67llLotteryLog;
+import com.ruoyi.fx67ll.lottery.domain.Fx67llLotteryTotalReward;
 import com.ruoyi.fx67ll.lottery.service.IFx67llLotteryLogService;
 import com.ruoyi.common.utils.poi.ExcelUtil;
 import com.ruoyi.common.core.page.TableDataInfo;
@@ -163,6 +164,17 @@ public class Fx67llLotteryLogController extends BaseController {
         } else {
             return toAjax(fx67llLotteryLogService.deleteFx67llLotteryLogByLotteryIdForApp(lotteryId));
         }
+    }
+
+    /**
+     * 提供给 APP 查询历史号码记录中奖数据统计
+     */
+    @GetMapping("/getLotteryTotalReward")
+    public TableDataInfo getLotteryTotalReward(Fx67llLotteryLog fx67llLotteryLog) {
+        startPageForApp();
+        fx67llLotteryLog.setUserId(SecurityUtils.getUserId());
+        List<Fx67llLotteryTotalReward> list = fx67llLotteryLogService.selectFx67llLotteryTotalReward(fx67llLotteryLog);
+        return getDataTable(list);
     }
 
 }

@@ -8,6 +8,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import com.ruoyi.fx67ll.lottery.mapper.Fx67llLotteryLogMapper;
 import com.ruoyi.fx67ll.lottery.domain.Fx67llLotteryLog;
+import com.ruoyi.fx67ll.lottery.domain.Fx67llLotteryTotalReward;
 import com.ruoyi.fx67ll.lottery.service.IFx67llLotteryLogService;
 
 /**
@@ -114,5 +115,17 @@ public class Fx67llLotteryLogServiceImpl implements IFx67llLotteryLogService {
     @Override
     public int deleteFx67llLotteryLogByLotteryId(Long lotteryId) {
         return fx67llLotteryLogMapper.deleteFx67llLotteryLogByLotteryId(lotteryId);
+    }
+
+    /**
+     * 查询历史号码记录中奖数据统计
+     *
+     * @param fx67llLotteryLog 每日号码记录
+     * @return 历史号码记录中奖统计集合
+     */
+    @Override
+    public List<Fx67llLotteryTotalReward> selectFx67llLotteryTotalReward(Fx67llLotteryLog fx67llLotteryLog) {
+        fx67llLotteryLog.setUserId(SecurityUtils.getUserId());
+        return fx67llLotteryLogMapper.selectFx67llLotteryTotalReward(fx67llLotteryLog);
     }
 }

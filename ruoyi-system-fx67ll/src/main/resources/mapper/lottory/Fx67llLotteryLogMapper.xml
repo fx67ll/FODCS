@@ -157,4 +157,34 @@
             #{lotteryId}
         </foreach>
     </delete>
+
+    <resultMap type="Fx67llLotteryTotalReward" id="Fx67llLotteryTotalRewardResult">
+        <result property="lotteryType" column="lottery_type"/>
+        <result property="totalTickets" column="total_tickets"/>
+        <result property="winningTickets" column="winning_tickets"/>
+        <result property="totalWinningAmount" column="total_winning_amount"/>
+    </resultMap>
+
+    <select id="selectFx67llLotteryTotalReward" parameterType="Fx67llPunchLog" resultMap="Fx67llLotteryTotalRewardResult">
+        SELECT
+        CASE
+        WHEN number_type = 1 THEN '大乐透'
+        WHEN number_type = 2 THEN '双色球'
+        ELSE '总计'
+        END AS lottery_type,
+        COUNT(*) AS total_tickets,
+        SUM(CASE WHEN is_win = 'Y' THEN 1 ELSE 0 END) AS winning_tickets,
+        SUM(CASE WHEN is_win = 'Y' THEN CAST(winning_price AS SIGNED) ELSE 0 END) AS total_winning_amount
+        FROM
+        fx67ll_lottery_log
+        <where>
+            user_id = #{userId}
+            <if test="beginCreateTime != null and beginCreateTime != '' and endCreateTime != null and endCreateTime != ''">
+                and create_time between #{beginCreateTime} and #{endCreateTime}
+            </if>
+        </where>
+        GROUP BY
+        number_type
+        WITH ROLLUP
+    </select>
 </mapper>
