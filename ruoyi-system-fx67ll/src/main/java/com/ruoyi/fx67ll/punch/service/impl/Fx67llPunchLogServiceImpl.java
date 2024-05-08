@@ -4,7 +4,6 @@ import java.util.List;
 
 import com.ruoyi.common.utils.DateUtils;
 import com.ruoyi.common.utils.SecurityUtils;
-import com.ruoyi.fx67ll.lottery.domain.Fx67llLotteryLog;
 import com.ruoyi.fx67ll.punch.domain.Fx67llPunchLogLost;
 import com.ruoyi.fx67ll.punch.domain.Fx67llPunchLogTotal;
 import org.springframework.beans.factory.annotation.Autowired;
