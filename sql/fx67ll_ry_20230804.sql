@@ -17,21 +17,23 @@ create table sys_dict_type
   unique (dict_type)
 ) engine=innodb auto_increment=100 comment = '字典类型表';
 
-insert into sys_dict_type values(1,  '用户性别', 'sys_user_sex',        '0', 'admin', sysdate(), '', null, '用户性别列表');
-insert into sys_dict_type values(2,  '菜单状态', 'sys_show_hide',       '0', 'admin', sysdate(), '', null, '菜单状态列表');
-insert into sys_dict_type values(3,  '系统开关', 'sys_normal_disable',  '0', 'admin', sysdate(), '', null, '系统开关列表');
-insert into sys_dict_type values(4,  '任务状态', 'sys_job_status',      '0', 'admin', sysdate(), '', null, '任务状态列表');
-insert into sys_dict_type values(5,  '任务分组', 'sys_job_group',       '0', 'admin', sysdate(), '', null, '任务分组列表');
-insert into sys_dict_type values(6,  '系统是否', 'sys_yes_no',          '0', 'admin', sysdate(), '', null, '系统是否列表');
-insert into sys_dict_type values(7,  '通知类型', 'sys_notice_type',     '0', 'admin', sysdate(), '', null, '通知类型列表');
-insert into sys_dict_type values(8,  '通知状态', 'sys_notice_status',   '0', 'admin', sysdate(), '', null, '通知状态列表');
-insert into sys_dict_type values(9,  '操作类型', 'sys_oper_type',       '0', 'admin', sysdate(), '', null, '操作类型列表');
-insert into sys_dict_type values(10, '系统状态', 'sys_common_status',   '0', 'admin', sysdate(), '', null, '登录状态列表');
+insert into sys_dict_type values(1,  '用户性别',   'sys_user_sex',            '0', 'admin', sysdate(), '', null, '用户性别列表');
+insert into sys_dict_type values(2,  '菜单状态',   'sys_show_hide',           '0', 'admin', sysdate(), '', null, '菜单状态列表');
+insert into sys_dict_type values(3,  '系统开关',   'sys_normal_disable',      '0', 'admin', sysdate(), '', null, '系统开关列表');
+insert into sys_dict_type values(4,  '任务状态',   'sys_job_status',          '0', 'admin', sysdate(), '', null, '任务状态列表');
+insert into sys_dict_type values(5,  '任务分组',   'sys_job_group',           '0', 'admin', sysdate(), '', null, '任务分组列表');
+insert into sys_dict_type values(6,  '系统是否',   'sys_yes_no',              '0', 'admin', sysdate(), '', null, '系统是否列表');
+insert into sys_dict_type values(7,  '通知类型',   'sys_notice_type',         '0', 'admin', sysdate(), '', null, '通知类型列表');
+insert into sys_dict_type values(8,  '通知状态',   'sys_notice_status',       '0', 'admin', sysdate(), '', null, '通知状态列表');
+insert into sys_dict_type values(9,  '操作类型',   'sys_oper_type',           '0', 'admin', sysdate(), '', null, '操作类型列表');
+insert into sys_dict_type values(10, '系统状态',   'sys_common_status',       '0', 'admin', sysdate(), '', null, '登录状态列表');
 -- 彩票管理枚举项
-insert into sys_dict_type values(11, '彩票类型', 'fx67ll_lottery_type', '0', 'admin', sysdate(), '', null, '彩票类型列表');
-insert into sys_dict_type values(12, '星期枚举', 'sys_week_type',       '0', 'admin', sysdate(), '', null, '星期枚举列表');
+insert into sys_dict_type values(11, '彩票类型',   'fx67ll_lottery_type',     '0', 'admin', sysdate(), '', null, '彩票类型列表');
+insert into sys_dict_type values(12, '星期枚举',   'sys_week_type',           '0', 'admin', sysdate(), '', null, '星期枚举列表');
 -- 打卡管理枚举项
-insert into sys_dict_type values(13, '打卡类型', 'fx67ll_punch_type',   '0', 'admin', sysdate(), '', null, '打卡类型列表');
+insert into sys_dict_type values(13, '打卡类型',   'fx67ll_punch_type',       '0', 'admin', sysdate(), '', null, '打卡类型列表');
+-- 简易面试题管理枚举项
+insert into sys_dict_type values(14, '技能类型',   'fx67ll_skill_type',       '0', 'admin', sysdate(), '', null, '技能类型列表');
 
 
 -- ----------------------------
@@ -101,5 +103,9 @@ insert into sys_dict_data values(38, 7,  '星期日',   '7',       'sys_week_typ
 -- 打卡管理枚举项插入值
 insert into sys_dict_data values(39, 1,  '上班打卡', '1',       'fx67ll_punch_type',   '',   '',        'N', '0', 'admin', sysdate(), '', null, '上班打卡');
 insert into sys_dict_data values(40, 2,  '下班打卡', '2',       'fx67ll_punch_type',   '',   '',        'N', '0', 'admin', sysdate(), '', null, '下班打卡');
+-- 面试题管理枚举项插入值
+insert into sys_dict_data values(41, 1,  '前端',     '1',       'fx67ll_skill_type',   '',   '',        'N', '0', 'admin', sysdate(), '', null, '前端');
+insert into sys_dict_data values(42, 2,  '后端',     '2',       'fx67ll_skill_type',   '',   '',        'N', '0', 'admin', sysdate(), '', null, '后端');
+insert into sys_dict_data values(43, 3,  '大数据',   '3',       'fx67ll_skill_type',   '',   '',        'N', '0', 'admin', sysdate(), '', null, '大数据');
 
 

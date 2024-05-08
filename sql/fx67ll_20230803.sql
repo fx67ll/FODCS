@@ -24,6 +24,59 @@ create table fx67ll_lottery_log (
 
 
 -- ----------------------------
+-- 1-1、统计所有记录的中奖金额之和 
+-- ----------------------------
+SELECT SUM(CAST(winning_price AS SIGNED)) AS total_winning_amount
+FROM fx67ll_lottery_log
+WHERE is_win = 'Y';
+
+
+-- ----------------------------
+-- 1-2、统计所有记录的中奖金额之和，并分别统计大乐透、双色球以及总计三个维度
+-- ----------------------------
+SELECT 
+  number_type,
+  SUM(CAST(winning_price AS SIGNED)) AS total_winning_amount
+FROM 
+  fx67ll_lottery_log
+WHERE 
+  is_win = 'Y'
+GROUP BY 
+  number_type
+WITH ROLLUP;
+
+
+-- ----------------------------
+-- 1-3、统计所有记录的中奖金额之和，并分别统计大乐透、双色球以及总计三个维度，并且需要转换为表头显示
+-- ----------------------------
+SELECT 
+  SUM(CASE WHEN number_type = 1 AND is_win = 'Y' THEN CAST(winning_price AS SIGNED) ELSE 0 END) AS 大乐透,
+  SUM(CASE WHEN number_type = 2 AND is_win = 'Y' THEN CAST(winning_price AS SIGNED) ELSE 0 END) AS 双色球,
+  SUM(CASE WHEN is_win = 'Y' THEN CAST(winning_price AS SIGNED) ELSE 0 END) AS 总计
+FROM 
+  fx67ll_lottery_log;
+ 
+ 
+ -- ----------------------------
+-- 1-4、统计所有记录的中奖金额之和，并分别统计大乐透、双色球以及总计三个维度，并且除了统计数据之和，还要统计总共购买了多少注，以及多少注中奖
+-- ----------------------------
+ SELECT
+  CASE 
+    WHEN number_type = 1 THEN '大乐透'
+    WHEN number_type = 2 THEN '双色球'
+    ELSE '总计'
+  END AS lottery_type,
+  COUNT(*) AS total_tickets,
+  SUM(CASE WHEN is_win = 'Y' THEN 1 ELSE 0 END) AS winning_tickets,
+  SUM(CASE WHEN is_win = 'Y' THEN CAST(winning_price AS SIGNED) ELSE 0 END) AS total_winning_amount
+FROM
+  fx67ll_lottery_log
+GROUP BY
+  number_type
+WITH ROLLUP;
+ 
+
+-- ----------------------------
 -- 2、固定追号配置表
 -- ----------------------------
 drop table if exists fx67ll_lottery_chase;
@@ -86,7 +139,7 @@ ALTER TABLE fx67ll_dortmund_extra
 ADD COLUMN save_money varchar(23) DEFAULT '0' COMMENT '已经落袋为安的盈利金额';
 
 -- ----------------------------
--- 4、秘钥配置表
+-- 5、秘钥配置表
 -- ----------------------------
 drop table if exists fx67ll_secret_key;
 create TABLE fx67ll_secret_key (
@@ -98,7 +151,7 @@ create TABLE fx67ll_secret_key (
 
 
 -- ----------------------------
--- 5、打卡记录表
+-- 6、打卡记录表
 -- ----------------------------
 drop table if exists fx67ll_punch_log;
 create table fx67ll_punch_log (
@@ -116,7 +169,7 @@ create table fx67ll_punch_log (
 
 
 -- ----------------------------
--- 5-1、统计每个用户当月的工作总时长
+-- 6-1、统计每个用户当月的工作总时长
 -- ----------------------------
 SELECT
 	fx67ll_punch_log_result.punch_user,
@@ -153,7 +206,7 @@ GROUP BY
 
 
 -- ----------------------------
--- 5-2、统计每个用户当月的只打了一次卡的缺卡记录
+-- 6-2、统计每个用户当月的只打了一次卡的缺卡记录
 -- ----------------------------
 SELECT
 	fx67ll_punch_log_result.punch_user AS punch_user,
@@ -187,6 +240,27 @@ GROUP BY
 HAVING
 	COUNT(CASE WHEN punch_type = '1' THEN 1 END) = 0
 	OR COUNT(CASE WHEN punch_type = '2' THEN 1 END) = 0;
+
+
+-- ----------------------------
+-- 7、简易面试题记录表
+-- ----------------------------
+drop table if exists fx67ll_interview_simple_log;
+
+create table fx67ll_interview_simple_log (
+  interview_simple_id                bigint(20)      not null auto_increment    comment '简易面试题记录主键',
+  interview_simple_type              char(1)                                    comment '简易面试题类型（1代表前端 2代表后端 3代表大数据）',
+  interview_simple_question_title    varchar(19999)   default ''                comment '简易面试题问题描述',
+  interview_simple_answer_content    varchar(19999)   default ''                comment '简易面试题答案详解',
+  interview_simple_remark            varchar(19999)   default ''                comment '简易面试题备注',
+  del_flag                           char(1)         default '0'                comment '删除标志（0代表存在 2代表删除）',
+  user_id                            bigint(20)                                 comment '用户ID',
+  create_by                          varchar(64)     default ''                 comment '记录创建者',
+  create_time 	                     datetime                                   comment '记录创建时间',
+  update_by                          varchar(64)     default ''                 comment '记录更新者',
+  update_time                        datetime                                   comment '记录更新时间',
+  primary key (interview_simple_id)
+) engine=innodb auto_increment=1 comment = '简易面试题记录表';
 
 
     
