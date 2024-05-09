@@ -18,12 +18,17 @@ public class Fx67llLotteryTotalReward {
     private String lotteryType;
 
     /**
-     * 总注数统计
+     * 总购买期数统计
      */
     private String totalTickets;
 
     /**
-     * 中奖注数统计
+     * 总购买号码数统计
+     */
+    private String totalNumbers;
+
+    /**
+     * 中奖期数统计
      */
     private String winningTickets;
 
@@ -48,6 +53,14 @@ public class Fx67llLotteryTotalReward {
         this.totalTickets = totalTickets;
     }
 
+    public String getTotalNumbers() {
+        return totalNumbers;
+    }
+
+    public void setTotalNumbers(String totalNumbers) {
+        this.totalNumbers = totalNumbers;
+    }
+
     public String getWinningTickets() {
         return winningTickets;
     }
@@ -70,6 +83,7 @@ public class Fx67llLotteryTotalReward {
         return new ToStringBuilder(this, ToStringStyle.MULTI_LINE_STYLE)
                 .append("lotteryType", getLotteryType())
                 .append("totalTickets", getTotalTickets())
+                .append("totalNumbers", getTotalNumbers())
                 .append("winningTickets", getWinningTickets())
                 .append("totalWinningAmount", getTotalWinningAmount())
                 .toString();

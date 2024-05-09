@@ -161,6 +161,7 @@
     <resultMap type="Fx67llLotteryTotalReward" id="Fx67llLotteryTotalRewardResult">
         <result property="lotteryType" column="lottery_type"/>
         <result property="totalTickets" column="total_tickets"/>
+        <result property="totalNumbers" column="total_numbers"/>
         <result property="winningTickets" column="winning_tickets"/>
         <result property="totalWinningAmount" column="total_winning_amount"/>
     </resultMap>
@@ -173,6 +174,7 @@
         ELSE '总计'
         END AS lottery_type,
         COUNT(*) AS total_tickets,
+        (COUNT(*) + SUM(LENGTH(record_number) - LENGTH(REPLACE(record_number, '/', '')) + 1)) AS total_numbers,
         SUM(CASE WHEN is_win = 'Y' THEN 1 ELSE 0 END) AS winning_tickets,
         SUM(CASE WHEN is_win = 'Y' THEN CAST(winning_price AS SIGNED) ELSE 0 END) AS total_winning_amount
         FROM

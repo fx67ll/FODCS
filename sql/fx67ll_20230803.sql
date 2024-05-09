@@ -57,8 +57,9 @@ FROM
   fx67ll_lottery_log;
  
  
- -- ----------------------------
--- 1-4、统计所有记录的中奖金额之和，并分别统计大乐透、双色球以及总计三个维度，并且除了统计数据之和，还要统计总共购买了多少注，以及多少注中奖
+-- ----------------------------
+-- 1-4、统计所有记录的中奖金额之和，并分别统计大乐透、双色球以及总计三个维度
+-- 除了统计数据之和，还要统计总共购买了多少注，多少注中奖，以及中奖总金额
 -- ----------------------------
  SELECT
   CASE 
@@ -75,6 +76,26 @@ GROUP BY
   number_type
 WITH ROLLUP;
  
+
+-- ----------------------------
+-- 1-5、统计所有记录的中奖金额之和，并分别统计大乐透、双色球以及总计三个维度
+-- 除了统计数据之和，还要统计总共购买了多少期，多少注号码，多少期中奖，以及中奖总金额
+-- ----------------------------
+SELECT
+  CASE
+    WHEN number_type = 1 THEN '大乐透'
+    WHEN number_type = 2 THEN '双色球'
+    ELSE '总计'
+  END AS lottery_type,
+  COUNT(*) AS total_tickets,
+  (COUNT(*) + SUM(LENGTH(record_number) - LENGTH(REPLACE(record_number, '/', '')) + 1)) AS total_numbers,
+  SUM(CASE WHEN is_win = 'Y' THEN 1 ELSE 0 END) AS winning_tickets,
+  SUM(CASE WHEN is_win = 'Y' THEN CAST(winning_price AS SIGNED) ELSE 0 END) AS total_winning_amount
+FROM
+  fx67ll_lottery_log
+GROUP BY
+  number_type WITH ROLLUP;
+
 
 -- ----------------------------
 -- 2、固定追号配置表
