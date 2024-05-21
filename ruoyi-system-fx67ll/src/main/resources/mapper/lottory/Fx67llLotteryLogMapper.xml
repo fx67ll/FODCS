@@ -166,7 +166,8 @@
         <result property="totalWinningAmount" column="total_winning_amount"/>
     </resultMap>
 
-    <select id="selectFx67llLotteryTotalReward" parameterType="Fx67llPunchLog" resultMap="Fx67llLotteryTotalRewardResult">
+    <select id="selectFx67llLotteryTotalReward" parameterType="Fx67llPunchLog"
+            resultMap="Fx67llLotteryTotalRewardResult">
         SELECT
         CASE
         WHEN number_type = 1 THEN '大乐透'
@@ -174,7 +175,8 @@
         ELSE '总计'
         END AS lottery_type,
         COUNT(*) AS total_tickets,
-        (COUNT(*) + SUM(LENGTH(record_number) - LENGTH(REPLACE(record_number, '/', '')) + 1)) AS total_numbers,
+        (COUNT(IF(chase_number IS NOT NULL AND chase_number &lt;&gt; '', 1, NULL)) + SUM(LENGTH(record_number) -
+        LENGTH(REPLACE(record_number, '/', '')) + 1)) AS total_numbers,
         SUM(CASE WHEN is_win = 'Y' THEN 1 ELSE 0 END) AS winning_tickets,
         SUM(CASE WHEN is_win = 'Y' THEN CAST(winning_price AS SIGNED) ELSE 0 END) AS total_winning_amount
         FROM
