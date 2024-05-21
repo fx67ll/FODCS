@@ -73,20 +73,16 @@
         SUM(TIME_TO_SEC(TIMEDIFF(fx67ll_punch_log_result.max_punch_time,
         fx67ll_punch_log_result.min_punch_time))) AS total_work_seconds,
         COUNT(*) AS total_punch_days,
-        COUNT(max_punch_time) AS total_work_days,
+        SUM(CASE WHEN max_punch_time IS NOT NULL AND min_punch_time IS NOT NULL THEN 1 ELSE 0 END) AS total_work_days,
         SUM(TIME_TO_SEC(TIMEDIFF(fx67ll_punch_log_result.max_punch_time,
         fx67ll_punch_log_result.min_punch_time))) / 3600 /
-        COUNT(max_punch_time) AS work_hours_per_day
+        SUM(CASE WHEN max_punch_time IS NOT NULL AND min_punch_time IS NOT NULL THEN 1 ELSE 0 END) AS work_hours_per_day
         FROM (
         SELECT update_by AS punch_user,
         DATE_FORMAT(update_time, '%Y-%m') AS punch_month,
         DATE (update_time) AS punch_day,
-        IF(MAX(update_time) != MIN(update_time),
-        MAX(update_time),
-        NULL) AS max_punch_time,
-        IF(MAX(update_time) != MIN(update_time),
-        MIN(update_time),
-        NULL) AS min_punch_time
+        MAX(CASE WHEN punch_type = 2 THEN update_time ELSE NULL END) AS max_punch_time,
+        MIN(CASE WHEN punch_type = 1 THEN update_time ELSE NULL END) AS min_punch_time
         FROM
         fx67ll_punch_log
         <where>
@@ -98,9 +94,15 @@
         punch_day
         )
         AS fx67ll_punch_log_result
+        <where>
+            <if test="punchMonth != null  and punchMonth != ''">and punch_month = #{punchMonth}</if>
+        </where>
         GROUP BY
         punch_user,
         punch_month
+        ORDER BY
+        punch_month
+        DESC
     </select>
 
     <resultMap type="Fx67llPunchLogLost" id="Fx67llPunchLostLogResult">
