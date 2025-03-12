@@ -78,7 +78,7 @@ WITH ROLLUP;
  
 
 -- ----------------------------
--- 1-5、统计所有记录的中奖金额之和，并分别统计大乐透、双色球以及总计三个维度
+-- 1-5-1、统计所有记录的中奖金额之和，并分别统计大乐透、双色球以及总计三个维度
 -- 除了统计数据之和，还要统计总共购买了多少期，多少注号码，多少期中奖，以及中奖总金额
 -- ----------------------------
 SELECT
@@ -95,6 +95,42 @@ FROM
   fx67ll_lottery_log
 GROUP BY
   number_type WITH ROLLUP;
+
+
+-- ----------------------------
+-- 1-5-2、新增类型统计
+-- ----------------------------
+SELECT
+  CASE
+    WHEN number_type = 1 THEN '大乐透'
+    WHEN number_type = 2 THEN '双色球'
+    WHEN number_type = 3 THEN '排列三'
+    WHEN number_type = 4 THEN '排列五'
+    WHEN number_type = 5 THEN '七星彩'
+    ELSE '总计'
+  END AS lottery_type,
+  COUNT(*) AS total_tickets,
+  -- 追号数量 + 单号码记录总数
+  COUNT(IF(chase_number IS NOT NULL AND chase_number <> '', 1, NULL)) 
+  + SUM(LENGTH(record_number) - LENGTH(REPLACE(record_number, '/', '')) + 1) 
+    AS total_numbers,
+  SUM(CASE WHEN is_win = 'Y' THEN 1 ELSE 0 END) AS winning_tickets,
+  SUM(CASE WHEN is_win = 'Y' THEN CAST(winning_price AS SIGNED) ELSE 0 END) AS total_winning_amount
+FROM
+  fx67ll_lottery_log
+GROUP BY
+  number_type WITH ROLLUP;
+ 
+ 
+-- ----------------------------
+-- 1-6、给号码日志记录表添加新的索引，根据实际需要使用单个索引或组合索引
+-- 两种方式生成索引均可，顺便记录查询索引和删除索引的方式
+-- ----------------------------
+SHOW INDEX FROM `fx67ll_lottery_log`;
+ALTER TABLE fx67ll_lottery_log ADD COLUMN create_date DATE AS (DATE(create_time)) STORED;
+ALTER TABLE fx67ll_lottery_log ADD INDEX idx_create_date(create_date);
+CREATE INDEX idx_group_lottery ON fx67ll_lottery_log(user_id, create_date DESC);
+DROP INDEX idx_create_date ON fx67ll_lottery_log;
 
 
 -- ----------------------------

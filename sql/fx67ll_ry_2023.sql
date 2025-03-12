@@ -107,5 +107,8 @@ insert into sys_dict_data values(40, 2,  '下班打卡', '2',       'fx67ll_punc
 insert into sys_dict_data values(41, 1,  '前端',     '1',       'fx67ll_skill_type',   '',   '',        'N', '0', 'admin', sysdate(), '', null, '前端');
 insert into sys_dict_data values(42, 2,  '后端',     '2',       'fx67ll_skill_type',   '',   '',        'N', '0', 'admin', sysdate(), '', null, '后端');
 insert into sys_dict_data values(43, 3,  '大数据',   '3',       'fx67ll_skill_type',   '',   '',        'N', '0', 'admin', sysdate(), '', null, '大数据');
-
+-- 彩票管理第二期新增的枚举项插入值
+insert into sys_dict_data values(44, 3,  '排列三',   '3',       'fx67ll_lottery_type', '',   '',        'N', '0', 'admin', sysdate(), '', null, '排列三');
+insert into sys_dict_data values(45, 4,  '排列五',   '4',       'fx67ll_lottery_type', '',   '',        'N', '0', 'admin', sysdate(), '', null, '排列五');
+insert into sys_dict_data values(46, 5,  '七星彩',   '5',       'fx67ll_lottery_type', '',   '',        'N', '0', 'admin', sysdate(), '', null, '七星彩');
 
