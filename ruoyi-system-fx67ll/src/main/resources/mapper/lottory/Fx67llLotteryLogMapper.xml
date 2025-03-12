@@ -71,6 +71,8 @@
         order by STR_TO_DATE(create_time, "%Y-%m-%d %H:%i:%s") desc
     </select>
 
+
+
     <select id="selectFx67llLotteryLogByLotteryId" parameterType="Long" resultMap="Fx67llLotteryLogResult">
         <include refid="selectFx67llLotteryLogVo"/>
         where lottery_id = #{lotteryId}
@@ -172,11 +174,15 @@
         CASE
         WHEN number_type = 1 THEN '大乐透'
         WHEN number_type = 2 THEN '双色球'
+        WHEN number_type = 3 THEN '排列三'
+        WHEN number_type = 4 THEN '排列五'
+        WHEN number_type = 5 THEN '七星彩'
         ELSE '总计'
         END AS lottery_type,
         COUNT(*) AS total_tickets,
-        (COUNT(IF(chase_number IS NOT NULL AND chase_number &lt;&gt; '', 1, NULL)) + SUM(LENGTH(record_number) -
-        LENGTH(REPLACE(record_number, '/', '')) + 1)) AS total_numbers,
+        COUNT(IF(chase_number IS NOT NULL AND chase_number &lt;&gt; '', 1, NULL))
+        + SUM(LENGTH(record_number) - LENGTH(REPLACE(record_number, '/', '')) + 1)
+            AS total_numbers,
         SUM(CASE WHEN is_win = 'Y' THEN 1 ELSE 0 END) AS winning_tickets,
         SUM(CASE WHEN is_win = 'Y' THEN CAST(winning_price AS SIGNED) ELSE 0 END) AS total_winning_amount
         FROM

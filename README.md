@@ -3,6 +3,9 @@ fx67ll One Data Center Server
 
 欢迎访问 [fx67ll's 管理系统](https://vip.fx67ll.com) ~
 
+## 0.3.15.20250312
+* 修复彩票中奖统计相关问题
+
 ## 0.3.14.20240521
 * 修复打卡统计相关问题
 
