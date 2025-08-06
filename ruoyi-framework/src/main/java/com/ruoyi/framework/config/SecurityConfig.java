@@ -113,7 +113,7 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
                 .antMatchers("/getRandomAvatar").permitAll()
                 // 随机返回图片，可匿名访问
 //                .antMatchers("/getRandomImage").hasIpAddress("0:0:0:0:0:0:0:1")
-//                .antMatchers("/getRandomImage").hasIpAddress("123.60.188.134")
+//                .antMatchers("/getRandomImage").hasIpAddress("124.71.201.142")
 //                .antMatchers("/getRandomImage").hasIpAddress("211.149.128.130")
                 .antMatchers("/getRandomImage", "/getRandomImageBetter").permitAll()
                 // 获取配置密钥，可匿名访问
