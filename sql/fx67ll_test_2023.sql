@@ -298,26 +298,153 @@ HAVING
 	OR COUNT(CASE WHEN punch_type = '2' THEN 1 END) = 0;
 
 
+
 -- ----------------------------
--- 7、简易面试题记录表
+-- 7、极简面试题记录表
 -- ----------------------------
-drop table if exists fx67ll_interview_simple_log;
+drop table if exists fx67ll_interview_minimal_log;
+drop table if exists fx67ll_interview_minimal_question_option;
+drop table if exists fx67ll_interview_minimal_collection;
 
-create table fx67ll_interview_simple_log (
-  interview_simple_id                bigint(20)      not null auto_increment    comment '简易面试题记录主键',
-  interview_simple_type              char(1)                                    comment '简易面试题类型（1代表前端 2代表后端 3代表大数据）',
-  interview_simple_question_title    varchar(19999)   default ''                comment '简易面试题问题描述',
-  interview_simple_answer_content    varchar(19999)   default ''                comment '简易面试题答案详解',
-  interview_simple_remark            varchar(19999)   default ''                comment '简易面试题备注',
-  del_flag                           char(1)         default '0'                comment '删除标志（0代表存在 2代表删除）',
-  user_id                            bigint(20)                                 comment '用户ID',
-  create_by                          varchar(64)     default ''                 comment '记录创建者',
-  create_time 	                     datetime                                   comment '记录创建时间',
-  update_by                          varchar(64)     default ''                 comment '记录更新者',
-  update_time                        datetime                                   comment '记录更新时间',
-  primary key (interview_simple_id)
-) engine=innodb auto_increment=1 comment = '简易面试题记录表';
+-- 建表
+create table fx67ll_interview_minimal_log (
+  interview_minimal_id                   bigint(20)       not null auto_increment    comment '面试题记录主键',
+  interview_minimal_subject_type         char(1)          not null                   comment '面试题学科类型（1代表前端 2代表后端 3代表大数据）',
+  interview_minimal_question_type        char(1)          not null                   comment '面试题问题类型（1代表单选题 2代表多选题 3代表解答题）',
+  interview_minimal_question_title       varchar(1023)    not null default ''        comment '面试题问题描述',
+  interview_minimal_answer_content       varchar(4444)    default ''                 comment '面试题答案详解',
+  interview_minimal_answer_big_text      text                                        comment '面试题答案详解，用于存储复杂数据，尽量不启用',
+  interview_minimal_remark               varchar(4444)    default ''                 comment '面试题备注',
+  top_sort                               int(11)                                     comment '个人创建的置顶排序，为空不置顶，有值则按顺序从小到大排序',
+  share_flag                             char(1)          not null default '0'       comment '分享标志（0代表私密题目 2代表公开题目）',
+  audit_status                           char(1)          not null default '0'       comment '审核状态（公开题需审核：0代表待审核 1代表审核通过 2代表审核拒绝',
+  del_flag                               char(1)          not null default '0'       comment '删除标志（0代表存在 2代表删除）',
+  user_id                                bigint(20)       not null                   comment '用户ID',
+  create_by                              varchar(64)      not null default ''        comment '记录创建者',
+  create_time 	                         datetime         not null                   comment '记录创建时间',
+  update_by                              varchar(64)      default ''                 comment '记录更新者',
+  update_time                            datetime                                    comment '记录更新时间',
+  primary key (interview_minimal_id)
+) engine=innodb auto_increment=1 comment = '极简面试题记录表';
+
+-- 建表，选项表
+create table fx67ll_interview_minimal_question_option (
+  option_id              bigint(20)       not null auto_increment    comment '面试题选项主键',
+  interview_minimal_id   bigint(20)       not null                   comment '关联面试题主键（外键）',
+  option_label           char(2)          not null                   comment '面试题选项标识（如A、B、C、D、E）',
+  option_content         varchar(1023)    not null                   comment '面试题选项内容',
+  is_correct             tinyint(1)       not null default '0'       comment '是否正确选项（1=正确 0=错误，单选/多选通用）',
+  create_by              varchar(64)      not null default ''        comment '记录创建者',
+  create_time            datetime         not null                   comment '创建时间',
+  update_by              varchar(64)      default ''                 comment '记录更新者',
+  update_time            datetime                                    comment '记录更新时间',
+  primary key (option_id),
+  -- 关联题目主键，确保数据一致性（删除题目时同步删除选项）
+  foreign key fk_question_option (interview_minimal_id) references fx67ll_interview_minimal_log (interview_minimal_id) on delete cascade,
+  -- 索引：查询题目时快速关联选项
+  index idx_question_id (interview_minimal_id)
+) engine=innodb auto_increment=1 comment = '面试题选项表（单选/多选题专用）';
+
+-- 建表，收藏表
+create table fx67ll_interview_minimal_collection (
+  interview_minimal_collection_id        bigint(20)       not null auto_increment    comment '收藏面试题记录主键',
+  user_id                                bigint(20)       not null                   comment '收藏用户ID',
+  interview_minimal_id                   bigint(20)       not null                   comment '关联面试题主键（必须是公开且审核通过的题目）',
+  interview_minimal_collection_time      datetime         not null                   comment '收藏面试题时间',
+  del_flag                               char(1)          not null default '0'       comment '取消收藏标志（0代表已收藏 2代表已取消）',
+  primary key (interview_minimal_collection_id),
+  -- 联合唯一：避免用户重复收藏同一题目
+  unique key uk_user_question (user_id, interview_minimal_id),
+  -- 外键：删除题目时，自动取消收藏；删除用户时，删除其所有收藏
+  foreign key fk_collection_question (interview_minimal_id) references fx67ll_interview_minimal_log (interview_minimal_id) on delete cascade,
+  foreign key fk_collection_user (user_id) references sys_user (user_id) on delete cascade, -- 假设用户表是sys_user
+  -- 索引：查询用户的收藏列表
+  index idx_user_collection (user_id, del_flag, interview_minimal_collection_time desc)
+) engine=innodb auto_increment=1 comment = '极简面试题收藏表';
+
+-- 查询
+select * from fx67ll_interview_simple_log;
 
 
-    
+
+-- ----------------------------
+-- 8、号码日志记录表第二期
+-- ----------------------------
+-- 给 fx67ll_lottery_log 新增插入枚举类型
+insert into sys_dict_data values(44, 3,  '排列三',   '3',       'fx67ll_lottery_type',    '',   '',     'N', '0', 'admin', sysdate(), '', null, '排列三');
+insert into sys_dict_data values(45, 4,  '排列五',   '4',       'fx67ll_lottery_type',    '',   '',     'N', '0', 'admin', sysdate(), '', null, '排列五');
+insert into sys_dict_data values(46, 5,  '七星彩',   '5',       'fx67ll_lottery_type',    '',   '',     'N', '0', 'admin', sysdate(), '', null, '七星彩');
+
+-- 给 fx67ll_lottery_log 添加新的索引
+ALTER TABLE fx67ll_lottery_log 
+ADD COLUMN create_date DATE AS (DATE(create_time)) STORED,
+ADD INDEX idx_create_date(create_date);
+CREATE INDEX idx_group_lottery ON fx67ll_lottery_log(user_id, create_date DESC);
+
+-- 查询 fx67ll_lottery_log 的所有索引
+SHOW INDEX FROM `fx67ll_lottery_log`;
+
+-- 如何删除索引
+DROP INDEX idx_create_date ON fx67ll_lottery_log;
+
+-- 查询
+EXPLAIN 
+SELECT * FROM fx67ll_lottery_log 
+WHERE create_date <= '2025-02-28' 
+  AND user_id = 'fx67ll' 
+  AND del_flag = 0
+ORDER BY create_date DESC 
+LIMIT 5;
+
+-- 查询
+SELECT * FROM fx67ll_lottery_log 
+WHERE create_date <= '2025-02-28' 
+  AND user_id = 1 
+  AND del_flag = 0
+ORDER BY create_date DESC 
+LIMIT 5;
+
+-- 查询
+SELECT
+  CASE
+    WHEN number_type = 1 THEN '大乐透'
+    WHEN number_type = 2 THEN '双色球'
+    WHEN number_type = 3 THEN '排列三'
+    WHEN number_type = 4 THEN '排列五'
+    WHEN number_type = 5 THEN '七星彩'
+    ELSE '总计'
+  END AS lottery_type,
+  COUNT(*) AS total_tickets,
+  (COUNT(IF(chase_number IS NOT NULL AND chase_number <> '', 1, NULL) + SUM(LENGTH(record_number) - LENGTH(REPLACE(record_number, '/', '')) + 1)) AS total_numbers,
+  SUM(CASE WHEN is_win = 'Y' THEN 1 ELSE 0 END) AS winning_tickets,
+  SUM(CASE WHEN is_win = 'Y' THEN CAST(winning_price AS SIGNED) ELSE 0 END) AS total_winning_amount
+FROM
+  fx67ll_lottery_log
+GROUP BY
+  number_type WITH ROLLUP;
+
+-- 查询
+SELECT
+  CASE
+    WHEN number_type = 1 THEN '大乐透'
+    WHEN number_type = 2 THEN '双色球'
+    WHEN number_type = 3 THEN '排列三'
+    WHEN number_type = 4 THEN '排列五'
+    WHEN number_type = 5 THEN '七星彩'
+    ELSE '总计'
+  END AS lottery_type,
+  COUNT(*) AS total_tickets,
+  -- 追号数量 + 单号码记录总数
+  COUNT(IF(chase_number IS NOT NULL AND chase_number <> '', 1, NULL)) 
+  + SUM(LENGTH(record_number) - LENGTH(REPLACE(record_number, '/', '')) + 1) 
+    AS total_numbers,
+  SUM(CASE WHEN is_win = 'Y' THEN 1 ELSE 0 END) AS winning_tickets,
+  SUM(CASE WHEN is_win = 'Y' THEN CAST(winning_price AS SIGNED) ELSE 0 END) AS total_winning_amount
+FROM
+  fx67ll_lottery_log
+GROUP BY
+  number_type WITH ROLLUP;
+
+
+
    

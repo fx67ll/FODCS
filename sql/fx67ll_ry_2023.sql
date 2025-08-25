@@ -27,13 +27,18 @@ insert into sys_dict_type values(7,  '通知类型',   'sys_notice_type',       
 insert into sys_dict_type values(8,  '通知状态',   'sys_notice_status',       '0', 'admin', sysdate(), '', null, '通知状态列表');
 insert into sys_dict_type values(9,  '操作类型',   'sys_oper_type',           '0', 'admin', sysdate(), '', null, '操作类型列表');
 insert into sys_dict_type values(10, '系统状态',   'sys_common_status',       '0', 'admin', sysdate(), '', null, '登录状态列表');
+
 -- 彩票管理枚举项
 insert into sys_dict_type values(11, '彩票类型',   'fx67ll_lottery_type',     '0', 'admin', sysdate(), '', null, '彩票类型列表');
 insert into sys_dict_type values(12, '星期枚举',   'sys_week_type',           '0', 'admin', sysdate(), '', null, '星期枚举列表');
+
 -- 打卡管理枚举项
 insert into sys_dict_type values(13, '打卡类型',   'fx67ll_punch_type',       '0', 'admin', sysdate(), '', null, '打卡类型列表');
--- 简易面试题管理枚举项
-insert into sys_dict_type values(14, '技能类型',   'fx67ll_skill_type',       '0', 'admin', sysdate(), '', null, '技能类型列表');
+
+-- 极简面试题管理枚举项
+insert into sys_dict_type values(14, '学科类型',   'fx67ll_subject_type',     '0', 'admin', sysdate(), '', null, '学科类型列表');
+insert into sys_dict_type values(15, '问题类型',   'fx67ll_question_type',    '0', 'admin', sysdate(), '', null, '问题类型列表');
+
 
 
 -- ----------------------------
@@ -90,6 +95,7 @@ insert into sys_dict_data values(28, 1,  '成功',     '0',       'sys_common_st
 insert into sys_dict_data values(29, 2,  '失败',     '1',       'sys_common_status',   '',   'danger',  'N', '0', 'admin', sysdate(), '', null, '停用状态');
 insert into sys_dict_data values(28, 1,  '成功',     '0',       'sys_common_status',   '',   'primary', 'N', '0', 'admin', sysdate(), '', null, '正常状态');
 insert into sys_dict_data values(29, 2,  '失败',     '1',       'sys_common_status',   '',   'danger',  'N', '0', 'admin', sysdate(), '', null, '停用状态');
+
 -- 彩票管理枚举项插入值
 insert into sys_dict_data values(30, 1,  '大乐透',   '1',       'fx67ll_lottery_type', '',   '',        'N', '0', 'admin', sysdate(), '', null, '大乐透');
 insert into sys_dict_data values(31, 2,  '双色球',   '2',       'fx67ll_lottery_type', '',   '',        'N', '0', 'admin', sysdate(), '', null, '双色球');
@@ -100,15 +106,23 @@ insert into sys_dict_data values(35, 4,  '星期四',   '4',       'sys_week_typ
 insert into sys_dict_data values(36, 5,  '星期五',   '5',       'sys_week_type',       '',   '',        'N', '0', 'admin', sysdate(), '', null, '星期五');
 insert into sys_dict_data values(37, 6,  '星期六',   '6',       'sys_week_type',       '',   '',        'N', '0', 'admin', sysdate(), '', null, '星期六');
 insert into sys_dict_data values(38, 7,  '星期日',   '7',       'sys_week_type',       '',   '',        'N', '0', 'admin', sysdate(), '', null, '星期日');
+
 -- 打卡管理枚举项插入值
 insert into sys_dict_data values(39, 1,  '上班打卡', '1',       'fx67ll_punch_type',   '',   '',        'N', '0', 'admin', sysdate(), '', null, '上班打卡');
 insert into sys_dict_data values(40, 2,  '下班打卡', '2',       'fx67ll_punch_type',   '',   '',        'N', '0', 'admin', sysdate(), '', null, '下班打卡');
--- 面试题管理枚举项插入值
-insert into sys_dict_data values(41, 1,  '前端',     '1',       'fx67ll_skill_type',   '',   '',        'N', '0', 'admin', sysdate(), '', null, '前端');
-insert into sys_dict_data values(42, 2,  '后端',     '2',       'fx67ll_skill_type',   '',   '',        'N', '0', 'admin', sysdate(), '', null, '后端');
-insert into sys_dict_data values(43, 3,  '大数据',   '3',       'fx67ll_skill_type',   '',   '',        'N', '0', 'admin', sysdate(), '', null, '大数据');
+
+-- 极简面试题管理学科类型枚举项插入值
+insert into sys_dict_data values(41, 1,  '前端',     '1',       'fx67ll_subject_type',    '',   '',     'N', '0', 'admin', sysdate(), '', null, '前端');
+insert into sys_dict_data values(42, 2,  '后端',     '2',       'fx67ll_subject_type',    '',   '',     'N', '0', 'admin', sysdate(), '', null, '后端');
+insert into sys_dict_data values(43, 3,  '大数据',   '3',       'fx67ll_subject_type',    '',   '',     'N', '0', 'admin', sysdate(), '', null, '大数据');
+
+-- 极简面试题管理问题类型枚举项插入值
+insert into sys_dict_data values(47, 1,  '单选题',   '1',       'fx67ll_question_type',   '',   '',     'N', '0', 'admin', sysdate(), '', null, '单选题');
+insert into sys_dict_data values(48, 2,  '多选题',   '2',       'fx67ll_question_type',   '',   '',     'N', '0', 'admin', sysdate(), '', null, '多选题');
+insert into sys_dict_data values(49, 3,  '解答题',   '3',       'fx67ll_question_type',   '',   '',     'N', '0', 'admin', sysdate(), '', null, '解答题');
+
 -- 彩票管理第二期新增的枚举项插入值
-insert into sys_dict_data values(44, 3,  '排列三',   '3',       'fx67ll_lottery_type', '',   '',        'N', '0', 'admin', sysdate(), '', null, '排列三');
-insert into sys_dict_data values(45, 4,  '排列五',   '4',       'fx67ll_lottery_type', '',   '',        'N', '0', 'admin', sysdate(), '', null, '排列五');
-insert into sys_dict_data values(46, 5,  '七星彩',   '5',       'fx67ll_lottery_type', '',   '',        'N', '0', 'admin', sysdate(), '', null, '七星彩');
+insert into sys_dict_data values(44, 3,  '排列三',   '3',       'fx67ll_lottery_type',    '',   '',     'N', '0', 'admin', sysdate(), '', null, '排列三');
+insert into sys_dict_data values(45, 4,  '排列五',   '4',       'fx67ll_lottery_type',    '',   '',     'N', '0', 'admin', sysdate(), '', null, '排列五');
+insert into sys_dict_data values(46, 5,  '七星彩',   '5',       'fx67ll_lottery_type',    '',   '',     'N', '0', 'admin', sysdate(), '', null, '七星彩');
 
