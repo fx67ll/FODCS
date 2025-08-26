@@ -39,6 +39,9 @@ insert into sys_dict_type values(13, '打卡类型',   'fx67ll_punch_type',     
 insert into sys_dict_type values(14, '学科类型',   'fx67ll_subject_type',     '0', 'admin', sysdate(), '', null, '学科类型列表');
 insert into sys_dict_type values(15, '问题类型',   'fx67ll_question_type',    '0', 'admin', sysdate(), '', null, '问题类型列表');
 
+-- IP记录管理枚举项
+insert into sys_dict_type values(16, 'IP记录类型', 'fx67ll_ip_type',          '0', 'admin', sysdate(), '', null, 'IP记录类型列表');
+
 
 
 -- ----------------------------
@@ -126,3 +129,7 @@ insert into sys_dict_data values(44, 3,  '排列三',   '3',       'fx67ll_lotte
 insert into sys_dict_data values(45, 4,  '排列五',   '4',       'fx67ll_lottery_type',    '',   '',     'N', '0', 'admin', sysdate(), '', null, '排列五');
 insert into sys_dict_data values(46, 5,  '七星彩',   '5',       'fx67ll_lottery_type',    '',   '',     'N', '0', 'admin', sysdate(), '', null, '七星彩');
 
+-- IP记录管理枚举项插入值
+insert into sys_dict_data values(50, 1,  '其他',     '0',       'fx67ll_ip_type',         '',   '',     'N', '0', 'admin', sysdate(), '', null, '其他');
+insert into sys_dict_data values(51, 2,  '点赞',     '1',       'fx67ll_ip_type',         '',   '',     'N', '0', 'admin', sysdate(), '', null, '点赞');
+insert into sys_dict_data values(52, 3,  '接口',     '2',       'fx67ll_ip_type',         '',   '',     'N', '0', 'admin', sysdate(), '', null, '接口');

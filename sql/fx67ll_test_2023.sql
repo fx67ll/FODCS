@@ -303,67 +303,93 @@ HAVING
 -- 7、极简面试题记录表
 -- ----------------------------
 drop table if exists fx67ll_interview_minimal_log;
-drop table if exists fx67ll_interview_minimal_question_option;
+drop table if exists fx67ll_interview_minimal_option;
 drop table if exists fx67ll_interview_minimal_collection;
+drop table if exists fx67ll_interview_minimal_disagree;
 
--- 建表
+-- 建表，面试题表
 create table fx67ll_interview_minimal_log (
   interview_minimal_id                   bigint(20)       not null auto_increment    comment '面试题记录主键',
-  interview_minimal_subject_type         char(1)          not null                   comment '面试题学科类型（1代表前端 2代表后端 3代表大数据）',
-  interview_minimal_question_type        char(1)          not null                   comment '面试题问题类型（1代表单选题 2代表多选题 3代表解答题）',
-  interview_minimal_question_title       varchar(1023)    not null default ''        comment '面试题问题描述',
-  interview_minimal_answer_content       varchar(4444)    default ''                 comment '面试题答案详解',
-  interview_minimal_answer_big_text      text                                        comment '面试题答案详解，用于存储复杂数据，尽量不启用',
-  interview_minimal_remark               varchar(4444)    default ''                 comment '面试题备注',
+  subject_type                           char(1)          not null                   comment '面试题学科类型（1代表前端 2代表后端 3代表大数据）',
+  question_type                          char(1)          not null                   comment '面试题问题类型（1代表单选题 2代表多选题 3代表解答题）',
+  question_title                         varchar(1023)    not null default ''        comment '面试题问题描述',
+  answer_content                         varchar(4444)    default ''                 comment '面试题答案详解',
+  answer_big_text                        text                                        comment '面试题答案详解，用于存储复杂数据，尽量不启用',
+  interview_minimal_remark               varchar(1023)    default ''                 comment '面试题备注',
   top_sort                               int(11)                                     comment '个人创建的置顶排序，为空不置顶，有值则按顺序从小到大排序',
-  share_flag                             char(1)          not null default '0'       comment '分享标志（0代表私密题目 2代表公开题目）',
+  is_share                               char(1)          not null default '0'       comment '分享标志（0代表私密题目 1代表公开题目）',
   audit_status                           char(1)          not null default '0'       comment '审核状态（公开题需审核：0代表待审核 1代表审核通过 2代表审核拒绝',
   del_flag                               char(1)          not null default '0'       comment '删除标志（0代表存在 2代表删除）',
   user_id                                bigint(20)       not null                   comment '用户ID',
-  create_by                              varchar(64)      not null default ''        comment '记录创建者',
-  create_time 	                         datetime         not null                   comment '记录创建时间',
+  create_by                              varchar(64)      default ''                 comment '记录创建者',
+  create_time 	                         datetime                                    comment '记录创建时间',
   update_by                              varchar(64)      default ''                 comment '记录更新者',
   update_time                            datetime                                    comment '记录更新时间',
-  primary key (interview_minimal_id)
-) engine=innodb auto_increment=1 comment = '极简面试题记录表';
+  primary key (interview_minimal_id),
+  -- 新增核心索引：覆盖高频查询场景
+  index idx_user_del_top (user_id, del_flag, top_sort),  -- 查用户的题（带置顶排序）
+  index idx_share_audit_del (is_share, audit_status, del_flag),  -- 查公开+审核通过的题
+  index idx_subject_type (subject_type, question_type, is_share, del_flag)  -- 按学科+题型筛选
+) engine=innodb auto_increment=1 default charset=utf8mb4 comment = '极简面试题记录表';
 
 -- 建表，选项表
-create table fx67ll_interview_minimal_question_option (
-  option_id              bigint(20)       not null auto_increment    comment '面试题选项主键',
-  interview_minimal_id   bigint(20)       not null                   comment '关联面试题主键（外键）',
-  option_label           char(2)          not null                   comment '面试题选项标识（如A、B、C、D、E）',
-  option_content         varchar(1023)    not null                   comment '面试题选项内容',
-  is_correct             tinyint(1)       not null default '0'       comment '是否正确选项（1=正确 0=错误，单选/多选通用）',
-  create_by              varchar(64)      not null default ''        comment '记录创建者',
-  create_time            datetime         not null                   comment '创建时间',
-  update_by              varchar(64)      default ''                 comment '记录更新者',
-  update_time            datetime                                    comment '记录更新时间',
-  primary key (option_id),
-  -- 关联题目主键，确保数据一致性（删除题目时同步删除选项）
+create table fx67ll_interview_minimal_option (
+  interview_minimal_option_id            bigint(20)       not null auto_increment    comment '面试题选项主键',
+  interview_minimal_id                   bigint(20)       not null                   comment '关联面试题记录主键（外键）',
+  option_label         char(2)          not null                   comment '面试题选项标识（如A、B、C、D、E）',
+  option_content       varchar(1023)    not null                   comment '面试题选项内容',
+  is_correct                             tinyint(1)       not null default '0'       comment '是否正确选项（0代表错误 1代表正确）',
+  create_by                              varchar(64)      default ''                 comment '记录创建者',
+  create_time                            datetime                                    comment '创建时间',
+  update_by                              varchar(64)      default ''                 comment '记录更新者',
+  update_time                            datetime                                    comment '记录更新时间',
+  primary key (interview_minimal_option_id),
+  -- 外键：删除题目时同步删除选项（符合物理删除逻辑）
   foreign key fk_question_option (interview_minimal_id) references fx67ll_interview_minimal_log (interview_minimal_id) on delete cascade,
-  -- 索引：查询题目时快速关联选项
+  -- 索引：通过题目ID快速关联选项
   index idx_question_id (interview_minimal_id)
-) engine=innodb auto_increment=1 comment = '面试题选项表（单选/多选题专用）';
+) engine=innodb auto_increment=1 default charset=utf8mb4 comment = '极简面试题选项表';
 
 -- 建表，收藏表
 create table fx67ll_interview_minimal_collection (
   interview_minimal_collection_id        bigint(20)       not null auto_increment    comment '收藏面试题记录主键',
+  interview_minimal_id                   bigint(20)       not null                   comment '关联面试题记录主键（外键）',
+  top_sort                               int(11)                                     comment '收藏的置顶排序，为空不置顶，有值则按顺序从小到大排序',
   user_id                                bigint(20)       not null                   comment '收藏用户ID',
-  interview_minimal_id                   bigint(20)       not null                   comment '关联面试题主键（必须是公开且审核通过的题目）',
-  interview_minimal_collection_time      datetime         not null                   comment '收藏面试题时间',
-  del_flag                               char(1)          not null default '0'       comment '取消收藏标志（0代表已收藏 2代表已取消）',
+  create_time                            datetime                                    comment '收藏面试题时间',
   primary key (interview_minimal_collection_id),
-  -- 联合唯一：避免用户重复收藏同一题目
+  -- 联合唯一：防止用户重复收藏同一题目
   unique key uk_user_question (user_id, interview_minimal_id),
-  -- 外键：删除题目时，自动取消收藏；删除用户时，删除其所有收藏
+  -- 外键：删除题目/用户时，自动删除收藏记录（符合物理删除逻辑）
   foreign key fk_collection_question (interview_minimal_id) references fx67ll_interview_minimal_log (interview_minimal_id) on delete cascade,
-  foreign key fk_collection_user (user_id) references sys_user (user_id) on delete cascade, -- 假设用户表是sys_user
-  -- 索引：查询用户的收藏列表
-  index idx_user_collection (user_id, del_flag, interview_minimal_collection_time desc)
-) engine=innodb auto_increment=1 comment = '极简面试题收藏表';
+  foreign key fk_collection_user (user_id) references sys_user (user_id) on delete cascade,
+  -- 优化索引：支持“用户的收藏+置顶排序+收藏时间”查询
+  index idx_user_collection_top (user_id, top_sort, create_time desc)
+) engine=innodb auto_increment=1 default charset=utf8mb4 comment = '极简面试题收藏表';
+
+-- 建表，异议反馈表
+create table fx67ll_interview_minimal_disagree (
+  interview_minimal_disagree_id          bigint(20)       not null auto_increment    comment '异议记录主键',
+  interview_minimal_id                   bigint(20)       not null                   comment '关联面试题ID（外键，指向需异议的题目）',
+  interview_minimal_disagree_reason      varchar(1023)    not null                   comment '不认同理由（核心字段，说明为何不认同答案，限制2000字内）',
+  user_id                                bigint(20)       not null                   comment '异议用户ID（外键，记录谁提出的异议）',
+  create_time                            datetime                                    comment '异议提交时间（自动生成，无需手动插入）',
+  primary key (interview_minimal_disagree_id),
+  -- 联合唯一约束：同一用户对同一道题，只能提交1次异议（避免重复反馈）
+  unique key uk_user_question (user_id, interview_minimal_id),
+  -- 外键级联删除：题目删除/用户删除时，自动删除对应的异议记录（物理删除，符合极简清理逻辑）
+  foreign key fk_disagree_question (interview_minimal_id) references fx67ll_interview_minimal_log (interview_minimal_id) on delete cascade,
+  foreign key fk_disagree_user (user_id) references sys_user (user_id) on delete cascade,
+  -- 仅保留2个必要索引，覆盖高频查询场景
+  index idx_question_disagree (interview_minimal_id),  -- 快速查询某道题的所有异议
+  index idx_user_disagree (user_id, create_time desc)  -- 快速查询用户自己提交的异议（按时间倒序）
+) engine=innodb auto_increment=1 default charset=utf8mb4 comment = '极简面试题异议反馈表';
 
 -- 查询
-select * from fx67ll_interview_simple_log;
+select * from fx67ll_interview_minimal_log;
+select * from fx67ll_interview_minimal_option;
+select * from fx67ll_interview_minimal_collection;
+select * from fx67ll_interview_minimal_disagree;
 
 
 
@@ -447,4 +473,92 @@ GROUP BY
 
 
 
-   
+-- ----------------------------
+-- 9、IP记录表
+-- ----------------------------
+drop table if exists fx67ll_ip_log;
+
+-- 建表
+create table fx67ll_ip_log (
+  ip_id                              bigint(20)       not null auto_increment    comment 'ip记录主键',
+  ip_type                            char(1)          not null                   comment 'ip类型（0代表其他 1代表点赞 2代表接口）',
+  ip_address                         varchar(39)      not null default ''        comment 'ip地址（支持ipv4和ipv6）',
+  ip_page_url                        varchar(666)     default ''                 comment 'ip的网站网址',
+  ip_source_location                 varchar(1023)    default ''                 comment 'ip来源位置（参考格式：国家/地区 + 城市）',
+  ip_remark                          varchar(1023)    default ''                 comment 'ip记录备注',
+  del_flag                           char(1)          not null default '0'       comment '删除标志（0代表存在 2代表删除）',
+  user_id                            bigint(20)       not null                   comment '用户id',
+  create_by                          varchar(64)      default ''                 comment '记录创建者',
+  create_time                        datetime                                    comment '记录创建时间',
+  update_by                          varchar(64)      default ''                 comment '记录更新者',
+  update_time                        datetime                                    comment '记录更新时间',
+  primary key (ip_id),
+  -- 基础索引
+  index idx_ip_address (ip_address),
+  index idx_user_id (user_id),
+  index idx_ip_type (ip_type),
+  -- 联合索引：优化"用户+IP+删除状态"的查询（原有核心场景）
+  index idx_user_ip_del (user_id, ip_address, del_flag),
+  -- 联合索引：优化"用户+场景+删除状态"的查询（新增场景化查询）
+  index idx_user_type_del (user_id, ip_type, del_flag),
+  -- 联合索引：优化"IP+场景+删除状态"的查询（新增场景化查询）
+  index idx_ip_type_del (ip_address, ip_type, del_flag),
+  -- 场景地址索引：按场景地址查询IP（如统计某接口的访问IP）
+  index idx_ip_page_url (ip_page_url)
+) engine=innodb auto_increment=1 default charset=utf8mb4 comment='ip记录表';
+
+-- 查询
+select * from fx67ll_ip_log;
+
+
+
+-- ----------------------------
+-- 10、网站点赞记录表
+-- ----------------------------
+drop table if exists fx67ll_like_log;
+
+-- 建表
+create table fx67ll_like_log (
+  like_id                            bigint(20)       not null auto_increment    comment '点赞记录主键',
+  ip_id                              bigint(20)       not null                   comment '关联的ip记录id（关联fx67ll_ip_log表的ip_id）',
+  like_page_url                      varchar(666)     not null                   comment '被点赞的网站网址',
+  like_count                         int(11)          not null default 1         comment '单次点赞数',
+  like_remark                        varchar(1023)    default ''                 comment '网站点赞记录备注',
+  is_canceled                        tinyint(1)       not null default 0         comment '是否取消点赞（0代表有效 1代表已取消）',
+  create_time                        datetime                                    comment '记录创建时间',
+  update_time                        datetime                                    comment '记录更新时间',
+  primary key (like_id),
+  -- 核心索引：优化按页面查询的场景
+  index idx_like_page_url (like_page_url),
+  -- 联合索引：优化"按页面+是否有效"的查询（统计有效点赞）
+  index idx_page_canceled (like_page_url, is_canceled),
+  -- 关联IP表的索引（用于通过IP反查点赞记录）
+  index idx_ip_id (ip_id)
+) engine=innodb auto_increment=1 default charset=utf8mb4 comment='网站点赞记录表';
+
+-- 查询
+select * from fx67ll_like_log;  
+
+
+
+-- ----------------------------
+-- 11、备忘记录表
+-- ----------------------------
+drop table if exists fx67ll_note_log;
+
+-- 建表
+create table fx67ll_note_log (
+  note_id                            bigint(20)       not null auto_increment    comment '备忘记录主键',
+  note_content                       varchar(1023)    not null                   comment '备忘内容',
+  note_remark                        varchar(1023)    default ''                 comment '备忘记录备注',
+  del_flag                           char(1)          not null default '0'       comment '删除标志（0代表存在 2代表删除）',
+  user_id                            bigint(20)       not null                   comment '用户id',
+  create_by                          varchar(64)      default ''                 comment '记录创建者',
+  create_time                        datetime                                    comment '记录创建时间',
+  update_by                          varchar(64)      default ''                 comment '记录更新者',
+  update_time                        datetime                                    comment '记录更新时间',
+  primary key (note_id)
+) engine=innodb auto_increment=1 default charset=utf8mb4 comment='备忘记录表';
+
+-- 查询
+select * from fx67ll_note_log; 
