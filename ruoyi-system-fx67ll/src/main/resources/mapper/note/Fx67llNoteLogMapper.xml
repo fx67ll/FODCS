@@ -1,0 +1,97 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.ruoyi.fx67ll.note.mapper.Fx67llNoteLogMapper">
+
+    <resultMap type="Fx67llNoteLog" id="Fx67llNoteLogResult">
+        <result property="noteId" column="note_id"/>
+        <result property="noteContent" column="note_content"/>
+        <result property="noteRemark" column="note_remark"/>
+        <result property="delFlag" column="del_flag"/>
+        <result property="userId" column="user_id"/>
+        <result property="createBy" column="create_by"/>
+        <result property="createTime" column="create_time"/>
+        <result property="updateBy" column="update_by"/>
+        <result property="updateTime" column="update_time"/>
+    </resultMap>
+
+    <sql id="selectFx67llNoteLogVo">
+        select note_id,
+               note_content,
+               note_remark,
+               del_flag,
+               user_id,
+               create_by,
+               create_time,
+               update_by,
+               update_time
+        from fx67ll_note_log
+    </sql>
+
+    <select id="selectFx67llNoteLogList" parameterType="Fx67llNoteLog" resultMap="Fx67llNoteLogResult">
+        <include refid="selectFx67llNoteLogVo"/>
+        <where>
+            <if test="noteContent != null  and noteContent != ''">and note_content = #{noteContent}</if>
+            <if test="noteRemark != null  and noteRemark != ''">and note_remark = #{noteRemark}</if>
+            <if test="userId != null ">and user_id = #{userId}</if>
+        </where>
+    </select>
+
+    <select id="selectFx67llNoteLogByNoteId" parameterType="Long" resultMap="Fx67llNoteLogResult">
+        <include refid="selectFx67llNoteLogVo"/>
+        where note_id = #{noteId}
+    </select>
+
+    <insert id="insertFx67llNoteLog" parameterType="Fx67llNoteLog" useGeneratedKeys="true" keyProperty="noteId">
+        insert into fx67ll_note_log
+        <trim prefix="(" suffix=")" suffixOverrides=",">
+            <if test="noteContent != null and noteContent != ''">note_content,</if>
+            <if test="noteRemark != null">note_remark,</if>
+            <if test="delFlag != null and delFlag != ''">del_flag,</if>
+            <if test="userId != null">user_id,</if>
+            <if test="createBy != null">create_by,</if>
+            <if test="createTime != null">create_time,</if>
+            <if test="updateBy != null">update_by,</if>
+            <if test="updateTime != null">update_time,</if>
+        </trim>
+        <trim prefix="values (" suffix=")" suffixOverrides=",">
+            <if test="noteContent != null and noteContent != ''">#{noteContent},</if>
+            <if test="noteRemark != null">#{noteRemark},</if>
+            <if test="delFlag != null and delFlag != ''">#{delFlag},</if>
+            <if test="userId != null">#{userId},</if>
+            <if test="createBy != null">#{createBy},</if>
+            <if test="createTime != null">#{createTime},</if>
+            <if test="updateBy != null">#{updateBy},</if>
+            <if test="updateTime != null">#{updateTime},</if>
+        </trim>
+    </insert>
+
+    <update id="updateFx67llNoteLog" parameterType="Fx67llNoteLog">
+        update fx67ll_note_log
+        <trim prefix="SET" suffixOverrides=",">
+            <if test="noteContent != null and noteContent != ''">note_content = #{noteContent},</if>
+            <if test="noteRemark != null">note_remark = #{noteRemark},</if>
+            <if test="delFlag != null and delFlag != ''">del_flag = #{delFlag},</if>
+            <if test="userId != null">user_id = #{userId},</if>
+            <if test="createBy != null">create_by = #{createBy},</if>
+            <if test="createTime != null">create_time = #{createTime},</if>
+            <if test="updateBy != null">update_by = #{updateBy},</if>
+            <if test="updateTime != null">update_time = #{updateTime},</if>
+        </trim>
+        where note_id = #{noteId}
+    </update>
+
+    <delete id="deleteFx67llNoteLogByNoteId" parameterType="Long">
+        delete
+        from fx67ll_note_log
+        where note_id = #{noteId}
+    </delete>
+
+    <delete id="deleteFx67llNoteLogByNoteIds" parameterType="String">
+        delete from fx67ll_note_log where note_id in
+        <foreach item="noteId" collection="array" open="(" separator="," close=")">
+            #{noteId}
+        </foreach>
+    </delete>
+</mapper>
