@@ -90,7 +90,8 @@ public class CommonController
             String url = RuoYiConfig.getFilePrefixUrl() + fileName;
             AjaxResult ajax = AjaxResult.success();
             ajax.put("url", url);
-            ajax.put("fileName", fileName);
+            // ajax.put("fileName", fileName);
+            ajax.put("fileName", RuoYiConfig.getFilePrefixUrl() + fileName);
             ajax.put("newFileName", FileUtils.getName(fileName));
             ajax.put("originalFilename", file.getOriginalFilename());
             return ajax;
