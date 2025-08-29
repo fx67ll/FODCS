@@ -36,6 +36,7 @@
             <if test="noteRemark != null  and noteRemark != ''">and note_remark = #{noteRemark}</if>
             <if test="userId != null ">and user_id = #{userId}</if>
         </where>
+        order by STR_TO_DATE(create_time, "%Y-%m-%d %H:%i:%s") desc
     </select>
 
     <select id="selectFx67llNoteLogByNoteId" parameterType="Long" resultMap="Fx67llNoteLogResult">
