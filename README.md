@@ -3,6 +3,9 @@ fx67ll One Data Center Server
 
 欢迎访问 [fx67ll's 管理系统](https://vip.fx67ll.com) ~
 
+## 0.4.3.20250902
+* 优化列表查询逻辑    
+
 ## 0.4.2.20250829
 * 修复列表未按创建顺序返回的问题  
 
