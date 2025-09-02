@@ -3,6 +3,8 @@ package com.ruoyi.web.controller.fx67ll.note;
 import java.util.List;
 import javax.servlet.http.HttpServletResponse;
 
+import com.ruoyi.common.utils.SecurityUtils;
+import com.ruoyi.fx67ll.punch.domain.Fx67llPunchLog;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -41,8 +43,13 @@ public class Fx67llNoteLogController extends BaseController {
     @GetMapping("/list")
     public TableDataInfo list(Fx67llNoteLog fx67llNoteLog) {
         startPage();
-        List<Fx67llNoteLog> list = fx67llNoteLogService.selectFx67llNoteLogList(fx67llNoteLog);
-        return getDataTable(list);
+        if (SecurityUtils.getUsername().equals("fx67ll")) {
+            List<Fx67llNoteLog> list = fx67llNoteLogService.selectFx67llNoteLogList(fx67llNoteLog);
+            return getDataTable(list);
+        } else {
+            List<Fx67llNoteLog> list = fx67llNoteLogService.selectFx67llNoteLogListByUserId(fx67llNoteLog);
+            return getDataTable(list);
+        }
     }
 
     /**

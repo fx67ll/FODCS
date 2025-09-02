@@ -4,6 +4,7 @@ import java.util.List;
 
 import com.ruoyi.common.utils.DateUtils;
 import com.ruoyi.common.utils.SecurityUtils;
+import com.ruoyi.fx67ll.punch.domain.Fx67llPunchLog;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import com.ruoyi.fx67ll.note.mapper.Fx67llNoteLogMapper;
@@ -44,6 +45,19 @@ public class Fx67llNoteLogServiceImpl implements IFx67llNoteLogService {
     }
 
     /**
+     * 查询打卡记录列表
+     *
+     * @param fx67llNoteLog 备忘记录
+     * @return 打卡记录
+     */
+    @Override
+    public List<Fx67llNoteLog> selectFx67llNoteLogListByUserId(Fx67llNoteLog fx67llNoteLog) {
+        fx67llNoteLog.setUserId(SecurityUtils.getUserId());
+        return fx67llNoteLogMapper.selectFx67llNoteLogList(fx67llNoteLog);
+    }
+
+
+    /**
      * 新增备忘记录
      *
      * @param fx67llNoteLog 备忘记录
@@ -54,6 +68,8 @@ public class Fx67llNoteLogServiceImpl implements IFx67llNoteLogService {
         fx67llNoteLog.setUserId(SecurityUtils.getUserId());
         fx67llNoteLog.setCreateBy(SecurityUtils.getUsername());
         fx67llNoteLog.setCreateTime(DateUtils.getNowDate());
+        fx67llNoteLog.setUpdateBy(SecurityUtils.getUsername());
+        fx67llNoteLog.setUpdateTime(DateUtils.getNowDate());
         return fx67llNoteLogMapper.insertFx67llNoteLog(fx67llNoteLog);
     }
 

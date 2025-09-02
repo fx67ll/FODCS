@@ -28,6 +28,14 @@ public interface IFx67llNoteLogService {
     public List<Fx67llNoteLog> selectFx67llNoteLogList(Fx67llNoteLog fx67llNoteLog);
 
     /**
+     * 查询备忘记录列表
+     *
+     * @param fx67llNoteLog 备忘记录
+     * @return 备忘记录集合
+     */
+    public List<Fx67llNoteLog> selectFx67llNoteLogListByUserId(Fx67llNoteLog fx67llNoteLog);
+
+    /**
      * 新增备忘记录
      *
      * @param fx67llNoteLog 备忘记录
