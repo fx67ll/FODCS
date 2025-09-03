@@ -11,7 +11,7 @@ import com.ruoyi.framework.security.context.PermissionContextHolder;
 
 /**
  * RuoYi首创 自定义权限实现，ss取自SpringSecurity首字母
- * 
+ *
  * @author ruoyi
  */
 @Service("ss")
@@ -29,7 +29,7 @@ public class PermissionService
 
     /**
      * 验证用户是否具备某权限
-     * 
+     *
      * @param permission 权限字符串
      * @return 用户是否具备某权限
      */
@@ -90,7 +90,7 @@ public class PermissionService
 
     /**
      * 判断用户是否拥有某个角色
-     * 
+     *
      * @param role 角色字符串
      * @return 用户是否具备某角色
      */
@@ -156,13 +156,15 @@ public class PermissionService
 
     /**
      * 判断是否包含权限
-     * 
+     *
      * @param permissions 权限列表
      * @param permission 权限字符串
      * @return 用户是否具备某权限
      */
     private boolean hasPermissions(Set<String> permissions, String permission)
     {
+        System.out.println("当前用户的权限列表是：" + permissions);
+        System.out.println("当前接口的权限标识为：" + StringUtils.trim(permission));
         return permissions.contains(ALL_PERMISSION) || permissions.contains(StringUtils.trim(permission));
     }
 }
