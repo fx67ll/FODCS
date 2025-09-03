@@ -542,15 +542,15 @@ select * from fx67ll_like_log;
 
 
 -- ----------------------------
--- 11、备忘记录表
+-- 11、富文本记录表
 -- ----------------------------
 drop table if exists fx67ll_note_log;
 
 -- 建表
 create table fx67ll_note_log (
-  note_id                            bigint(20)       not null auto_increment    comment '备忘记录主键',
-  note_content                       varchar(1023)    not null                   comment '备忘内容',
-  note_remark                        varchar(1023)    default ''                 comment '备忘记录备注',
+  note_id                            bigint(20)       not null auto_increment    comment '富文本记录主键',
+  note_content                       varchar(1023)    not null                   comment '富文本内容',
+  note_remark                        varchar(1023)    default ''                 comment '富文本记录备注',
   del_flag                           char(1)          not null default '0'       comment '删除标志（0代表存在 2代表删除）',
   user_id                            bigint(20)       not null                   comment '用户id',
   create_by                          varchar(64)      default ''                 comment '记录创建者',
@@ -558,7 +558,7 @@ create table fx67ll_note_log (
   update_by                          varchar(64)      default ''                 comment '记录更新者',
   update_time                        datetime                                    comment '记录更新时间',
   primary key (note_id)
-) engine=innodb auto_increment=1 default charset=utf8mb4 comment='备忘记录表';
+) engine=innodb auto_increment=1 default charset=utf8mb4 comment='富文本记录表';
 
 -- 查询
 select * from fx67ll_note_log; 
