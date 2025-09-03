@@ -12,7 +12,7 @@ import com.ruoyi.fx67ll.note.domain.Fx67llNoteLog;
 import com.ruoyi.fx67ll.note.service.IFx67llNoteLogService;
 
 /**
- * 备忘记录Service业务层处理
+ * 富文本记录Service业务层处理
  *
  * @author ruoyi
  * @date 2025-08-26
@@ -23,10 +23,10 @@ public class Fx67llNoteLogServiceImpl implements IFx67llNoteLogService {
     private Fx67llNoteLogMapper fx67llNoteLogMapper;
 
     /**
-     * 查询备忘记录
+     * 查询富文本记录
      *
-     * @param noteId 备忘记录主键
-     * @return 备忘记录
+     * @param noteId 富文本记录主键
+     * @return 富文本记录
      */
     @Override
     public Fx67llNoteLog selectFx67llNoteLogByNoteId(Long noteId) {
@@ -34,10 +34,10 @@ public class Fx67llNoteLogServiceImpl implements IFx67llNoteLogService {
     }
 
     /**
-     * 查询备忘记录列表
+     * 查询富文本记录列表
      *
-     * @param fx67llNoteLog 备忘记录
-     * @return 备忘记录
+     * @param fx67llNoteLog 富文本记录
+     * @return 富文本记录
      */
     @Override
     public List<Fx67llNoteLog> selectFx67llNoteLogList(Fx67llNoteLog fx67llNoteLog) {
@@ -47,7 +47,7 @@ public class Fx67llNoteLogServiceImpl implements IFx67llNoteLogService {
     /**
      * 查询打卡记录列表
      *
-     * @param fx67llNoteLog 备忘记录
+     * @param fx67llNoteLog 富文本记录
      * @return 打卡记录
      */
     @Override
@@ -58,9 +58,9 @@ public class Fx67llNoteLogServiceImpl implements IFx67llNoteLogService {
 
 
     /**
-     * 新增备忘记录
+     * 新增富文本记录
      *
-     * @param fx67llNoteLog 备忘记录
+     * @param fx67llNoteLog 富文本记录
      * @return 结果
      */
     @Override
@@ -74,9 +74,9 @@ public class Fx67llNoteLogServiceImpl implements IFx67llNoteLogService {
     }
 
     /**
-     * 修改备忘记录
+     * 修改富文本记录
      *
-     * @param fx67llNoteLog 备忘记录
+     * @param fx67llNoteLog 富文本记录
      * @return 结果
      */
     @Override
@@ -87,9 +87,9 @@ public class Fx67llNoteLogServiceImpl implements IFx67llNoteLogService {
     }
 
     /**
-     * 批量删除备忘记录
+     * 批量删除富文本记录
      *
-     * @param noteIds 需要删除的备忘记录主键
+     * @param noteIds 需要删除的富文本记录主键
      * @return 结果
      */
     @Override
@@ -98,9 +98,9 @@ public class Fx67llNoteLogServiceImpl implements IFx67llNoteLogService {
     }
 
     /**
-     * 删除备忘记录信息
+     * 删除富文本记录信息
      *
-     * @param noteId 备忘记录主键
+     * @param noteId 富文本记录主键
      * @return 结果
      */
     @Override

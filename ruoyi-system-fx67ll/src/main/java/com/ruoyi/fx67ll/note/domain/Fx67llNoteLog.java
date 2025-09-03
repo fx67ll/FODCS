@@ -6,7 +6,7 @@ import com.ruoyi.common.annotation.Excel;
 import com.ruoyi.common.core.domain.BaseEntity;
 
 /**
- * 备忘记录对象 fx67ll_note_log
+ * 富文本记录对象 fx67ll_note_log
  *
  * @author ruoyi
  * @date 2025-08-26
@@ -15,20 +15,20 @@ public class Fx67llNoteLog extends BaseEntity {
     private static final long serialVersionUID = 1L;
 
     /**
-     * 备忘记录主键
+     * 富文本记录主键
      */
     private Long noteId;
 
     /**
-     * 备忘内容
+     * 富文本内容
      */
-    @Excel(name = "备忘内容")
+    @Excel(name = "富文本内容")
     private String noteContent;
 
     /**
-     * 备忘记录备注
+     * 富文本记录备注
      */
-    @Excel(name = "备忘记录备注")
+    @Excel(name = "富文本记录备注")
     private String noteRemark;
 
     /**

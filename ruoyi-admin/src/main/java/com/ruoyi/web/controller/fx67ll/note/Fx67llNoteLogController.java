@@ -25,7 +25,7 @@ import com.ruoyi.common.utils.poi.ExcelUtil;
 import com.ruoyi.common.core.page.TableDataInfo;
 
 /**
- * 备忘记录Controller
+ * 富文本记录Controller
  *
  * @author ruoyi
  * @date 2025-08-26
@@ -37,7 +37,7 @@ public class Fx67llNoteLogController extends BaseController {
     private IFx67llNoteLogService fx67llNoteLogService;
 
     /**
-     * 查询备忘记录列表
+     * 查询富文本记录列表
      */
     @PreAuthorize("@ss.hasPermi('note:log:list')")
     @GetMapping("/list")
@@ -53,19 +53,31 @@ public class Fx67llNoteLogController extends BaseController {
     }
 
     /**
-     * 导出备忘记录列表
+     * 提供给 APP 查询富文本记录列表
+     */
+    @PreAuthorize("@ss.hasPermi('note:log:list')")
+    @GetMapping("/getNoteLogListForApp")
+    public TableDataInfo getNoteLogListForApp(Fx67llNoteLog fx67llNoteLog) {
+        startPage();
+        List<Fx67llNoteLog> list = fx67llNoteLogService.selectFx67llNoteLogListByUserId(fx67llNoteLog);
+        return getDataTable(list);
+    }
+
+
+    /**
+     * 导出富文本记录列表
      */
     @PreAuthorize("@ss.hasPermi('note:log:export')")
-    @Log(title = "备忘记录", businessType = BusinessType.EXPORT)
+    @Log(title = "导出富文本记录", businessType = BusinessType.EXPORT)
     @PostMapping("/export")
     public void export(HttpServletResponse response, Fx67llNoteLog fx67llNoteLog) {
         List<Fx67llNoteLog> list = fx67llNoteLogService.selectFx67llNoteLogList(fx67llNoteLog);
         ExcelUtil<Fx67llNoteLog> util = new ExcelUtil<Fx67llNoteLog>(Fx67llNoteLog.class);
-        util.exportExcel(response, list, "备忘记录数据");
+        util.exportExcel(response, list, "富文本记录数据");
     }
 
     /**
-     * 获取备忘记录详细信息
+     * 获取富文本记录详细信息
      */
     @PreAuthorize("@ss.hasPermi('note:log:query')")
     @GetMapping(value = "/{noteId}")
@@ -74,32 +86,70 @@ public class Fx67llNoteLogController extends BaseController {
     }
 
     /**
-     * 新增备忘记录
+     * 新增富文本记录
      */
     @PreAuthorize("@ss.hasPermi('note:log:add')")
-    @Log(title = "备忘记录", businessType = BusinessType.INSERT)
+    @Log(title = "新增富文本记录", businessType = BusinessType.INSERT)
     @PostMapping
     public AjaxResult add(@RequestBody Fx67llNoteLog fx67llNoteLog) {
         return toAjax(fx67llNoteLogService.insertFx67llNoteLog(fx67llNoteLog));
     }
 
     /**
-     * 修改备忘记录
+     * 提供给 APP 新增富文本记录
+     */
+    @PreAuthorize("@ss.hasPermi('note:log:add')")
+    @Log(title = "提供给 APP 新增富文本记录", businessType = BusinessType.INSERT)
+    @PostMapping("/addNoteLogForApp")
+    public AjaxResult addNoteLogForApp(@RequestBody Fx67llNoteLog fx67llNoteLog) {
+        return toAjax(fx67llNoteLogService.insertFx67llNoteLog(fx67llNoteLog));
+    }
+
+    /**
+     * 修改富文本记录
      */
     @PreAuthorize("@ss.hasPermi('note:log:edit')")
-    @Log(title = "备忘记录", businessType = BusinessType.UPDATE)
+    @Log(title = "修改富文本记录", businessType = BusinessType.UPDATE)
     @PutMapping
     public AjaxResult edit(@RequestBody Fx67llNoteLog fx67llNoteLog) {
         return toAjax(fx67llNoteLogService.updateFx67llNoteLog(fx67llNoteLog));
     }
 
     /**
-     * 删除备忘记录
+     * 提供给 APP 修改富文本记录
+     */
+    @PreAuthorize("@ss.hasPermi('note:log:edit')")
+    @Log(title = "提供给 APP 修改富文本记录", businessType = BusinessType.UPDATE)
+    @PutMapping("/editNoteLogForApp")
+    public AjaxResult editNoteLogForApp(@RequestBody Fx67llNoteLog fx67llNoteLog) {
+        if (fx67llNoteLogService.selectFx67llNoteLogByNoteId(fx67llNoteLog.getNoteId()).getUserId() != SecurityUtils.getUserId()) {
+            return warn("此记录非本人创建，禁止修改！");
+        } else {
+            return toAjax(fx67llNoteLogService.updateFx67llNoteLog(fx67llNoteLog));
+        }
+    }
+
+    /**
+     * 删除富文本记录
      */
     @PreAuthorize("@ss.hasPermi('note:log:remove')")
-    @Log(title = "备忘记录", businessType = BusinessType.DELETE)
+    @Log(title = "删除富文本记录", businessType = BusinessType.DELETE)
     @DeleteMapping("/{noteIds}")
     public AjaxResult remove(@PathVariable Long[] noteIds) {
         return toAjax(fx67llNoteLogService.deleteFx67llNoteLogByNoteIds(noteIds));
+    }
+
+    /**
+     * 提供给 APP 删除富文本记录
+     */
+    @PreAuthorize("@ss.hasPermi('note:log:remove')")
+    @Log(title = "提供给 APP 删除富文本记录", businessType = BusinessType.DELETE)
+    @DeleteMapping("/deleteNoteLogByIdForApp/{noteIds}")
+    public AjaxResult deleteNoteLogByIdForApp(@PathVariable Long noteId) {
+        if (fx67llNoteLogService.selectFx67llNoteLogByNoteId(noteId).getUserId() != SecurityUtils.getUserId()) {
+            return warn("此记录非本人创建，禁止删除！");
+        } else {
+            return toAjax(fx67llNoteLogService.deleteFx67llNoteLogByNoteId(noteId));
+        }
     }
 }
