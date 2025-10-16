@@ -562,3 +562,75 @@ create table fx67ll_note_log (
 
 -- 查询
 select * from fx67ll_note_log; 
+
+
+
+-- ----------------------------
+-- 12、麻将室预约表（预留精简计费字段，后续增加计费配置表）
+-- ----------------------------
+drop table if exists fx67ll_mahjong_room;
+drop table if exists fx67ll_mahjong_reservation_log;
+
+-- 建表，麻将室表
+create table fx67ll_mahjong_room (
+  mahjong_room_id                    bigint(20)       not null auto_increment    comment '麻将室主键',
+  user_id                            bigint(20)       not null                   comment '创建者用户主键',
+  mahjong_room_name                  varchar(64)      not null                   comment '麻将室名称',
+  mahjong_room_description           varchar(1023)    not null                   comment '麻将室描述',
+  mahjong_room_capacity              int(2)           not null default 4         comment '容纳人数（默认4人）',
+  mahjong_room_price_config          json             null                       comment '预留：计费配置（未来存储分时段/包夜规则等JSON数据）',
+  mahjong_room_status                char(1)          not null default '0'       comment '状态（0开放 1关闭）',
+  mahjong_room_remark                varchar(1023)    default ''                 comment '麻将室备注',
+  del_flag                           char(1)          not null default '0'       comment '删除标志（0代表存在 2代表删除）',
+  create_by                          varchar(64)      default ''                 comment '记录创建者',
+  create_time                        datetime         default current_timestamp  comment '记录创建时间',
+  update_by                          varchar(64)      default ''                 comment '记录更新者',
+  update_time                        datetime         default current_timestamp on update current_timestamp  comment '记录更新时间',
+  primary key (mahjong_room_id),
+  key idx_room_status (mahjong_room_status, del_flag),  -- 优化状态查询
+  key idx_room_name (mahjong_room_name, del_flag)        -- 优化按名称搜索
+) engine=innodb auto_increment=1 default charset=utf8mb4 comment='麻将室表';
+
+-- 添加约束：限制状态和删除标志的取值范围
+alter table fx67ll_mahjong_room 
+add constraint chk_room_status check (mahjong_room_status in ('0', '1')),
+add constraint chk_room_del_flag check (del_flag in ('0', '2'));
+
+-- 建表，麻将室预约订单记录表（核心调整：索引移除date()函数）
+create table fx67ll_mahjong_reservation_log (
+  mahjong_reservation_log_id         bigint(20)       not null auto_increment    comment '麻将室预约订单记录主键',
+  user_id                            bigint(20)       not null                   comment '预约用户主键',
+  mahjong_room_id                    bigint(20)       not null                   comment '麻将室主键',
+  reservation_start_time             datetime         not null                   comment '预约开始时间（含日期和小时）',
+  reservation_end_time               datetime         not null                   comment '预约结束时间（含日期和小时）',
+  reservation_contact                varchar(20)      default ''                 comment '预约联系方式（电话）',
+  reservation_amount                 decimal(10,2)    null                       comment '预留：费用金额（未来存储实际费用）',
+  reservation_status                 char(1)          not null default '0'       comment '预约状态（0正常 1取消 2完成）',
+  reservation_remark                 varchar(1023)    default ''                 comment '麻将室预约订单记录备注',
+  del_flag                           char(1)          not null default '0'       comment '删除标志（0代表存在 2代表删除）',
+  create_by                          varchar(64)      default ''                 comment '记录创建者',
+  create_time                        datetime         default current_timestamp  comment '记录创建时间',
+  update_by                          varchar(64)      default ''                 comment '记录更新者',
+  update_time                        datetime         default current_timestamp on update current_timestamp  comment '记录更新时间',
+  primary key (mahjong_reservation_log_id),
+  -- 外键关联（限制物理删除，避免误删历史数据）
+  constraint fk_reservation_user foreign key (user_id) references sys_user(user_id) on delete restrict,
+  constraint fk_reservation_room foreign key (mahjong_room_id) references fx67ll_mahjong_room(mahjong_room_id) on delete restrict,
+  -- 索引调整：移除date()函数，用原始时间字段建索引（兼容所有MySQL版本）
+  key idx_user_reservation (user_id, del_flag, reservation_status),  -- 我的预约记录查询
+  key idx_room_reservation (mahjong_room_id, del_flag, reservation_start_time),  -- 按房间+时间查询（替代原date()函数索引）
+  key idx_reservation_status (reservation_status, del_flag, reservation_start_time)  -- 按状态+时间范围查询
+) engine=innodb auto_increment=1 default charset=utf8mb4 comment='麻将室预约订单记录表';
+
+-- 添加约束：限制时间逻辑和状态取值
+alter table fx67ll_mahjong_reservation_log 
+add constraint chk_reservation_time check (reservation_start_time < reservation_end_time),
+add constraint chk_reservation_status check (reservation_status in ('0', '1', '2')),
+add constraint chk_reservation_del_flag check (del_flag in ('0', '2'));
+
+-- 查询语句
+select * from fx67ll_mahjong_room where del_flag = '0'; 
+select * from fx67ll_mahjong_reservation_log where del_flag = '0';
+
+
+

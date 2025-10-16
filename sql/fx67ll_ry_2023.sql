@@ -40,7 +40,10 @@ insert into sys_dict_type values(14, '学科类型',   'fx67ll_subject_type',   
 insert into sys_dict_type values(15, '问题类型',   'fx67ll_question_type',    '0', 'admin', sysdate(), '', null, '问题类型列表');
 
 -- IP记录管理枚举项
-insert into sys_dict_type values(16, 'IP记录类型', 'fx67ll_ip_type',          '0', 'admin', sysdate(), '', null, 'IP记录类型列表');
+insert into sys_dict_type values(16, 'IP记录类型',    'fx67ll_ip_type',         '0', 'admin', sysdate(), '', null, 'IP记录类型列表');
+
+-- 麻将室预约订单记录管理枚举项
+insert into sys_dict_type values(17, '订单记录类型',  'fx67ll_order_status',    '0', 'admin', sysdate(), '', null, '订单状态类型列表');
 
 
 
@@ -96,8 +99,6 @@ insert into sys_dict_data values(26, 8,  '生成代码', '8',       'sys_oper_ty
 insert into sys_dict_data values(27, 9,  '清空数据', '9',       'sys_oper_type',       '',   'danger',  'N', '0', 'admin', sysdate(), '', null, '清空操作');
 insert into sys_dict_data values(28, 1,  '成功',     '0',       'sys_common_status',   '',   'primary', 'N', '0', 'admin', sysdate(), '', null, '正常状态');
 insert into sys_dict_data values(29, 2,  '失败',     '1',       'sys_common_status',   '',   'danger',  'N', '0', 'admin', sysdate(), '', null, '停用状态');
-insert into sys_dict_data values(28, 1,  '成功',     '0',       'sys_common_status',   '',   'primary', 'N', '0', 'admin', sysdate(), '', null, '正常状态');
-insert into sys_dict_data values(29, 2,  '失败',     '1',       'sys_common_status',   '',   'danger',  'N', '0', 'admin', sysdate(), '', null, '停用状态');
 
 -- 彩票管理枚举项插入值
 insert into sys_dict_data values(30, 1,  '大乐透',   '1',       'fx67ll_lottery_type', '',   '',        'N', '0', 'admin', sysdate(), '', null, '大乐透');
@@ -133,3 +134,11 @@ insert into sys_dict_data values(46, 5,  '七星彩',   '5',       'fx67ll_lotte
 insert into sys_dict_data values(50, 1,  '其他',     '0',       'fx67ll_ip_type',         '',   '',     'N', '0', 'admin', sysdate(), '', null, '其他');
 insert into sys_dict_data values(51, 2,  '点赞',     '1',       'fx67ll_ip_type',         '',   '',     'N', '0', 'admin', sysdate(), '', null, '点赞');
 insert into sys_dict_data values(52, 3,  '接口',     '2',       'fx67ll_ip_type',         '',   '',     'N', '0', 'admin', sysdate(), '', null, '接口');
+
+-- 麻将室预约订单记录管理枚举项插入值
+insert into sys_dict_data values(53, 1,  '正常',     '0',       'fx67ll_order_status',         '',   '',     'N', '0', 'admin', sysdate(), '', null, '正常');
+insert into sys_dict_data values(54, 2,  '取消',     '1',       'fx67ll_order_status',         '',   '',     'N', '0', 'admin', sysdate(), '', null, '取消');
+insert into sys_dict_data values(55, 3,  '完成',     '2',       'fx67ll_order_status',         '',   '',     'N', '0', 'admin', sysdate(), '', null, '完成');
+
+
+
