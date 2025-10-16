@@ -1,0 +1,139 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.ruoyi.system.mapper.Fx67llMahjongReservationLogMapper">
+
+    <resultMap type="Fx67llMahjongReservationLog" id="Fx67llMahjongReservationLogResult">
+        <result property="mahjongReservationLogId" column="mahjong_reservation_log_id"/>
+        <result property="userId" column="user_id"/>
+        <result property="mahjongRoomId" column="mahjong_room_id"/>
+        <result property="reservationStartTime" column="reservation_start_time"/>
+        <result property="reservationEndTime" column="reservation_end_time"/>
+        <result property="reservationContact" column="reservation_contact"/>
+        <result property="reservationAmount" column="reservation_amount"/>
+        <result property="reservationStatus" column="reservation_status"/>
+        <result property="reservationRemark" column="reservation_remark"/>
+        <result property="delFlag" column="del_flag"/>
+        <result property="createBy" column="create_by"/>
+        <result property="createTime" column="create_time"/>
+        <result property="updateBy" column="update_by"/>
+        <result property="updateTime" column="update_time"/>
+    </resultMap>
+
+    <sql id="selectFx67llMahjongReservationLogVo">
+        select mahjong_reservation_log_id,
+               user_id,
+               mahjong_room_id,
+               reservation_start_time,
+               reservation_end_time,
+               reservation_contact,
+               reservation_amount,
+               reservation_status,
+               reservation_remark,
+               del_flag,
+               create_by,
+               create_time,
+               update_by,
+               update_time
+        from fx67ll_mahjong_reservation_log
+    </sql>
+
+    <select id="selectFx67llMahjongReservationLogList" parameterType="Fx67llMahjongReservationLog"
+            resultMap="Fx67llMahjongReservationLogResult">
+        <include refid="selectFx67llMahjongReservationLogVo"/>
+        <where>
+            <if test="userId != null ">and user_id = #{userId}</if>
+            <if test="mahjongRoomId != null ">and mahjong_room_id = #{mahjongRoomId}</if>
+            <if test="reservationStartTime != null ">and reservation_start_time = #{reservationStartTime}</if>
+            <if test="reservationEndTime != null ">and reservation_end_time = #{reservationEndTime}</if>
+            <if test="reservationContact != null  and reservationContact != ''">and reservation_contact =
+                #{reservationContact}
+            </if>
+            <if test="reservationAmount != null ">and reservation_amount = #{reservationAmount}</if>
+            <if test="reservationStatus != null  and reservationStatus != ''">and reservation_status =
+                #{reservationStatus}
+            </if>
+            <if test="reservationRemark != null  and reservationRemark != ''">and reservation_remark =
+                #{reservationRemark}
+            </if>
+        </where>
+        order by STR_TO_DATE(update_time, "%Y-%m-%d %H:%i:%s") desc
+    </select>
+
+    <select id="selectFx67llMahjongReservationLogByMahjongReservationLogId" parameterType="Long"
+            resultMap="Fx67llMahjongReservationLogResult">
+        <include refid="selectFx67llMahjongReservationLogVo"/>
+        where mahjong_reservation_log_id = #{mahjongReservationLogId}
+    </select>
+
+    <insert id="insertFx67llMahjongReservationLog" parameterType="Fx67llMahjongReservationLog" useGeneratedKeys="true"
+            keyProperty="mahjongReservationLogId">
+        insert into fx67ll_mahjong_reservation_log
+        <trim prefix="(" suffix=")" suffixOverrides=",">
+            <if test="userId != null">user_id,</if>
+            <if test="mahjongRoomId != null">mahjong_room_id,</if>
+            <if test="reservationStartTime != null">reservation_start_time,</if>
+            <if test="reservationEndTime != null">reservation_end_time,</if>
+            <if test="reservationContact != null">reservation_contact,</if>
+            <if test="reservationAmount != null">reservation_amount,</if>
+            <if test="reservationStatus != null and reservationStatus != ''">reservation_status,</if>
+            <if test="reservationRemark != null">reservation_remark,</if>
+            <if test="delFlag != null and delFlag != ''">del_flag,</if>
+            <if test="createBy != null">create_by,</if>
+            <if test="createTime != null">create_time,</if>
+            <if test="updateBy != null">update_by,</if>
+            <if test="updateTime != null">update_time,</if>
+        </trim>
+        <trim prefix="values (" suffix=")" suffixOverrides=",">
+            <if test="userId != null">#{userId},</if>
+            <if test="mahjongRoomId != null">#{mahjongRoomId},</if>
+            <if test="reservationStartTime != null">#{reservationStartTime},</if>
+            <if test="reservationEndTime != null">#{reservationEndTime},</if>
+            <if test="reservationContact != null">#{reservationContact},</if>
+            <if test="reservationAmount != null">#{reservationAmount},</if>
+            <if test="reservationStatus != null and reservationStatus != ''">#{reservationStatus},</if>
+            <if test="reservationRemark != null">#{reservationRemark},</if>
+            <if test="delFlag != null and delFlag != ''">#{delFlag},</if>
+            <if test="createBy != null">#{createBy},</if>
+            <if test="createTime != null">#{createTime},</if>
+            <if test="updateBy != null">#{updateBy},</if>
+            <if test="updateTime != null">#{updateTime},</if>
+        </trim>
+    </insert>
+
+    <update id="updateFx67llMahjongReservationLog" parameterType="Fx67llMahjongReservationLog">
+        update fx67ll_mahjong_reservation_log
+        <trim prefix="SET" suffixOverrides=",">
+            <if test="userId != null">user_id = #{userId},</if>
+            <if test="mahjongRoomId != null">mahjong_room_id = #{mahjongRoomId},</if>
+            <if test="reservationStartTime != null">reservation_start_time = #{reservationStartTime},</if>
+            <if test="reservationEndTime != null">reservation_end_time = #{reservationEndTime},</if>
+            <if test="reservationContact != null">reservation_contact = #{reservationContact},</if>
+            <if test="reservationAmount != null">reservation_amount = #{reservationAmount},</if>
+            <if test="reservationStatus != null and reservationStatus != ''">reservation_status =
+                #{reservationStatus},
+            </if>
+            <if test="reservationRemark != null">reservation_remark = #{reservationRemark},</if>
+            <if test="delFlag != null and delFlag != ''">del_flag = #{delFlag},</if>
+            <if test="createBy != null">create_by = #{createBy},</if>
+            <if test="createTime != null">create_time = #{createTime},</if>
+            <if test="updateBy != null">update_by = #{updateBy},</if>
+            <if test="updateTime != null">update_time = #{updateTime},</if>
+        </trim>
+        where mahjong_reservation_log_id = #{mahjongReservationLogId}
+    </update>
+
+    <delete id="deleteFx67llMahjongReservationLogByMahjongReservationLogId" parameterType="Long">
+        delete
+        from fx67ll_mahjong_reservation_log
+        where mahjong_reservation_log_id = #{mahjongReservationLogId}
+    </delete>
+
+    <delete id="deleteFx67llMahjongReservationLogByMahjongReservationLogIds" parameterType="String">
+        delete from fx67ll_mahjong_reservation_log where mahjong_reservation_log_id in
+        <foreach item="mahjongReservationLogId" collection="array" open="(" separator="," close=")">
+            #{mahjongReservationLogId}
+        </foreach>
+    </delete>
+</mapper>
