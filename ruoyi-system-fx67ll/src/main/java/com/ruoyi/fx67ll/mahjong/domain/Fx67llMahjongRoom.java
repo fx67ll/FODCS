@@ -20,10 +20,16 @@ public class Fx67llMahjongRoom extends BaseEntity {
     private Long mahjongRoomId;
 
     /**
-     * 创建者用户主键
+     * 管理员用户主键
      */
-    @Excel(name = "创建者用户主键")
+    @Excel(name = "管理员用户主键")
     private Long userId;
+
+    /**
+     * 管理员用户名
+     */
+    @Excel(name = "管理员用户名")
+    private String userName;
 
     /**
      * 麻将室名称
@@ -101,6 +107,14 @@ public class Fx67llMahjongRoom extends BaseEntity {
 
     public Long getUserId() {
         return userId;
+    }
+
+    public void setUserName(String userName) {
+        this.userName = userName;
+    }
+
+    public String getUserName() {
+        return userName;
     }
 
     public void setMahjongRoomName(String mahjongRoomName) {
@@ -196,6 +210,7 @@ public class Fx67llMahjongRoom extends BaseEntity {
         return new ToStringBuilder(this, ToStringStyle.MULTI_LINE_STYLE)
                 .append("mahjongRoomId", getMahjongRoomId())
                 .append("userId", getUserId())
+                .append("userName", getUserName())
                 .append("mahjongRoomName", getMahjongRoomName())
                 .append("mahjongRoomDescription", getMahjongRoomDescription())
                 .append("mahjongRoomCapacity", getMahjongRoomCapacity())

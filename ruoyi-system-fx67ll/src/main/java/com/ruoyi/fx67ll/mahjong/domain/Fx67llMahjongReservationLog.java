@@ -29,10 +29,23 @@ public class Fx67llMahjongReservationLog extends BaseEntity {
     private Long userId;
 
     /**
+     * 预约用户名
+     */
+    @Excel(name = "预约用户名")
+    private String createBy;
+
+    /**
      * 麻将室主键
      */
     @Excel(name = "麻将室主键")
     private Long mahjongRoomId;
+
+    /**
+     * 麻将室名称
+     */
+    @Excel(name = "麻将室名称")
+    private String mahjongRoomName;
+
 
     /**
      * 预约开始时间（含日期和小时）
@@ -111,12 +124,28 @@ public class Fx67llMahjongReservationLog extends BaseEntity {
         return userId;
     }
 
+    public void setCreateBy(String createBy) {
+        this.createBy = createBy;
+    }
+
+    public String getCreateBy() {
+        return createBy;
+    }
+
     public void setMahjongRoomId(Long mahjongRoomId) {
         this.mahjongRoomId = mahjongRoomId;
     }
 
     public Long getMahjongRoomId() {
         return mahjongRoomId;
+    }
+
+    public void setMahjongRoomName(String mahjongRoomName) {
+        this.mahjongRoomName = mahjongRoomName;
+    }
+
+    public String getMahjongRoomName() {
+        return mahjongRoomName;
     }
 
     public void setReservationStartTime(Date reservationStartTime) {
@@ -212,7 +241,9 @@ public class Fx67llMahjongReservationLog extends BaseEntity {
         return new ToStringBuilder(this, ToStringStyle.MULTI_LINE_STYLE)
                 .append("mahjongReservationLogId", getMahjongReservationLogId())
                 .append("userId", getUserId())
+                .append("createBy", getCreateBy())
                 .append("mahjongRoomId", getMahjongRoomId())
+                .append("mahjongRoomName", getMahjongRoomName())
                 .append("reservationStartTime", getReservationStartTime())
                 .append("reservationEndTime", getReservationEndTime())
                 .append("reservationContact", getReservationContact())
@@ -220,7 +251,6 @@ public class Fx67llMahjongReservationLog extends BaseEntity {
                 .append("reservationStatus", getReservationStatus())
                 .append("reservationRemark", getReservationRemark())
                 .append("delFlag", getDelFlag())
-                .append("createBy", getCreateBy())
                 .append("createTime", getCreateTime())
                 .append("updateBy", getUpdateBy())
                 .append("updateTime", getUpdateTime())

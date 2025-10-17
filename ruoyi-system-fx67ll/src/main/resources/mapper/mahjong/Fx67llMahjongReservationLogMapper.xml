@@ -7,7 +7,9 @@
     <resultMap type="Fx67llMahjongReservationLog" id="Fx67llMahjongReservationLogResult">
         <result property="mahjongReservationLogId" column="mahjong_reservation_log_id"/>
         <result property="userId" column="user_id"/>
+        <result property="createBy" column="create_by"/>
         <result property="mahjongRoomId" column="mahjong_room_id"/>
+        <result property="mahjongRoomName" column="mahjong_room_name"/>
         <result property="reservationStartTime" column="reservation_start_time"/>
         <result property="reservationEndTime" column="reservation_end_time"/>
         <result property="reservationContact" column="reservation_contact"/>
@@ -15,7 +17,6 @@
         <result property="reservationStatus" column="reservation_status"/>
         <result property="reservationRemark" column="reservation_remark"/>
         <result property="delFlag" column="del_flag"/>
-        <result property="createBy" column="create_by"/>
         <result property="createTime" column="create_time"/>
         <result property="updateBy" column="update_by"/>
         <result property="updateTime" column="update_time"/>
@@ -24,7 +25,9 @@
     <sql id="selectFx67llMahjongReservationLogVo">
         select mahjong_reservation_log_id,
                user_id,
+               create_by,
                mahjong_room_id,
+               mahjong_room_name,
                reservation_start_time,
                reservation_end_time,
                reservation_contact,
@@ -32,7 +35,6 @@
                reservation_status,
                reservation_remark,
                del_flag,
-               create_by,
                create_time,
                update_by,
                update_time
@@ -43,22 +45,25 @@
             resultMap="Fx67llMahjongReservationLogResult">
         <include refid="selectFx67llMahjongReservationLogVo"/>
         <where>
+            <if test="userId != null ">and user_id = #{userId}</if>
+            <if test="createBy != null  and createBy != ''">and create_by like concat('%',
+                #{createBy}, '%')
+            </if>
             <if test="mahjongRoomId != null ">and mahjong_room_id = #{mahjongRoomId}</if>
-            <if test="reservationStartTime != null ">and reservation_start_time = #{reservationStartTime}</if>
-            <if test="reservationEndTime != null ">and reservation_end_time = #{reservationEndTime}</if>
-            <if test="reservationContact != null  and reservationContact != ''">and reservation_contact =
-                #{reservationContact}
+            <if test="mahjongRoomName != null  and mahjongRoomName != ''">and mahjong_room_name like concat('%',
+                #{mahjongRoomName}, '%')
+            </if>
+            <if test="reservationContact != null  and reservationContact != ''">and reservation_contact like concat('%',
+                #{reservationContact}, '%')
             </if>
             <if test="reservationAmount != null ">and reservation_amount = #{reservationAmount}</if>
             <if test="reservationStatus != null  and reservationStatus != ''">and reservation_status =
                 #{reservationStatus}
             </if>
-            <if test="reservationRemark != null  and reservationRemark != ''">and reservation_remark =
-                #{reservationRemark}
+            <if test="reservationRemark != null  and reservationRemark != ''">and reservation_remark like concat('%',
+                #{reservationRemark}, '%')
             </if>
             <if test="delFlag != null  and delFlag != ''">and del_flag = #{delFlag}</if>
-            <if test="userId != null ">and user_id = #{userId}</if>
-            <if test="createBy != null  and createBy != ''">and create_by = #{createBy}</if>
             <if test="beginCreateTime != null and endCreateTime != ''">and create_time between #{beginCreateTime} and
                 #{endCreateTime}
             </if>
@@ -81,7 +86,9 @@
         insert into fx67ll_mahjong_reservation_log
         <trim prefix="(" suffix=")" suffixOverrides=",">
             <if test="userId != null">user_id,</if>
+            <if test="createBy != null">create_by,</if>
             <if test="mahjongRoomId != null">mahjong_room_id,</if>
+            <if test="mahjongRoomName != null">mahjong_room_name,</if>
             <if test="reservationStartTime != null">reservation_start_time,</if>
             <if test="reservationEndTime != null">reservation_end_time,</if>
             <if test="reservationContact != null">reservation_contact,</if>
@@ -89,14 +96,15 @@
             <if test="reservationStatus != null and reservationStatus != ''">reservation_status,</if>
             <if test="reservationRemark != null">reservation_remark,</if>
             <if test="delFlag != null and delFlag != ''">del_flag,</if>
-            <if test="createBy != null">create_by,</if>
             <if test="createTime != null">create_time,</if>
             <if test="updateBy != null">update_by,</if>
             <if test="updateTime != null">update_time,</if>
         </trim>
         <trim prefix="values (" suffix=")" suffixOverrides=",">
             <if test="userId != null">#{userId},</if>
+            <if test="createBy != null">#{createBy},</if>
             <if test="mahjongRoomId != null">#{mahjongRoomId},</if>
+            <if test="mahjongRoomName != null">#{mahjongRoomName},</if>
             <if test="reservationStartTime != null">#{reservationStartTime},</if>
             <if test="reservationEndTime != null">#{reservationEndTime},</if>
             <if test="reservationContact != null">#{reservationContact},</if>
@@ -104,7 +112,6 @@
             <if test="reservationStatus != null and reservationStatus != ''">#{reservationStatus},</if>
             <if test="reservationRemark != null">#{reservationRemark},</if>
             <if test="delFlag != null and delFlag != ''">#{delFlag},</if>
-            <if test="createBy != null">#{createBy},</if>
             <if test="createTime != null">#{createTime},</if>
             <if test="updateBy != null">#{updateBy},</if>
             <if test="updateTime != null">#{updateTime},</if>
@@ -115,7 +122,9 @@
         update fx67ll_mahjong_reservation_log
         <trim prefix="SET" suffixOverrides=",">
             <if test="userId != null">user_id = #{userId},</if>
+            <if test="createBy != null">create_by = #{createBy},</if>
             <if test="mahjongRoomId != null">mahjong_room_id = #{mahjongRoomId},</if>
+            <if test="mahjongRoomName != null">mahjong_room_name = #{mahjongRoomName},</if>
             <if test="reservationStartTime != null">reservation_start_time = #{reservationStartTime},</if>
             <if test="reservationEndTime != null">reservation_end_time = #{reservationEndTime},</if>
             <if test="reservationContact != null">reservation_contact = #{reservationContact},</if>
@@ -125,7 +134,6 @@
             </if>
             <if test="reservationRemark != null">reservation_remark = #{reservationRemark},</if>
             <if test="delFlag != null and delFlag != ''">del_flag = #{delFlag},</if>
-            <if test="createBy != null">create_by = #{createBy},</if>
             <if test="createTime != null">create_time = #{createTime},</if>
             <if test="updateBy != null">update_by = #{updateBy},</if>
             <if test="updateTime != null">update_time = #{updateTime},</if>

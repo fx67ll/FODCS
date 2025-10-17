@@ -7,6 +7,7 @@
     <resultMap type="Fx67llMahjongRoom" id="Fx67llMahjongRoomResult">
         <result property="mahjongRoomId" column="mahjong_room_id"/>
         <result property="userId" column="user_id"/>
+        <result property="userName" column="user_name"/>
         <result property="mahjongRoomName" column="mahjong_room_name"/>
         <result property="mahjongRoomDescription" column="mahjong_room_description"/>
         <result property="mahjongRoomCapacity" column="mahjong_room_capacity"/>
@@ -23,6 +24,7 @@
     <sql id="selectFx67llMahjongRoomVo">
         select mahjong_room_id,
                user_id,
+               user_name,
                mahjong_room_name,
                mahjong_room_description,
                mahjong_room_capacity,
@@ -40,11 +42,14 @@
     <select id="selectFx67llMahjongRoomList" parameterType="Fx67llMahjongRoom" resultMap="Fx67llMahjongRoomResult">
         <include refid="selectFx67llMahjongRoomVo"/>
         <where>
+            <if test="userName != null  and userName != ''">and user_name like concat('%',
+                #{userName}, '%')
+            </if>
             <if test="mahjongRoomName != null  and mahjongRoomName != ''">and mahjong_room_name like concat('%',
                 #{mahjongRoomName}, '%')
             </if>
-            <if test="mahjongRoomDescription != null  and mahjongRoomDescription != ''">and mahjong_room_description =
-                #{mahjongRoomDescription}
+            <if test="mahjongRoomDescription != null  and mahjongRoomDescription != ''">and mahjong_room_description like concat('%',
+                #{mahjongRoomDescription}, '%')
             </if>
             <if test="mahjongRoomCapacity != null ">and mahjong_room_capacity = #{mahjongRoomCapacity}</if>
             <if test="mahjongRoomPriceConfig != null  and mahjongRoomPriceConfig != ''">and mahjong_room_price_config =
@@ -53,8 +58,8 @@
             <if test="mahjongRoomStatus != null  and mahjongRoomStatus != ''">and mahjong_room_status =
                 #{mahjongRoomStatus}
             </if>
-            <if test="mahjongRoomRemark != null  and mahjongRoomRemark != ''">and mahjong_room_remark =
-                #{mahjongRoomRemark}
+            <if test="mahjongRoomRemark != null  and mahjongRoomRemark != ''">and mahjong_room_remark like concat('%',
+                #{mahjongRoomRemark}, '%')
             </if>
             <if test="delFlag != null  and delFlag != ''">and del_flag = #{delFlag}</if>
             <if test="userId != null ">and user_id = #{userId}</if>
@@ -80,6 +85,7 @@
         insert into fx67ll_mahjong_room
         <trim prefix="(" suffix=")" suffixOverrides=",">
             <if test="userId != null">user_id,</if>
+            <if test="userName != null">user_name,</if>
             <if test="mahjongRoomName != null and mahjongRoomName != ''">mahjong_room_name,</if>
             <if test="mahjongRoomDescription != null and mahjongRoomDescription != ''">mahjong_room_description,</if>
             <if test="mahjongRoomCapacity != null">mahjong_room_capacity,</if>
@@ -94,6 +100,7 @@
         </trim>
         <trim prefix="values (" suffix=")" suffixOverrides=",">
             <if test="userId != null">#{userId},</if>
+            <if test="userName != null">#{userName},</if>
             <if test="mahjongRoomName != null and mahjongRoomName != ''">#{mahjongRoomName},</if>
             <if test="mahjongRoomDescription != null and mahjongRoomDescription != ''">#{mahjongRoomDescription},</if>
             <if test="mahjongRoomCapacity != null">#{mahjongRoomCapacity},</if>
@@ -112,6 +119,7 @@
         update fx67ll_mahjong_room
         <trim prefix="SET" suffixOverrides=",">
             <if test="userId != null">user_id = #{userId},</if>
+            <if test="userName != null">user_name = #{userName},</if>
             <if test="mahjongRoomName != null and mahjongRoomName != ''">mahjong_room_name = #{mahjongRoomName},</if>
             <if test="mahjongRoomDescription != null and mahjongRoomDescription != ''">mahjong_room_description =
                 #{mahjongRoomDescription},
