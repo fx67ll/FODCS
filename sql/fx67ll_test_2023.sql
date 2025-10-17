@@ -568,13 +568,14 @@ select * from fx67ll_note_log;
 -- ----------------------------
 -- 12、麻将室预约表（预留精简计费字段，后续增加计费配置表）
 -- ----------------------------
-drop table if exists fx67ll_mahjong_room;
 drop table if exists fx67ll_mahjong_reservation_log;
+drop table if exists fx67ll_mahjong_room;
 
 -- 建表，麻将室表
 create table fx67ll_mahjong_room (
   mahjong_room_id                    bigint(20)       not null auto_increment    comment '麻将室主键',
-  user_id                            bigint(20)       not null                   comment '创建者用户主键',
+  user_id                            bigint(20)       not null                   comment '管理员主键',
+  user_name                          varchar(30)      not null                   comment '管理员名称',
   mahjong_room_name                  varchar(64)      not null                   comment '麻将室名称',
   mahjong_room_description           varchar(1023)    not null                   comment '麻将室描述',
   mahjong_room_capacity              int(2)           not null default 4         comment '容纳人数（默认4人）',
@@ -596,7 +597,7 @@ alter table fx67ll_mahjong_room
 add constraint chk_room_status check (mahjong_room_status in ('0', '1')),
 add constraint chk_room_del_flag check (del_flag in ('0', '2'));
 
--- 建表，麻将室预约订单记录表（核心调整：索引移除date()函数）
+-- 建表，麻将室预约订单记录表
 create table fx67ll_mahjong_reservation_log (
   mahjong_reservation_log_id         bigint(20)       not null auto_increment    comment '麻将室预约订单记录主键',
   user_id                            bigint(20)       not null                   comment '预约用户主键',
@@ -605,7 +606,7 @@ create table fx67ll_mahjong_reservation_log (
   reservation_end_time               datetime         not null                   comment '预约结束时间（含日期和小时）',
   reservation_contact                varchar(20)      default ''                 comment '预约联系方式（电话）',
   reservation_amount                 decimal(10,2)    null                       comment '预留：费用金额（未来存储实际费用）',
-  reservation_status                 char(1)          not null default '0'       comment '预约状态（0正常 1取消 2完成）',
+  reservation_status                 char(1)          not null default '0'       comment '麻将室预约订单记录状态（0正常 1取消 2完成）',
   reservation_remark                 varchar(1023)    default ''                 comment '麻将室预约订单记录备注',
   del_flag                           char(1)          not null default '0'       comment '删除标志（0代表存在 2代表删除）',
   create_by                          varchar(64)      default ''                 comment '记录创建者',
