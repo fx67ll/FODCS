@@ -1,49 +1,82 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <!DOCTYPE mapper
-PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
-"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
-<mapper namespace="com.ruoyi.system.mapper.Fx67llMahjongRoomMapper">
-    
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.ruoyi.fx67ll.mahjong.mapper.Fx67llMahjongRoomMapper">
+
     <resultMap type="Fx67llMahjongRoom" id="Fx67llMahjongRoomResult">
-        <result property="mahjongRoomId"    column="mahjong_room_id"    />
-        <result property="userId"    column="user_id"    />
-        <result property="mahjongRoomName"    column="mahjong_room_name"    />
-        <result property="mahjongRoomDescription"    column="mahjong_room_description"    />
-        <result property="mahjongRoomCapacity"    column="mahjong_room_capacity"    />
-        <result property="mahjongRoomPriceConfig"    column="mahjong_room_price_config"    />
-        <result property="mahjongRoomStatus"    column="mahjong_room_status"    />
-        <result property="mahjongRoomRemark"    column="mahjong_room_remark"    />
-        <result property="delFlag"    column="del_flag"    />
-        <result property="createBy"    column="create_by"    />
-        <result property="createTime"    column="create_time"    />
-        <result property="updateBy"    column="update_by"    />
-        <result property="updateTime"    column="update_time"    />
+        <result property="mahjongRoomId" column="mahjong_room_id"/>
+        <result property="userId" column="user_id"/>
+        <result property="mahjongRoomName" column="mahjong_room_name"/>
+        <result property="mahjongRoomDescription" column="mahjong_room_description"/>
+        <result property="mahjongRoomCapacity" column="mahjong_room_capacity"/>
+        <result property="mahjongRoomPriceConfig" column="mahjong_room_price_config"/>
+        <result property="mahjongRoomStatus" column="mahjong_room_status"/>
+        <result property="mahjongRoomRemark" column="mahjong_room_remark"/>
+        <result property="delFlag" column="del_flag"/>
+        <result property="createBy" column="create_by"/>
+        <result property="createTime" column="create_time"/>
+        <result property="updateBy" column="update_by"/>
+        <result property="updateTime" column="update_time"/>
     </resultMap>
 
     <sql id="selectFx67llMahjongRoomVo">
-        select mahjong_room_id, user_id, mahjong_room_name, mahjong_room_description, mahjong_room_capacity, mahjong_room_price_config, mahjong_room_status, mahjong_room_remark, del_flag, create_by, create_time, update_by, update_time from fx67ll_mahjong_room
+        select mahjong_room_id,
+               user_id,
+               mahjong_room_name,
+               mahjong_room_description,
+               mahjong_room_capacity,
+               mahjong_room_price_config,
+               mahjong_room_status,
+               mahjong_room_remark,
+               del_flag,
+               create_by,
+               create_time,
+               update_by,
+               update_time
+        from fx67ll_mahjong_room
     </sql>
 
     <select id="selectFx67llMahjongRoomList" parameterType="Fx67llMahjongRoom" resultMap="Fx67llMahjongRoomResult">
         <include refid="selectFx67llMahjongRoomVo"/>
-        <where>  
-            <if test="userId != null "> and user_id = #{userId}</if>
-            <if test="mahjongRoomName != null  and mahjongRoomName != ''"> and mahjong_room_name like concat('%', #{mahjongRoomName}, '%')</if>
-            <if test="mahjongRoomDescription != null  and mahjongRoomDescription != ''"> and mahjong_room_description = #{mahjongRoomDescription}</if>
-            <if test="mahjongRoomCapacity != null "> and mahjong_room_capacity = #{mahjongRoomCapacity}</if>
-            <if test="mahjongRoomPriceConfig != null  and mahjongRoomPriceConfig != ''"> and mahjong_room_price_config = #{mahjongRoomPriceConfig}</if>
-            <if test="mahjongRoomStatus != null  and mahjongRoomStatus != ''"> and mahjong_room_status = #{mahjongRoomStatus}</if>
-            <if test="mahjongRoomRemark != null  and mahjongRoomRemark != ''"> and mahjong_room_remark = #{mahjongRoomRemark}</if>
+        <where>
+            <if test="mahjongRoomName != null  and mahjongRoomName != ''">and mahjong_room_name like concat('%',
+                #{mahjongRoomName}, '%')
+            </if>
+            <if test="mahjongRoomDescription != null  and mahjongRoomDescription != ''">and mahjong_room_description =
+                #{mahjongRoomDescription}
+            </if>
+            <if test="mahjongRoomCapacity != null ">and mahjong_room_capacity = #{mahjongRoomCapacity}</if>
+            <if test="mahjongRoomPriceConfig != null  and mahjongRoomPriceConfig != ''">and mahjong_room_price_config =
+                #{mahjongRoomPriceConfig}
+            </if>
+            <if test="mahjongRoomStatus != null  and mahjongRoomStatus != ''">and mahjong_room_status =
+                #{mahjongRoomStatus}
+            </if>
+            <if test="mahjongRoomRemark != null  and mahjongRoomRemark != ''">and mahjong_room_remark =
+                #{mahjongRoomRemark}
+            </if>
+            <if test="delFlag != null  and delFlag != ''">and del_flag = #{delFlag}</if>
+            <if test="userId != null ">and user_id = #{userId}</if>
+            <if test="createBy != null  and createBy != ''">and create_by = #{createBy}</if>
+            <if test="beginCreateTime != null and endCreateTime != ''">and create_time between #{beginCreateTime} and
+                #{endCreateTime}
+            </if>
+            <if test="updateBy != null  and updateBy != ''">and update_by = #{updateBy}</if>
+            <if test="beginUpdateTime != null and endUpdateTime != ''">and update_time between #{beginUpdateTime} and
+                #{endUpdateTime}
+            </if>
         </where>
         order by STR_TO_DATE(update_time, "%Y-%m-%d %H:%i:%s") desc
     </select>
-    
+
     <select id="selectFx67llMahjongRoomByMahjongRoomId" parameterType="Long" resultMap="Fx67llMahjongRoomResult">
         <include refid="selectFx67llMahjongRoomVo"/>
         where mahjong_room_id = #{mahjongRoomId}
     </select>
-        
-    <insert id="insertFx67llMahjongRoom" parameterType="Fx67llMahjongRoom" useGeneratedKeys="true" keyProperty="mahjongRoomId">
+
+    <insert id="insertFx67llMahjongRoom" parameterType="Fx67llMahjongRoom" useGeneratedKeys="true"
+            keyProperty="mahjongRoomId">
         insert into fx67ll_mahjong_room
         <trim prefix="(" suffix=")" suffixOverrides=",">
             <if test="userId != null">user_id,</if>
@@ -58,7 +91,7 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
             <if test="createTime != null">create_time,</if>
             <if test="updateBy != null">update_by,</if>
             <if test="updateTime != null">update_time,</if>
-         </trim>
+        </trim>
         <trim prefix="values (" suffix=")" suffixOverrides=",">
             <if test="userId != null">#{userId},</if>
             <if test="mahjongRoomName != null and mahjongRoomName != ''">#{mahjongRoomName},</if>
@@ -72,7 +105,7 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
             <if test="createTime != null">#{createTime},</if>
             <if test="updateBy != null">#{updateBy},</if>
             <if test="updateTime != null">#{updateTime},</if>
-         </trim>
+        </trim>
     </insert>
 
     <update id="updateFx67llMahjongRoom" parameterType="Fx67llMahjongRoom">
@@ -80,10 +113,14 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         <trim prefix="SET" suffixOverrides=",">
             <if test="userId != null">user_id = #{userId},</if>
             <if test="mahjongRoomName != null and mahjongRoomName != ''">mahjong_room_name = #{mahjongRoomName},</if>
-            <if test="mahjongRoomDescription != null and mahjongRoomDescription != ''">mahjong_room_description = #{mahjongRoomDescription},</if>
+            <if test="mahjongRoomDescription != null and mahjongRoomDescription != ''">mahjong_room_description =
+                #{mahjongRoomDescription},
+            </if>
             <if test="mahjongRoomCapacity != null">mahjong_room_capacity = #{mahjongRoomCapacity},</if>
             <if test="mahjongRoomPriceConfig != null">mahjong_room_price_config = #{mahjongRoomPriceConfig},</if>
-            <if test="mahjongRoomStatus != null and mahjongRoomStatus != ''">mahjong_room_status = #{mahjongRoomStatus},</if>
+            <if test="mahjongRoomStatus != null and mahjongRoomStatus != ''">mahjong_room_status =
+                #{mahjongRoomStatus},
+            </if>
             <if test="mahjongRoomRemark != null">mahjong_room_remark = #{mahjongRoomRemark},</if>
             <if test="delFlag != null and delFlag != ''">del_flag = #{delFlag},</if>
             <if test="createBy != null">create_by = #{createBy},</if>
@@ -95,7 +132,9 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
     </update>
 
     <delete id="deleteFx67llMahjongRoomByMahjongRoomId" parameterType="Long">
-        delete from fx67ll_mahjong_room where mahjong_room_id = #{mahjongRoomId}
+        delete
+        from fx67ll_mahjong_room
+        where mahjong_room_id = #{mahjongRoomId}
     </delete>
 
     <delete id="deleteFx67llMahjongRoomByMahjongRoomIds" parameterType="String">
