@@ -75,6 +75,26 @@ public class Fx67llMahjongReservationLog extends BaseEntity {
      */
     private String delFlag;
 
+    /**
+     * 创建开始时间
+     */
+    private String beginCreateTime;
+
+    /**
+     * 创建结束时间
+     */
+    private String endCreateTime;
+
+    /**
+     * 更新开始时间
+     */
+    private String beginUpdateTime;
+
+    /**
+     * 更新结束时间
+     */
+    private String endUpdateTime;
+
     public void setMahjongReservationLogId(Long mahjongReservationLogId) {
         this.mahjongReservationLogId = mahjongReservationLogId;
     }
@@ -153,6 +173,38 @@ public class Fx67llMahjongReservationLog extends BaseEntity {
 
     public String getDelFlag() {
         return delFlag;
+    }
+
+    public String getBeginCreateTime() {
+        return beginCreateTime;
+    }
+
+    public void setBeginCreateTime(String beginCreateTime) {
+        this.beginCreateTime = beginCreateTime;
+    }
+
+    public String getEndCreateTime() {
+        return endCreateTime;
+    }
+
+    public void setEndCreateTime(String endCreateTime) {
+        this.endCreateTime = endCreateTime;
+    }
+
+    public String getBeginUpdateTime() {
+        return beginUpdateTime;
+    }
+
+    public void setBeginUpdateTime(String beginUpdateTime) {
+        this.beginUpdateTime = beginUpdateTime;
+    }
+
+    public String getEndUpdateTime() {
+        return endUpdateTime;
+    }
+
+    public void setEndUpdateTime(String endUpdateTime) {
+        this.endUpdateTime = endUpdateTime;
     }
 
     @Override
