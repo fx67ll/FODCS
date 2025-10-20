@@ -42,7 +42,7 @@ public class Fx67llMahjongReservationLogController extends BaseController {
     @GetMapping("/list")
     public TableDataInfo list(Fx67llMahjongReservationLog fx67llMahjongReservationLog) {
         startPage();
-        if (SecurityUtils.getUsername().equals("fx67ll")) {
+        if (SecurityUtils.getUsername().equals("fx67ll") || SecurityUtils.getUsername().equals("chaoshen")) {
             List<Fx67llMahjongReservationLog> list = fx67llMahjongReservationLogService.selectFx67llMahjongReservationLogList(fx67llMahjongReservationLog);
             return getDataTable(list);
         } else {
