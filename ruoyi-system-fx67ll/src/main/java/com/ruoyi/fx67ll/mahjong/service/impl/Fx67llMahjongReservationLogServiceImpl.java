@@ -13,6 +13,7 @@ import com.ruoyi.common.core.domain.entity.SysUser;
 import com.ruoyi.system.service.ISysUserService;
 import com.ruoyi.fx67ll.mahjong.mapper.Fx67llMahjongReservationLogMapper;
 import com.ruoyi.fx67ll.mahjong.domain.Fx67llMahjongReservationLog;
+import com.ruoyi.fx67ll.mahjong.domain.Fx67llMahjongReservationLogExt;
 import com.ruoyi.fx67ll.mahjong.service.IFx67llMahjongReservationLogService;
 import com.ruoyi.fx67ll.mahjong.domain.Fx67llMahjongRoom;
 import com.ruoyi.fx67ll.mahjong.service.IFx67llMahjongRoomService;
@@ -109,6 +110,20 @@ public class Fx67llMahjongReservationLogServiceImpl implements IFx67llMahjongRes
     }
 
     /**
+     * 提供给 APP 查询麻将室预约记录列表
+     *
+     * @param mahjongRoomId   麻将室ID
+     * @param reservationDate 预约日期（格式：YYYYMMDD，如20251031）
+     * @param userId            预约用户ID
+     * @param reservationStatus 预约状态
+     * @return 预约记录列表（含用户信息）
+     */
+    @Override
+    public List<Fx67llMahjongReservationLogExt> selectReservationLogForApp(Long mahjongRoomId, String reservationDate, Long userId, String reservationStatus) {
+        return fx67llMahjongReservationLogMapper.selectReservationLogByRoomAndDate(mahjongRoomId, reservationDate, userId, reservationStatus);
+    }
+
+    /**
      * 新增麻将室预约记录
      *
      * @param fx67llMahjongReservationLog 麻将室预约记录
@@ -161,7 +176,7 @@ public class Fx67llMahjongReservationLogServiceImpl implements IFx67llMahjongRes
                     ? fx67llMahjongReservationLog.getUserId()
                     : oldLog.getUserId();
             SysUser sysUser = userService.selectUserById(nowUserId);
-            Long nowMahjongRoomId= fx67llMahjongReservationLog.getMahjongRoomId() != null
+            Long nowMahjongRoomId = fx67llMahjongReservationLog.getMahjongRoomId() != null
                     ? fx67llMahjongReservationLog.getMahjongRoomId()
                     : oldLog.getMahjongRoomId();
             Fx67llMahjongRoom fx67llMahjongRoom = mahjongRoomService.selectFx67llMahjongRoomByMahjongRoomId(nowMahjongRoomId);
@@ -178,7 +193,7 @@ public class Fx67llMahjongReservationLogServiceImpl implements IFx67llMahjongRes
             fx67llMahjongReservationLog.setReservationContact(sysUser.getPhonenumber());
             fx67llMahjongReservationLog.setUpdateBy(SecurityUtils.getUsername());
             fx67llMahjongReservationLog.setUpdateTime(DateUtils.getNowDate());
-        }else{
+        } else {
             fx67llMahjongReservationLog.setUpdateBy(SecurityUtils.getUsername());
             fx67llMahjongReservationLog.setUpdateTime(DateUtils.getNowDate());
         }

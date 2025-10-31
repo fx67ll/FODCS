@@ -4,6 +4,7 @@ import java.util.List;
 import javax.servlet.http.HttpServletResponse;
 
 import com.ruoyi.common.utils.SecurityUtils;
+import com.ruoyi.fx67ll.mahjong.domain.Fx67llMahjongReservationLogExt;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -52,6 +53,18 @@ public class Fx67llMahjongReservationLogController extends BaseController {
     }
 
     /**
+     * 提供给 APP 查询麻将室预约记录列表
+     */
+//    如果只放开SecurityConfig中允许匿名请求的配置，不放开这里的权限配置，会返回获取用户信息异常的错误
+//    @PreAuthorize("@ss.hasPermi('mahjong:reservation:log:list')")
+    @GetMapping("/getReservationLogListForApp")
+    public TableDataInfo getReservationLogListForApp(@RequestBody Long mahjongRoomId, @RequestBody String reservationDate, @RequestBody Long userId, @RequestBody String reservationStatus) {
+        startPage();
+        List<Fx67llMahjongReservationLogExt> list = fx67llMahjongReservationLogService.selectReservationLogForApp(mahjongRoomId, reservationDate, userId, reservationStatus);
+        return getDataTable(list);
+    }
+
+    /**
      * 导出麻将室预约记录列表
      */
     @PreAuthorize("@ss.hasPermi('mahjong:reservation:log:export')")
@@ -83,12 +96,34 @@ public class Fx67llMahjongReservationLogController extends BaseController {
     }
 
     /**
+     * 提供给 APP 新增麻将室预约记录
+     */
+//    如果只放开SecurityConfig中允许匿名请求的配置，不放开这里的权限配置，会返回获取用户信息异常的错误
+//    @PreAuthorize("@ss.hasPermi('mahjong:reservation:log:add')")
+    @Log(title = "麻将室预约记录", businessType = BusinessType.INSERT)
+    @PostMapping(value = "/addReservationLogForApp")
+    public AjaxResult addReservationLogForApp(@RequestBody Fx67llMahjongReservationLog fx67llMahjongReservationLog) {
+        return toAjax(fx67llMahjongReservationLogService.insertFx67llMahjongReservationLog(fx67llMahjongReservationLog));
+    }
+
+    /**
      * 修改麻将室预约记录
      */
     @PreAuthorize("@ss.hasPermi('mahjong:reservation:log:edit')")
     @Log(title = "麻将室预约记录", businessType = BusinessType.UPDATE)
     @PutMapping
     public AjaxResult edit(@RequestBody Fx67llMahjongReservationLog fx67llMahjongReservationLog) {
+        return toAjax(fx67llMahjongReservationLogService.updateFx67llMahjongReservationLog(fx67llMahjongReservationLog));
+    }
+
+    /**
+     * 提供给 APP 修改麻将室预约记录
+     */
+//    如果只放开SecurityConfig中允许匿名请求的配置，不放开这里的权限配置，会返回获取用户信息异常的错误
+//    @PreAuthorize("@ss.hasPermi('mahjong:reservation:log:edit')")
+    @Log(title = "麻将室预约记录", businessType = BusinessType.UPDATE)
+    @PutMapping(value = "/editReservationLogForApp")
+    public AjaxResult editReservationLogForApp(@RequestBody Fx67llMahjongReservationLog fx67llMahjongReservationLog) {
         return toAjax(fx67llMahjongReservationLogService.updateFx67llMahjongReservationLog(fx67llMahjongReservationLog));
     }
 

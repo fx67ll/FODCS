@@ -73,6 +73,21 @@ public class Fx67llMahjongRoomController extends BaseController {
     }
 
     /**
+     * 提供给 APP 获取麻将室详细信息
+     */
+//    如果只放开SecurityConfig中允许匿名请求的配置，不放开这里的权限配置，会返回获取用户信息异常的错误
+//    @PreAuthorize("@ss.hasPermi('mahjong:room:query')")
+    @GetMapping(value = "/getMahjongRoomInfoForApp/{mahjongRoomId}")
+    public AjaxResult getMahjongRoomInfoForApp(@PathVariable("mahjongRoomId") Long mahjongRoomId) {
+        // 参数校验
+        if (mahjongRoomId == null || mahjongRoomId <= 0) {
+            return error("无效的麻将室ID，查询失败！");
+        }
+        return success(fx67llMahjongRoomService.selectFx67llMahjongRoomInfoForApp(mahjongRoomId));
+    }
+
+
+    /**
      * 新增麻将室
      */
     @PreAuthorize("@ss.hasPermi('mahjong:room:add')")

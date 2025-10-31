@@ -65,6 +65,17 @@ public class Fx67llMahjongRoomServiceImpl implements IFx67llMahjongRoomService {
     }
 
     /**
+     * 提供给 APP 查询麻将室
+     *
+     * @param mahjongRoomId 麻将室主键
+     * @return 麻将室
+     */
+    @Override
+    public Fx67llMahjongRoom selectFx67llMahjongRoomInfoForApp(Long mahjongRoomId) {
+        return fx67llMahjongRoomMapper.selectFx67llMahjongRoomDescriptionByMahjongRoomId(mahjongRoomId);
+    }
+
+    /**
      * 查询麻将室列表
      *
      * @param fx67llMahjongRoom 麻将室

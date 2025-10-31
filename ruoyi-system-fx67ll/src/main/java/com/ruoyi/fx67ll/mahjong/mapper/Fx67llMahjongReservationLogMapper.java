@@ -3,6 +3,7 @@ package com.ruoyi.fx67ll.mahjong.mapper;
 import java.util.List;
 
 import com.ruoyi.fx67ll.mahjong.domain.Fx67llMahjongReservationLog;
+import com.ruoyi.fx67ll.mahjong.domain.Fx67llMahjongReservationLogExt;
 
 /**
  * 麻将室预约记录Mapper接口
@@ -18,6 +19,17 @@ public interface Fx67llMahjongReservationLogMapper {
      * @return 麻将室预约记录
      */
     public Fx67llMahjongReservationLog selectFx67llMahjongReservationLogByMahjongReservationLogId(Long mahjongReservationLogId);
+
+    /**
+     * 提供给 APP 查询指定麻将室某天的所有预约记录（含用户名、用户联系方式）
+     *
+     * @param mahjongRoomId     麻将室ID
+     * @param reservationDate   预约日期（格式：YYYYMMDD，如20251031）
+     * @param userId            预约用户ID
+     * @param reservationStatus 预约状态
+     * @return 预约记录列表（含用户信息）
+     */
+    public List<Fx67llMahjongReservationLogExt> selectReservationLogByRoomAndDate(Long mahjongRoomId, String reservationDate, Long userId, String reservationStatus);
 
     /**
      * 查询麻将室预约记录列表

@@ -22,6 +22,18 @@
         <result property="updateTime" column="update_time"/>
     </resultMap>
 
+    <!-- 扩展结果集：继承父类结果集，仅补充用户表关联字段 -->
+    <!-- 继承已有的父类结果集 -->
+    <resultMap
+            type="Fx67llMahjongReservationLogExt"
+            id="Fx67llMahjongReservationLogExtResult"
+            extends="Fx67llMahjongReservationLogResult"
+    >
+        <!-- 仅需定义新增的用户表关联字段（父类字段已通过extends继承） -->
+        <result property="userName" column="user_name"/> <!-- 来自sys_user表的用户名 -->
+        <result property="phonenumber" column="phonenumber"/> <!-- 来自sys_user表的联系方式 -->
+    </resultMap>
+
     <sql id="selectFx67llMahjongReservationLogVo">
         select mahjong_reservation_log_id,
                user_id,
@@ -40,6 +52,61 @@
                update_time
         from fx67ll_mahjong_reservation_log
     </sql>
+
+    <!-- 查询指定麻将室某天的所有预约记录（含用户名、用户联系方式） -->
+    <select id="selectReservationLogByRoomAndDate" resultMap="Fx67llMahjongReservationLogExtResult">
+        SELECT
+        rl.mahjong_reservation_log_id,
+        rl.user_id,
+        rl.create_by,
+        rl.mahjong_room_id,
+        rl.mahjong_room_name,
+        rl.reservation_start_time,
+        rl.reservation_end_time,
+        rl.reservation_contact,
+        rl.reservation_amount,
+        rl.reservation_status,
+        rl.reservation_remark,
+        rl.del_flag,
+        rl.create_time,  <!-- 预约记录的创建时间 -->
+        rl.update_by,
+        rl.update_time,
+        su.user_name,
+        su.phonenumber
+        FROM
+        fx67ll_mahjong_reservation_log rl
+        LEFT JOIN
+        sys_user su ON rl.user_id = su.user_id
+        WHERE
+        rl.del_flag = '0'  <!-- 固定条件：只查未删除的记录 -->
+
+        <!-- 原需求场景固定条件：查询“某个麻将室+某天”时，排除取消状态 -->
+        <if test="mahjongRoomId != null and reservationDate != null and reservationDate != ''">
+            AND rl.reservation_status != '1'  <!-- '1'代表取消，排除该状态 -->
+        </if>
+
+        <!-- 动态条件1：指定麻将室 -->
+        <if test="mahjongRoomId != null">
+            AND rl.mahjong_room_id = #{mahjongRoomId}
+        </if>
+
+        <!-- 动态条件2：指定日期 -->
+        <if test="reservationDate != null and reservationDate != ''">
+            AND DATE_FORMAT(rl.reservation_start_time, '%Y%m%d') = #{reservationDate}
+        </if>
+
+        <!-- 动态条件3：指定用户 -->
+        <if test="userId != null">
+            AND rl.user_id = #{userId}
+        </if>
+
+        <!-- 动态条件4：指定状态 -->
+        <if test="reservationStatus != null and reservationStatus != ''">
+            AND rl.reservation_status = #{reservationStatus}
+        </if>
+        ORDER BY
+        rl.create_time DESC  <!-- 核心修改：按预约记录的创建时间倒序，最新的在第一个 -->
+    </select>
 
     <select id="selectFx67llMahjongReservationLogList" parameterType="Fx67llMahjongReservationLog"
             resultMap="Fx67llMahjongReservationLogResult">

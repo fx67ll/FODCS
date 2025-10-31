@@ -80,6 +80,12 @@
         where mahjong_room_id = #{mahjongRoomId}
     </select>
 
+    <select id="selectFx67llMahjongRoomDescriptionByMahjongRoomId" parameterType="Long" resultMap="Fx67llMahjongRoomResult">
+        select mahjong_room_description
+        from fx67ll_mahjong_room
+        where mahjong_room_id = #{mahjongRoomId}
+    </select>
+
     <insert id="insertFx67llMahjongRoom" parameterType="Fx67llMahjongRoom" useGeneratedKeys="true"
             keyProperty="mahjongRoomId">
         insert into fx67ll_mahjong_room
