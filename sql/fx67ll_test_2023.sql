@@ -500,7 +500,7 @@ create table fx67ll_ip_log (
   -- 联合索引：优化"用户+IP+删除状态"的查询（原有核心场景）
   index idx_user_ip_del (user_id, ip_address, del_flag),
   -- 联合索引：优化"用户+场景+删除状态"的查询（新增场景化查询）
-  index idx_user_type_del (user_id, ip_type, del_flag),
+  index idx_user_ip_type_del (user_id, ip_type, del_flag),
   -- 联合索引：优化"IP+场景+删除状态"的查询（新增场景化查询）
   index idx_ip_type_del (ip_address, ip_type, del_flag),
   -- 场景地址索引：按场景地址查询IP（如统计某接口的访问IP）
@@ -570,6 +570,7 @@ select * from fx67ll_note_log;
 -- ----------------------------
 drop table if exists fx67ll_mahjong_reservation_log;
 drop table if exists fx67ll_mahjong_room;
+drop table if exists sys_user_chaoshen;
 
 -- 建表，麻将室表
 create table fx67ll_mahjong_room (
@@ -628,6 +629,20 @@ alter table fx67ll_mahjong_reservation_log
 add constraint chk_reservation_time check (reservation_start_time < reservation_end_time),
 add constraint chk_reservation_status check (reservation_status in ('0', '1', '2')),
 add constraint chk_reservation_del_flag check (del_flag in ('0', '2'));
+
+-- 修改原有用户表的字段 user_type 为非空，并且完善注释
+alter table sys_user
+modify column user_type varchar(2) default '00' not null comment '用户类型（00系统用户，79超神用户）';
+
+-- 给原有用户表新增字段 user_key，contact_info，用于区分chaoshen用户，兼容复杂的方式
+alter table `sys_user`
+add column `user_key` varchar(30) default '' not null comment '用户标识（chaoshen=超神麻将室用户）' after `user_type`
+alter table `sys_user`
+add column `contact_info` varchar(100) default '' comment '联系方式（手机号之外的联系方式）' after `phonenumber`;
+
+-- 为超神用户注册新增独立配置开关，避免与普通用户注册开关冲突
+insert into `sys_config` (`config_name`, `config_key`, `config_value`, `config_type`, `remark`, `create_time`, `update_time`)
+values ('超神用户注册开关', 'sys.account.registerUserChaoshen', 'true', 'Y', '账号自助-是否开启超神用户注册功能', now(), now());
 
 -- 查询语句
 select * from fx67ll_mahjong_room where del_flag = '0'; 
