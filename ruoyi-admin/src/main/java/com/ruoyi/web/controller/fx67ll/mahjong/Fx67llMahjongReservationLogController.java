@@ -57,10 +57,13 @@ public class Fx67llMahjongReservationLogController extends BaseController {
      */
 //    如果只放开SecurityConfig中允许匿名请求的配置，不放开这里的权限配置，会返回获取用户信息异常的错误
 //    @PreAuthorize("@ss.hasPermi('mahjong:reservation:log:list')")
-    @GetMapping("/getReservationLogListForApp")
-    public TableDataInfo getReservationLogListForApp(@RequestBody Long mahjongRoomId, @RequestBody String reservationDate, @RequestBody Long userId, @RequestBody String reservationStatus) {
+    @PostMapping("/getReservationLogListForApp")
+    public TableDataInfo getReservationLogListForApp(@RequestBody Fx67llMahjongReservationLogExt fx67llMahjongReservationLogExt) {
+        if(!fx67llMahjongReservationLogExt.getIsNeedAll()){
+            fx67llMahjongReservationLogExt.setUserId(SecurityUtils.getUserId());
+        }
         startPage();
-        List<Fx67llMahjongReservationLogExt> list = fx67llMahjongReservationLogService.selectReservationLogForApp(mahjongRoomId, reservationDate, userId, reservationStatus);
+        List<Fx67llMahjongReservationLogExt> list = fx67llMahjongReservationLogService.selectReservationLogForApp(fx67llMahjongReservationLogExt);
         return getDataTable(list);
     }
 

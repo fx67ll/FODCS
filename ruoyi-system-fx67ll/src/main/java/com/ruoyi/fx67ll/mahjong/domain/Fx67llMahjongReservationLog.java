@@ -3,6 +3,7 @@ package com.ruoyi.fx67ll.mahjong.domain;
 import java.math.BigDecimal;
 import java.util.Date;
 
+import com.fasterxml.jackson.annotation.JsonFormat;
 import org.apache.commons.lang3.builder.ToStringBuilder;
 import org.apache.commons.lang3.builder.ToStringStyle;
 import com.ruoyi.common.annotation.Excel;
@@ -51,12 +52,14 @@ public class Fx67llMahjongReservationLog extends BaseEntity {
      * 预约开始时间（含日期和小时）
      */
     @Excel(name = "预约开始时间", readConverterExp = "含=日期和小时")
+    @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
     private Date reservationStartTime;
 
     /**
      * 预约结束时间（含日期和小时）
      */
     @Excel(name = "预约结束时间", readConverterExp = "含=日期和小时")
+    @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
     private Date reservationEndTime;
 
     /**

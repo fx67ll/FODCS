@@ -112,15 +112,12 @@ public class Fx67llMahjongReservationLogServiceImpl implements IFx67llMahjongRes
     /**
      * 提供给 APP 查询麻将室预约记录列表
      *
-     * @param mahjongRoomId   麻将室ID
-     * @param reservationDate 预约日期（格式：YYYYMMDD，如20251031）
-     * @param userId            预约用户ID
-     * @param reservationStatus 预约状态
+     * @param fx67llMahjongReservationLogExt 麻将室预约记录Ext
      * @return 预约记录列表（含用户信息）
      */
     @Override
-    public List<Fx67llMahjongReservationLogExt> selectReservationLogForApp(Long mahjongRoomId, String reservationDate, Long userId, String reservationStatus) {
-        return fx67llMahjongReservationLogMapper.selectReservationLogByRoomAndDate(mahjongRoomId, reservationDate, userId, reservationStatus);
+    public List<Fx67llMahjongReservationLogExt> selectReservationLogForApp(Fx67llMahjongReservationLogExt fx67llMahjongReservationLogExt) {
+        return fx67llMahjongReservationLogMapper.selectReservationLogByRoomAndDate(fx67llMahjongReservationLogExt);
     }
 
     /**

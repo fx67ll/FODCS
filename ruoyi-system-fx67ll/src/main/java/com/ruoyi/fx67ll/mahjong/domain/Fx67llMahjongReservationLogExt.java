@@ -23,6 +23,16 @@ public class Fx67llMahjongReservationLogExt extends Fx67llMahjongReservationLog 
      */
     private String phonenumber;
 
+    /**
+     * 预约日期（格式：YYYYMMDD，如20251031）
+     */
+    private String reservationDate;
+
+    /**
+     * 是否需要查询全量数据
+     */
+    private Boolean isNeedAll;
+
     // Getter & Setter
     public String getUserName() {
         return userName;
@@ -40,6 +50,22 @@ public class Fx67llMahjongReservationLogExt extends Fx67llMahjongReservationLog 
         this.phonenumber = phonenumber;
     }
 
+    public String getReservationDate() {
+        return reservationDate;
+    }
+
+    public void setReservationDate(String reservationDate) {
+        this.reservationDate = reservationDate;
+    }
+
+    public Boolean getIsNeedAll() {
+        return isNeedAll;
+    }
+
+    public void setIsNeedAll(Boolean all) {
+        isNeedAll = all;
+    }
+
     // 重写toString，包含父类字段和新增字段
     @Override
     public String toString() {
@@ -47,6 +73,8 @@ public class Fx67llMahjongReservationLogExt extends Fx67llMahjongReservationLog 
                 .appendSuper(super.toString()) // 继承父类所有字段的toString
                 .append("userName", getUserName())
                 .append("phonenumber", getPhonenumber())
+                .append("reservationDate", getReservationDate())
+                .append("isNeedAll", getIsNeedAll())
                 .toString();
     }
 }

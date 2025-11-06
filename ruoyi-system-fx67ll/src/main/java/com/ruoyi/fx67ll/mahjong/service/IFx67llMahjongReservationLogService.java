@@ -4,6 +4,7 @@ import java.util.List;
 
 import com.ruoyi.fx67ll.mahjong.domain.Fx67llMahjongReservationLog;
 import com.ruoyi.fx67ll.mahjong.domain.Fx67llMahjongReservationLogExt;
+import org.springframework.web.bind.annotation.RequestBody;
 
 /**
  * 麻将室预约记录Service接口
@@ -39,13 +40,10 @@ public interface IFx67llMahjongReservationLogService {
     /**
      * 提供给 APP 查询指定麻将室某天的所有预约记录（含用户名、用户联系方式）
      *
-     * @param mahjongRoomId   麻将室ID
-     * @param reservationDate 预约日期（格式：YYYYMMDD，如20251031）
-     * @param userId            预约用户ID
-     * @param reservationStatus 预约状态
+     * @param fx67llMahjongReservationLogExt 麻将室预约记录Ext
      * @return 预约记录列表（含用户信息）
      */
-    public List<Fx67llMahjongReservationLogExt> selectReservationLogForApp(Long mahjongRoomId, String reservationDate, Long userId, String reservationStatus);
+    public List<Fx67llMahjongReservationLogExt> selectReservationLogForApp(Fx67llMahjongReservationLogExt fx67llMahjongReservationLogExt);
 
     /**
      * 新增麻将室预约记录

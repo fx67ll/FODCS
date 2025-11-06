@@ -23,13 +23,10 @@ public interface Fx67llMahjongReservationLogMapper {
     /**
      * 提供给 APP 查询指定麻将室某天的所有预约记录（含用户名、用户联系方式）
      *
-     * @param mahjongRoomId     麻将室ID
-     * @param reservationDate   预约日期（格式：YYYYMMDD，如20251031）
-     * @param userId            预约用户ID
-     * @param reservationStatus 预约状态
+     * @param fx67llMahjongReservationLogExt 麻将室预约记录Ext
      * @return 预约记录列表（含用户信息）
      */
-    public List<Fx67llMahjongReservationLogExt> selectReservationLogByRoomAndDate(Long mahjongRoomId, String reservationDate, Long userId, String reservationStatus);
+    public List<Fx67llMahjongReservationLogExt> selectReservationLogByRoomAndDate(Fx67llMahjongReservationLogExt fx67llMahjongReservationLogExt);
 
     /**
      * 查询麻将室预约记录列表

@@ -54,7 +54,8 @@
     </sql>
 
     <!-- 查询指定麻将室某天的所有预约记录（含用户名、用户联系方式） -->
-    <select id="selectReservationLogByRoomAndDate" resultMap="Fx67llMahjongReservationLogExtResult">
+    <select id="selectReservationLogByRoomAndDate" parameterType="Fx67llMahjongReservationLogExt"
+            resultMap="Fx67llMahjongReservationLogExtResult">
         SELECT
         rl.mahjong_reservation_log_id,
         rl.user_id,
