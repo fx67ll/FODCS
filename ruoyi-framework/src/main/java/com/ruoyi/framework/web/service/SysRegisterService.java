@@ -34,6 +34,11 @@ public class SysRegisterService {
     @Autowired
     private RedisCache redisCache;
 
+    // 超神用户ID起始值
+    private static final Long CHAOSHEN_USER_ID_MIN = 100000L;
+    // 超神用户标识常量
+    private static final String CHAOSHEN_USER_KEY = "chaoshen";
+
     /**
      * 注册
      */
@@ -74,23 +79,20 @@ public class SysRegisterService {
     }
 
     /**
-     * 超神注册用户
+     * 超神用户注册
      */
-    public String registerForChaoshen(RegisterBody registerBody) {
+    public String registerChaoshenUser(RegisterBody registerBody) {
         String msg = "", username = registerBody.getUsername(), password = registerBody.getPassword();
         SysUser sysUser = new SysUser();
         sysUser.setUserName(username);
 
-        // 强制设置remark为"chaoshen"
-        String remark = "chaoshen";
-        sysUser.setRemark(remark);
-
-        // 验证码开关
+        // 复用验证码校验逻辑
         boolean captchaEnabled = configService.selectCaptchaEnabled();
         if (captchaEnabled) {
             validateCaptcha(username, registerBody.getCode(), registerBody.getUuid());
         }
 
+        // 1. 基础参数校验（与普通注册一致）
         if (StringUtils.isEmpty(username)) {
             msg = "用户名不能为空";
         } else if (StringUtils.isEmpty(password)) {
@@ -102,15 +104,25 @@ public class SysRegisterService {
                 || password.length() > UserConstants.PASSWORD_MAX_LENGTH) {
             msg = "密码长度必须在5到20个字符之间";
         } else if (!userService.checkUserNameUnique(sysUser)) {
-            msg = "保存用户'" + username + "'失败，注册账号已存在";
+            msg = "保存超神用户'" + username + "'失败，注册账号已存在";
         } else {
+            // 2. 超神用户专属配置
             sysUser.setNickName(username);
+            sysUser.setUserType("79"); // 强制设置用户类型
+            sysUser.setUserKey(CHAOSHEN_USER_KEY); // 强制设置用户标识
+            sysUser.setStatus("0"); // 默认正常状态
+            sysUser.setDelFlag("0"); // 默认未删除
+
+            // 3. 密码加密（复用若依原生规则）
             sysUser.setPassword(SecurityUtils.encryptPassword(password));
-            boolean regFlag = userService.registerUser(sysUser);
+
+            // 4. 调用userService的超神用户注册方法（内部处理ID生成）
+            boolean regFlag = userService.registerChaoshenUser(sysUser);
             if (!regFlag) {
-                msg = "注册失败,请联系系统管理人员";
+                msg = "超神用户注册失败，请联系系统管理人员";
             } else {
-                AsyncManager.me().execute(AsyncFactory.recordLogininfor(username, Constants.REGISTER, MessageUtils.message("user.register.success")));
+                // 5. 异步记录注册日志
+                AsyncManager.me().execute(AsyncFactory.recordLogininfor(username, Constants.REGISTER, "超神用户注册成功"));
             }
         }
         return msg;

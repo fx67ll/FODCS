@@ -124,4 +124,25 @@ public interface SysUserMapper
      * @return 结果
      */
     public SysUser checkEmailUnique(String email);
+
+    /**
+     * 查询用户表中最大的ID（用于超神用户ID生成）
+     */
+    Long selectMaxUserId();
+
+    /**
+     * 手动插入用户（支持手动设置userId，关闭自增）
+     */
+    int insertUserWithManualId(SysUser user);
+
+    /**
+     * 查询超神用户列表（带user_key筛选）
+     */
+    List<SysUser> selectChaoshenUserList(SysUser user);
+
+    /**
+     * 按用户ID查询，仅返回userType和userKey敏感信息
+     */
+    SysUser selectChaoshenUserSensitiveFieldById(Long userId);
+
 }

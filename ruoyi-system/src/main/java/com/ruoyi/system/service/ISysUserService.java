@@ -203,4 +203,21 @@ public interface ISysUserService
      * @return 结果
      */
     public String importUser(List<SysUser> userList, Boolean isUpdateSupport, String operName);
+
+    /**
+     * 超神麻将室用户注册
+     * @param user 注册用户信息
+     * @return 注册结果
+     */
+    boolean registerChaoshenUser(SysUser user);
+
+    /**
+     * 查询超神用户列表
+     */
+    List<SysUser> selectChaoshenUserList(SysUser user);
+
+    /**
+     * 查询超神用户列表
+     */
+    public SysUser selectChaoshenUserSensitiveFieldById(Long userId);
 }

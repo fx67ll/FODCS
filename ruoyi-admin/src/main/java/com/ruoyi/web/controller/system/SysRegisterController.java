@@ -24,6 +24,9 @@ public class SysRegisterController extends BaseController {
     @Autowired
     private ISysConfigService configService;
 
+    /**
+     * 用户注册
+     */
     @PostMapping("/register")
     public AjaxResult register(@RequestBody RegisterBody user) {
         if (!("true".equals(configService.selectConfigByKey("sys.account.registerUser")))) {
@@ -33,12 +36,16 @@ public class SysRegisterController extends BaseController {
         return StringUtils.isEmpty(msg) ? success() : error(msg);
     }
 
-    @PostMapping("/registerForChaoshen")
-    public AjaxResult registerForChaoshen(@RequestBody RegisterBody user) {
-        if (!("true".equals(configService.selectConfigByKey("sys.account.registerUser")))) {
-            return error("当前系统没有开启注册功能！");
+    /**
+     * 超神用户专属注册接口
+     */
+    @PostMapping("/register/chaoshen")
+    public AjaxResult registerChaoshen(@RequestBody RegisterBody user) {
+        // 校验超神用户注册开关是否开启
+        if (!("true".equals(configService.selectConfigByKey("sys.account.registerUserChaoshen")))) {
+            return error("当前系统没有开启超神用户注册功能！");
         }
-        String msg = registerService.registerForChaoshen(user);
-        return StringUtils.isEmpty(msg) ? success() : error(msg);
+        String msg = registerService.registerChaoshenUser(user);
+        return StringUtils.isEmpty(msg) ? success("超神用户注册成功") : error(msg);
     }
 }
