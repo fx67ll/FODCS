@@ -31,7 +31,7 @@
     >
         <!-- 仅需定义新增的用户表关联字段（父类字段已通过extends继承） -->
         <result property="userName" column="user_name"/> <!-- 来自sys_user表的用户名 -->
-        <result property="phonenumber" column="phonenumber"/> <!-- 来自sys_user表的联系方式 -->
+        <result property="contactInfo" column="contactInfo"/> <!-- 来自sys_user表的联系方式 -->
     </resultMap>
 
     <sql id="selectFx67llMahjongReservationLogVo">

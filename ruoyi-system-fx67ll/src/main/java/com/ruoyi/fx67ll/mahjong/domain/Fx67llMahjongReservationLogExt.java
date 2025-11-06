@@ -19,9 +19,9 @@ public class Fx67llMahjongReservationLogExt extends Fx67llMahjongReservationLog 
     private String userName;
 
     /**
-     * 预约用户联系方式（关联sys_user表phonenumber，假设用户表联系方式字段为phonenumber）
+     * 预约用户联系方式（关联sys_user表contactInfo，假设用户表联系方式字段为contactInfo）
      */
-    private String phonenumber;
+    private String contactInfo;
 
     /**
      * 预约日期（格式：YYYYMMDD，如20251031）
@@ -42,12 +42,12 @@ public class Fx67llMahjongReservationLogExt extends Fx67llMahjongReservationLog 
         this.userName = userName;
     }
 
-    public String getPhonenumber() {
-        return phonenumber;
+    public String getContactInfo() {
+        return contactInfo;
     }
 
-    public void setPhonenumber(String phonenumber) {
-        this.phonenumber = phonenumber;
+    public void setContactInfo(String contactInfo) {
+        this.contactInfo = contactInfo;
     }
 
     public String getReservationDate() {
@@ -72,7 +72,7 @@ public class Fx67llMahjongReservationLogExt extends Fx67llMahjongReservationLog 
         return new ToStringBuilder(this, ToStringStyle.MULTI_LINE_STYLE)
                 .appendSuper(super.toString()) // 继承父类所有字段的toString
                 .append("userName", getUserName())
-                .append("phonenumber", getPhonenumber())
+                .append("contactInfo", getContactInfo())
                 .append("reservationDate", getReservationDate())
                 .append("isNeedAll", getIsNeedAll())
                 .toString();
