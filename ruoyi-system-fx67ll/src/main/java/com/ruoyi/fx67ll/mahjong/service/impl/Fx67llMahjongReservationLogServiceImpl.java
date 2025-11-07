@@ -135,7 +135,7 @@ public class Fx67llMahjongReservationLogServiceImpl implements IFx67llMahjongRes
                 : SecurityUtils.getUserId();
         SysUser sysUser = userService.selectUserById(isFx67ll ? nowUserId : SecurityUtils.getUserId());
         if (sysUser == null) {
-            throw new ServiceException("用户不存在，用户ID：" + fx67llMahjongRoom.getUserId());
+            throw new ServiceException("用户不存在，用户ID：" + sysUser.getUserId());
         }
         if (fx67llMahjongReservationLog.getMahjongRoomId() == null) {
             throw new ServiceException("预约的麻将室ID为必填参数！");
@@ -143,7 +143,11 @@ public class Fx67llMahjongReservationLogServiceImpl implements IFx67llMahjongRes
         if (fx67llMahjongRoom == null) {
             throw new ServiceException("麻将室不存在，麻将室ID：" + fx67llMahjongReservationLog.getMahjongRoomId());
         }
-        fx67llMahjongReservationLog.setReservationContact(sysUser.getPhonenumber());
+        fx67llMahjongReservationLog.setReservationContact(
+                sysUser.getContactInfo() != null && !sysUser.getContactInfo().trim().isEmpty()
+                        ? sysUser.getContactInfo()
+                        : sysUser.getPhonenumber()
+        );
         fx67llMahjongReservationLog.setMahjongRoomName(fx67llMahjongRoom.getMahjongRoomName());
         fx67llMahjongReservationLog.setUserId(isFx67ll ? nowUserId : SecurityUtils.getUserId());
         fx67llMahjongReservationLog.setCreateBy(SecurityUtils.getUsername());

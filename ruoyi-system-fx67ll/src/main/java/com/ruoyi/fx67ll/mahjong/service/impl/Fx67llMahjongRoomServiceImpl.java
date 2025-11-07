@@ -59,8 +59,6 @@ public class Fx67llMahjongRoomServiceImpl implements IFx67llMahjongRoomService {
     @Override
     public Fx67llMahjongRoom selectFx67llMahjongRoomByMahjongRoomId(Long mahjongRoomId) {
         Fx67llMahjongRoom room = fx67llMahjongRoomMapper.selectFx67llMahjongRoomByMahjongRoomId(mahjongRoomId);
-        // 校验权限
-        checkPermission(room);
         return room;
     }
 
