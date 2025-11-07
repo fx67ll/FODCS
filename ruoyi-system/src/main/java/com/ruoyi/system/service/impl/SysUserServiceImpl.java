@@ -534,7 +534,7 @@ public class SysUserServiceImpl implements ISysUserService {
         user.setPassword(SecurityUtils.encryptPassword(user.getPassword()));
 
         // 8. 设置创建人（若未传则取当前登录用户）
-        user.setCreateBy(StringUtils.isBlank(user.getCreateBy()) ? SecurityUtils.getUsername() : user.getCreateBy());
+        user.setCreateBy(StringUtils.isBlank(user.getCreateBy()) ? user.getUserName() : user.getCreateBy());
 
         // 9. 手动插入用户（避免自增ID覆盖，需在SysUserMapper中新增insertUserWithManualId方法）
         return userMapper.insertUserWithManualId(user) > 0;

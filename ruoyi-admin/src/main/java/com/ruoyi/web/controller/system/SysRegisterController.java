@@ -39,7 +39,7 @@ public class SysRegisterController extends BaseController {
     /**
      * 超神用户专属注册接口
      */
-    @PostMapping("/register/chaoshen")
+    @PostMapping("/registerChaoshen")
     public AjaxResult registerChaoshen(@RequestBody RegisterBody user) {
         // 校验超神用户注册开关是否开启
         if (!("true".equals(configService.selectConfigByKey("sys.account.registerUserChaoshen")))) {
