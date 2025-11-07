@@ -58,9 +58,6 @@
             resultMap="Fx67llMahjongReservationLogExtResult">
         SELECT
         rl.mahjong_reservation_log_id,
-        rl.user_id,
-        rl.create_by,
-        rl.mahjong_room_id,
         rl.mahjong_room_name,
         rl.reservation_start_time,
         rl.reservation_end_time,
@@ -68,12 +65,7 @@
         rl.reservation_amount,
         rl.reservation_status,
         rl.reservation_remark,
-        rl.del_flag,
-        rl.create_time,  <!-- 预约记录的创建时间 -->
-        rl.update_by,
-        rl.update_time,
-        su.user_name,
-        su.phonenumber
+        rl.create_time  <!-- 预约记录的创建时间 -->
         FROM
         fx67ll_mahjong_reservation_log rl
         LEFT JOIN
