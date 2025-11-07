@@ -3,6 +3,10 @@ fx67ll One Data Center Server
 
 欢迎访问 [fx67ll's 管理系统](https://vip.fx67ll.com) ~
 
+## 0.5.6.20251107
+* 优化麻将预约相关功能  
+* 对接用户注册相关功能  
+
 ## 0.5.5.20251106
 * 验证完成新开发的APP接口  
 * 新增chaoshen用户相关接口功能
