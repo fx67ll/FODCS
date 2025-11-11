@@ -34,11 +34,6 @@ public class SysRegisterService {
     @Autowired
     private RedisCache redisCache;
 
-    // 超神用户ID起始值
-    private static final Long CHAOSHEN_USER_ID_MIN = 100000L;
-    // 超神用户标识常量
-    private static final String CHAOSHEN_USER_KEY = "chaoshen";
-
     /**
      * 注册
      */
@@ -82,7 +77,7 @@ public class SysRegisterService {
      * 超神用户注册
      */
     public String registerChaoshenUser(RegisterBody registerBody) {
-        String msg = "", username = registerBody.getUsername(), password = registerBody.getPassword();
+        String msg = "", username = registerBody.getUsername(), password = registerBody.getPassword(), contactInfo = registerBody.getContactInfo();
         SysUser sysUser = new SysUser();
         sysUser.setUserName(username);
 
@@ -97,6 +92,8 @@ public class SysRegisterService {
             msg = "用户名不能为空";
         } else if (StringUtils.isEmpty(password)) {
             msg = "用户密码不能为空";
+        } else if (StringUtils.isEmpty(contactInfo)) {
+            msg = "联系方式不能为空";
         } else if (username.length() < UserConstants.USERNAME_MIN_LENGTH
                 || username.length() > UserConstants.USERNAME_MAX_LENGTH) {
             msg = "账户长度必须在2到20个字符之间";
@@ -106,12 +103,9 @@ public class SysRegisterService {
         } else if (!userService.checkUserNameUnique(sysUser)) {
             msg = "保存超神用户'" + username + "'失败，注册账号已存在";
         } else {
-            // 2. 超神用户专属配置
+            // 2. 添加用户信息
             sysUser.setNickName(username);
-            sysUser.setUserType("79"); // 强制设置用户类型
-            sysUser.setUserKey(CHAOSHEN_USER_KEY); // 强制设置用户标识
-            sysUser.setStatus("0"); // 默认正常状态
-            sysUser.setDelFlag("0"); // 默认未删除
+            sysUser.setContactInfo(contactInfo);
 
             // 3. 密码加密（复用若依原生规则）
             sysUser.setPassword(SecurityUtils.encryptPassword(password));
@@ -121,7 +115,7 @@ public class SysRegisterService {
             if (!regFlag) {
                 msg = "超神用户注册失败，请联系系统管理人员";
             } else {
-                // 5. 异步记录注册日志
+                // 6. 异步记录注册日志
                 AsyncManager.me().execute(AsyncFactory.recordLogininfor(username, Constants.REGISTER, "超神用户注册成功"));
             }
         }

@@ -523,20 +523,23 @@ public class SysUserServiceImpl implements ISysUserService {
         Long maxUserId = userMapper.selectMaxUserId(); // 需要在SysUserMapper中新增此方法
         Long newUserId = maxUserId < 1000000L ? 1000000L : maxUserId + 1;
 
-        // 6. 强制设置超神用户标识及默认属性
+        // 6. 设置超神用户ID
         user.setUserId(newUserId);
-        user.setUserKey("chaoshen"); // 固定标识
+
+        // 7. 为新用户默认分配麻将室用户角色，麻将室用户角色ID 103
+        insertUserAuth(newUserId, new Long[]{103L});
+
+        // 8. 设置超神用户专属配置
+        user.setUserType("79"); // 强制设置用户类型
+        user.setUserKey("chaoshen"); // 强制设置用户标识
+
+        // 9. 补充账户信息
         user.setStatus("0"); // 默认正常状态
         user.setDelFlag("0"); // 未删除
         user.setNickName(StringUtils.isBlank(user.getNickName()) ? user.getUserName() : user.getNickName()); // 用户昵称兜底
+        user.setCreateBy(StringUtils.isBlank(user.getCreateBy()) ? user.getUserName() : user.getCreateBy()); // 设置创建人（若未传则取当前登录用户）
 
-        // 7. 密码加密（复用若依原生加密规则）
-        user.setPassword(SecurityUtils.encryptPassword(user.getPassword()));
-
-        // 8. 设置创建人（若未传则取当前登录用户）
-        user.setCreateBy(StringUtils.isBlank(user.getCreateBy()) ? user.getUserName() : user.getCreateBy());
-
-        // 9. 手动插入用户（避免自增ID覆盖，需在SysUserMapper中新增insertUserWithManualId方法）
+        // 10. 手动插入用户（避免自增ID覆盖，需在SysUserMapper中新增insertUserWithManualId方法）
         return userMapper.insertUserWithManualId(user) > 0;
     }
 

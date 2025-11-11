@@ -11,11 +11,24 @@ public class RegisterBody extends LoginBody {
      */
     private String remark;
 
+    /**
+     * 联系方式
+     */
+    private String contactInfo;
+
     public String getRemark() {
         return remark;
     }
 
     public void setRemark(String remark) {
         this.remark = remark;
+    }
+
+    public String getContactInfo() {
+        return contactInfo;
+    }
+
+    public void setContactInfo(String contactInfo) {
+        this.contactInfo = contactInfo;
     }
 }

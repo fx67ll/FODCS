@@ -311,12 +311,11 @@
 
     <!-- 手动插入用户（关闭自增） -->
     <insert id="insertUserWithManualId" parameterType="SysUser" useGeneratedKeys="false">
-        insert into sys_user (user_id, dept_id, user_name, nick_name, user_type,
-                              email, phonenumber, sex, avatar, password, status,
-                              del_flag, create_by, create_time, remark, user_key)
+        insert into sys_user (user_id, dept_id, user_name, nick_name, user_type, user_key,
+                              email, phonenumber, contact_info, sex, avatar, password, status,
+                              del_flag, create_by, create_time, remark)
         values (#{userId}, #{deptId}, #{userName}, #{nickName}, #{userType},
-                #{email}, #{phonenumber}, #{sex}, #{avatar}, #{password}, #{status},
-                #{delFlag}, #{createBy}, now(), #{remark}, #{userKey})
+                #{userKey}, #{email}, #{phonenumber}, #{contactInfo}, #{sex}, #{avatar}, #{password}, #{status}, #{delFlag}, #{createBy}, now(), #{remark})
     </insert>
 
     <!-- 查询超神用户列表（带数据权限） -->
