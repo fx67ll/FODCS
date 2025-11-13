@@ -79,10 +79,6 @@ public class Fx67llMahjongReservationLogServiceImpl implements IFx67llMahjongRes
      * @param isUpdate 是否为修改操作（修改时排除自身）
      */
     private void checkTimeOverlap(Fx67llMahjongReservationLog log, boolean isUpdate) {
-        // 校验必要参数
-        if (log.getMahjongRoomId() == null) {
-            throw new ServiceException("麻将室ID不能为空！");
-        }
         if (log.getReservationStartTime() == null || log.getReservationEndTime() == null) {
             throw new ServiceException("预约开始时间和结束时间不能为空！");
         }
