@@ -111,6 +111,26 @@ public class Fx67llMahjongReservationLog extends BaseEntity {
      */
     private String endUpdateTime;
 
+    /**
+     * 预约开始 - 开始时间
+     */
+    private String beginReservationStartTime;
+
+    /**
+     * 预约开始 - 结束时间
+     */
+    private String endReservationStartTime;
+
+    /**
+     * 预约结束 - 开始时间
+     */
+    private String beginReservationEndTime;
+
+    /**
+     * 预约结束 - 结束时间
+     */
+    private String endReservationEndTime;
+
     public void setMahjongReservationLogId(Long mahjongReservationLogId) {
         this.mahjongReservationLogId = mahjongReservationLogId;
     }
@@ -237,6 +257,38 @@ public class Fx67llMahjongReservationLog extends BaseEntity {
 
     public void setEndUpdateTime(String endUpdateTime) {
         this.endUpdateTime = endUpdateTime;
+    }
+
+    public String getBeginReservationStartTime() {
+        return beginReservationStartTime;
+    }
+
+    public void setBeginReservationStartTime(String beginReservationStartTime) {
+        this.beginReservationStartTime = beginReservationStartTime;
+    }
+
+    public String getEndReservationStartTime() {
+        return endReservationStartTime;
+    }
+
+    public void setEndReservationStartTime(String endReservationStartTime) {
+        this.endReservationStartTime = endReservationStartTime;
+    }
+
+    public String getBeginReservationEndTime() {
+        return beginReservationEndTime;
+    }
+
+    public void setBeginReservationEndTime(String beginReservationEndTime) {
+        this.beginReservationEndTime = beginReservationEndTime;
+    }
+
+    public String getEndReservationEndTime() {
+        return endReservationEndTime;
+    }
+
+    public void setEndReservationEndTime(String endReservationEndTime) {
+        this.endReservationEndTime = endReservationEndTime;
     }
 
     @Override

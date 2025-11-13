@@ -570,7 +570,6 @@ select * from fx67ll_note_log;
 -- ----------------------------
 drop table if exists fx67ll_mahjong_reservation_log;
 drop table if exists fx67ll_mahjong_room;
-drop table if exists sys_user_chaoshen;
 
 -- 建表，麻将室表
 create table fx67ll_mahjong_room (
@@ -603,6 +602,7 @@ create table fx67ll_mahjong_reservation_log (
   mahjong_reservation_log_id         bigint(20)       not null auto_increment    comment '麻将室预约订单记录主键',
   user_id                            bigint(20)       not null                   comment '预约用户主键',
   mahjong_room_id                    bigint(20)       not null                   comment '麻将室主键',
+  mahjong_room_name                  varchar(64)      not null                   comment '麻将室名称',
   reservation_start_time             datetime         not null                   comment '预约开始时间（含日期和小时）',
   reservation_end_time               datetime         not null                   comment '预约结束时间（含日期和小时）',
   reservation_contact                varchar(20)      default ''                 comment '预约联系方式（电话）',
@@ -647,6 +647,7 @@ values ('超神用户注册开关', 'sys.account.registerUserChaoshen', 'true', 
 -- 查询语句
 select * from fx67ll_mahjong_room where del_flag = '0'; 
 select * from fx67ll_mahjong_reservation_log where del_flag = '0';
+
 
 
 

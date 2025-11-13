@@ -124,12 +124,21 @@
                 #{reservationRemark}, '%')
             </if>
             <if test="delFlag != null  and delFlag != ''">and del_flag = #{delFlag}</if>
+            <if test="createBy != null  and createBy != ''">and create_by = #{createBy}</if>
             <if test="beginCreateTime != null and endCreateTime != ''">and create_time between #{beginCreateTime} and
                 #{endCreateTime}
             </if>
             <if test="updateBy != null  and updateBy != ''">and update_by = #{updateBy}</if>
             <if test="beginUpdateTime != null and endUpdateTime != ''">and update_time between #{beginUpdateTime} and
                 #{endUpdateTime}
+            </if>
+            <if test="beginReservationStartTime != null and endReservationStartTime != ''">and reservation_start_time
+                between #{beginReservationStartTime} and
+                #{endReservationStartTime}
+            </if>
+            <if test="beginReservationEndTime != null and endReservationEndTime != ''">and reservation_end_time between
+                #{beginReservationEndTime} and
+                #{endReservationEndTime}
             </if>
         </where>
         order by STR_TO_DATE(update_time, "%Y-%m-%d %H:%i:%s") desc
