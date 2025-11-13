@@ -4,11 +4,13 @@ import java.util.List;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.Collections;
+import java.text.SimpleDateFormat;
 
 import com.ruoyi.common.utils.DateUtils;
 import com.ruoyi.common.utils.SecurityUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import com.ruoyi.common.core.domain.entity.SysUser;
 import com.ruoyi.system.service.ISysUserService;
 import com.ruoyi.fx67ll.mahjong.mapper.Fx67llMahjongReservationLogMapper;
@@ -39,6 +41,9 @@ public class Fx67llMahjongReservationLogServiceImpl implements IFx67llMahjongRes
     // 允许操作所有数据的管理员用户名集合（兼容Java 8及以下版本）
     private static final Set<String> ADMIN_USERNAMES;
 
+    // 日期格式化器（线程安全）
+    private static final SimpleDateFormat DATE_FORMAT = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+
     static {
         Set<String> adminSet = new HashSet<>();
         adminSet.add("fx67ll");
@@ -64,6 +69,36 @@ public class Fx67llMahjongReservationLogServiceImpl implements IFx67llMahjongRes
         }
         if (!currentUsername.equals(log.getCreateBy())) {
             throw new ServiceException("您没有权限操作该数据，请立刻停止违规操作！");
+        }
+    }
+
+    /**
+     * 时间段重叠校验：判断当前预约时间段是否与已有预约重叠
+     *
+     * @param log      预约记录对象
+     * @param isUpdate 是否为修改操作（修改时排除自身）
+     */
+    private void checkTimeOverlap(Fx67llMahjongReservationLog log, boolean isUpdate) {
+        // 校验必要参数
+        if (log.getMahjongRoomId() == null) {
+            throw new ServiceException("麻将室ID不能为空！");
+        }
+        if (log.getReservationStartTime() == null || log.getReservationEndTime() == null) {
+            throw new ServiceException("预约开始时间和结束时间不能为空！");
+        }
+        if (log.getReservationEndTime().compareTo(log.getReservationStartTime()) <= 0) {
+            throw new ServiceException("预约结束时间必须晚于开始时间，请重新选择时间段！");
+        }
+        // 格式化时间为字符串（统一格式便于数据库比较）
+        String startTime = DATE_FORMAT.format(log.getReservationStartTime());
+        String endTime = DATE_FORMAT.format(log.getReservationEndTime());
+        // 查询重叠记录（修改时排除自身ID）
+        Long excludeLogId = isUpdate ? log.getMahjongReservationLogId() : null;
+        List<Fx67llMahjongReservationLog> overlapLogs = fx67llMahjongReservationLogMapper.selectOverlapReservationLogs(
+                log.getMahjongRoomId(), startTime, endTime, excludeLogId);
+        // 存在重叠记录则抛出异常
+        if (!overlapLogs.isEmpty()) {
+            throw new ServiceException("该时间段已被预约，请选择其他时间段！");
         }
     }
 
@@ -127,6 +162,7 @@ public class Fx67llMahjongReservationLogServiceImpl implements IFx67llMahjongRes
      * @return 结果
      */
     @Override
+    @Transactional(rollbackFor = Exception.class)
     public int insertFx67llMahjongReservationLog(Fx67llMahjongReservationLog fx67llMahjongReservationLog) {
         Fx67llMahjongRoom fx67llMahjongRoom = mahjongRoomService.selectFx67llMahjongRoomByMahjongRoomId(fx67llMahjongReservationLog.getMahjongRoomId());
         boolean isFx67ll = "fx67ll".equals(SecurityUtils.getUsername());
@@ -135,7 +171,7 @@ public class Fx67llMahjongReservationLogServiceImpl implements IFx67llMahjongRes
                 : SecurityUtils.getUserId();
         SysUser sysUser = userService.selectUserById(isFx67ll ? nowUserId : SecurityUtils.getUserId());
         if (sysUser == null) {
-            throw new ServiceException("用户不存在，用户ID：" + sysUser.getUserId());
+            throw new ServiceException("用户不存在，用户ID：" + nowUserId);
         }
         if (fx67llMahjongReservationLog.getMahjongRoomId() == null) {
             throw new ServiceException("预约的麻将室ID为必填参数！");
@@ -143,6 +179,10 @@ public class Fx67llMahjongReservationLogServiceImpl implements IFx67llMahjongRes
         if (fx67llMahjongRoom == null) {
             throw new ServiceException("麻将室不存在，麻将室ID：" + fx67llMahjongReservationLog.getMahjongRoomId());
         }
+
+        // 核心修改：新增预约前校验时间段是否重叠（非修改操作）
+        checkTimeOverlap(fx67llMahjongReservationLog, false);
+
         fx67llMahjongReservationLog.setReservationContact(
                 sysUser.getContactInfo() != null && !sysUser.getContactInfo().trim().isEmpty()
                         ? sysUser.getContactInfo()
@@ -164,6 +204,7 @@ public class Fx67llMahjongReservationLogServiceImpl implements IFx67llMahjongRes
      * @return 结果
      */
     @Override
+    @Transactional(rollbackFor = Exception.class)
     public int updateFx67llMahjongReservationLog(Fx67llMahjongReservationLog fx67llMahjongReservationLog) {
         // 先查询原数据
         Fx67llMahjongReservationLog oldLog = fx67llMahjongReservationLogMapper.selectFx67llMahjongReservationLogByMahjongReservationLogId(
@@ -182,7 +223,7 @@ public class Fx67llMahjongReservationLogServiceImpl implements IFx67llMahjongRes
                     : oldLog.getMahjongRoomId();
             Fx67llMahjongRoom fx67llMahjongRoom = mahjongRoomService.selectFx67llMahjongRoomByMahjongRoomId(nowMahjongRoomId);
             if (sysUser == null) {
-                throw new ServiceException("用户不存在，用户ID：" + fx67llMahjongRoom.getUserId());
+                throw new ServiceException("用户不存在，用户ID：" + nowUserId);
             }
             if (fx67llMahjongRoom == null) {
                 throw new ServiceException("麻将室不存在，麻将室ID：" + nowMahjongRoomId);
@@ -198,6 +239,10 @@ public class Fx67llMahjongReservationLogServiceImpl implements IFx67llMahjongRes
             fx67llMahjongReservationLog.setUpdateBy(SecurityUtils.getUsername());
             fx67llMahjongReservationLog.setUpdateTime(DateUtils.getNowDate());
         }
+
+        // 核心修改：修改预约前校验时间段是否重叠（修改操作，排除自身）
+        checkTimeOverlap(fx67llMahjongReservationLog, true);
+
         return fx67llMahjongReservationLogMapper.updateFx67llMahjongReservationLog(fx67llMahjongReservationLog);
     }
 

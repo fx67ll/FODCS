@@ -4,6 +4,7 @@ import java.util.List;
 
 import com.ruoyi.fx67ll.mahjong.domain.Fx67llMahjongReservationLog;
 import com.ruoyi.fx67ll.mahjong.domain.Fx67llMahjongReservationLogExt;
+import org.apache.ibatis.annotations.Param;
 
 /**
  * 麻将室预约记录Mapper接口
@@ -67,4 +68,19 @@ public interface Fx67llMahjongReservationLogMapper {
      * @return 结果
      */
     public int deleteFx67llMahjongReservationLogByMahjongReservationLogIds(Long[] mahjongReservationLogIds);
+
+    /**
+     * 查询指定麻将室的重叠预约记录（悲观锁）
+     *
+     * @param mahjongRoomId 麻将室ID
+     * @param startTime     新预约开始时间
+     * @param endTime       新预约结束时间
+     * @param excludeLogId  排除的预约记录ID（修改时使用）
+     * @return 重叠的预约记录列表
+     */
+    List<Fx67llMahjongReservationLog> selectOverlapReservationLogs(
+            @Param("mahjongRoomId") Long mahjongRoomId,
+            @Param("startTime") String startTime,
+            @Param("endTime") String endTime,
+            @Param("excludeLogId") Long excludeLogId);
 }

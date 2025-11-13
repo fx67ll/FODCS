@@ -222,4 +222,30 @@
             #{mahjongReservationLogId}
         </foreach>
     </delete>
+
+    <!-- 查询指定麻将室的重叠预约记录（悲观锁） -->
+    <select id="selectOverlapReservationLogs" resultMap="Fx67llMahjongReservationLogResult">
+        SELECT
+        mahjong_reservation_log_id,
+        mahjong_room_id,
+        reservation_start_time,
+        reservation_end_time,
+        reservation_status
+        FROM
+        fx67ll_mahjong_reservation_log
+        WHERE
+        mahjong_room_id = #{mahjongRoomId}
+        AND del_flag = '0'  <!-- 只查未删除的记录 -->
+        AND reservation_status != '1'  <!-- 排除已取消的记录 -->
+        <!-- 重叠条件：新预约开始时间 < 已有结束时间 且 新预约结束时间 > 已有开始时间 -->
+        AND
+        #{startTime} &lt; reservation_end_time
+        AND
+        #{endTime} &gt; reservation_start_time
+        <!-- 修改时排除自身记录 -->
+        <if test="excludeLogId != null">
+            AND mahjong_reservation_log_id != #{excludeLogId}
+        </if>
+        FOR UPDATE; <!-- 悲观锁：锁定查询结果，防止并发修改 -->
+    </select>
 </mapper>
