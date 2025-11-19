@@ -123,6 +123,8 @@ public class TomcatController extends BaseController {
             log.error(errorMsg);
             return AjaxResult.error(errorMsg);
         }
+
+        // 3. 检查脚本文件是否有读取权限
         if (!Files.isReadable(Paths.get(scriptFile.getAbsolutePath()))) {
             String errorMsg = operationDesc + "失败：没有脚本读取权限，路径：" + scriptFile.getAbsolutePath();
             log.error(errorMsg);
@@ -131,20 +133,20 @@ public class TomcatController extends BaseController {
 
         Process process = null;
         try {
-            // 3. 构建命令：用sh执行脚本（避免依赖脚本的可执行权限）
+            // 4. 构建命令：用sh执行脚本（避免依赖脚本的可执行权限）
             ProcessBuilder pb = new ProcessBuilder("sh", scriptName);
             pb.directory(tomcatBinDir); // 设置工作目录为tomcat bin目录
             pb.redirectErrorStream(true); // 合并错误流到输入流，统一处理
 
-            // 4. 启动进程
+            // 5. 启动进程
             log.info("开始{}，执行脚本：{}", operationDesc, scriptFile.getAbsolutePath());
             process = pb.start();
 
-            // 5. 异步读取输出流（关键：避免缓冲区满导致进程阻塞）
+            // 6. 异步读取输出流（关键：避免缓冲区满导致进程阻塞）
             Process finalProcess = process;
             Future<String> outputFuture = STREAM_EXECUTOR.submit(() -> readStream(finalProcess.getInputStream()));
 
-            // 6. 等待命令执行完成（带超时）
+            // 7. 等待命令执行完成（带超时）
             boolean isFinished = process.waitFor(COMMAND_TIMEOUT, TimeUnit.SECONDS);
             if (!isFinished) {
                 process.destroyForcibly(); // 超时强制销毁进程
@@ -153,11 +155,11 @@ public class TomcatController extends BaseController {
                 return AjaxResult.error(errorMsg);
             }
 
-            // 7. 获取脚本输出和退出码
+            // 8. 获取脚本输出和退出码
             String output = outputFuture.get(); // 获取异步读取的输出
             int exitCode = process.exitValue();
 
-            // 8. 根据退出码判断结果
+            // 9. 根据退出码判断结果
             if (exitCode == 0) {
                 log.info("{}成功，输出：{}", operationDesc, output);
                 return AjaxResult.success(operationDesc + "成功", output);
