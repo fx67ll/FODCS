@@ -3,6 +3,9 @@ fx67ll One Data Center Server
 
 欢迎访问 [fx67ll's 管理系统](https://vip.fx67ll.com) ~
 
+## 0.6.1.20251119
+* 新增Tomcat服务相关接口  
+
 ## 0.5.9.20251113
 * 修复系统层级未对重复预约问题作出限制的BUG  
 
