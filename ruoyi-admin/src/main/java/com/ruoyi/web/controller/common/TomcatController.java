@@ -13,9 +13,11 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.io.*;
+import java.net.InetSocketAddress;
+import java.net.Socket;
+import java.net.SocketTimeoutException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
-import java.util.List;
 import java.util.concurrent.*;
 
 /**
@@ -36,6 +38,12 @@ public class TomcatController extends BaseController {
     private static final String TOMCAT_PROCESS_KEYWORD = "apache-tomcat-9.0.7";
     // 线程池用于异步读取流（避免阻塞）
     private static final ExecutorService STREAM_EXECUTOR = Executors.newFixedThreadPool(2);
+
+    // GitHub连通性检测配置
+    private static final String GITHUB_HOST = "github.com";
+    private static final int GITHUB_PORT = 443;
+    private static final int CONNECT_TIMEOUT = 5; // 连接超时时间（秒）
+    private static final int CURL_TIMEOUT = 10; // curl命令超时时间（秒）
 
     /**
      * 启动Tomcat
@@ -99,6 +107,126 @@ public class TomcatController extends BaseController {
             return AjaxResult.error("查询Tomcat状态失败：" + e.getMessage());
         } finally {
             closeReader(reader);
+            destroyProcess(process);
+        }
+    }
+
+    /**
+     * 检测GitHub连通性（基于TCP Socket）
+     * 快速检测网络层是否可达，不涉及HTTP协议
+     */
+    @PreAuthorize("@ss.hasPermi('system:tomcat:view')")
+    @GetMapping("/testConnectToGithubByTcp")
+    public AjaxResult checkGithubTcpConnectivity() {
+        String operationDesc = "GitHub TCP连通性检测（" + GITHUB_HOST + ":" + GITHUB_PORT + "）";
+        log.info("开始{}", operationDesc);
+
+        Socket socket = null;
+        try {
+            socket = new Socket();
+            // 设置连接超时
+            socket.connect(new InetSocketAddress(GITHUB_HOST, GITHUB_PORT), CONNECT_TIMEOUT * 1000);
+
+            if (socket.isConnected()) {
+                log.info("{}成功", operationDesc);
+                return AjaxResult.success(operationDesc + "成功", "网络可达");
+            } else {
+                log.warn("{}失败：连接已建立但状态异常", operationDesc);
+                return AjaxResult.error(operationDesc + "失败：连接状态异常");
+            }
+        } catch (SocketTimeoutException e) {
+            String errorMsg = operationDesc + "失败：连接超时（" + CONNECT_TIMEOUT + "秒）";
+            log.error(errorMsg, e);
+            return AjaxResult.error(errorMsg);
+        } catch (IOException e) {
+            String errorMsg = operationDesc + "失败：" + e.getMessage();
+            log.error(errorMsg, e);
+            return AjaxResult.error(errorMsg);
+        } finally {
+            // 确保关闭socket，释放连接资源
+            if (socket != null) {
+                try {
+                    socket.close();
+                } catch (IOException e) {
+                    log.error("关闭检测socket失败", e);
+                }
+            }
+        }
+    }
+
+    /**
+     * 检测GitHub连通性（基于curl命令）
+     * 完整检测HTTP层连通性，包含SSL握手和响应状态
+     */
+    @PreAuthorize("@ss.hasPermi('system:tomcat:view')")
+    @GetMapping("/testConnectToGithubByHttp")
+    public AjaxResult checkGithubHttpConnectivity() {
+        String operationDesc = "GitHub HTTP连通性检测（curl https://" + GITHUB_HOST + "）";
+        log.info("开始{}", operationDesc);
+
+        // 先检查系统是否安装curl
+        if (!isCommandAvailable("curl")) {
+            String errorMsg = operationDesc + "失败：系统未安装curl命令";
+            log.error(errorMsg);
+            return AjaxResult.error(errorMsg);
+        }
+
+        Process process = null;
+        try {
+            // 构建curl命令：-v显示详细信息，-m设置超时，-I只获取响应头，-k忽略SSL证书验证（避免证书问题影响检测）
+            ProcessBuilder pb = new ProcessBuilder(
+                    "curl", "-v", "-m", String.valueOf(CURL_TIMEOUT), "-I", "-k", "https://" + GITHUB_HOST
+            );
+            pb.redirectErrorStream(true); // 合并错误流和输出流
+            process = pb.start();
+
+            // 异步读取输出流
+            Process finalProcess = process;
+            Future<String> outputFuture = STREAM_EXECUTOR.submit(() -> readStream(finalProcess.getInputStream()));
+
+            // 等待命令执行完成（带超时）
+            boolean isFinished = process.waitFor(CURL_TIMEOUT + 2, TimeUnit.SECONDS);
+            if (!isFinished) {
+                process.destroyForcibly();
+                String errorMsg = operationDesc + "超时（" + (CURL_TIMEOUT + 2) + "秒），已强制终止";
+                log.error(errorMsg);
+                return AjaxResult.error(errorMsg);
+            }
+
+            // 获取输出和退出码
+            String output = outputFuture.get();
+            int exitCode = process.exitValue();
+
+            // curl退出码说明：0成功，非0失败
+            if (exitCode == 0) {
+                // 从输出中提取关键信息（如HTTP状态码）
+                String statusInfo = extractHttpStatus(output);
+                log.info("{}成功，响应信息：{}", operationDesc, statusInfo);
+                return AjaxResult.success(
+                        operationDesc + "成功",
+                        "响应信息：" + statusInfo + "\n详细输出：" + output
+                );
+            } else {
+                log.error("{}失败，退出码：{}，输出：{}", operationDesc, exitCode, output);
+                return AjaxResult.error(
+                        operationDesc + "失败（退出码：" + exitCode + "）",
+                        "详细信息：" + output
+                );
+            }
+        } catch (IOException e) {
+            String errorMsg = operationDesc + "失败：IO异常";
+            log.error(errorMsg, e);
+            return AjaxResult.error(errorMsg + "，原因：" + e.getMessage());
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            String errorMsg = operationDesc + "被中断";
+            log.error(errorMsg, e);
+            return AjaxResult.error(errorMsg);
+        } catch (ExecutionException e) {
+            String errorMsg = operationDesc + "失败：流读取异常";
+            log.error(errorMsg, e);
+            return AjaxResult.error(errorMsg + "，原因：" + e.getMessage());
+        } finally {
             destroyProcess(process);
         }
     }
@@ -222,5 +350,40 @@ public class TomcatController extends BaseController {
             process.destroyForcibly(); // 强制销毁避免残留
             log.info("进程已强制销毁");
         }
+    }
+
+    /**
+     * 检查系统命令是否可用（工具方法）
+     */
+    private boolean isCommandAvailable(String command) {
+        Process process = null;
+        try {
+            // 执行which命令检查命令是否存在
+            process = new ProcessBuilder("which", command).start();
+            boolean isAvailable = process.waitFor(2, TimeUnit.SECONDS) && process.exitValue() == 0;
+            log.info("命令{}是否可用：{}", command, isAvailable);
+            return isAvailable;
+        } catch (Exception e) {
+            log.error("检查命令{}可用性失败", command, e);
+            return false;
+        } finally {
+            destroyProcess(process);
+        }
+    }
+
+    /**
+     * 从curl输出中提取HTTP状态信息（工具方法）
+     */
+    private String extractHttpStatus(String curlOutput) {
+        if (curlOutput.contains("HTTP/")) {
+            // 匹配HTTP状态行（如：HTTP/2 200 OK）
+            String[] lines = curlOutput.split("\n");
+            for (String line : lines) {
+                if (line.trim().startsWith("HTTP/")) {
+                    return line.trim();
+                }
+            }
+        }
+        return "未找到明确HTTP状态码";
     }
 }
