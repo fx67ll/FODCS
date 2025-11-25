@@ -3,6 +3,9 @@ fx67ll One Data Center Server
 
 欢迎访问 [fx67ll's 管理系统](https://vip.fx67ll.com) ~
 
+## 0.7.3.20251125
+* 优化预约记录显示字段  
+
 ## 0.7.2.20251121
 * 补充启动jenkins服务的前置条件检测功能相关接口：*Github服务连通性测试*~
 
