@@ -19,6 +19,11 @@ public class Fx67llMahjongReservationLogExt extends Fx67llMahjongReservationLog 
     private String userName;
 
     /**
+     * 预约用户备注（关联sys_user表remark字段）
+     */
+    private String userRemark;
+
+    /**
      * 预约用户联系方式（关联sys_user表contactInfo，假设用户表联系方式字段为contactInfo）
      */
     private String contactInfo;
@@ -40,6 +45,14 @@ public class Fx67llMahjongReservationLogExt extends Fx67llMahjongReservationLog 
 
     public void setUserName(String userName) {
         this.userName = userName;
+    }
+
+    public String getUserRemark() {
+        return userRemark;
+    }
+
+    public void setUserRemark(String userRemark) {
+        this.userRemark = userRemark;
     }
 
     public String getContactInfo() {
@@ -72,6 +85,7 @@ public class Fx67llMahjongReservationLogExt extends Fx67llMahjongReservationLog 
         return new ToStringBuilder(this, ToStringStyle.MULTI_LINE_STYLE)
                 .appendSuper(super.toString()) // 继承父类所有字段的toString
                 .append("userName", getUserName())
+                .append("userRemark", getUserRemark())
                 .append("contactInfo", getContactInfo())
                 .append("reservationDate", getReservationDate())
                 .append("isNeedAll", getIsNeedAll())

@@ -31,26 +31,29 @@
     >
         <!-- 仅需定义新增的用户表关联字段（父类字段已通过extends继承） -->
         <result property="userName" column="user_name"/> <!-- 来自sys_user表的用户名 -->
+        <result property="userRemark" column="user_remark"/> <!-- 来自sys_user表的用户备注 -->
         <result property="contactInfo" column="contactInfo"/> <!-- 来自sys_user表的联系方式 -->
     </resultMap>
 
     <sql id="selectFx67llMahjongReservationLogVo">
-        select mahjong_reservation_log_id,
-               user_id,
-               create_by,
-               mahjong_room_id,
-               mahjong_room_name,
-               reservation_start_time,
-               reservation_end_time,
-               reservation_contact,
-               reservation_amount,
-               reservation_status,
-               reservation_remark,
-               del_flag,
-               create_time,
-               update_by,
-               update_time
-        from fx67ll_mahjong_reservation_log
+        select rl.mahjong_reservation_log_id,
+               rl.user_id,
+               rl.create_by,
+               rl.mahjong_room_id,
+               rl.mahjong_room_name,
+               rl.reservation_start_time,
+               rl.reservation_end_time,
+               rl.reservation_contact,
+               rl.reservation_amount,
+               rl.reservation_status,
+               rl.reservation_remark,
+               rl.del_flag,
+               rl.create_time,
+               rl.update_by,
+               rl.update_time,
+               su.remark as user_remark -- 用户表字段指定 su. 别名
+        from fx67ll_mahjong_reservation_log rl -- 主表加别名 rl
+                 left join sys_user su on rl.user_id = su.user_id -- 关联条件用别名，更清晰
     </sql>
 
     <!-- 查询指定麻将室某天的所有预约记录（含用户名、用户联系方式） -->
@@ -102,46 +105,49 @@
     </select>
 
     <select id="selectFx67llMahjongReservationLogList" parameterType="Fx67llMahjongReservationLog"
-            resultMap="Fx67llMahjongReservationLogResult">
+            resultMap="Fx67llMahjongReservationLogExtResult">
         <include refid="selectFx67llMahjongReservationLogVo"/>
         <where>
-            <if test="userId != null ">and user_id = #{userId}</if>
-            <if test="createBy != null  and createBy != ''">and create_by like concat('%',
+            <if test="userId != null ">and rl.user_id = #{userId}</if>
+            <if test="createBy != null  and createBy != ''">and rl.create_by like concat('%',
                 #{createBy}, '%')
             </if>
-            <if test="mahjongRoomId != null ">and mahjong_room_id = #{mahjongRoomId}</if>
-            <if test="mahjongRoomName != null  and mahjongRoomName != ''">and mahjong_room_name like concat('%',
+            <if test="mahjongRoomId != null ">and rl.mahjong_room_id = #{mahjongRoomId}</if>
+            <if test="mahjongRoomName != null  and mahjongRoomName != ''">and rl.mahjong_room_name like concat('%',
                 #{mahjongRoomName}, '%')
             </if>
-            <if test="reservationContact != null  and reservationContact != ''">and reservation_contact like concat('%',
+            <if test="reservationContact != null  and reservationContact != ''">and rl.reservation_contact like
+                concat('%',
                 #{reservationContact}, '%')
             </if>
-            <if test="reservationAmount != null ">and reservation_amount = #{reservationAmount}</if>
-            <if test="reservationStatus != null  and reservationStatus != ''">and reservation_status =
+            <if test="reservationAmount != null ">and rl.reservation_amount = #{reservationAmount}</if>
+            <if test="reservationStatus != null  and reservationStatus != ''">and rl.reservation_status =
                 #{reservationStatus}
             </if>
-            <if test="reservationRemark != null  and reservationRemark != ''">and reservation_remark like concat('%',
+            <if test="reservationRemark != null  and reservationRemark != ''">and rl.reservation_remark like concat('%',
                 #{reservationRemark}, '%')
             </if>
-            <if test="delFlag != null  and delFlag != ''">and del_flag = #{delFlag}</if>
-            <if test="createBy != null  and createBy != ''">and create_by = #{createBy}</if>
-            <if test="beginCreateTime != null and endCreateTime != ''">and create_time between #{beginCreateTime} and
+            <if test="delFlag != null  and delFlag != ''">and rl.del_flag = #{delFlag}</if>
+            <if test="createBy != null  and createBy != ''">and rl.create_by = #{createBy}</if>
+            <if test="beginCreateTime != null and endCreateTime != ''">and rl.create_time between #{beginCreateTime} and
                 #{endCreateTime}
             </if>
-            <if test="updateBy != null  and updateBy != ''">and update_by = #{updateBy}</if>
-            <if test="beginUpdateTime != null and endUpdateTime != ''">and update_time between #{beginUpdateTime} and
+            <if test="updateBy != null  and updateBy != ''">and rl.update_by = #{updateBy}</if>
+            <if test="beginUpdateTime != null and endUpdateTime != ''">and rl.update_time between #{beginUpdateTime} and
                 #{endUpdateTime}
             </if>
-            <if test="beginReservationStartTime != null and endReservationStartTime != ''">and reservation_start_time
+            <if test="beginReservationStartTime != null and endReservationStartTime != ''">and rl.reservation_start_time
                 between #{beginReservationStartTime} and
                 #{endReservationStartTime}
             </if>
-            <if test="beginReservationEndTime != null and endReservationEndTime != ''">and reservation_end_time between
+            <if test="beginReservationEndTime != null and endReservationEndTime != ''">and rl.reservation_end_time
+                between
                 #{beginReservationEndTime} and
                 #{endReservationEndTime}
             </if>
         </where>
-        order by STR_TO_DATE(update_time, "%Y-%m-%d %H:%i:%s") desc
+        <!-- 核心修复：给update_time加rl.别名 -->
+        order by STR_TO_DATE(rl.update_time, "%Y-%m-%d %H:%i:%s") desc
     </select>
 
     <select id="selectFx67llMahjongReservationLogByMahjongReservationLogId" parameterType="Long"
