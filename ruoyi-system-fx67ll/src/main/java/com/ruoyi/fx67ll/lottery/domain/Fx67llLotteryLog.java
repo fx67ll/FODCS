@@ -85,24 +85,29 @@ public class Fx67llLotteryLog extends BaseEntity {
     private Long userId;
 
     /**
-     * 创建开始时间
+     * 额外查询用字段：创建开始时间
      */
     private String beginCreateTime;
 
     /**
-     * 创建结束时间
+     * 额外查询用字段：创建结束时间
      */
     private String endCreateTime;
 
     /**
-     * 更新开始时间
+     * 额外查询用字段：更新开始时间
      */
     private String beginUpdateTime;
 
     /**
-     * 更新结束时间
+     * 额外查询用字段：更新结束时间
      */
     private String endUpdateTime;
+
+    /**
+     * 额外查询用字段：用于查询是否已经查询过中奖号码的记录（Y=只查有中奖号码记录数据，N=只查无中奖号码记录数据，null=不限）
+     */
+    private String hasWinningNumber;
 
     public void setDateCode(String dateCode) {
         this.dateCode = dateCode;
@@ -232,6 +237,14 @@ public class Fx67llLotteryLog extends BaseEntity {
         this.endUpdateTime = endUpdateTime;
     }
 
+    public String getHasWinningNumber() {
+        return hasWinningNumber;
+    }
+
+    public void setHasWinningNumber(String hasWinningNumber) {
+        this.hasWinningNumber = hasWinningNumber;
+    }
+
     @Override
     public String toString() {
         return new ToStringBuilder(this, ToStringStyle.MULTI_LINE_STYLE)
@@ -255,6 +268,7 @@ public class Fx67llLotteryLog extends BaseEntity {
                 .append("updateTime", getUpdateTime())
                 .append("beginUpdateTime", getBeginUpdateTime())
                 .append("endUpdateTime", getEndUpdateTime())
+                .append("hasWinningNumber", getHasWinningNumber())
                 .toString();
     }
 }

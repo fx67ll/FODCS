@@ -67,10 +67,22 @@
             <if test="beginUpdateTime != null and endUpdateTime != ''">and update_time between #{beginUpdateTime} and
                 #{endUpdateTime}
             </if>
+            <!-- 根据 String 类型的 hasWinningNumber（Y/N）筛选中奖号码是否存在 -->
+            <if test="hasWinningNumber != null and hasWinningNumber != ''">
+                <choose>
+                    <!-- Y=只查 winningNumber 非空的记录（有中奖号码） -->
+                    <when test="hasWinningNumber.equals('Y')">
+                        and winning_number is not null and winning_number != ''
+                    </when>
+                    <!-- N=只查 winningNumber 为空的记录（无中奖号码） -->
+                    <otherwise>
+                        and (winning_number is null or winning_number = '')
+                    </otherwise>
+                </choose>
+            </if>
         </where>
         order by STR_TO_DATE(create_time, "%Y-%m-%d %H:%i:%s") desc
     </select>
-
 
 
     <select id="selectFx67llLotteryLogByLotteryId" parameterType="Long" resultMap="Fx67llLotteryLogResult">
@@ -182,7 +194,7 @@
         COUNT(*) AS total_tickets,
         COUNT(IF(chase_number IS NOT NULL AND chase_number &lt;&gt; '', 1, NULL))
         + SUM(LENGTH(record_number) - LENGTH(REPLACE(record_number, '/', '')) + 1)
-            AS total_numbers,
+        AS total_numbers,
         SUM(CASE WHEN is_win = 'Y' THEN 1 ELSE 0 END) AS winning_tickets,
         SUM(CASE WHEN is_win = 'Y' THEN CAST(winning_price AS SIGNED) ELSE 0 END) AS total_winning_amount
         FROM
