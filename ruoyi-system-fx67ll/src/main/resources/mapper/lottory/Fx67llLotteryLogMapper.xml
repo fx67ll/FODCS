@@ -71,7 +71,7 @@
             <if test="hasWinningNumber != null and hasWinningNumber != ''">
                 <choose>
                     <!-- Y=只查 winningNumber 非空的记录（有中奖号码） -->
-                    <when test="hasWinningNumber.equals('Y')">
+                    <when test='hasWinningNumber == "Y"'>
                         and winning_number is not null and winning_number != ''
                     </when>
                     <!-- N=只查 winningNumber 为空的记录（无中奖号码） -->
