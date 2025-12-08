@@ -80,6 +80,19 @@
                     </otherwise>
                 </choose>
             </if>
+            <!-- 根据 String 类型的 hasDateCode（Y/N）筛选是否记录了期号 -->
+            <if test="hasDateCode != null and hasDateCode != ''">
+                <choose>
+                    <!-- Y=只查 dateCode 非空的记录（有期号） -->
+                    <when test='hasDateCode == "Y"'>
+                        and date_code is not null and date_code != ''
+                    </when>
+                    <!-- N=只查 dateCode 为空的记录（无期号） -->
+                    <otherwise>
+                        and (date_code is null or date_code = '')
+                    </otherwise>
+                </choose>
+            </if>
         </where>
         order by STR_TO_DATE(create_time, "%Y-%m-%d %H:%i:%s") desc
     </select>
