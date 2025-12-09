@@ -36,11 +36,15 @@
             <if test="noteRemark != null  and noteRemark != ''">and note_remark = #{noteRemark}</if>
             <if test="delFlag != null  and delFlag != ''">and del_flag = #{delFlag}</if>
             <if test="userId != null ">and user_id = #{userId}</if>
-            <if test="createBy != null  and createBy != ''">and create_by = #{createBy}</if>
+            <if test="createBy != null  and createBy != ''">and create_by like concat('%',
+                #{createBy}, '%')
+            </if>
             <if test="beginCreateTime != null and endCreateTime != ''">and create_time between #{beginCreateTime} and
                 #{endCreateTime}
             </if>
-            <if test="updateBy != null  and updateBy != ''">and update_by = #{updateBy}</if>
+            <if test="updateBy != null  and updateBy != ''">and update_by like concat('%',
+                #{updateBy}, '%')
+            </if>
             <if test="beginUpdateTime != null and endUpdateTime != ''">and update_time between #{beginUpdateTime} and
                 #{endUpdateTime}
             </if>

@@ -109,9 +109,6 @@
         <include refid="selectFx67llMahjongReservationLogVo"/>
         <where>
             <if test="userId != null ">and rl.user_id = #{userId}</if>
-            <if test="createBy != null  and createBy != ''">and rl.create_by like concat('%',
-                #{createBy}, '%')
-            </if>
             <if test="mahjongRoomId != null ">and rl.mahjong_room_id = #{mahjongRoomId}</if>
             <if test="mahjongRoomName != null  and mahjongRoomName != ''">and rl.mahjong_room_name like concat('%',
                 #{mahjongRoomName}, '%')
@@ -128,11 +125,15 @@
                 #{reservationRemark}, '%')
             </if>
             <if test="delFlag != null  and delFlag != ''">and rl.del_flag = #{delFlag}</if>
-            <if test="createBy != null  and createBy != ''">and rl.create_by = #{createBy}</if>
+            <if test="createBy != null  and createBy != ''">and rl.create_by like concat('%',
+                #{createBy}, '%')
+            </if>
             <if test="beginCreateTime != null and endCreateTime != ''">and rl.create_time between #{beginCreateTime} and
                 #{endCreateTime}
             </if>
-            <if test="updateBy != null  and updateBy != ''">and rl.update_by = #{updateBy}</if>
+            <if test="updateBy != null  and updateBy != ''">and rl.update_by like concat('%',
+                #{updateBy}, '%')
+            </if>
             <if test="beginUpdateTime != null and endUpdateTime != ''">and rl.update_time between #{beginUpdateTime} and
                 #{endUpdateTime}
             </if>
