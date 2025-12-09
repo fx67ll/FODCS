@@ -526,8 +526,9 @@ public class SysUserServiceImpl implements ISysUserService {
         // 6. 设置超神用户ID
         user.setUserId(newUserId);
 
-        // 7. 为新用户默认分配麻将室用户角色，麻将室用户角色ID 103
-        insertUserAuth(newUserId, new Long[]{103L});
+        // 7. 为新用户默认分配麻将室相关信息
+        insertUserAuth(newUserId, new Long[]{103L}); // 强制设置麻将室用户角色: ID 103
+        user.setDeptId(204L); // 强制设置麻将室用户部门为麻将室: ID 204
 
         // 8. 设置超神用户专属配置
         user.setUserType("79"); // 强制设置用户类型
