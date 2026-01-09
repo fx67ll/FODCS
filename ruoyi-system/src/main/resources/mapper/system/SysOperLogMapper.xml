@@ -40,6 +40,15 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
 			<if test="title != null and title != ''">
 				AND title like concat('%', #{title}, '%')
 			</if>
+			<if test="operName != null and operName != ''">
+				AND oper_name like concat('%', #{operName}, '%')
+			</if>
+			<if test="operIp != null and operIp != ''">
+				AND oper_ip like concat('%', #{operIp}, '%')
+			</if>
+			<if test="operLocation != null and operLocation != ''">
+				AND oper_location like concat('%', #{operLocation}, '%')
+			</if>
 			<if test="businessType != null">
 				AND business_type = #{businessType}
 			</if>
@@ -51,9 +60,6 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
 			</if>
 			<if test="status != null">
 				AND status = #{status}
-			</if>
-			<if test="operName != null and operName != ''">
-				AND oper_name like concat('%', #{operName}, '%')
 			</if>
 			<if test="params.beginTime != null and params.beginTime != ''"><!-- 开始时间检索 -->
 				AND oper_time &gt;= #{params.beginTime}

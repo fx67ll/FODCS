@@ -76,6 +76,12 @@ public class SysUser extends BaseEntity {
     private String contactInfo;
 
     /**
+     * 用户备注
+     */
+    @Excel(name = "用户备注")
+    private String remark;
+
+    /**
      * 用户性别
      */
     @Excel(name = "用户性别", readConverterExp = "0=男,1=女,2=未知")
@@ -237,6 +243,14 @@ public class SysUser extends BaseEntity {
 
     public void setContactInfo(String contactInfo) {
         this.contactInfo = contactInfo;
+    }
+
+    public String getRemark() {
+        return remark;
+    }
+
+    public void setRemark(String remark) {
+        this.remark = remark;
     }
 
     public String getSex() {

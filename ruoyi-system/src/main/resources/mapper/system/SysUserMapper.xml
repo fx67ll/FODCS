@@ -342,6 +342,9 @@
         <if test="contactInfo != null and contactInfo != ''">
             AND u.contact_info like concat('%', #{contactInfo}, '%')
         </if>
+        <if test="remark != null and remark != ''">
+            AND u.remark like concat('%', #{remark}, '%')
+        </if>
         <if test="sex != null and sex != ''">
             AND u.sex = #{sex}
         </if>
