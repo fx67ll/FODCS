@@ -3,6 +3,12 @@ fx67ll One Data Center Server
 
 欢迎访问 [fx67ll's 管理系统](https://vip.fx67ll.com) ~
 
+## 0.8.0.20260213
+* 213开启下一个AI大版本，这次从0开始  
+* 删除配置文件，确保敏感文件永远不会被提交（如果需要，可以去个人keys仓库提取）  
+    + ruoyi-admin\src\main\resources\application.yml  
+    + ruoyi-admin\src\main\resources\application-druid.yml  
+
 ## 0.7.7.20260109
 * 麻将用户添加备注搜索参数  
 * 日志管理添加更多搜索参数
