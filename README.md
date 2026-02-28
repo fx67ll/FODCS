@@ -3,11 +3,24 @@ fx67ll One Data Center Server
 
 欢迎访问 [fx67ll's 管理系统](https://vip.fx67ll.com) ~
 
+## 0.8.1.20260228
+* 初步完成`AI 表设计`以下部分表的设计工作  
+  + AI Prompt 模板表
+  + AI Prompt 模版分组表  
+  + AI Prompt 场景编码表
+  + AI Prompt 模型配置表
+  + AI Prompt 模型配置表
+  + AI Prompt 限流/熔断规则表（适配Sentinel框架）
+  + AI 调用请求日志表
+  + AI 调用请求日统计日志表
+  + AI 调用请求月统计日志表
+  + AI 调用请求年统计日志表
+
 ## 0.8.0.20260213
 * 213开启下一个AI大版本，这次从0开始  
 * 删除配置文件，确保敏感文件永远不会被提交（如果需要，可以去个人keys仓库提取）  
-    + ruoyi-admin\src\main\resources\application.yml  
-    + ruoyi-admin\src\main\resources\application-druid.yml  
+  + ruoyi-admin\src\main\resources\application.yml  
+  + ruoyi-admin\src\main\resources\application-druid.yml  
 
 ## 0.7.7.20260109
 * 麻将用户添加备注搜索参数  
