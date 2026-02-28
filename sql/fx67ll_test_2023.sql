@@ -650,4 +650,254 @@ select * from fx67ll_mahjong_reservation_log where del_flag = '0';
 
 
 
+-- ----------------------------
+-- 13、AI 表设计
+-- ----------------------------
+-- AI Prompt 模板表
+drop table if exists fx67ll_ai_prompt_template;
+-- AI Prompt 模版分组表  
+drop table if exists fx67ll_ai_prompt_group;
+-- AI Prompt 场景编码表
+drop table if exists fx67ll_ai_prompt_scene;
+-- AI Prompt 模型配置表
+drop table if exists fx67ll_ai_prompt_model;
+-- AI Prompt 模型配置表
+drop table if exists fx67ll_ai_prompt_model;
+-- AI Prompt 限流/熔断规则表（适配Sentinel框架）
+drop table if exists fx67ll_ai_prompt_limit_rule;
+-- AI 调用请求日志表
+drop table if exists fx67ll_ai_request_log;
+-- AI 调用请求日统计日志表
+drop table if exists fx67ll_ai_request_daily_log;
+-- AI 调用请求月统计日志表
+drop table if exists fx67ll_ai_request_monthly_log;
+-- AI 调用请求年统计日志表
+drop table if exists fx67ll_ai_request_yearly_log;
+
+CREATE TABLE `fx67ll_ai_prompt_template` (
+  `prompt_id` bigint(20) NOT NULL AUTO_INCREMENT COMMENT '主键ID',
+  `prompt_name` varchar(233) NOT NULL COMMENT '模板名称',
+  `group_id` bigint(20) NOT NULL COMMENT '关联分组ID（外键，模板仅属于一个分组）',
+  `scene_id` bigint(20) NOT NULL COMMENT '关联场景ID（外键，模板仅属于一个场景）',
+  `model_id` bigint(20) NOT NULL COMMENT '关联模型ID（外键，模板仅使用一个模型）',
+  `prompt_content` text NOT NULL COMMENT 'Prompt模板内容（含变量占位符）',
+  `prompt_variable_config` text COMMENT '变量配置（JSON格式字符串，示例：[{"name":"team","type":"string","required":true}]）',
+  `prompt_custom_config_params` text COMMENT '模板自定义参数（JSON格式字符串，覆盖模型默认参数）',
+  `prompt_status` char(1) DEFAULT '0' COMMENT '状态（0正常 1停用）',
+  `prompt_remark` varchar(1023) DEFAULT '' COMMENT '备注',
+  `create_by` varchar(64) DEFAULT '' COMMENT '创建者',
+  `create_time` datetime DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+  `update_by` varchar(64) DEFAULT '' COMMENT '更新者',
+  `update_time` datetime DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
+  `del_flag` char(1) DEFAULT '0' COMMENT '删除标志（0存在 2删除）',
+  PRIMARY KEY (`prompt_id`),
+  KEY `idx_group_id` (`group_id`) COMMENT '分组ID索引（快速按分组查询模板）',
+  KEY `idx_scene_id` (`scene_id`) COMMENT '场景ID索引（快速按场景查询模板）',
+  KEY `idx_model_id` (`model_id`) COMMENT '模型ID索引（快速按模型查询模板）',
+  KEY `idx_group_scene_model` (`group_id`, `scene_id`, `model_id`) COMMENT '分组+场景+模型组合索引（优化多维度组合查询）',
+  KEY `idx_prompt_status` (`prompt_status`) COMMENT '模板状态索引（快速筛选启用/停用模板）',
+  FOREIGN KEY (`group_id`) REFERENCES `fx67ll_ai_prompt_group`(`group_id`) ON DELETE RESTRICT COMMENT '分组外键：删除分组时禁止删除关联模板',
+  FOREIGN KEY (`scene_id`) REFERENCES `fx67ll_ai_prompt_scene`(`scene_id`) ON DELETE RESTRICT COMMENT '场景外键：删除场景时禁止删除关联模板',
+  FOREIGN KEY (`model_id`) REFERENCES `fx67ll_ai_prompt_model`(`model_id`) ON DELETE RESTRICT COMMENT '模型外键：删除模型时禁止删除关联模板'
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='AI Prompt模板管理表';
+
+CREATE TABLE `fx67ll_ai_prompt_group` (
+  `group_id` bigint(20) NOT NULL AUTO_INCREMENT COMMENT '分组ID（主键）',
+  `group_code` varchar(233) NOT NULL COMMENT '分组编码（如football_analysis、code_helper）',
+  `group_name` varchar(233) NOT NULL COMMENT '分组名称（如足球分析、代码助手）',
+  `group_desc` varchar(1023) DEFAULT '' COMMENT '分组描述（如“跨场景的足球相关Prompt模板分组”）',
+  `group_status` char(1) DEFAULT '0' COMMENT '状态（0正常 1停用）',
+  `group_sort` int(4) DEFAULT 0 COMMENT '排序（用于前端展示，数值越小越靠前）',
+  `create_by` varchar(64) DEFAULT '' COMMENT '创建者',
+  `create_time` datetime DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+  `update_by` varchar(64) DEFAULT '' COMMENT '更新者',
+  `update_time` datetime DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
+  `del_flag` char(1) DEFAULT '0' COMMENT '删除标志（0存在 2删除）',
+  PRIMARY KEY (`group_id`),
+  UNIQUE KEY `uk_group_code` (`group_code`) COMMENT '分组编码唯一索引：防止分组编码重复',
+  KEY `idx_group_status` (`group_status`) COMMENT '分组状态索引（快速筛选启用/停用分组）'
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='AI Prompt模板分组表';
+
+CREATE TABLE `fx67ll_ai_prompt_scene` (
+  `scene_id` bigint(20) NOT NULL AUTO_INCREMENT COMMENT '场景ID（主键）',
+  `scene_code` varchar(233) NOT NULL COMMENT '场景编码（如football_pre_match，唯一标识场景，用于接口/配置关联）',
+  `scene_name` varchar(233) NOT NULL COMMENT '场景名称',
+  `scene_desc` varchar(1023) DEFAULT '' COMMENT '场景描述',
+  `scene_remark` varchar(1023) DEFAULT '' COMMENT '备注',
+  `scene_status` char(1) DEFAULT '0' COMMENT '状态（0正常 1停用）',
+  `scene_sort` int(4) DEFAULT 0 COMMENT '排序（用于前端展示，数值越小越靠前）',
+  `create_by` varchar(64) DEFAULT '' COMMENT '创建者',
+  `create_time` datetime DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+  `update_by` varchar(64) DEFAULT '' COMMENT '更新者',
+  `update_time` datetime DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
+  `del_flag` char(1) DEFAULT '0' COMMENT '删除标志（0存在 2删除）',
+  PRIMARY KEY (`scene_id`),
+  UNIQUE KEY `uk_scene_code` (`scene_code`) COMMENT '场景编码唯一索引：防止场景编码重复',
+  KEY `idx_scene_status` (`scene_status`) COMMENT '场景状态索引（快速筛选启用/停用场景）'
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='AI Prompt场景管理表';
+
+CREATE TABLE `fx67ll_ai_prompt_model` (
+  `model_id` bigint(20) NOT NULL AUTO_INCREMENT COMMENT '模型ID（主键）',
+  `model_code` varchar(233) NOT NULL COMMENT '模型编码（如deepseek_chat/doubao_pro）',
+  `model_name` varchar(233) NOT NULL COMMENT '模型名称（如DeepSeek通用对话模型/豆包Pro）',
+  `model_vendor` varchar(233) NOT NULL COMMENT '厂商标识（如deepseek/doubao/tongyi）',
+  `model_api_key` varchar(1023) NOT NULL COMMENT 'API密钥键（关联fx67ll_secret_key.secret_key，字段类型varchar(1023)）',
+  `model_secret_key` varchar(1023) DEFAULT '' COMMENT 'Secret密钥键（关联fx67ll_secret_key.secret_key，可为空）',
+  `model_api_url` varchar(233) NOT NULL COMMENT '模型API调用地址',
+  `model_api_version` varchar(10) DEFAULT 'v1' COMMENT 'API版本（如v1/v3，贴合主流模型默认值）',
+  `model_config_params` text NOT NULL COMMENT '模型配置参数（JSON格式字符串，兼容所有模型参数）',
+  `model_request_header` text COMMENT '请求头配置（JSON格式字符串）',
+  `model_remark` varchar(1023) DEFAULT '' COMMENT '备注',
+  `model_status` char(1) DEFAULT '0' COMMENT '状态（0正常 1停用）',
+  `model_sort` int(4) DEFAULT 0 COMMENT '排序（前端展示用，数值越小越靠前）',
+  `model_token_price` decimal(10,6) DEFAULT 0.000000 COMMENT '每1000 token价格（元），用于计算调用费用',
+  `model_token_currency` varchar(10) DEFAULT 'CNY' COMMENT '计价货币（默认CNY，支持USD等）',
+  `create_by` varchar(64) DEFAULT '' COMMENT '创建者',
+  `create_time` datetime DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+  `update_by` varchar(64) DEFAULT '' COMMENT '更新者',
+  `update_time` datetime DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
+  `del_flag` char(1) DEFAULT '0' COMMENT '删除标志（0存在 2删除）',
+  PRIMARY KEY (`model_id`),
+  UNIQUE KEY `uk_model_code` (`model_code`) COMMENT '模型编码唯一索引：避免重复配置同一模型',
+  KEY `idx_model_vendor_status` (`model_vendor`, `model_status`) COMMENT '厂商+状态组合索引（快速筛选某厂商的启用模型）',
+  KEY `idx_model_status` (`model_status`) COMMENT '模型状态索引（快速筛选启用/停用模型）',
+  CONSTRAINT `fk_model_api_key` FOREIGN KEY (`model_api_key`) REFERENCES `fx67ll_secret_key`(`secret_key`) ON DELETE RESTRICT COMMENT 'API密钥外键：删除密钥时禁止删除关联模型'
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='AI Prompt模型配置表';
+
+CREATE TABLE `fx67ll_ai_prompt_limit_rule` (
+  `limit_id` bigint(20) NOT NULL AUTO_INCREMENT COMMENT '限流/熔断规则主键ID',
+  `limit_dimension` char(2) NOT NULL COMMENT '规则维度（1:模型 2:模板 3:场景 4:分组）',
+  `limit_target_id` bigint(20) NOT NULL COMMENT '关联维度ID（如model_id/prompt_id/scene_id/group_id）',
+  `limit_type` char(2) NOT NULL COMMENT '规则类型（1:流控 2:熔断）',
+  `flow_control_mode` char(1) DEFAULT 'D' COMMENT '流控模式（D:直接  A:关联  L:链路，仅limit_type=1时有效）',
+  `flow_control_effect` char(1) DEFAULT 'F' COMMENT '流控效果（F:快速失败 W:WarmUp Q:排队等待，仅limit_type=1时有效）',
+  `flow_rule_type` char(1) DEFAULT 'Q' COMMENT '流控规则类型（Q:QPS C:并发数，仅limit_type=1时有效）',
+  `flow_threshold` decimal(10,2) NOT NULL COMMENT '流控阈值（QPS/并发数，保留2位小数）',
+  `circuit_strategy` char(1) DEFAULT 'S' COMMENT '熔断策略（S:慢调用比例 E:异常比例 N:异常数，仅limit_type=2时有效）',
+  `circuit_threshold` decimal(10,2) DEFAULT 0.5 COMMENT '熔断阈值（慢调用比例/异常比例:0-1；异常数:整数，保留2位小数）',
+  `circuit_grade` int(4) DEFAULT 500 COMMENT '慢调用阈值（ms，仅circuit_strategy=S时有效）',
+  `circuit_window` int(4) DEFAULT 10000 COMMENT '统计窗口时长（ms，默认10s，仅limit_type=2时有效）',
+  `circuit_timeout` int(4) DEFAULT 5000 COMMENT '熔断恢复时间（ms，默认5s，仅limit_type=2时有效）',
+  `limit_status` char(1) DEFAULT '0' COMMENT '规则状态（0:启用 1:停用）',
+  `create_by` varchar(64) DEFAULT '' COMMENT '创建者',
+  `create_time` datetime DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+  `update_by` varchar(64) DEFAULT '' COMMENT '更新者',
+  `update_time` datetime DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
+  `del_flag` char(1) DEFAULT '0' COMMENT '删除标志（0存在 2删除）',
+  PRIMARY KEY (`limit_id`),
+  KEY `idx_limit_dim_target` (`limit_dimension`, `limit_target_id`) COMMENT '维度+目标ID索引（快速查询某维度下的规则）',
+  KEY `idx_limit_type_status` (`limit_type`, `limit_status`) COMMENT '规则类型+状态索引（筛选启用的流控/熔断规则）',
+  KEY `idx_limit_dim_type_status` (`limit_dimension`, `limit_type`, `limit_status`) COMMENT '维度+类型+状态索引（高频查询：某维度启用的流控/熔断规则）'
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='AI Prompt 限流/熔断规则表（适配Sentinel框架）';
+
+CREATE TABLE `fx67ll_ai_request_log` (
+  `log_id` bigint(20) NOT NULL AUTO_INCREMENT COMMENT '日志ID（主键）',
+  `prompt_id` bigint(20) DEFAULT NULL COMMENT '使用的模板ID（可为空，若直接调用非模板）',
+  `scene_id` bigint(20) DEFAULT NULL COMMENT '关联场景ID',
+  `model_id` bigint(20) NOT NULL COMMENT '调用的模型ID',
+  `model_vendor` varchar(233) NOT NULL COMMENT '模型厂商（冗余存储，避免关联查询）',
+  `request_content` text COMMENT '请求内容（含最终渲染后的Prompt）',
+  `response_content` text COMMENT '响应内容（大文本存储）',
+  `prompt_tokens` int(11) DEFAULT 0 COMMENT '输入token数',
+  `completion_tokens` int(11) DEFAULT 0 COMMENT '输出token数',
+  `total_tokens` int(11) DEFAULT 0 COMMENT '总token数',
+  `cost` decimal(10,6) DEFAULT 0.000000 COMMENT '预估费用（元）',
+  `duration_ms` int(11) DEFAULT 0 COMMENT '请求耗时（毫秒）',
+  `http_status` int(3) DEFAULT NULL COMMENT 'HTTP状态码',
+  `call_status` char(2) DEFAULT '00' COMMENT '调用状态（00:成功 01:失败 02:限流 03:熔断）',
+  `error_msg` text COMMENT '错误信息',
+  `caller_ip` varchar(233) DEFAULT '' COMMENT '调用者IP',
+  `request_time` datetime DEFAULT CURRENT_TIMESTAMP COMMENT '请求时间（精确到秒）',
+  `create_by` varchar(64) DEFAULT '' COMMENT '调用者标识',
+  PRIMARY KEY (`log_id`, `request_time`),
+  KEY `idx_request_time` (`request_time`),
+  KEY `idx_prompt_id` (`prompt_id`),
+  KEY `idx_scene_id` (`scene_id`),
+  KEY `idx_model_id` (`model_id`),
+  KEY `idx_create_by` (`create_by`),
+  KEY `idx_call_status` (`call_status`),
+  KEY `idx_request_time_vendor` (`request_time`, `model_vendor`),
+  KEY `idx_scene_model_time` (`scene_id`, `model_id`, `request_time`),
+  KEY `idx_create_by_time` (`create_by`, `request_time`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 
+PARTITION BY RANGE (TO_DAYS(request_time)) (
+  PARTITION p202603 VALUES LESS THAN (TO_DAYS('2026-04-01')), -- 2026年3月
+  PARTITION p202604 VALUES LESS THAN (TO_DAYS('2026-05-01')), -- 2026年4月
+  PARTITION p202605 VALUES LESS THAN (TO_DAYS('2026-06-01')), -- 2026年5月
+  PARTITION p_default VALUES LESS THAN MAXVALUE -- 默认分区（防止未提前创建月份分区）
+) COMMENT='AI 调用请求日志表（按request_time月份分区）';
+
+CREATE TABLE `fx67ll_ai_request_daily_log` (
+  `daily_log_date` date NOT NULL COMMENT '统计日期（yyyy-MM-dd）',
+  `model_id` bigint(20) NOT NULL COMMENT '模型ID',
+  `scene_id` bigint(20) NOT NULL COMMENT '场景ID（可选，若需要场景级统计）',
+  `total_requests` int(11) DEFAULT 0 COMMENT '总请求次数',
+  `fail_requests` int(11) DEFAULT 0 COMMENT '失败请求次数',
+  `limit_requests` int(11) DEFAULT 0 COMMENT '限流请求次数',
+  `circuit_requests` int(11) DEFAULT 0 COMMENT '熔断请求次数',
+  `total_prompt_tokens` bigint(20) DEFAULT 0 COMMENT '总输入token数',
+  `total_completion_tokens` bigint(20) DEFAULT 0 COMMENT '总输出token数',
+  `total_cost` decimal(12,6) DEFAULT 0.000000 COMMENT '总费用（元）',
+  `avg_duration_ms` int(11) DEFAULT 0 COMMENT '平均耗时（毫秒，计算逻辑：总耗时/总请求数）',
+  PRIMARY KEY (`daily_log_date`, `model_id`, `scene_id`) COMMENT '复合主键：日期+模型+场景（唯一确定一条日统计记录）'
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='AI 调用请求日统计日志表';
+
+CREATE TABLE `fx67ll_ai_request_monthly_log` (
+  `monthly_log_month` varchar(7) NOT NULL COMMENT '统计年月（yyyy-MM）',
+  `model_id` bigint(20) NOT NULL COMMENT '模型ID',
+  `scene_id` bigint(20) NOT NULL COMMENT '场景ID（可选，若需要场景级统计）',
+  `total_requests` int(11) DEFAULT 0 COMMENT '月总请求次数',
+  `fail_requests` int(11) DEFAULT 0 COMMENT '月失败请求次数',
+  `limit_requests` int(11) DEFAULT 0 COMMENT '月限流请求次数',
+  `circuit_requests` int(11) DEFAULT 0 COMMENT '月熔断请求次数',
+  `total_prompt_tokens` bigint(20) DEFAULT 0 COMMENT '月总输入token数',
+  `total_completion_tokens` bigint(20) DEFAULT 0 COMMENT '月总输出token数',
+  `total_cost` decimal(12,6) DEFAULT 0.000000 COMMENT '月总费用（元）',
+  `avg_duration_ms` int(11) DEFAULT 0 COMMENT '月平均耗时（毫秒）',
+  PRIMARY KEY (`monthly_log_month`, `model_id`, `scene_id`) COMMENT '复合主键：年月+模型+场景（唯一确定一条月统计记录）'
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='AI 调用请求月统计日志表';
+
+CREATE TABLE `fx67ll_ai_request_yearly_log` (
+  `yearly_log_year` varchar(4) NOT NULL COMMENT '统计年份（yyyy）',
+  `model_id` bigint(20) NOT NULL COMMENT '模型ID',
+  `scene_id` bigint(20) NOT NULL COMMENT '场景ID（可选，若需要场景级统计）',
+  `total_requests` bigint(20) DEFAULT 0 COMMENT '年总请求次数',
+  `total_prompt_tokens` bigint(20) DEFAULT 0 COMMENT '年总输入token数',
+  `total_completion_tokens` bigint(20) DEFAULT 0 COMMENT '年总输出token数',
+  `total_cost` decimal(14,6) DEFAULT 0.000000 COMMENT '年总费用（元，保留6位小数）',
+  `avg_duration_ms` int(11) DEFAULT 0 COMMENT '年平均耗时（毫秒）',
+  PRIMARY KEY (`yearly_log_year`, `model_id`, `scene_id`) COMMENT '复合主键：年份+模型+场景（唯一确定一条年统计记录）'
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='AI 调用请求年统计日志表';
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
