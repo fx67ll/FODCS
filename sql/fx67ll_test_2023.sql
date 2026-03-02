@@ -651,7 +651,7 @@ select * from fx67ll_mahjong_reservation_log where del_flag = '0';
 
 
 -- ----------------------------
--- 13、AI 表设计
+-- 13、AI 相关表设计
 -- ----------------------------
 -- AI Prompt 模板表
 drop table if exists fx67ll_ai_prompt_template;
@@ -872,18 +872,17 @@ CREATE TABLE `fx67ll_ai_request_yearly_log` (
 
 
 -- ----------------------------
--- 14、比赛赛前分析相关表设计
+-- 14、我横业务分析相关表设计
 -- ----------------------------
--- 豆包待整合处理
-CREATE TABLE `fx67ll_football_season` (
+CREATE TABLE `fx67ll_dortmund_season` (
   `season_id` bigint(20) NOT NULL AUTO_INCREMENT COMMENT '赛季ID（主键）',
-  `season_code` varchar(50) NOT NULL COMMENT '赛季编码（如2025-2026，唯一标识）',
-  `season_name` varchar(100) NOT NULL COMMENT '赛季名称（如2025-2026赛季）',
-  `season_desc` varchar(500) DEFAULT '' COMMENT '赛季描述（如“包含欧冠、英超等主流赛事”）',
-  `start_date` date DEFAULT NULL COMMENT '赛季开始日期',
-  `end_date` date DEFAULT NULL COMMENT '赛季结束日期',
-  `season_status` char(1) DEFAULT '0' COMMENT '状态（0正常 1停用）',
-  `season_sort` int(4) DEFAULT 0 COMMENT '排序（前端展示用）',
+  `season_code` varchar(23) NOT NULL COMMENT '赛季编码（如2025-2026，唯一标识）',
+  `season_name` varchar(233) NOT NULL COMMENT '赛季名称（如2025-2026赛季）',
+  `season_remark` varchar(1023) DEFAULT '' COMMENT '赛季备注（如“包含欧冠、英超等主流赛事”）',
+  `start_date` date NOT NULL COMMENT '赛季开始日期',
+  `end_date` date NOT NULL COMMENT '赛季结束日期',
+  `season_status` char(1) DEFAULT '0' COMMENT '赛季状态（0正常 1停用）',
+  `season_sort` int(4) DEFAULT 0 COMMENT '赛季排序（前端展示用）',
   `create_by` varchar(64) DEFAULT '' COMMENT '创建者',
   `create_time` datetime DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
   `update_by` varchar(64) DEFAULT '' COMMENT '更新者',
@@ -891,18 +890,21 @@ CREATE TABLE `fx67ll_football_season` (
   `del_flag` char(1) DEFAULT '0' COMMENT '删除标志（0存在 2删除）',
   PRIMARY KEY (`season_id`),
   UNIQUE KEY `uk_season_code` (`season_code`) COMMENT '赛季编码唯一索引',
-  KEY `idx_season_status` (`season_status`) COMMENT '赛季状态索引'
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='足球赛季管理表';
-CREATE TABLE `fx67ll_football_team` (
+  KEY `idx_season_status` (`season_status`) COMMENT '赛季状态索引（筛选启用/停用赛季）',
+  KEY `idx_season_sort` (`season_sort`) COMMENT '赛季排序索引（前端展示排序）'
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='赛季管理表';
+
+CREATE TABLE `fx67ll_dortmund_team` (
   `team_id` bigint(20) NOT NULL AUTO_INCREMENT COMMENT '球队ID（主键）',
-  `team_code` varchar(50) NOT NULL COMMENT '球队编码（如man_city、real_madrid，唯一标识）',
-  `team_name` varchar(100) NOT NULL COMMENT '球队名称（如曼城、皇家马德里）',
-  `team_name_en` varchar(100) DEFAULT '' COMMENT '球队英文名称（如Manchester City）',
-  `team_logo_url` varchar(500) DEFAULT '' COMMENT '球队Logo URL',
-  `country` varchar(50) DEFAULT '' COMMENT '所属国家/地区（如英格兰、西班牙）',
-  `team_desc` varchar(500) DEFAULT '' COMMENT '球队简介',
-  `team_status` char(1) DEFAULT '0' COMMENT '状态（0正常 1停用）',
-  `team_sort` int(4) DEFAULT 0 COMMENT '排序（前端展示用）',
+  `team_code` varchar(23) NOT NULL COMMENT '球队编码（如dort，唯一标识）',
+  `team_name` varchar(233) NOT NULL COMMENT '球队名称（如多特蒙德）',
+  `team_name_short` varchar(10) DEFAULT '' COMMENT '球队简称或外号（如多特叫我横）',
+  `team_name_en` varchar(233) DEFAULT '' COMMENT '球队英文名称（如Manchester City）',
+  `team_logo_url` varchar(1023) DEFAULT '' COMMENT '球队Logo地址',
+  `team_country` varchar(23) DEFAULT '' COMMENT '球队所属国家/地区（如英格兰、西班牙）',
+  `team_remark` varchar(1023) DEFAULT '' COMMENT '球队备注',
+  `team_status` char(1) DEFAULT '0' COMMENT '球队状态（0正常 1停用）',
+  `team_sort` int(4) DEFAULT 0 COMMENT '球队排序（前端展示用）',
   `create_by` varchar(64) DEFAULT '' COMMENT '创建者',
   `create_time` datetime DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
   `update_by` varchar(64) DEFAULT '' COMMENT '更新者',
@@ -910,20 +912,22 @@ CREATE TABLE `fx67ll_football_team` (
   `del_flag` char(1) DEFAULT '0' COMMENT '删除标志（0存在 2删除）',
   PRIMARY KEY (`team_id`),
   UNIQUE KEY `uk_team_code` (`team_code`) COMMENT '球队编码唯一索引',
-  KEY `idx_team_status` (`team_status`) COMMENT '球队状态索引',
-  KEY `idx_country` (`country`) COMMENT '所属国家索引'
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='足球球队管理表';
-CREATE TABLE `fx67ll_football_match` (
+  KEY `idx_team_status` (`team_status`) COMMENT '球队状态索引（筛选启用/停用球队）',
+  KEY `idx_team_sort` (`team_sort`) COMMENT '球队排序索引（前端展示排序）',
+  KEY `idx_team_country` (`team_country`) COMMENT '球队国家索引（筛选某国球队）'
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='球队管理表';
+
+CREATE TABLE `fx67ll_dortmund_match` (
   `match_id` bigint(20) NOT NULL AUTO_INCREMENT COMMENT '比赛ID（主键）',
-  `match_code` varchar(50) NOT NULL COMMENT '比赛编码（如20250301_man_city_real_madrid，唯一标识）',
+  `match_code` varchar(50) NOT NULL COMMENT '比赛编码（可考虑使用 season_code + 日期 + 主客队编码 拼接，确保唯一且可读）',
   `season_id` bigint(20) NOT NULL COMMENT '关联赛季ID（外键）',
   `home_team_id` bigint(20) NOT NULL COMMENT '主队ID（外键）',
   `away_team_id` bigint(20) NOT NULL COMMENT '客队ID（外键）',
   `match_time` datetime NOT NULL COMMENT '比赛时间',
-  `match_venue` varchar(100) DEFAULT '' COMMENT '比赛场地（如伊蒂哈德球场）',
-  `match_desc` varchar(500) DEFAULT '' COMMENT '比赛简介（如欧冠1/4决赛首回合）',
+  `match_venue` varchar(233) DEFAULT '' COMMENT '比赛场地（如伊杜纳信号公园球场）',
+  `match_remark` varchar(1023) DEFAULT '' COMMENT '比赛备注（如欧冠1/4决赛首回合）',
   `match_status` char(1) DEFAULT '0' COMMENT '比赛状态（0未开始 1进行中 2已结束）',
-  `analysis_status` char(1) DEFAULT '0' COMMENT '分析状态（0未分析 1已分析）',
+  `analysis_count` int(4) DEFAULT 0 COMMENT '分析次数（替代原analysis_status，体现多次分析）',
   `create_by` varchar(64) DEFAULT '' COMMENT '创建者',
   `create_time` datetime DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
   `update_by` varchar(64) DEFAULT '' COMMENT '更新者',
@@ -936,20 +940,25 @@ CREATE TABLE `fx67ll_football_match` (
   KEY `idx_away_team_id` (`away_team_id`) COMMENT '客队ID索引',
   KEY `idx_match_time` (`match_time`) COMMENT '比赛时间索引',
   KEY `idx_match_status` (`match_status`) COMMENT '比赛状态索引',
-  KEY `idx_analysis_status` (`analysis_status`) COMMENT '分析状态索引',
-  FOREIGN KEY (`season_id`) REFERENCES `fx67ll_football_season`(`season_id`) ON DELETE RESTRICT,
-  FOREIGN KEY (`home_team_id`) REFERENCES `fx67ll_football_team`(`team_id`) ON DELETE RESTRICT,
-  FOREIGN KEY (`away_team_id`) REFERENCES `fx67ll_football_team`(`team_id`) ON DELETE RESTRICT
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='足球比赛记录表';
-CREATE TABLE `fx67ll_football_match_analysis` (
+  KEY `idx_match_create` (`match_id`, `create_time`) COMMENT '比赛+创建时间（高频：按创建时间倒序）',
+  KEY `idx_season_match_status` (`season_id`, `match_status`) COMMENT '赛季+比赛状态索引（高频：按赛季查未开始比赛）',
+  KEY `idx_season_match_time` (`season_id`, `match_time`) COMMENT '赛季+比赛时间索引（高频：某赛季的比赛列表按时间排序）',
+  KEY `idx_match_time_status` (`match_time`, `match_status`) COMMENT '比赛时间+状态索引（高频：查近期未开始比赛）',
+  FOREIGN KEY (`season_id`) REFERENCES `fx67ll_football_season`(`season_id`) ON DELETE RESTRICT COMMENT '赛季外键：删除赛季时禁止删除关联比赛',
+  FOREIGN KEY (`home_team_id`) REFERENCES `fx67ll_football_team`(`team_id`) ON DELETE RESTRICT COMMENT '主队外键：删除球队时禁止删除关联比赛',
+  FOREIGN KEY (`away_team_id`) REFERENCES `fx67ll_football_team`(`team_id`) ON DELETE RESTRICT COMMENT '客队外键：删除球队时禁止删除关联比赛'
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='比赛记录表';
+
+CREATE TABLE `fx67ll_dortmund_match_analysis` (
   `analysis_id` bigint(20) NOT NULL AUTO_INCREMENT COMMENT '分析ID（主键）',
   `match_id` bigint(20) NOT NULL COMMENT '关联比赛ID（外键）',
-  `prompt_id` bigint(20) NOT NULL COMMENT '使用的Prompt模板ID（外键，关联fx67ll_ai_prompt_template）',
+  `prompt_id` bigint(20) DEFAULT NULL COMMENT '使用的Prompt模板ID（外键，关联fx67ll_ai_prompt_template，自定义分析时为空）',
   `model_id` bigint(20) NOT NULL COMMENT '使用的模型ID（外键，关联fx67ll_ai_prompt_model）',
-  `ai_request_log_id` bigint(20) DEFAULT NULL COMMENT '关联AI调用日志ID（外键，关联fx67ll_ai_request_log）',
-  `raw_prompt` text NOT NULL COMMENT '最终渲染后的Prompt（含球队/比赛数据）',
+  `ai_request_log_id` bigint(20) DEFAULT NULL COMMENT '关联AI调用日志ID（外键，自定义文本分析时为空）',
+  `analysis_type` char(1) DEFAULT '0' COMMENT '分析类型（0模板分析 1自定义文本分析）',
+  `raw_prompt` text NOT NULL COMMENT '最终渲染后的Prompt（含球队/比赛数据，自定义分析时为用户输入文本）',
   `raw_ai_response` text NOT NULL COMMENT 'AI返回的原始JSON结果',
-  `analysis_remark` varchar(500) DEFAULT '' COMMENT '分析备注',
+  `analysis_remark` varchar(1023) DEFAULT '' COMMENT '分析备注',
   `create_by` varchar(64) DEFAULT '' COMMENT '创建者',
   `create_time` datetime DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
   `update_by` varchar(64) DEFAULT '' COMMENT '更新者',
@@ -960,71 +969,59 @@ CREATE TABLE `fx67ll_football_match_analysis` (
   KEY `idx_prompt_id` (`prompt_id`) COMMENT 'Prompt模板ID索引',
   KEY `idx_model_id` (`model_id`) COMMENT '模型ID索引',
   KEY `idx_create_time` (`create_time`) COMMENT '创建时间索引',
-  FOREIGN KEY (`match_id`) REFERENCES `fx67ll_football_match`(`match_id`) ON DELETE RESTRICT,
-  FOREIGN KEY (`prompt_id`) REFERENCES `fx67ll_ai_prompt_template`(`prompt_id`) ON DELETE RESTRICT,
-  FOREIGN KEY (`model_id`) REFERENCES `fx67ll_ai_prompt_model`(`model_id`) ON DELETE RESTRICT
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='足球比赛AI分析原始结果表';
+  KEY `idx_ai_request_log_id` (`ai_request_log_id`) COMMENT 'AI调用日志ID索引（关联日志查询）',
+  KEY `idx_match_prompt_model` (`match_id`, `prompt_id`, `model_id`) COMMENT '比赛+模板+模型索引（高频：查某比赛的特定模板分析）',
+  KEY `idx_analysis_type` (`analysis_type`) COMMENT '分析类型索引（筛选模板/自定义分析）',
+  FOREIGN KEY (`match_id`) REFERENCES `fx67ll_football_match`(`match_id`) ON DELETE RESTRICT COMMENT '比赛外键：删除比赛时禁止删除关联分析',
+  FOREIGN KEY (`prompt_id`) REFERENCES `fx67ll_ai_prompt_template`(`prompt_id`) ON DELETE RESTRICT COMMENT 'Prompt模板外键：删除模板时禁止删除关联分析',
+  FOREIGN KEY (`model_id`) REFERENCES `fx67ll_ai_prompt_model`(`model_id`) ON DELETE RESTRICT COMMENT '模型外键：删除模型时禁止删除关联分析',
+  FOREIGN KEY (`ai_request_log_id`) REFERENCES `fx67ll_ai_request_log`(`log_id`) ON DELETE RESTRICT COMMENT 'AI日志外键：删除日志时禁止删除关联分析'
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='比赛AI分析原始结果表';
 
--- Deepseek待整合处理
-CREATE TABLE `fx67ll_football_team` (
-  `team_id` bigint(20) NOT NULL AUTO_INCREMENT COMMENT '球队ID',
-  `team_name` varchar(100) NOT NULL COMMENT '球队全名',
-  `team_short_name` varchar(50) DEFAULT '' COMMENT '球队简称',
-  `country` varchar(50) DEFAULT '' COMMENT '所属国家/地区',
-  `logo_url` varchar(255) DEFAULT '' COMMENT '队标URL',
-  `status` char(1) DEFAULT '0' COMMENT '状态（0正常 1停用）',
+CREATE TABLE `fx67ll_dortmund_match_score` (
+  `score_id` bigint(20) NOT NULL AUTO_INCREMENT COMMENT '评分ID（主键）',
+  `analysis_id` bigint(20) NOT NULL COMMENT '关联分析ID（外键）',
+  `match_id` bigint(20) NOT NULL COMMENT '关联比赛ID（外键，冗余字段，便于查询）',
+  -- 主队评分
+  `home_attack_score` decimal(5,2) DEFAULT 0.00 COMMENT '主队进攻评分（0-100）',
+  `home_defense_score` decimal(5,2) DEFAULT 0.00 COMMENT '主队防守评分（0-100）',
+  `home_injury_score` decimal(5,2) DEFAULT 0.00 COMMENT '主队伤病评分（0-100，越高越健康）',
+  `home_history_score` decimal(5,2) DEFAULT 0.00 COMMENT '主队历史交锋评分（0-100）',
+  `home_total_score` decimal(5,2) DEFAULT 0.00 COMMENT '主队总评分（0-100）',
+  -- 客队评分
+  `away_attack_score` decimal(5,2) DEFAULT 0.00 COMMENT '客队进攻评分（0-100）',
+  `away_defense_score` decimal(5,2) DEFAULT 0.00 COMMENT '客队防守评分（0-100）',
+  `away_injury_score` decimal(5,2) DEFAULT 0.00 COMMENT '客队伤病评分（0-100）',
+  `away_history_score` decimal(5,2) DEFAULT 0.00 COMMENT '客队历史交锋评分（0-100）',
+  `away_total_score` decimal(5,2) DEFAULT 0.00 COMMENT '客队总评分（0-100）',
+  -- 预测结果
+  `predicted_result` char(1) DEFAULT '0' COMMENT '预测结果（0主队胜 1平局 2客队胜）',
+  `predicted_confidence` decimal(5,2) DEFAULT 0.00 COMMENT '预测置信度（0-100）',
+  `score_calc_rule_version` varchar(23) DEFAULT '1' COMMENT '评分计算规则版本（便于追溯规则变更）',
+  -- 扩展评分字段：JSON字符串（varchar类型，仅存储不查询）
+  `extra_score_str` varchar(2333) DEFAULT NULL COMMENT '扩展评分JSON字符串',
+  -- 基础通用字段
+  `score_remark` varchar(1023) DEFAULT '' COMMENT '评分备注',
   `create_by` varchar(64) DEFAULT '' COMMENT '创建者',
   `create_time` datetime DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
   `update_by` varchar(64) DEFAULT '' COMMENT '更新者',
   `update_time` datetime DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
   `del_flag` char(1) DEFAULT '0' COMMENT '删除标志（0存在 2删除）',
-  PRIMARY KEY (`team_id`),
-  KEY `idx_team_name` (`team_name`) COMMENT '按名称查询'
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='足球球队信息表';
-CREATE TABLE `fx67ll_football_season` (
-  `season_id` bigint(20) NOT NULL AUTO_INCREMENT COMMENT '赛季ID',
-  `season_name` varchar(50) NOT NULL COMMENT '赛季名称（如2025-2026）',
-  `start_date` date DEFAULT NULL COMMENT '开始日期',
-  `end_date` date DEFAULT NULL COMMENT '结束日期',
-  `is_current` tinyint(1) DEFAULT 0 COMMENT '是否当前赛季（1是 0否）',
-  `status` char(1) DEFAULT '0' COMMENT '状态（0正常 1停用）',
-  `create_by` varchar(64) DEFAULT '' COMMENT '创建者',
-  `create_time` datetime DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
-  `update_by` varchar(64) DEFAULT '' COMMENT '更新者',
-  `update_time` datetime DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
-  `del_flag` char(1) DEFAULT '0' COMMENT '删除标志（0存在 2删除）',
-  PRIMARY KEY (`season_id`),
-  UNIQUE KEY `uk_season_name` (`season_name`) COMMENT '赛季名称唯一'
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='足球赛季管理表';
-CREATE TABLE `fx67ll_football_match_analysis` (
-  `match_id` bigint(20) NOT NULL AUTO_INCREMENT COMMENT '比赛分析ID',
-  `season_id` bigint(20) NOT NULL COMMENT '所属赛季ID',
-  `home_team_id` bigint(20) NOT NULL COMMENT '主队ID',
-  `away_team_id` bigint(20) NOT NULL COMMENT '客队ID',
-  `match_time` datetime DEFAULT NULL COMMENT '比赛时间',
-  `prompt_id` bigint(20) DEFAULT NULL COMMENT '使用的Prompt模板ID（关联fx67ll_ai_prompt_template）',
-  `ai_raw_output` text COMMENT 'AI生成的原始分析文本',
-  `analysis_result` text COMMENT '结构化分析结果（JSON格式，如评分、预测等）',
-  `home_score` decimal(5,2) DEFAULT NULL COMMENT '主队评分/预测得分',
-  `away_score` decimal(5,2) DEFAULT NULL COMMENT '客队评分/预测得分',
-  `analysis_conclusion` varchar(20) DEFAULT '' COMMENT '分析结论（如主胜/平/客胜）',
-  `analysis_status` char(2) DEFAULT '00' COMMENT '分析状态（00待分析 01已完成 02失败）',
-  `create_by` varchar(64) DEFAULT '' COMMENT '创建者',
-  `create_time` datetime DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
-  `update_by` varchar(64) DEFAULT '' COMMENT '更新者',
-  `update_time` datetime DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
-  `del_flag` char(1) DEFAULT '0' COMMENT '删除标志（0存在 2删除）',
-  PRIMARY KEY (`match_id`),
-  KEY `idx_season_id` (`season_id`) COMMENT '按赛季查询',
-  KEY `idx_home_team` (`home_team_id`) COMMENT '按主队查询',
-  KEY `idx_away_team` (`away_team_id`) COMMENT '按客队查询',
-  KEY `idx_match_time` (`match_time`) COMMENT '按比赛时间排序',
-  KEY `idx_prompt_id` (`prompt_id`) COMMENT '关联模板',
-  FOREIGN KEY (`season_id`) REFERENCES `fx67ll_football_season`(`season_id`) ON DELETE RESTRICT,
-  FOREIGN KEY (`home_team_id`) REFERENCES `fx67ll_football_team`(`team_id`) ON DELETE RESTRICT,
-  FOREIGN KEY (`away_team_id`) REFERENCES `fx67ll_football_team`(`team_id`) ON DELETE RESTRICT,
-  FOREIGN KEY (`prompt_id`) REFERENCES `fx67ll_ai_prompt_template`(`prompt_id`) ON DELETE SET NULL
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='足球比赛分析记录表';
+  -- 索引与约束
+  PRIMARY KEY (`score_id`),
+  UNIQUE KEY `uk_analysis_id` (`analysis_id`) COMMENT '分析ID唯一索引（一个分析对应一个评分）',
+  KEY `idx_match_id` (`match_id`) COMMENT '比赛ID索引',
+  KEY `idx_predicted_result` (`predicted_result`) COMMENT '预测结果索引',
+  KEY `idx_create_time` (`create_time`) COMMENT '评分创建时间索引（查近期评分）',
+  KEY `idx_match_predicted_result` (`match_id`, `predicted_result`) COMMENT '比赛+预测结果索引（高频：查某比赛的预测结果）',
+  -- 核心字段范围约束（保证基础评分有效性）
+  CONSTRAINT `chk_confidence_range` CHECK (`predicted_confidence` BETWEEN 0 AND 100),
+  CONSTRAINT `chk_home_total_range` CHECK (`home_total_score` BETWEEN 0 AND 100),
+  CONSTRAINT `chk_away_total_range` CHECK (`away_total_score` BETWEEN 0 AND 100),
+  -- 外键约束
+  FOREIGN KEY (`analysis_id`) REFERENCES `fx67ll_football_match_analysis`(`analysis_id`) ON DELETE RESTRICT COMMENT '分析外键：删除分析时禁止删除关联评分',
+  FOREIGN KEY (`match_id`) REFERENCES `fx67ll_football_match`(`match_id`) ON DELETE RESTRICT COMMENT '比赛外键：删除比赛时禁止删除关联评分'
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='比赛标准化评分表';
 
 
 
