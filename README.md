@@ -17,7 +17,6 @@ fx67ll One Data Center Server
   + AI Prompt 模版分组表  
   + AI Prompt 场景编码表
   + AI Prompt 模型配置表
-  + AI Prompt 模型配置表
   + AI Prompt 限流/熔断规则表（适配Sentinel框架）
   + AI 调用请求日志表
   + AI 调用请求日统计日志表
