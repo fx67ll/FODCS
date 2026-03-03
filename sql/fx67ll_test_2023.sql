@@ -697,7 +697,7 @@ CREATE TABLE `fx67ll_ai_prompt_template` (
   FOREIGN KEY (`group_id`) REFERENCES `fx67ll_ai_prompt_group`(`group_id`) ON DELETE RESTRICT,
   FOREIGN KEY (`scene_id`) REFERENCES `fx67ll_ai_prompt_scene`(`scene_id`) ON DELETE RESTRICT,
   FOREIGN KEY (`model_id`) REFERENCES `fx67ll_ai_prompt_model`(`model_id`) ON DELETE RESTRICT
-) ENGINE=innodb DEFAULT CHARSET=utf8mb4 COMMENT='AI Prompt模板管理表（存储Prompt模板、变量配置及绑定关系）';
+) ENGINE=innodb DEFAULT CHARSET=utf8mb4 COMMENT='AI Prompt模板管理表';
 
 CREATE TABLE `fx67ll_ai_prompt_group` (
   `group_id` bigint(20) NOT NULL AUTO_INCREMENT COMMENT '分组唯一标识（主键）',
@@ -714,7 +714,7 @@ CREATE TABLE `fx67ll_ai_prompt_group` (
   PRIMARY KEY (`group_id`),
   UNIQUE KEY `uk_group_code` (`group_code`) COMMENT '分组编码唯一索引（防止业务编码重复）',
   KEY `idx_group_status` (`group_status`) COMMENT '分组状态索引（加速筛选启用/停用分组）'
-) ENGINE=innodb DEFAULT CHARSET=utf8mb4 COMMENT='AI Prompt模板分组表（对Prompt模板进行业务维度分类）';
+) ENGINE=innodb DEFAULT CHARSET=utf8mb4 COMMENT='AI Prompt模板分组表';
 
 CREATE TABLE `fx67ll_ai_prompt_scene` (
   `scene_id` bigint(20) NOT NULL AUTO_INCREMENT COMMENT '场景唯一标识（主键）',
@@ -732,7 +732,7 @@ CREATE TABLE `fx67ll_ai_prompt_scene` (
   PRIMARY KEY (`scene_id`),
   UNIQUE KEY `uk_scene_code` (`scene_code`) COMMENT '场景编码唯一索引（防止业务编码重复）',
   KEY `idx_scene_status` (`scene_status`) COMMENT '场景状态索引（加速筛选启用/停用场景）'
-) ENGINE=innodb DEFAULT CHARSET=utf8mb4 COMMENT='AI Prompt场景管理表（定义Prompt模板的业务应用场景）';
+) ENGINE=innodb DEFAULT CHARSET=utf8mb4 COMMENT='AI Prompt场景管理表';
 
 CREATE TABLE `fx67ll_ai_prompt_model` (
   `model_id` bigint(20) NOT NULL AUTO_INCREMENT COMMENT '模型唯一标识（主键）',
@@ -761,7 +761,7 @@ CREATE TABLE `fx67ll_ai_prompt_model` (
   KEY `idx_model_status` (`model_status`) COMMENT '模型状态索引（加速筛选启用/停用模型）',
   CONSTRAINT `fk_model_api_key` FOREIGN KEY (`model_api_key`) REFERENCES `fx67ll_secret_key`(`secret_id`) ON DELETE RESTRICT,
   CONSTRAINT `fk_model_secret_key` FOREIGN KEY (`model_secret_key`) REFERENCES `fx67ll_secret_key`(`secret_id`) ON DELETE RESTRICT
-) ENGINE=innodb DEFAULT CHARSET=utf8mb4 COMMENT='AI Prompt模型配置表（存储AI模型的接入配置、计费信息）';
+) ENGINE=innodb DEFAULT CHARSET=utf8mb4 COMMENT='AI Prompt模型配置表';
 
 CREATE TABLE `fx67ll_ai_prompt_limit_rule` (
   `limit_rule_id` bigint(20) NOT NULL AUTO_INCREMENT COMMENT '规则唯一标识（主键）',
@@ -787,7 +787,7 @@ CREATE TABLE `fx67ll_ai_prompt_limit_rule` (
   KEY `idx_limit_dim_target` (`limit_rule_dimension`, `limit_rule_target_id`) COMMENT '维度+目标ID组合索引（加速查询某维度下的规则）',
   KEY `idx_limit_type_status` (`limit_rule_type`, `limit_rule_status`) COMMENT '类型+状态组合索引（加速筛选启用的流控/熔断规则）',
   KEY `idx_limit_dim_type_status` (`limit_rule_dimension`, `limit_rule_type`, `limit_rule_status`) COMMENT '维度+类型+状态组合索引（优化高频查询性能）'
-) ENGINE=innodb DEFAULT CHARSET=utf8mb4 COMMENT='AI Prompt 限流/熔断规则表（适配Sentinel框架，存储流量控制与熔断保护规则）';
+) ENGINE=innodb DEFAULT CHARSET=utf8mb4 COMMENT='AI Prompt 限流/熔断规则表（适配Sentinel框架）';
 
 CREATE TABLE `fx67ll_ai_request_log` (
   `request_log_id` bigint(20) NOT NULL AUTO_INCREMENT COMMENT '日志唯一标识（分区表主键，与request_time组成复合聚集索引）',
@@ -841,7 +841,7 @@ CREATE TABLE `fx67ll_ai_request_daily_log` (
   `total_cost` decimal(12,6) DEFAULT 0.000000 COMMENT '统计周期内总预估费用（元）',
   `avg_duration_ms` int(11) DEFAULT 0 COMMENT '统计周期内平均请求耗时（毫秒，总耗时/成功请求数）',
   PRIMARY KEY (`daily_log_date`, `model_id`, `scene_id`) COMMENT '复合主键：日期+模型+场景（唯一确定一条统计记录）'
-) ENGINE=innodb DEFAULT CHARSET=utf8mb4 COMMENT='AI 调用请求日统计日志表（按日聚合统计调用量、Token、费用等指标）';
+) ENGINE=innodb DEFAULT CHARSET=utf8mb4 COMMENT='AI 调用请求日统计日志表';
 
 CREATE TABLE `fx67ll_ai_request_monthly_log` (
   `monthly_log_month` varchar(7) NOT NULL COMMENT '统计月份（yyyy-MM，分区键）',
@@ -856,7 +856,7 @@ CREATE TABLE `fx67ll_ai_request_monthly_log` (
   `total_cost` decimal(12,6) DEFAULT 0.000000 COMMENT '统计周期内总预估费用（元）',
   `avg_duration_ms` int(11) DEFAULT 0 COMMENT '统计周期内平均请求耗时（毫秒）',
   PRIMARY KEY (`monthly_log_month`, `model_id`, `scene_id`) COMMENT '复合主键：月份+模型+场景（唯一确定一条统计记录）'
-) ENGINE=innodb DEFAULT CHARSET=utf8mb4 COMMENT='AI 调用请求月统计日志表（按月聚合统计调用量、Token、费用等指标）';
+) ENGINE=innodb DEFAULT CHARSET=utf8mb4 COMMENT='AI 调用请求月统计日志表';
 
 CREATE TABLE `fx67ll_ai_request_yearly_log` (
   `yearly_log_year` varchar(4) NOT NULL COMMENT '统计年份（yyyy，分区键）',
@@ -868,7 +868,7 @@ CREATE TABLE `fx67ll_ai_request_yearly_log` (
   `total_cost` decimal(14,6) DEFAULT 0.000000 COMMENT '统计周期内总预估费用（元）',
   `avg_duration_ms` int(11) DEFAULT 0 COMMENT '统计周期内平均请求耗时（毫秒）',
   PRIMARY KEY (`yearly_log_year`, `model_id`, `scene_id`) COMMENT '复合主键：年份+模型+场景（唯一确定一条统计记录）'
-) ENGINE=innodb DEFAULT CHARSET=utf8mb4 COMMENT='AI 调用请求年统计日志表（按年聚合统计调用量、Token、费用等指标）';
+) ENGINE=innodb DEFAULT CHARSET=utf8mb4 COMMENT='AI 调用请求年统计日志表';
 
 
 
@@ -904,7 +904,7 @@ CREATE TABLE `fx67ll_dortmund_season` (
   UNIQUE KEY `uk_season_code` (`season_code`) COMMENT '赛季编码唯一索引（防止业务编码重复）',
   KEY `idx_season_status` (`season_status`) COMMENT '赛季状态索引（加速筛选进行中/已结束赛季）',
   KEY `idx_season_sort` (`season_sort`) COMMENT '赛季排序索引（加速前端展示排序）'
-) ENGINE=innodb DEFAULT CHARSET=utf8mb4 COMMENT='赛季管理表（存储赛季基本信息、时间范围）';
+) ENGINE=innodb DEFAULT CHARSET=utf8mb4 COMMENT='赛季管理表';
 
 CREATE TABLE `fx67ll_dortmund_team` (
   `team_id` bigint(20) NOT NULL AUTO_INCREMENT COMMENT '球队唯一标识（主键）',
