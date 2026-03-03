@@ -1,0 +1,117 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.ruoyi.fx67ll.ai.mapper.Fx67llAiRequestApiMonthlyLogMapper">
+
+    <resultMap type="Fx67llAiRequestApiMonthlyLog" id="Fx67llAiRequestApiMonthlyLogResult">
+        <result property="monthlyLogMonth" column="monthly_log_month"/>
+        <result property="modelId" column="model_id"/>
+        <result property="sceneId" column="scene_id"/>
+        <result property="totalRequests" column="total_requests"/>
+        <result property="failRequests" column="fail_requests"/>
+        <result property="limitRequests" column="limit_requests"/>
+        <result property="circuitRequests" column="circuit_requests"/>
+        <result property="totalPromptTokens" column="total_prompt_tokens"/>
+        <result property="totalCompletionTokens" column="total_completion_tokens"/>
+        <result property="totalCost" column="total_cost"/>
+        <result property="avgDurationMs" column="avg_duration_ms"/>
+    </resultMap>
+
+    <sql id="selectFx67llAiRequestApiMonthlyLogVo">
+        select monthly_log_month,
+               model_id,
+               scene_id,
+               total_requests,
+               fail_requests,
+               limit_requests,
+               circuit_requests,
+               total_prompt_tokens,
+               total_completion_tokens,
+               total_cost,
+               avg_duration_ms
+        from fx67ll_ai_request_monthly_log
+    </sql>
+
+    <select id="selectFx67llAiRequestApiMonthlyLogList" parameterType="Fx67llAiRequestApiMonthlyLog"
+            resultMap="Fx67llAiRequestApiMonthlyLogResult">
+        <include refid="selectFx67llAiRequestApiMonthlyLogVo"/>
+        <where>
+            <if test="totalRequests != null ">and total_requests = #{totalRequests}</if>
+            <if test="failRequests != null ">and fail_requests = #{failRequests}</if>
+            <if test="limitRequests != null ">and limit_requests = #{limitRequests}</if>
+            <if test="circuitRequests != null ">and circuit_requests = #{circuitRequests}</if>
+            <if test="totalPromptTokens != null ">and total_prompt_tokens = #{totalPromptTokens}</if>
+            <if test="totalCompletionTokens != null ">and total_completion_tokens = #{totalCompletionTokens}</if>
+            <if test="totalCost != null ">and total_cost = #{totalCost}</if>
+            <if test="avgDurationMs != null ">and avg_duration_ms = #{avgDurationMs}</if>
+        </where>
+        order by STR_TO_DATE(create_time, "%Y-%m-%d %H:%i:%s") desc
+    </select>
+
+    <select id="selectFx67llAiRequestApiMonthlyLogByMonthlyLogMonth" parameterType="String"
+            resultMap="Fx67llAiRequestApiMonthlyLogResult">
+        <include refid="selectFx67llAiRequestApiMonthlyLogVo"/>
+        where monthly_log_month = #{monthlyLogMonth}
+    </select>
+
+    <insert id="insertFx67llAiRequestApiMonthlyLog" parameterType="Fx67llAiRequestApiMonthlyLog">
+        insert into fx67ll_ai_request_monthly_log
+        <trim prefix="(" suffix=")" suffixOverrides=",">
+            <if test="monthlyLogMonth != null">monthly_log_month,</if>
+            <if test="modelId != null">model_id,</if>
+            <if test="sceneId != null">scene_id,</if>
+            <if test="totalRequests != null">total_requests,</if>
+            <if test="failRequests != null">fail_requests,</if>
+            <if test="limitRequests != null">limit_requests,</if>
+            <if test="circuitRequests != null">circuit_requests,</if>
+            <if test="totalPromptTokens != null">total_prompt_tokens,</if>
+            <if test="totalCompletionTokens != null">total_completion_tokens,</if>
+            <if test="totalCost != null">total_cost,</if>
+            <if test="avgDurationMs != null">avg_duration_ms,</if>
+        </trim>
+        <trim prefix="values (" suffix=")" suffixOverrides=",">
+            <if test="monthlyLogMonth != null">#{monthlyLogMonth},</if>
+            <if test="modelId != null">#{modelId},</if>
+            <if test="sceneId != null">#{sceneId},</if>
+            <if test="totalRequests != null">#{totalRequests},</if>
+            <if test="failRequests != null">#{failRequests},</if>
+            <if test="limitRequests != null">#{limitRequests},</if>
+            <if test="circuitRequests != null">#{circuitRequests},</if>
+            <if test="totalPromptTokens != null">#{totalPromptTokens},</if>
+            <if test="totalCompletionTokens != null">#{totalCompletionTokens},</if>
+            <if test="totalCost != null">#{totalCost},</if>
+            <if test="avgDurationMs != null">#{avgDurationMs},</if>
+        </trim>
+    </insert>
+
+    <update id="updateFx67llAiRequestApiMonthlyLog" parameterType="Fx67llAiRequestApiMonthlyLog">
+        update fx67ll_ai_request_monthly_log
+        <trim prefix="SET" suffixOverrides=",">
+            <if test="modelId != null">model_id = #{modelId},</if>
+            <if test="sceneId != null">scene_id = #{sceneId},</if>
+            <if test="totalRequests != null">total_requests = #{totalRequests},</if>
+            <if test="failRequests != null">fail_requests = #{failRequests},</if>
+            <if test="limitRequests != null">limit_requests = #{limitRequests},</if>
+            <if test="circuitRequests != null">circuit_requests = #{circuitRequests},</if>
+            <if test="totalPromptTokens != null">total_prompt_tokens = #{totalPromptTokens},</if>
+            <if test="totalCompletionTokens != null">total_completion_tokens = #{totalCompletionTokens},</if>
+            <if test="totalCost != null">total_cost = #{totalCost},</if>
+            <if test="avgDurationMs != null">avg_duration_ms = #{avgDurationMs},</if>
+        </trim>
+        where monthly_log_month = #{monthlyLogMonth}
+    </update>
+
+    <delete id="deleteFx67llAiRequestApiMonthlyLogByMonthlyLogMonth" parameterType="String">
+        delete
+        from fx67ll_ai_request_monthly_log
+        where monthly_log_month = #{monthlyLogMonth}
+    </delete>
+
+    <delete id="deleteFx67llAiRequestApiMonthlyLogByMonthlyLogMonths" parameterType="String">
+        delete from fx67ll_ai_request_monthly_log where monthly_log_month in
+        <foreach item="monthlyLogMonth" collection="array" open="(" separator="," close=")">
+            #{monthlyLogMonth}
+        </foreach>
+    </delete>
+</mapper>

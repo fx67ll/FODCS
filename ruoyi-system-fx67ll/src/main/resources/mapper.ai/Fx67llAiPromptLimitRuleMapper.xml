@@ -1,0 +1,188 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.ruoyi.fx67ll.ai.mapper.Fx67llAiPromptLimitRuleMapper">
+
+    <resultMap type="Fx67llAiPromptLimitRule" id="Fx67llAiPromptLimitRuleResult">
+        <result property="limitRuleId" column="limit_rule_id"/>
+        <result property="limitRuleDimension" column="limit_rule_dimension"/>
+        <result property="limitRuleTargetId" column="limit_rule_target_id"/>
+        <result property="limitRuleType" column="limit_rule_type"/>
+        <result property="flowControlMode" column="flow_control_mode"/>
+        <result property="flowControlEffect" column="flow_control_effect"/>
+        <result property="flowRuleType" column="flow_rule_type"/>
+        <result property="flowThreshold" column="flow_threshold"/>
+        <result property="circuitStrategy" column="circuit_strategy"/>
+        <result property="circuitThreshold" column="circuit_threshold"/>
+        <result property="circuitGrade" column="circuit_grade"/>
+        <result property="circuitWindow" column="circuit_window"/>
+        <result property="circuitTimeout" column="circuit_timeout"/>
+        <result property="limitRuleStatus" column="limit_rule_status"/>
+        <result property="userId" column="user_id"/>
+        <result property="createBy" column="create_by"/>
+        <result property="createTime" column="create_time"/>
+        <result property="updateBy" column="update_by"/>
+        <result property="updateTime" column="update_time"/>
+        <result property="delFlag" column="del_flag"/>
+    </resultMap>
+
+    <sql id="selectFx67llAiPromptLimitRuleVo">
+        select limit_rule_id,
+               limit_rule_dimension,
+               limit_rule_target_id,
+               limit_rule_type,
+               flow_control_mode,
+               flow_control_effect,
+               flow_rule_type,
+               flow_threshold,
+               circuit_strategy,
+               circuit_threshold,
+               circuit_grade,
+               circuit_window,
+               circuit_timeout,
+               limit_rule_status,
+               user_id,
+               create_by,
+               create_time,
+               update_by,
+               update_time,
+               del_flag
+        from fx67ll_ai_prompt_limit_rule
+    </sql>
+
+    <select id="selectFx67llAiPromptLimitRuleList" parameterType="Fx67llAiPromptLimitRule"
+            resultMap="Fx67llAiPromptLimitRuleResult">
+        <include refid="selectFx67llAiPromptLimitRuleVo"/>
+        <where>
+            <if test="limitRuleDimension != null  and limitRuleDimension != ''">and limit_rule_dimension =
+                #{limitRuleDimension}
+            </if>
+            <if test="limitRuleTargetId != null ">and limit_rule_target_id = #{limitRuleTargetId}</if>
+            <if test="limitRuleType != null  and limitRuleType != ''">and limit_rule_type = #{limitRuleType}</if>
+            <if test="flowControlMode != null  and flowControlMode != ''">and flow_control_mode = #{flowControlMode}
+            </if>
+            <if test="flowControlEffect != null  and flowControlEffect != ''">and flow_control_effect =
+                #{flowControlEffect}
+            </if>
+            <if test="flowRuleType != null  and flowRuleType != ''">and flow_rule_type = #{flowRuleType}</if>
+            <if test="flowThreshold != null ">and flow_threshold = #{flowThreshold}</if>
+            <if test="circuitStrategy != null  and circuitStrategy != ''">and circuit_strategy = #{circuitStrategy}</if>
+            <if test="circuitThreshold != null ">and circuit_threshold = #{circuitThreshold}</if>
+            <if test="circuitGrade != null ">and circuit_grade = #{circuitGrade}</if>
+            <if test="circuitWindow != null ">and circuit_window = #{circuitWindow}</if>
+            <if test="circuitTimeout != null ">and circuit_timeout = #{circuitTimeout}</if>
+            <if test="limitRuleStatus != null  and limitRuleStatus != ''">and limit_rule_status = #{limitRuleStatus}
+            </if>
+            <if test="delFlag != null  and delFlag != ''">and del_flag = #{delFlag}</if>
+            <if test="userId != null ">and user_id = #{userId}</if>
+            <if test="createBy != null  and createBy != ''">and create_by like concat('%',
+                #{createBy}, '%')
+            </if>
+            <if test="beginCreateTime != null and endCreateTime != ''">and create_time between #{beginCreateTime} and
+                #{endCreateTime}
+            </if>
+            <if test="updateBy != null  and updateBy != ''">and update_by like concat('%',
+                #{updateBy}, '%')
+            </if>
+            <if test="beginUpdateTime != null and endUpdateTime != ''">and update_time between #{beginUpdateTime} and
+                #{endUpdateTime}
+            </if>
+        </where>
+        order by STR_TO_DATE(create_time, "%Y-%m-%d %H:%i:%s") desc
+    </select>
+
+    <select id="selectFx67llAiPromptLimitRuleByLimitRuleId" parameterType="Long"
+            resultMap="Fx67llAiPromptLimitRuleResult">
+        <include refid="selectFx67llAiPromptLimitRuleVo"/>
+        where limit_rule_id = #{limitRuleId}
+    </select>
+
+    <insert id="insertFx67llAiPromptLimitRule" parameterType="Fx67llAiPromptLimitRule" useGeneratedKeys="true"
+            keyProperty="limitRuleId">
+        insert into fx67ll_ai_prompt_limit_rule
+        <trim prefix="(" suffix=")" suffixOverrides=",">
+            <if test="limitRuleDimension != null and limitRuleDimension != ''">limit_rule_dimension,</if>
+            <if test="limitRuleTargetId != null">limit_rule_target_id,</if>
+            <if test="limitRuleType != null and limitRuleType != ''">limit_rule_type,</if>
+            <if test="flowControlMode != null">flow_control_mode,</if>
+            <if test="flowControlEffect != null">flow_control_effect,</if>
+            <if test="flowRuleType != null">flow_rule_type,</if>
+            <if test="flowThreshold != null">flow_threshold,</if>
+            <if test="circuitStrategy != null">circuit_strategy,</if>
+            <if test="circuitThreshold != null">circuit_threshold,</if>
+            <if test="circuitGrade != null">circuit_grade,</if>
+            <if test="circuitWindow != null">circuit_window,</if>
+            <if test="circuitTimeout != null">circuit_timeout,</if>
+            <if test="limitRuleStatus != null">limit_rule_status,</if>
+            <if test="createBy != null">create_by,</if>
+            <if test="createTime != null">create_time,</if>
+            <if test="updateBy != null">update_by,</if>
+            <if test="updateTime != null">update_time,</if>
+            <if test="delFlag != null">del_flag,</if>
+            <if test="userId != null">user_id,</if>
+        </trim>
+        <trim prefix="values (" suffix=")" suffixOverrides=",">
+            <if test="limitRuleDimension != null and limitRuleDimension != ''">#{limitRuleDimension},</if>
+            <if test="limitRuleTargetId != null">#{limitRuleTargetId},</if>
+            <if test="limitRuleType != null and limitRuleType != ''">#{limitRuleType},</if>
+            <if test="flowControlMode != null">#{flowControlMode},</if>
+            <if test="flowControlEffect != null">#{flowControlEffect},</if>
+            <if test="flowRuleType != null">#{flowRuleType},</if>
+            <if test="flowThreshold != null">#{flowThreshold},</if>
+            <if test="circuitStrategy != null">#{circuitStrategy},</if>
+            <if test="circuitThreshold != null">#{circuitThreshold},</if>
+            <if test="circuitGrade != null">#{circuitGrade},</if>
+            <if test="circuitWindow != null">#{circuitWindow},</if>
+            <if test="circuitTimeout != null">#{circuitTimeout},</if>
+            <if test="limitRuleStatus != null">#{limitRuleStatus},</if>
+            <if test="createBy != null">#{createBy},</if>
+            <if test="createTime != null">#{createTime},</if>
+            <if test="updateBy != null">#{updateBy},</if>
+            <if test="updateTime != null">#{updateTime},</if>
+            <if test="delFlag != null">#{delFlag},</if>
+            <if test="userId != null">#{userId},</if>
+        </trim>
+    </insert>
+
+    <update id="updateFx67llAiPromptLimitRule" parameterType="Fx67llAiPromptLimitRule">
+        update fx67ll_ai_prompt_limit_rule
+        <trim prefix="SET" suffixOverrides=",">
+            <if test="limitRuleDimension != null and limitRuleDimension != ''">limit_rule_dimension =
+                #{limitRuleDimension},
+            </if>
+            <if test="limitRuleTargetId != null">limit_rule_target_id = #{limitRuleTargetId},</if>
+            <if test="limitRuleType != null and limitRuleType != ''">limit_rule_type = #{limitRuleType},</if>
+            <if test="flowControlMode != null">flow_control_mode = #{flowControlMode},</if>
+            <if test="flowControlEffect != null">flow_control_effect = #{flowControlEffect},</if>
+            <if test="flowRuleType != null">flow_rule_type = #{flowRuleType},</if>
+            <if test="flowThreshold != null">flow_threshold = #{flowThreshold},</if>
+            <if test="circuitStrategy != null">circuit_strategy = #{circuitStrategy},</if>
+            <if test="circuitThreshold != null">circuit_threshold = #{circuitThreshold},</if>
+            <if test="circuitGrade != null">circuit_grade = #{circuitGrade},</if>
+            <if test="circuitWindow != null">circuit_window = #{circuitWindow},</if>
+            <if test="circuitTimeout != null">circuit_timeout = #{circuitTimeout},</if>
+            <if test="limitRuleStatus != null">limit_rule_status = #{limitRuleStatus},</if>
+            <if test="createBy != null">create_by = #{createBy},</if>
+            <if test="createTime != null">create_time = #{createTime},</if>
+            <if test="updateBy != null">update_by = #{updateBy},</if>
+            <if test="updateTime != null">update_time = #{updateTime},</if>
+            <if test="delFlag != null">del_flag = #{delFlag},</if>
+            <if test="userId != null">user_id = #{userId},</if>
+        </trim>
+        where limit_rule_id = #{limitRuleId}
+    </update>
+
+    <delete id="deleteFx67llAiPromptLimitRuleByLimitRuleId" parameterType="Long">
+        delete
+        from fx67ll_ai_prompt_limit_rule
+        where limit_rule_id = #{limitRuleId}
+    </delete>
+
+    <delete id="deleteFx67llAiPromptLimitRuleByLimitRuleIds" parameterType="String">
+        delete from fx67ll_ai_prompt_limit_rule where limit_rule_id in
+        <foreach item="limitRuleId" collection="array" open="(" separator="," close=")">
+            #{limitRuleId}
+        </foreach>
+    </delete>
+</mapper>

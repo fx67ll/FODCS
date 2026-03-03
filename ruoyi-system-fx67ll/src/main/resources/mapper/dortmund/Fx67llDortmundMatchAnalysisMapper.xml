@@ -1,0 +1,136 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.ruoyi.fx67ll.dortmund.mapper.Fx67llDortmundMatchAnalysisMapper">
+
+    <resultMap type="Fx67llDortmundMatchAnalysis" id="Fx67llDortmundMatchAnalysisResult">
+        <result property="analysisId" column="analysis_id"/>
+        <result property="matchId" column="match_id"/>
+        <result property="promptId" column="prompt_id"/>
+        <result property="modelId" column="model_id"/>
+        <result property="requestLogCode" column="request_log_code"/>
+        <result property="analysisType" column="analysis_type"/>
+        <result property="rawPrompt" column="raw_prompt"/>
+        <result property="rawAiResponse" column="raw_ai_response"/>
+        <result property="analysisRemark" column="analysis_remark"/>
+        <result property="userId" column="user_id"/>
+        <result property="createBy" column="create_by"/>
+        <result property="createTime" column="create_time"/>
+        <result property="updateBy" column="update_by"/>
+        <result property="updateTime" column="update_time"/>
+        <result property="delFlag" column="del_flag"/>
+    </resultMap>
+
+    <sql id="selectFx67llDortmundMatchAnalysisVo">
+        select analysis_id,
+               match_id,
+               prompt_id,
+               model_id,
+               request_log_code,
+               analysis_type,
+               raw_prompt,
+               raw_ai_response,
+               analysis_remark,
+               user_id,
+               create_by,
+               create_time,
+               update_by,
+               update_time,
+               del_flag
+        from fx67ll_dortmund_match_analysis
+    </sql>
+
+    <select id="selectFx67llDortmundMatchAnalysisList" parameterType="Fx67llDortmundMatchAnalysis"
+            resultMap="Fx67llDortmundMatchAnalysisResult">
+        <include refid="selectFx67llDortmundMatchAnalysisVo"/>
+        <where>
+            <if test="matchId != null ">and match_id = #{matchId}</if>
+            <if test="promptId != null ">and prompt_id = #{promptId}</if>
+            <if test="modelId != null ">and model_id = #{modelId}</if>
+            <if test="requestLogCode != null  and requestLogCode != ''">and request_log_code = #{requestLogCode}</if>
+            <if test="analysisType != null  and analysisType != ''">and analysis_type = #{analysisType}</if>
+            <if test="rawPrompt != null  and rawPrompt != ''">and raw_prompt = #{rawPrompt}</if>
+            <if test="rawAiResponse != null  and rawAiResponse != ''">and raw_ai_response = #{rawAiResponse}</if>
+            <if test="analysisRemark != null  and analysisRemark != ''">and analysis_remark = #{analysisRemark}</if>
+        </where>
+        order by STR_TO_DATE(create_time, "%Y-%m-%d %H:%i:%s") desc
+    </select>
+
+    <select id="selectFx67llDortmundMatchAnalysisByAnalysisId" parameterType="Long"
+            resultMap="Fx67llDortmundMatchAnalysisResult">
+        <include refid="selectFx67llDortmundMatchAnalysisVo"/>
+        where analysis_id = #{analysisId}
+    </select>
+
+    <insert id="insertFx67llDortmundMatchAnalysis" parameterType="Fx67llDortmundMatchAnalysis" useGeneratedKeys="true"
+            keyProperty="analysisId">
+        insert into fx67ll_dortmund_match_analysis
+        <trim prefix="(" suffix=")" suffixOverrides=",">
+            <if test="matchId != null">match_id,</if>
+            <if test="promptId != null">prompt_id,</if>
+            <if test="modelId != null">model_id,</if>
+            <if test="requestLogCode != null">request_log_code,</if>
+            <if test="analysisType != null">analysis_type,</if>
+            <if test="rawPrompt != null and rawPrompt != ''">raw_prompt,</if>
+            <if test="rawAiResponse != null and rawAiResponse != ''">raw_ai_response,</if>
+            <if test="analysisRemark != null">analysis_remark,</if>
+            <if test="createBy != null">create_by,</if>
+            <if test="createTime != null">create_time,</if>
+            <if test="updateBy != null">update_by,</if>
+            <if test="updateTime != null">update_time,</if>
+            <if test="delFlag != null">del_flag,</if>
+            <if test="userId != null">user_id,</if>
+        </trim>
+        <trim prefix="values (" suffix=")" suffixOverrides=",">
+            <if test="matchId != null">#{matchId},</if>
+            <if test="promptId != null">#{promptId},</if>
+            <if test="modelId != null">#{modelId},</if>
+            <if test="requestLogCode != null">#{requestLogCode},</if>
+            <if test="analysisType != null">#{analysisType},</if>
+            <if test="rawPrompt != null and rawPrompt != ''">#{rawPrompt},</if>
+            <if test="rawAiResponse != null and rawAiResponse != ''">#{rawAiResponse},</if>
+            <if test="analysisRemark != null">#{analysisRemark},</if>
+            <if test="createBy != null">#{createBy},</if>
+            <if test="createTime != null">#{createTime},</if>
+            <if test="updateBy != null">#{updateBy},</if>
+            <if test="updateTime != null">#{updateTime},</if>
+            <if test="delFlag != null">#{delFlag},</if>
+            <if test="userId != null">#{userId},</if>
+        </trim>
+    </insert>
+
+    <update id="updateFx67llDortmundMatchAnalysis" parameterType="Fx67llDortmundMatchAnalysis">
+        update fx67ll_dortmund_match_analysis
+        <trim prefix="SET" suffixOverrides=",">
+            <if test="matchId != null">match_id = #{matchId},</if>
+            <if test="promptId != null">prompt_id = #{promptId},</if>
+            <if test="modelId != null">model_id = #{modelId},</if>
+            <if test="requestLogCode != null">request_log_code = #{requestLogCode},</if>
+            <if test="analysisType != null">analysis_type = #{analysisType},</if>
+            <if test="rawPrompt != null and rawPrompt != ''">raw_prompt = #{rawPrompt},</if>
+            <if test="rawAiResponse != null and rawAiResponse != ''">raw_ai_response = #{rawAiResponse},</if>
+            <if test="analysisRemark != null">analysis_remark = #{analysisRemark},</if>
+            <if test="createBy != null">create_by = #{createBy},</if>
+            <if test="createTime != null">create_time = #{createTime},</if>
+            <if test="updateBy != null">update_by = #{updateBy},</if>
+            <if test="updateTime != null">update_time = #{updateTime},</if>
+            <if test="delFlag != null">del_flag = #{delFlag},</if>
+            <if test="userId != null">user_id = #{userId},</if>
+        </trim>
+        where analysis_id = #{analysisId}
+    </update>
+
+    <delete id="deleteFx67llDortmundMatchAnalysisByAnalysisId" parameterType="Long">
+        delete
+        from fx67ll_dortmund_match_analysis
+        where analysis_id = #{analysisId}
+    </delete>
+
+    <delete id="deleteFx67llDortmundMatchAnalysisByAnalysisIds" parameterType="String">
+        delete from fx67ll_dortmund_match_analysis where analysis_id in
+        <foreach item="analysisId" collection="array" open="(" separator="," close=")">
+            #{analysisId}
+        </foreach>
+    </delete>
+</mapper>

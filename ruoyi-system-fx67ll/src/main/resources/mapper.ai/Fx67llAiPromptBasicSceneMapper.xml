@@ -1,0 +1,138 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.ruoyi.fx67ll.ai.mapper.Fx67llAiPromptBasicSceneMapper">
+
+    <resultMap type="Fx67llAiPromptBasicScene" id="Fx67llAiPromptBasicSceneResult">
+        <result property="sceneId" column="scene_id"/>
+        <result property="sceneCode" column="scene_code"/>
+        <result property="sceneName" column="scene_name"/>
+        <result property="sceneDesc" column="scene_desc"/>
+        <result property="sceneRemark" column="scene_remark"/>
+        <result property="sceneStatus" column="scene_status"/>
+        <result property="sceneSort" column="scene_sort"/>
+        <result property="userId" column="user_id"/>
+        <result property="createBy" column="create_by"/>
+        <result property="createTime" column="create_time"/>
+        <result property="updateBy" column="update_by"/>
+        <result property="updateTime" column="update_time"/>
+        <result property="delFlag" column="del_flag"/>
+    </resultMap>
+
+    <sql id="selectFx67llAiPromptBasicSceneVo">
+        select scene_id,
+               scene_code,
+               scene_name,
+               scene_desc,
+               scene_remark,
+               scene_status,
+               scene_sort,
+               user_id,
+               create_by,
+               create_time,
+               update_by,
+               update_time,
+               del_flag
+        from fx67ll_ai_prompt_scene
+    </sql>
+
+    <select id="selectFx67llAiPromptBasicSceneList" parameterType="Fx67llAiPromptBasicScene"
+            resultMap="Fx67llAiPromptBasicSceneResult">
+        <include refid="selectFx67llAiPromptBasicSceneVo"/>
+        <where>
+            <if test="sceneCode != null  and sceneCode != ''">and scene_code = #{sceneCode}</if>
+            <if test="sceneName != null  and sceneName != ''">and scene_name like concat('%', #{sceneName}, '%')</if>
+            <if test="sceneDesc != null  and sceneDesc != ''">and scene_desc = #{sceneDesc}</if>
+            <if test="sceneRemark != null  and sceneRemark != ''">and scene_remark = #{sceneRemark}</if>
+            <if test="sceneStatus != null  and sceneStatus != ''">and scene_status = #{sceneStatus}</if>
+            <if test="sceneSort != null ">and scene_sort = #{sceneSort}</if>
+            <if test="delFlag != null  and delFlag != ''">and del_flag = #{delFlag}</if>
+            <if test="userId != null ">and user_id = #{userId}</if>
+            <if test="createBy != null  and createBy != ''">and create_by like concat('%',
+                #{createBy}, '%')
+            </if>
+            <if test="beginCreateTime != null and endCreateTime != ''">and create_time between #{beginCreateTime} and
+                #{endCreateTime}
+            </if>
+            <if test="updateBy != null  and updateBy != ''">and update_by like concat('%',
+                #{updateBy}, '%')
+            </if>
+            <if test="beginUpdateTime != null and endUpdateTime != ''">and update_time between #{beginUpdateTime} and
+                #{endUpdateTime}
+            </if>
+        </where>
+        order by STR_TO_DATE(create_time, "%Y-%m-%d %H:%i:%s") desc
+    </select>
+
+    <select id="selectFx67llAiPromptBasicSceneBySceneId" parameterType="Long"
+            resultMap="Fx67llAiPromptBasicSceneResult">
+        <include refid="selectFx67llAiPromptBasicSceneVo"/>
+        where scene_id = #{sceneId}
+    </select>
+
+    <insert id="insertFx67llAiPromptBasicScene" parameterType="Fx67llAiPromptBasicScene" useGeneratedKeys="true"
+            keyProperty="sceneId">
+        insert into fx67ll_ai_prompt_scene
+        <trim prefix="(" suffix=")" suffixOverrides=",">
+            <if test="sceneCode != null and sceneCode != ''">scene_code,</if>
+            <if test="sceneName != null and sceneName != ''">scene_name,</if>
+            <if test="sceneDesc != null">scene_desc,</if>
+            <if test="sceneRemark != null">scene_remark,</if>
+            <if test="sceneStatus != null">scene_status,</if>
+            <if test="sceneSort != null">scene_sort,</if>
+            <if test="createBy != null">create_by,</if>
+            <if test="createTime != null">create_time,</if>
+            <if test="updateBy != null">update_by,</if>
+            <if test="updateTime != null">update_time,</if>
+            <if test="delFlag != null">del_flag,</if>
+            <if test="userId != null">user_id,</if>
+        </trim>
+        <trim prefix="values (" suffix=")" suffixOverrides=",">
+            <if test="sceneCode != null and sceneCode != ''">#{sceneCode},</if>
+            <if test="sceneName != null and sceneName != ''">#{sceneName},</if>
+            <if test="sceneDesc != null">#{sceneDesc},</if>
+            <if test="sceneRemark != null">#{sceneRemark},</if>
+            <if test="sceneStatus != null">#{sceneStatus},</if>
+            <if test="sceneSort != null">#{sceneSort},</if>
+            <if test="createBy != null">#{createBy},</if>
+            <if test="createTime != null">#{createTime},</if>
+            <if test="updateBy != null">#{updateBy},</if>
+            <if test="updateTime != null">#{updateTime},</if>
+            <if test="delFlag != null">#{delFlag},</if>
+            <if test="userId != null">#{userId},</if>
+        </trim>
+    </insert>
+
+    <update id="updateFx67llAiPromptBasicScene" parameterType="Fx67llAiPromptBasicScene">
+        update fx67ll_ai_prompt_scene
+        <trim prefix="SET" suffixOverrides=",">
+            <if test="sceneCode != null and sceneCode != ''">scene_code = #{sceneCode},</if>
+            <if test="sceneName != null and sceneName != ''">scene_name = #{sceneName},</if>
+            <if test="sceneDesc != null">scene_desc = #{sceneDesc},</if>
+            <if test="sceneRemark != null">scene_remark = #{sceneRemark},</if>
+            <if test="sceneStatus != null">scene_status = #{sceneStatus},</if>
+            <if test="sceneSort != null">scene_sort = #{sceneSort},</if>
+            <if test="createBy != null">create_by = #{createBy},</if>
+            <if test="createTime != null">create_time = #{createTime},</if>
+            <if test="updateBy != null">update_by = #{updateBy},</if>
+            <if test="updateTime != null">update_time = #{updateTime},</if>
+            <if test="delFlag != null">del_flag = #{delFlag},</if>
+            <if test="userId != null">user_id = #{userId},</if>
+        </trim>
+        where scene_id = #{sceneId}
+    </update>
+
+    <delete id="deleteFx67llAiPromptBasicSceneBySceneId" parameterType="Long">
+        delete
+        from fx67ll_ai_prompt_scene
+        where scene_id = #{sceneId}
+    </delete>
+
+    <delete id="deleteFx67llAiPromptBasicSceneBySceneIds" parameterType="String">
+        delete from fx67ll_ai_prompt_scene where scene_id in
+        <foreach item="sceneId" collection="array" open="(" separator="," close=")">
+            #{sceneId}
+        </foreach>
+    </delete>
+</mapper>

@@ -1,0 +1,127 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.ruoyi.fx67ll.ai.mapper.Fx67llAiPromptBasicGroupMapper">
+    
+    <resultMap type="Fx67llAiPromptBasicGroup" id="Fx67llAiPromptBasicGroupResult">
+        <result property="groupId"    column="group_id"    />
+        <result property="groupCode"    column="group_code"    />
+        <result property="groupName"    column="group_name"    />
+        <result property="groupRemark"    column="group_remark"    />
+        <result property="groupStatus"    column="group_status"    />
+        <result property="groupSort"    column="group_sort"    />
+        <result property="userId" column="user_id"/>
+        <result property="createBy"    column="create_by"    />
+        <result property="createTime"    column="create_time"    />
+        <result property="updateBy"    column="update_by"    />
+        <result property="updateTime"    column="update_time"    />
+        <result property="delFlag"    column="del_flag"    />
+    </resultMap>
+
+    <sql id="selectFx67llAiPromptBasicGroupVo">
+        select group_id,
+               group_code,
+               group_name,
+               group_remark,
+               group_status,
+               group_sort,
+               user_id,
+               create_by,
+               create_time,
+               update_by,
+               update_time,
+               del_flag
+        from fx67ll_ai_prompt_group
+    </sql>
+
+    <select id="selectFx67llAiPromptBasicGroupList" parameterType="Fx67llAiPromptBasicGroup" resultMap="Fx67llAiPromptBasicGroupResult">
+        <include refid="selectFx67llAiPromptBasicGroupVo"/>
+        <where>  
+            <if test="groupCode != null  and groupCode != ''"> and group_code = #{groupCode}</if>
+            <if test="groupName != null  and groupName != ''"> and group_name like concat('%', #{groupName}, '%')</if>
+            <if test="groupRemark != null  and groupRemark != ''"> and group_remark = #{groupRemark}</if>
+            <if test="groupStatus != null  and groupStatus != ''"> and group_status = #{groupStatus}</if>
+            <if test="groupSort != null "> and group_sort = #{groupSort}</if>
+            <if test="delFlag != null  and delFlag != ''">and del_flag = #{delFlag}</if>
+            <if test="userId != null ">and user_id = #{userId}</if>
+            <if test="createBy != null  and createBy != ''">and create_by like concat('%',
+                #{createBy}, '%')
+            </if>
+            <if test="beginCreateTime != null and endCreateTime != ''">and create_time between #{beginCreateTime} and
+                #{endCreateTime}
+            </if>
+            <if test="updateBy != null  and updateBy != ''">and update_by like concat('%',
+                #{updateBy}, '%')
+            </if>
+            <if test="beginUpdateTime != null and endUpdateTime != ''">and update_time between #{beginUpdateTime} and
+                #{endUpdateTime}
+            </if>
+        </where>
+        order by STR_TO_DATE(create_time, "%Y-%m-%d %H:%i:%s") desc
+    </select>
+    
+    <select id="selectFx67llAiPromptBasicGroupByGroupId" parameterType="Long" resultMap="Fx67llAiPromptBasicGroupResult">
+        <include refid="selectFx67llAiPromptBasicGroupVo"/>
+        where group_id = #{groupId}
+    </select>
+        
+    <insert id="insertFx67llAiPromptBasicGroup" parameterType="Fx67llAiPromptBasicGroup" useGeneratedKeys="true" keyProperty="groupId">
+        insert into fx67ll_ai_prompt_group
+        <trim prefix="(" suffix=")" suffixOverrides=",">
+            <if test="groupCode != null and groupCode != ''">group_code,</if>
+            <if test="groupName != null and groupName != ''">group_name,</if>
+            <if test="groupRemark != null">group_remark,</if>
+            <if test="groupStatus != null">group_status,</if>
+            <if test="groupSort != null">group_sort,</if>
+            <if test="createBy != null">create_by,</if>
+            <if test="createTime != null">create_time,</if>
+            <if test="updateBy != null">update_by,</if>
+            <if test="updateTime != null">update_time,</if>
+            <if test="delFlag != null">del_flag,</if>
+            <if test="userId != null">user_id,</if>
+         </trim>
+        <trim prefix="values (" suffix=")" suffixOverrides=",">
+            <if test="groupCode != null and groupCode != ''">#{groupCode},</if>
+            <if test="groupName != null and groupName != ''">#{groupName},</if>
+            <if test="groupRemark != null">#{groupRemark},</if>
+            <if test="groupStatus != null">#{groupStatus},</if>
+            <if test="groupSort != null">#{groupSort},</if>
+            <if test="createBy != null">#{createBy},</if>
+            <if test="createTime != null">#{createTime},</if>
+            <if test="updateBy != null">#{updateBy},</if>
+            <if test="updateTime != null">#{updateTime},</if>
+            <if test="delFlag != null">#{delFlag},</if>
+            <if test="userId != null">#{userId},</if>
+         </trim>
+    </insert>
+
+    <update id="updateFx67llAiPromptBasicGroup" parameterType="Fx67llAiPromptBasicGroup">
+        update fx67ll_ai_prompt_group
+        <trim prefix="SET" suffixOverrides=",">
+            <if test="groupCode != null and groupCode != ''">group_code = #{groupCode},</if>
+            <if test="groupName != null and groupName != ''">group_name = #{groupName},</if>
+            <if test="groupRemark != null">group_remark = #{groupRemark},</if>
+            <if test="groupStatus != null">group_status = #{groupStatus},</if>
+            <if test="groupSort != null">group_sort = #{groupSort},</if>
+            <if test="createBy != null">create_by = #{createBy},</if>
+            <if test="createTime != null">create_time = #{createTime},</if>
+            <if test="updateBy != null">update_by = #{updateBy},</if>
+            <if test="updateTime != null">update_time = #{updateTime},</if>
+            <if test="delFlag != null">del_flag = #{delFlag},</if>
+            <if test="userId != null">user_id = #{userId},</if>
+        </trim>
+        where group_id = #{groupId}
+    </update>
+
+    <delete id="deleteFx67llAiPromptBasicGroupByGroupId" parameterType="Long">
+        delete from fx67ll_ai_prompt_group where group_id = #{groupId}
+    </delete>
+
+    <delete id="deleteFx67llAiPromptBasicGroupByGroupIds" parameterType="String">
+        delete from fx67ll_ai_prompt_group where group_id in 
+        <foreach item="groupId" collection="array" open="(" separator="," close=")">
+            #{groupId}
+        </foreach>
+    </delete>
+</mapper>

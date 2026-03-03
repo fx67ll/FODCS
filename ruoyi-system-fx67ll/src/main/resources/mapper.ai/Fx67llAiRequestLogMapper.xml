@@ -1,0 +1,170 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.ruoyi.fx67ll.ai.mapper.Fx67llAiRequestLogMapper">
+
+    <resultMap type="Fx67llAiRequestLog" id="Fx67llAiRequestLogResult">
+        <result property="requestLogId" column="request_log_id"/>
+        <result property="promptId" column="prompt_id"/>
+        <result property="sceneId" column="scene_id"/>
+        <result property="modelId" column="model_id"/>
+        <result property="modelVendor" column="model_vendor"/>
+        <result property="requestContent" column="request_content"/>
+        <result property="responseContent" column="response_content"/>
+        <result property="promptTokens" column="prompt_tokens"/>
+        <result property="completionTokens" column="completion_tokens"/>
+        <result property="totalTokens" column="total_tokens"/>
+        <result property="cost" column="cost"/>
+        <result property="durationMs" column="duration_ms"/>
+        <result property="httpStatus" column="http_status"/>
+        <result property="callStatus" column="call_status"/>
+        <result property="errorMsg" column="error_msg"/>
+        <result property="callerIp" column="caller_ip"/>
+        <result property="requestTime" column="request_time"/>
+        <result property="userId" column="user_id"/>
+        <result property="createBy" column="create_by"/>
+    </resultMap>
+
+    <sql id="selectFx67llAiRequestLogVo">
+        select request_log_id,
+               prompt_id,
+               scene_id,
+               model_id,
+               model_vendor,
+               request_content,
+               response_content,
+               prompt_tokens,
+               completion_tokens,
+               total_tokens,
+               cost,
+               duration_ms,
+               http_status,
+               call_status,
+               error_msg,
+               caller_ip,
+               request_time,
+               user_id,
+               create_by
+        from fx67ll_ai_request_log
+    </sql>
+
+    <select id="selectFx67llAiRequestLogList" parameterType="Fx67llAiRequestLog" resultMap="Fx67llAiRequestLogResult">
+        <include refid="selectFx67llAiRequestLogVo"/>
+        <where>
+            <if test="promptId != null ">and prompt_id = #{promptId}</if>
+            <if test="sceneId != null ">and scene_id = #{sceneId}</if>
+            <if test="modelId != null ">and model_id = #{modelId}</if>
+            <if test="modelVendor != null  and modelVendor != ''">and model_vendor = #{modelVendor}</if>
+            <if test="requestContent != null  and requestContent != ''">and request_content = #{requestContent}</if>
+            <if test="responseContent != null  and responseContent != ''">and response_content = #{responseContent}</if>
+            <if test="promptTokens != null ">and prompt_tokens = #{promptTokens}</if>
+            <if test="completionTokens != null ">and completion_tokens = #{completionTokens}</if>
+            <if test="totalTokens != null ">and total_tokens = #{totalTokens}</if>
+            <if test="cost != null ">and cost = #{cost}</if>
+            <if test="durationMs != null ">and duration_ms = #{durationMs}</if>
+            <if test="httpStatus != null ">and http_status = #{httpStatus}</if>
+            <if test="callStatus != null  and callStatus != ''">and call_status = #{callStatus}</if>
+            <if test="errorMsg != null  and errorMsg != ''">and error_msg = #{errorMsg}</if>
+            <if test="callerIp != null  and callerIp != ''">and caller_ip = #{callerIp}</if>
+            <if test="delFlag != null  and delFlag != ''">and del_flag = #{delFlag}</if>
+            <if test="userId != null ">and user_id = #{userId}</if>
+            <if test="createBy != null  and createBy != ''">and create_by like concat('%',
+                #{createBy}, '%')
+            </if>
+            <if test="beginRequestTime != null and endRequestTime != ''">and request_time between #{beginRequestTime}
+                and
+                #{endRequestTime}
+            </if>
+        </where>
+        order by STR_TO_DATE(request_time, "%Y-%m-%d %H:%i:%s") desc
+    </select>
+
+    <select id="selectFx67llAiRequestLogByRequestLogId" parameterType="Long" resultMap="Fx67llAiRequestLogResult">
+        <include refid="selectFx67llAiRequestLogVo"/>
+        where request_log_id = #{requestLogId}
+    </select>
+
+    <insert id="insertFx67llAiRequestLog" parameterType="Fx67llAiRequestLog" useGeneratedKeys="true"
+            keyProperty="requestLogId">
+        insert into fx67ll_ai_request_log
+        <trim prefix="(" suffix=")" suffixOverrides=",">
+            <if test="promptId != null">prompt_id,</if>
+            <if test="sceneId != null">scene_id,</if>
+            <if test="modelId != null">model_id,</if>
+            <if test="modelVendor != null and modelVendor != ''">model_vendor,</if>
+            <if test="requestContent != null">request_content,</if>
+            <if test="responseContent != null">response_content,</if>
+            <if test="promptTokens != null">prompt_tokens,</if>
+            <if test="completionTokens != null">completion_tokens,</if>
+            <if test="totalTokens != null">total_tokens,</if>
+            <if test="cost != null">cost,</if>
+            <if test="durationMs != null">duration_ms,</if>
+            <if test="httpStatus != null">http_status,</if>
+            <if test="callStatus != null">call_status,</if>
+            <if test="errorMsg != null">error_msg,</if>
+            <if test="callerIp != null">caller_ip,</if>
+            <if test="requestTime != null">request_time,</if>
+            <if test="createBy != null">create_by,</if>
+            <if test="userId != null">user_id,</if>
+        </trim>
+        <trim prefix="values (" suffix=")" suffixOverrides=",">
+            <if test="promptId != null">#{promptId},</if>
+            <if test="sceneId != null">#{sceneId},</if>
+            <if test="modelId != null">#{modelId},</if>
+            <if test="modelVendor != null and modelVendor != ''">#{modelVendor},</if>
+            <if test="requestContent != null">#{requestContent},</if>
+            <if test="responseContent != null">#{responseContent},</if>
+            <if test="promptTokens != null">#{promptTokens},</if>
+            <if test="completionTokens != null">#{completionTokens},</if>
+            <if test="totalTokens != null">#{totalTokens},</if>
+            <if test="cost != null">#{cost},</if>
+            <if test="durationMs != null">#{durationMs},</if>
+            <if test="httpStatus != null">#{httpStatus},</if>
+            <if test="callStatus != null">#{callStatus},</if>
+            <if test="errorMsg != null">#{errorMsg},</if>
+            <if test="callerIp != null">#{callerIp},</if>
+            <if test="requestTime != null">#{requestTime},</if>
+            <if test="createBy != null">#{createBy},</if>
+            <if test="userId != null">#{userId},</if>
+        </trim>
+    </insert>
+
+    <update id="updateFx67llAiRequestLog" parameterType="Fx67llAiRequestLog">
+        update fx67ll_ai_request_log
+        <trim prefix="SET" suffixOverrides=",">
+            <if test="promptId != null">prompt_id = #{promptId},</if>
+            <if test="sceneId != null">scene_id = #{sceneId},</if>
+            <if test="modelId != null">model_id = #{modelId},</if>
+            <if test="modelVendor != null and modelVendor != ''">model_vendor = #{modelVendor},</if>
+            <if test="requestContent != null">request_content = #{requestContent},</if>
+            <if test="responseContent != null">response_content = #{responseContent},</if>
+            <if test="promptTokens != null">prompt_tokens = #{promptTokens},</if>
+            <if test="completionTokens != null">completion_tokens = #{completionTokens},</if>
+            <if test="totalTokens != null">total_tokens = #{totalTokens},</if>
+            <if test="cost != null">cost = #{cost},</if>
+            <if test="durationMs != null">duration_ms = #{durationMs},</if>
+            <if test="httpStatus != null">http_status = #{httpStatus},</if>
+            <if test="callStatus != null">call_status = #{callStatus},</if>
+            <if test="errorMsg != null">error_msg = #{errorMsg},</if>
+            <if test="callerIp != null">caller_ip = #{callerIp},</if>
+            <if test="requestTime != null">request_time = #{requestTime},</if>
+            <if test="createBy != null">create_by = #{createBy},</if>
+            <if test="userId != null">user_id = #{userId},</if>
+        </trim>
+        where request_log_id = #{requestLogId}
+    </update>
+
+    <delete id="deleteFx67llAiRequestLogByRequestLogId" parameterType="Long">
+        delete
+        from fx67ll_ai_request_log
+        where request_log_id = #{requestLogId}
+    </delete>
+
+    <delete id="deleteFx67llAiRequestLogByRequestLogIds" parameterType="String">
+        delete from fx67ll_ai_request_log where request_log_id in
+        <foreach item="requestLogId" collection="array" open="(" separator="," close=")">
+            #{requestLogId}
+        </foreach>
+    </delete>
+</mapper>

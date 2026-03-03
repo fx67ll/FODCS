@@ -1,0 +1,160 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.ruoyi.fx67ll.ai.mapper.Fx67llAiPromptTemplateMapper">
+
+    <resultMap type="Fx67llAiPromptTemplate" id="Fx67llAiPromptTemplateResult">
+        <result property="promptId" column="prompt_id"/>
+        <result property="promptName" column="prompt_name"/>
+        <result property="groupId" column="group_id"/>
+        <result property="sceneId" column="scene_id"/>
+        <result property="modelId" column="model_id"/>
+        <result property="promptContent" column="prompt_content"/>
+        <result property="promptVariableConfig" column="prompt_variable_config"/>
+        <result property="promptCustomConfigParams" column="prompt_custom_config_params"/>
+        <result property="promptStatus" column="prompt_status"/>
+        <result property="promptRemark" column="prompt_remark"/>
+        <result property="userId" column="user_id"/>
+        <result property="createBy" column="create_by"/>
+        <result property="createTime" column="create_time"/>
+        <result property="updateBy" column="update_by"/>
+        <result property="updateTime" column="update_time"/>
+        <result property="delFlag" column="del_flag"/>
+    </resultMap>
+
+    <sql id="selectFx67llAiPromptTemplateVo">
+        select prompt_id,
+               prompt_name,
+               group_id,
+               scene_id,
+               model_id,
+               prompt_content,
+               prompt_variable_config,
+               prompt_custom_config_params,
+               prompt_status,
+               prompt_remark,
+               user_id,
+               create_by,
+               create_time,
+               update_by,
+               update_time,
+               del_flag
+        from fx67ll_ai_prompt_template
+    </sql>
+
+    <select id="selectFx67llAiPromptTemplateList" parameterType="Fx67llAiPromptTemplate"
+            resultMap="Fx67llAiPromptTemplateResult">
+        <include refid="selectFx67llAiPromptTemplateVo"/>
+        <where>
+            <if test="promptName != null  and promptName != ''">and prompt_name like concat('%', #{promptName}, '%')
+            </if>
+            <if test="groupId != null ">and group_id = #{groupId}</if>
+            <if test="sceneId != null ">and scene_id = #{sceneId}</if>
+            <if test="modelId != null ">and model_id = #{modelId}</if>
+            <if test="promptContent != null  and promptContent != ''">and prompt_content = #{promptContent}</if>
+            <if test="promptVariableConfig != null  and promptVariableConfig != ''">and prompt_variable_config =
+                #{promptVariableConfig}
+            </if>
+            <if test="promptCustomConfigParams != null  and promptCustomConfigParams != ''">and
+                prompt_custom_config_params = #{promptCustomConfigParams}
+            </if>
+            <if test="promptStatus != null  and promptStatus != ''">and prompt_status = #{promptStatus}</if>
+            <if test="promptRemark != null  and promptRemark != ''">and prompt_remark = #{promptRemark}</if>
+            <if test="delFlag != null  and delFlag != ''">and del_flag = #{delFlag}</if>
+            <if test="userId != null ">and user_id = #{userId}</if>
+            <if test="createBy != null  and createBy != ''">and create_by like concat('%',
+                #{createBy}, '%')
+            </if>
+            <if test="beginCreateTime != null and endCreateTime != ''">and create_time between #{beginCreateTime} and
+                #{endCreateTime}
+            </if>
+            <if test="updateBy != null  and updateBy != ''">and update_by like concat('%',
+                #{updateBy}, '%')
+            </if>
+            <if test="beginUpdateTime != null and endUpdateTime != ''">and update_time between #{beginUpdateTime} and
+                #{endUpdateTime}
+            </if>
+        </where>
+        order by STR_TO_DATE(create_time, "%Y-%m-%d %H:%i:%s") desc
+    </select>
+
+    <select id="selectFx67llAiPromptTemplateByPromptId" parameterType="Long" resultMap="Fx67llAiPromptTemplateResult">
+        <include refid="selectFx67llAiPromptTemplateVo"/>
+        where prompt_id = #{promptId}
+    </select>
+
+    <insert id="insertFx67llAiPromptTemplate" parameterType="Fx67llAiPromptTemplate" useGeneratedKeys="true"
+            keyProperty="promptId">
+        insert into fx67ll_ai_prompt_template
+        <trim prefix="(" suffix=")" suffixOverrides=",">
+            <if test="promptName != null and promptName != ''">prompt_name,</if>
+            <if test="groupId != null">group_id,</if>
+            <if test="sceneId != null">scene_id,</if>
+            <if test="modelId != null">model_id,</if>
+            <if test="promptContent != null and promptContent != ''">prompt_content,</if>
+            <if test="promptVariableConfig != null">prompt_variable_config,</if>
+            <if test="promptCustomConfigParams != null">prompt_custom_config_params,</if>
+            <if test="promptStatus != null">prompt_status,</if>
+            <if test="promptRemark != null">prompt_remark,</if>
+            <if test="createBy != null">create_by,</if>
+            <if test="createTime != null">create_time,</if>
+            <if test="updateBy != null">update_by,</if>
+            <if test="updateTime != null">update_time,</if>
+            <if test="delFlag != null">del_flag,</if>
+            <if test="userId != null">user_id,</if>
+        </trim>
+        <trim prefix="values (" suffix=")" suffixOverrides=",">
+            <if test="promptName != null and promptName != ''">#{promptName},</if>
+            <if test="groupId != null">#{groupId},</if>
+            <if test="sceneId != null">#{sceneId},</if>
+            <if test="modelId != null">#{modelId},</if>
+            <if test="promptContent != null and promptContent != ''">#{promptContent},</if>
+            <if test="promptVariableConfig != null">#{promptVariableConfig},</if>
+            <if test="promptCustomConfigParams != null">#{promptCustomConfigParams},</if>
+            <if test="promptStatus != null">#{promptStatus},</if>
+            <if test="promptRemark != null">#{promptRemark},</if>
+            <if test="createBy != null">#{createBy},</if>
+            <if test="createTime != null">#{createTime},</if>
+            <if test="updateBy != null">#{updateBy},</if>
+            <if test="updateTime != null">#{updateTime},</if>
+            <if test="delFlag != null">#{delFlag},</if>
+            <if test="userId != null">#{userId},</if>
+        </trim>
+    </insert>
+
+    <update id="updateFx67llAiPromptTemplate" parameterType="Fx67llAiPromptTemplate">
+        update fx67ll_ai_prompt_template
+        <trim prefix="SET" suffixOverrides=",">
+            <if test="promptName != null and promptName != ''">prompt_name = #{promptName},</if>
+            <if test="groupId != null">group_id = #{groupId},</if>
+            <if test="sceneId != null">scene_id = #{sceneId},</if>
+            <if test="modelId != null">model_id = #{modelId},</if>
+            <if test="promptContent != null and promptContent != ''">prompt_content = #{promptContent},</if>
+            <if test="promptVariableConfig != null">prompt_variable_config = #{promptVariableConfig},</if>
+            <if test="promptCustomConfigParams != null">prompt_custom_config_params = #{promptCustomConfigParams},</if>
+            <if test="promptStatus != null">prompt_status = #{promptStatus},</if>
+            <if test="promptRemark != null">prompt_remark = #{promptRemark},</if>
+            <if test="createBy != null">create_by = #{createBy},</if>
+            <if test="createTime != null">create_time = #{createTime},</if>
+            <if test="updateBy != null">update_by = #{updateBy},</if>
+            <if test="updateTime != null">update_time = #{updateTime},</if>
+            <if test="delFlag != null">del_flag = #{delFlag},</if>
+            <if test="userId != null">user_id = #{userId},</if>
+        </trim>
+        where prompt_id = #{promptId}
+    </update>
+
+    <delete id="deleteFx67llAiPromptTemplateByPromptId" parameterType="Long">
+        delete
+        from fx67ll_ai_prompt_template
+        where prompt_id = #{promptId}
+    </delete>
+
+    <delete id="deleteFx67llAiPromptTemplateByPromptIds" parameterType="String">
+        delete from fx67ll_ai_prompt_template where prompt_id in
+        <foreach item="promptId" collection="array" open="(" separator="," close=")">
+            #{promptId}
+        </foreach>
+    </delete>
+</mapper>

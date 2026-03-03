@@ -1,0 +1,142 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.ruoyi.fx67ll.dortmund.mapper.Fx67llDortmundBasicMatchMapper">
+
+    <resultMap type="Fx67llDortmundBasicMatch" id="Fx67llDortmundBasicMatchResult">
+        <result property="matchId" column="match_id"/>
+        <result property="matchCode" column="match_code"/>
+        <result property="seasonId" column="season_id"/>
+        <result property="homeTeamId" column="home_team_id"/>
+        <result property="awayTeamId" column="away_team_id"/>
+        <result property="matchTime" column="match_time"/>
+        <result property="matchVenue" column="match_venue"/>
+        <result property="matchRemark" column="match_remark"/>
+        <result property="matchStatus" column="match_status"/>
+        <result property="analysisCount" column="analysis_count"/>
+        <result property="userId" column="user_id"/>
+        <result property="createBy" column="create_by"/>
+        <result property="createTime" column="create_time"/>
+        <result property="updateBy" column="update_by"/>
+        <result property="updateTime" column="update_time"/>
+        <result property="delFlag" column="del_flag"/>
+    </resultMap>
+
+    <sql id="selectFx67llDortmundBasicMatchVo">
+        select match_id,
+               match_code,
+               season_id,
+               home_team_id,
+               away_team_id,
+               match_time,
+               match_venue,
+               match_remark,
+               match_status,
+               analysis_count,
+               user_id,
+               create_by,
+               create_time,
+               update_by,
+               update_time,
+               del_flag
+        from fx67ll_dortmund_match
+    </sql>
+
+    <select id="selectFx67llDortmundBasicMatchList" parameterType="Fx67llDortmundBasicMatch"
+            resultMap="Fx67llDortmundBasicMatchResult">
+        <include refid="selectFx67llDortmundBasicMatchVo"/>
+        <where>
+            <if test="matchCode != null  and matchCode != ''">and match_code = #{matchCode}</if>
+            <if test="seasonId != null ">and season_id = #{seasonId}</if>
+            <if test="homeTeamId != null ">and home_team_id = #{homeTeamId}</if>
+            <if test="awayTeamId != null ">and away_team_id = #{awayTeamId}</if>
+            <if test="matchTime != null ">and match_time = #{matchTime}</if>
+            <if test="matchVenue != null  and matchVenue != ''">and match_venue = #{matchVenue}</if>
+            <if test="matchRemark != null  and matchRemark != ''">and match_remark = #{matchRemark}</if>
+            <if test="matchStatus != null  and matchStatus != ''">and match_status = #{matchStatus}</if>
+            <if test="analysisCount != null ">and analysis_count = #{analysisCount}</if>
+        </where>
+        order by STR_TO_DATE(create_time, "%Y-%m-%d %H:%i:%s") desc
+    </select>
+
+    <select id="selectFx67llDortmundBasicMatchByMatchId" parameterType="Long"
+            resultMap="Fx67llDortmundBasicMatchResult">
+        <include refid="selectFx67llDortmundBasicMatchVo"/>
+        where match_id = #{matchId}
+    </select>
+
+    <insert id="insertFx67llDortmundBasicMatch" parameterType="Fx67llDortmundBasicMatch" useGeneratedKeys="true"
+            keyProperty="matchId">
+        insert into fx67ll_dortmund_match
+        <trim prefix="(" suffix=")" suffixOverrides=",">
+            <if test="matchCode != null and matchCode != ''">match_code,</if>
+            <if test="seasonId != null">season_id,</if>
+            <if test="homeTeamId != null">home_team_id,</if>
+            <if test="awayTeamId != null">away_team_id,</if>
+            <if test="matchTime != null">match_time,</if>
+            <if test="matchVenue != null">match_venue,</if>
+            <if test="matchRemark != null">match_remark,</if>
+            <if test="matchStatus != null">match_status,</if>
+            <if test="analysisCount != null">analysis_count,</if>
+            <if test="createBy != null">create_by,</if>
+            <if test="createTime != null">create_time,</if>
+            <if test="updateBy != null">update_by,</if>
+            <if test="updateTime != null">update_time,</if>
+            <if test="delFlag != null">del_flag,</if>
+            <if test="userId != null">user_id,</if>
+        </trim>
+        <trim prefix="values (" suffix=")" suffixOverrides=",">
+            <if test="matchCode != null and matchCode != ''">#{matchCode},</if>
+            <if test="seasonId != null">#{seasonId},</if>
+            <if test="homeTeamId != null">#{homeTeamId},</if>
+            <if test="awayTeamId != null">#{awayTeamId},</if>
+            <if test="matchTime != null">#{matchTime},</if>
+            <if test="matchVenue != null">#{matchVenue},</if>
+            <if test="matchRemark != null">#{matchRemark},</if>
+            <if test="matchStatus != null">#{matchStatus},</if>
+            <if test="analysisCount != null">#{analysisCount},</if>
+            <if test="createBy != null">#{createBy},</if>
+            <if test="createTime != null">#{createTime},</if>
+            <if test="updateBy != null">#{updateBy},</if>
+            <if test="updateTime != null">#{updateTime},</if>
+            <if test="delFlag != null">#{delFlag},</if>
+            <if test="userId != null">#{userId},</if>
+        </trim>
+    </insert>
+
+    <update id="updateFx67llDortmundBasicMatch" parameterType="Fx67llDortmundBasicMatch">
+        update fx67ll_dortmund_match
+        <trim prefix="SET" suffixOverrides=",">
+            <if test="matchCode != null and matchCode != ''">match_code = #{matchCode},</if>
+            <if test="seasonId != null">season_id = #{seasonId},</if>
+            <if test="homeTeamId != null">home_team_id = #{homeTeamId},</if>
+            <if test="awayTeamId != null">away_team_id = #{awayTeamId},</if>
+            <if test="matchTime != null">match_time = #{matchTime},</if>
+            <if test="matchVenue != null">match_venue = #{matchVenue},</if>
+            <if test="matchRemark != null">match_remark = #{matchRemark},</if>
+            <if test="matchStatus != null">match_status = #{matchStatus},</if>
+            <if test="analysisCount != null">analysis_count = #{analysisCount},</if>
+            <if test="createBy != null">create_by = #{createBy},</if>
+            <if test="createTime != null">create_time = #{createTime},</if>
+            <if test="updateBy != null">update_by = #{updateBy},</if>
+            <if test="updateTime != null">update_time = #{updateTime},</if>
+            <if test="delFlag != null">del_flag = #{delFlag},</if>
+            <if test="userId != null">user_id = #{userId},</if>
+        </trim>
+        where match_id = #{matchId}
+    </update>
+
+    <delete id="deleteFx67llDortmundBasicMatchByMatchId" parameterType="Long">
+        delete
+        from fx67ll_dortmund_match
+        where match_id = #{matchId}
+    </delete>
+
+    <delete id="deleteFx67llDortmundBasicMatchByMatchIds" parameterType="String">
+        delete from fx67ll_dortmund_match where match_id in
+        <foreach item="matchId" collection="array" open="(" separator="," close=")">
+            #{matchId}
+        </foreach>
+    </delete>
+</mapper>

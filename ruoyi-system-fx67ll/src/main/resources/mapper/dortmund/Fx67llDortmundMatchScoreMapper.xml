@@ -1,0 +1,192 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.ruoyi.fx67ll.dortmund.mapper.Fx67llDortmundMatchScoreMapper">
+
+    <resultMap type="Fx67llDortmundMatchScore" id="Fx67llDortmundMatchScoreResult">
+        <result property="scoreId" column="score_id"/>
+        <result property="analysisId" column="analysis_id"/>
+        <result property="matchId" column="match_id"/>
+        <result property="homeAttackScore" column="home_attack_score"/>
+        <result property="homeDefenseScore" column="home_defense_score"/>
+        <result property="homeInjuryScore" column="home_injury_score"/>
+        <result property="homeHistoryScore" column="home_history_score"/>
+        <result property="homeTotalScore" column="home_total_score"/>
+        <result property="awayAttackScore" column="away_attack_score"/>
+        <result property="awayDefenseScore" column="away_defense_score"/>
+        <result property="awayInjuryScore" column="away_injury_score"/>
+        <result property="awayHistoryScore" column="away_history_score"/>
+        <result property="awayTotalScore" column="away_total_score"/>
+        <result property="predictedResult" column="predicted_result"/>
+        <result property="predictedConfidence" column="predicted_confidence"/>
+        <result property="scoreCalcRuleVersion" column="score_calc_rule_version"/>
+        <result property="extraScoreStr" column="extra_score_str"/>
+        <result property="scoreRemark" column="score_remark"/>
+        <result property="userId" column="user_id"/>
+        <result property="createBy" column="create_by"/>
+        <result property="createTime" column="create_time"/>
+        <result property="updateBy" column="update_by"/>
+        <result property="updateTime" column="update_time"/>
+        <result property="delFlag" column="del_flag"/>
+    </resultMap>
+
+    <sql id="selectFx67llDortmundMatchScoreVo">
+        select score_id,
+               analysis_id,
+               match_id,
+               home_attack_score,
+               home_defense_score,
+               home_injury_score,
+               home_history_score,
+               home_total_score,
+               away_attack_score,
+               away_defense_score,
+               away_injury_score,
+               away_history_score,
+               away_total_score,
+               predicted_result,
+               predicted_confidence,
+               score_calc_rule_version,
+               extra_score_str,
+               score_remark,
+               user_id,
+               create_by,
+               create_time,
+               update_by,
+               update_time,
+               del_flag
+        from fx67ll_dortmund_match_score
+    </sql>
+
+    <select id="selectFx67llDortmundMatchScoreList" parameterType="Fx67llDortmundMatchScore"
+            resultMap="Fx67llDortmundMatchScoreResult">
+        <include refid="selectFx67llDortmundMatchScoreVo"/>
+        <where>
+            <if test="analysisId != null ">and analysis_id = #{analysisId}</if>
+            <if test="matchId != null ">and match_id = #{matchId}</if>
+            <if test="homeAttackScore != null ">and home_attack_score = #{homeAttackScore}</if>
+            <if test="homeDefenseScore != null ">and home_defense_score = #{homeDefenseScore}</if>
+            <if test="homeInjuryScore != null ">and home_injury_score = #{homeInjuryScore}</if>
+            <if test="homeHistoryScore != null ">and home_history_score = #{homeHistoryScore}</if>
+            <if test="homeTotalScore != null ">and home_total_score = #{homeTotalScore}</if>
+            <if test="awayAttackScore != null ">and away_attack_score = #{awayAttackScore}</if>
+            <if test="awayDefenseScore != null ">and away_defense_score = #{awayDefenseScore}</if>
+            <if test="awayInjuryScore != null ">and away_injury_score = #{awayInjuryScore}</if>
+            <if test="awayHistoryScore != null ">and away_history_score = #{awayHistoryScore}</if>
+            <if test="awayTotalScore != null ">and away_total_score = #{awayTotalScore}</if>
+            <if test="predictedResult != null  and predictedResult != ''">and predicted_result = #{predictedResult}</if>
+            <if test="predictedConfidence != null ">and predicted_confidence = #{predictedConfidence}</if>
+            <if test="scoreCalcRuleVersion != null  and scoreCalcRuleVersion != ''">and score_calc_rule_version =
+                #{scoreCalcRuleVersion}
+            </if>
+            <if test="extraScoreStr != null  and extraScoreStr != ''">and extra_score_str = #{extraScoreStr}</if>
+            <if test="scoreRemark != null  and scoreRemark != ''">and score_remark = #{scoreRemark}</if>
+        </where>
+        order by STR_TO_DATE(create_time, "%Y-%m-%d %H:%i:%s") desc
+    </select>
+
+    <select id="selectFx67llDortmundMatchScoreByScoreId" parameterType="Long"
+            resultMap="Fx67llDortmundMatchScoreResult">
+        <include refid="selectFx67llDortmundMatchScoreVo"/>
+        where score_id = #{scoreId}
+    </select>
+
+    <insert id="insertFx67llDortmundMatchScore" parameterType="Fx67llDortmundMatchScore" useGeneratedKeys="true"
+            keyProperty="scoreId">
+        insert into fx67ll_dortmund_match_score
+        <trim prefix="(" suffix=")" suffixOverrides=",">
+            <if test="analysisId != null">analysis_id,</if>
+            <if test="matchId != null">match_id,</if>
+            <if test="homeAttackScore != null">home_attack_score,</if>
+            <if test="homeDefenseScore != null">home_defense_score,</if>
+            <if test="homeInjuryScore != null">home_injury_score,</if>
+            <if test="homeHistoryScore != null">home_history_score,</if>
+            <if test="homeTotalScore != null">home_total_score,</if>
+            <if test="awayAttackScore != null">away_attack_score,</if>
+            <if test="awayDefenseScore != null">away_defense_score,</if>
+            <if test="awayInjuryScore != null">away_injury_score,</if>
+            <if test="awayHistoryScore != null">away_history_score,</if>
+            <if test="awayTotalScore != null">away_total_score,</if>
+            <if test="predictedResult != null">predicted_result,</if>
+            <if test="predictedConfidence != null">predicted_confidence,</if>
+            <if test="scoreCalcRuleVersion != null">score_calc_rule_version,</if>
+            <if test="extraScoreStr != null">extra_score_str,</if>
+            <if test="scoreRemark != null">score_remark,</if>
+            <if test="createBy != null">create_by,</if>
+            <if test="createTime != null">create_time,</if>
+            <if test="updateBy != null">update_by,</if>
+            <if test="updateTime != null">update_time,</if>
+            <if test="delFlag != null">del_flag,</if>
+            <if test="userId != null">user_id,</if>
+        </trim>
+        <trim prefix="values (" suffix=")" suffixOverrides=",">
+            <if test="analysisId != null">#{analysisId},</if>
+            <if test="matchId != null">#{matchId},</if>
+            <if test="homeAttackScore != null">#{homeAttackScore},</if>
+            <if test="homeDefenseScore != null">#{homeDefenseScore},</if>
+            <if test="homeInjuryScore != null">#{homeInjuryScore},</if>
+            <if test="homeHistoryScore != null">#{homeHistoryScore},</if>
+            <if test="homeTotalScore != null">#{homeTotalScore},</if>
+            <if test="awayAttackScore != null">#{awayAttackScore},</if>
+            <if test="awayDefenseScore != null">#{awayDefenseScore},</if>
+            <if test="awayInjuryScore != null">#{awayInjuryScore},</if>
+            <if test="awayHistoryScore != null">#{awayHistoryScore},</if>
+            <if test="awayTotalScore != null">#{awayTotalScore},</if>
+            <if test="predictedResult != null">#{predictedResult},</if>
+            <if test="predictedConfidence != null">#{predictedConfidence},</if>
+            <if test="scoreCalcRuleVersion != null">#{scoreCalcRuleVersion},</if>
+            <if test="extraScoreStr != null">#{extraScoreStr},</if>
+            <if test="scoreRemark != null">#{scoreRemark},</if>
+            <if test="createBy != null">#{createBy},</if>
+            <if test="createTime != null">#{createTime},</if>
+            <if test="updateBy != null">#{updateBy},</if>
+            <if test="updateTime != null">#{updateTime},</if>
+            <if test="delFlag != null">#{delFlag},</if>
+            <if test="userId != null">#{userId},</if>
+        </trim>
+    </insert>
+
+    <update id="updateFx67llDortmundMatchScore" parameterType="Fx67llDortmundMatchScore">
+        update fx67ll_dortmund_match_score
+        <trim prefix="SET" suffixOverrides=",">
+            <if test="analysisId != null">analysis_id = #{analysisId},</if>
+            <if test="matchId != null">match_id = #{matchId},</if>
+            <if test="homeAttackScore != null">home_attack_score = #{homeAttackScore},</if>
+            <if test="homeDefenseScore != null">home_defense_score = #{homeDefenseScore},</if>
+            <if test="homeInjuryScore != null">home_injury_score = #{homeInjuryScore},</if>
+            <if test="homeHistoryScore != null">home_history_score = #{homeHistoryScore},</if>
+            <if test="homeTotalScore != null">home_total_score = #{homeTotalScore},</if>
+            <if test="awayAttackScore != null">away_attack_score = #{awayAttackScore},</if>
+            <if test="awayDefenseScore != null">away_defense_score = #{awayDefenseScore},</if>
+            <if test="awayInjuryScore != null">away_injury_score = #{awayInjuryScore},</if>
+            <if test="awayHistoryScore != null">away_history_score = #{awayHistoryScore},</if>
+            <if test="awayTotalScore != null">away_total_score = #{awayTotalScore},</if>
+            <if test="predictedResult != null">predicted_result = #{predictedResult},</if>
+            <if test="predictedConfidence != null">predicted_confidence = #{predictedConfidence},</if>
+            <if test="scoreCalcRuleVersion != null">score_calc_rule_version = #{scoreCalcRuleVersion},</if>
+            <if test="extraScoreStr != null">extra_score_str = #{extraScoreStr},</if>
+            <if test="scoreRemark != null">score_remark = #{scoreRemark},</if>
+            <if test="createBy != null">create_by = #{createBy},</if>
+            <if test="createTime != null">create_time = #{createTime},</if>
+            <if test="updateBy != null">update_by = #{updateBy},</if>
+            <if test="updateTime != null">update_time = #{updateTime},</if>
+            <if test="delFlag != null">del_flag = #{delFlag},</if>
+            <if test="userId != null">user_id = #{userId},</if>
+        </trim>
+        where score_id = #{scoreId}
+    </update>
+
+    <delete id="deleteFx67llDortmundMatchScoreByScoreId" parameterType="Long">
+        delete
+        from fx67ll_dortmund_match_score
+        where score_id = #{scoreId}
+    </delete>
+
+    <delete id="deleteFx67llDortmundMatchScoreByScoreIds" parameterType="String">
+        delete from fx67ll_dortmund_match_score where score_id in
+        <foreach item="scoreId" collection="array" open="(" separator="," close=")">
+            #{scoreId}
+        </foreach>
+    </delete>
+</mapper>

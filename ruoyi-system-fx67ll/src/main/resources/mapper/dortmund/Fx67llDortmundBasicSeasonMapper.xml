@@ -1,0 +1,131 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.ruoyi.fx67ll.dortmund.mapper.Fx67llDortmundBasicSeasonMapper">
+
+    <resultMap type="Fx67llDortmundBasicSeason" id="Fx67llDortmundBasicSeasonResult">
+        <result property="seasonId" column="season_id"/>
+        <result property="seasonCode" column="season_code"/>
+        <result property="seasonName" column="season_name"/>
+        <result property="seasonRemark" column="season_remark"/>
+        <result property="seasonStartDate" column="season_start_date"/>
+        <result property="seasonEndDate" column="season_end_date"/>
+        <result property="seasonStatus" column="season_status"/>
+        <result property="seasonSort" column="season_sort"/>
+        <result property="userId" column="user_id"/>
+        <result property="createBy" column="create_by"/>
+        <result property="createTime" column="create_time"/>
+        <result property="updateBy" column="update_by"/>
+        <result property="updateTime" column="update_time"/>
+        <result property="delFlag" column="del_flag"/>
+    </resultMap>
+
+    <sql id="selectFx67llDortmundBasicSeasonVo">
+        select season_id,
+               season_code,
+               season_name,
+               season_remark,
+               season_start_date,
+               season_end_date,
+               season_status,
+               season_sort,
+               user_id,
+               create_by,
+               create_time,
+               update_by,
+               update_time,
+               del_flag
+        from fx67ll_dortmund_season
+    </sql>
+
+    <select id="selectFx67llDortmundBasicSeasonList" parameterType="Fx67llDortmundBasicSeason"
+            resultMap="Fx67llDortmundBasicSeasonResult">
+        <include refid="selectFx67llDortmundBasicSeasonVo"/>
+        <where>
+            <if test="seasonCode != null  and seasonCode != ''">and season_code = #{seasonCode}</if>
+            <if test="seasonName != null  and seasonName != ''">and season_name like concat('%', #{seasonName}, '%')
+            </if>
+            <if test="seasonRemark != null  and seasonRemark != ''">and season_remark = #{seasonRemark}</if>
+            <if test="seasonStartDate != null ">and season_start_date = #{seasonStartDate}</if>
+            <if test="seasonEndDate != null ">and season_end_date = #{seasonEndDate}</if>
+            <if test="seasonStatus != null  and seasonStatus != ''">and season_status = #{seasonStatus}</if>
+            <if test="seasonSort != null ">and season_sort = #{seasonSort}</if>
+        </where>
+        order by STR_TO_DATE(create_time, "%Y-%m-%d %H:%i:%s") desc
+    </select>
+
+    <select id="selectFx67llDortmundBasicSeasonBySeasonId" parameterType="Long"
+            resultMap="Fx67llDortmundBasicSeasonResult">
+        <include refid="selectFx67llDortmundBasicSeasonVo"/>
+        where season_id = #{seasonId}
+    </select>
+
+    <insert id="insertFx67llDortmundBasicSeason" parameterType="Fx67llDortmundBasicSeason" useGeneratedKeys="true"
+            keyProperty="seasonId">
+        insert into fx67ll_dortmund_season
+        <trim prefix="(" suffix=")" suffixOverrides=",">
+            <if test="seasonCode != null and seasonCode != ''">season_code,</if>
+            <if test="seasonName != null and seasonName != ''">season_name,</if>
+            <if test="seasonRemark != null">season_remark,</if>
+            <if test="seasonStartDate != null">season_start_date,</if>
+            <if test="seasonEndDate != null">season_end_date,</if>
+            <if test="seasonStatus != null">season_status,</if>
+            <if test="seasonSort != null">season_sort,</if>
+            <if test="createBy != null">create_by,</if>
+            <if test="createTime != null">create_time,</if>
+            <if test="updateBy != null">update_by,</if>
+            <if test="updateTime != null">update_time,</if>
+            <if test="delFlag != null">del_flag,</if>
+            <if test="userId != null">user_id,</if>
+        </trim>
+        <trim prefix="values (" suffix=")" suffixOverrides=",">
+            <if test="seasonCode != null and seasonCode != ''">#{seasonCode},</if>
+            <if test="seasonName != null and seasonName != ''">#{seasonName},</if>
+            <if test="seasonRemark != null">#{seasonRemark},</if>
+            <if test="seasonStartDate != null">#{seasonStartDate},</if>
+            <if test="seasonEndDate != null">#{seasonEndDate},</if>
+            <if test="seasonStatus != null">#{seasonStatus},</if>
+            <if test="seasonSort != null">#{seasonSort},</if>
+            <if test="createBy != null">#{createBy},</if>
+            <if test="createTime != null">#{createTime},</if>
+            <if test="updateBy != null">#{updateBy},</if>
+            <if test="updateTime != null">#{updateTime},</if>
+            <if test="delFlag != null">#{delFlag},</if>
+            <if test="userId != null">#{userId},</if>
+        </trim>
+    </insert>
+
+    <update id="updateFx67llDortmundBasicSeason" parameterType="Fx67llDortmundBasicSeason">
+        update fx67ll_dortmund_season
+        <trim prefix="SET" suffixOverrides=",">
+            <if test="seasonCode != null and seasonCode != ''">season_code = #{seasonCode},</if>
+            <if test="seasonName != null and seasonName != ''">season_name = #{seasonName},</if>
+            <if test="seasonRemark != null">season_remark = #{seasonRemark},</if>
+            <if test="seasonStartDate != null">season_start_date = #{seasonStartDate},</if>
+            <if test="seasonEndDate != null">season_end_date = #{seasonEndDate},</if>
+            <if test="seasonStatus != null">season_status = #{seasonStatus},</if>
+            <if test="seasonSort != null">season_sort = #{seasonSort},</if>
+            <if test="createBy != null">create_by = #{createBy},</if>
+            <if test="createTime != null">create_time = #{createTime},</if>
+            <if test="updateBy != null">update_by = #{updateBy},</if>
+            <if test="updateTime != null">update_time = #{updateTime},</if>
+            <if test="delFlag != null">del_flag = #{delFlag},</if>
+            <if test="userId != null">user_id = #{userId},</if>
+        </trim>
+        where season_id = #{seasonId}
+    </update>
+
+    <delete id="deleteFx67llDortmundBasicSeasonBySeasonId" parameterType="Long">
+        delete
+        from fx67ll_dortmund_season
+        where season_id = #{seasonId}
+    </delete>
+
+    <delete id="deleteFx67llDortmundBasicSeasonBySeasonIds" parameterType="String">
+        delete from fx67ll_dortmund_season where season_id in
+        <foreach item="seasonId" collection="array" open="(" separator="," close=")">
+            #{seasonId}
+        </foreach>
+    </delete>
+</mapper>

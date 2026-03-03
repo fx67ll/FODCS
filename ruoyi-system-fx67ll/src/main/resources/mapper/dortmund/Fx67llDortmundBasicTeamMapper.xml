@@ -1,0 +1,147 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.ruoyi.fx67ll.dortmund.mapper.Fx67llDortmundBasicTeamMapper">
+
+    <resultMap type="Fx67llDortmundBasicTeam" id="Fx67llDortmundBasicTeamResult">
+        <result property="teamId" column="team_id"/>
+        <result property="teamCode" column="team_code"/>
+        <result property="teamName" column="team_name"/>
+        <result property="teamNameShort" column="team_name_short"/>
+        <result property="teamNameEn" column="team_name_en"/>
+        <result property="teamLogoUrl" column="team_logo_url"/>
+        <result property="teamCountry" column="team_country"/>
+        <result property="teamTag" column="team_tag"/>
+        <result property="teamRemark" column="team_remark"/>
+        <result property="teamStatus" column="team_status"/>
+        <result property="teamSort" column="team_sort"/>
+        <result property="userId" column="user_id"/>
+        <result property="createBy" column="create_by"/>
+        <result property="createTime" column="create_time"/>
+        <result property="updateBy" column="update_by"/>
+        <result property="updateTime" column="update_time"/>
+        <result property="delFlag" column="del_flag"/>
+    </resultMap>
+
+    <sql id="selectFx67llDortmundBasicTeamVo">
+        select team_id,
+               team_code,
+               team_name,
+               team_name_short,
+               team_name_en,
+               team_logo_url,
+               team_country,
+               team_tag,
+               team_remark,
+               team_status,
+               team_sort,
+               user_id,
+               create_by,
+               create_time,
+               update_by,
+               update_time,
+               del_flag
+        from fx67ll_dortmund_team
+    </sql>
+
+    <select id="selectFx67llDortmundBasicTeamList" parameterType="Fx67llDortmundBasicTeam"
+            resultMap="Fx67llDortmundBasicTeamResult">
+        <include refid="selectFx67llDortmundBasicTeamVo"/>
+        <where>
+            <if test="teamCode != null  and teamCode != ''">and team_code = #{teamCode}</if>
+            <if test="teamName != null  and teamName != ''">and team_name like concat('%', #{teamName}, '%')</if>
+            <if test="teamNameShort != null  and teamNameShort != ''">and team_name_short = #{teamNameShort}</if>
+            <if test="teamNameEn != null  and teamNameEn != ''">and team_name_en = #{teamNameEn}</if>
+            <if test="teamLogoUrl != null  and teamLogoUrl != ''">and team_logo_url = #{teamLogoUrl}</if>
+            <if test="teamCountry != null  and teamCountry != ''">and team_country = #{teamCountry}</if>
+            <if test="teamTag != null  and teamTag != ''">and team_tag = #{teamTag}</if>
+            <if test="teamRemark != null  and teamRemark != ''">and team_remark = #{teamRemark}</if>
+            <if test="teamStatus != null  and teamStatus != ''">and team_status = #{teamStatus}</if>
+            <if test="teamSort != null ">and team_sort = #{teamSort}</if>
+        </where>
+        order by STR_TO_DATE(create_time, "%Y-%m-%d %H:%i:%s") desc
+    </select>
+
+    <select id="selectFx67llDortmundBasicTeamByTeamId" parameterType="Long" resultMap="Fx67llDortmundBasicTeamResult">
+        <include refid="selectFx67llDortmundBasicTeamVo"/>
+        where team_id = #{teamId}
+    </select>
+
+    <insert id="insertFx67llDortmundBasicTeam" parameterType="Fx67llDortmundBasicTeam" useGeneratedKeys="true"
+            keyProperty="teamId">
+        insert into fx67ll_dortmund_team
+        <trim prefix="(" suffix=")" suffixOverrides=",">
+            <if test="teamCode != null and teamCode != ''">team_code,</if>
+            <if test="teamName != null and teamName != ''">team_name,</if>
+            <if test="teamNameShort != null">team_name_short,</if>
+            <if test="teamNameEn != null">team_name_en,</if>
+            <if test="teamLogoUrl != null">team_logo_url,</if>
+            <if test="teamCountry != null">team_country,</if>
+            <if test="teamTag != null">team_tag,</if>
+            <if test="teamRemark != null">team_remark,</if>
+            <if test="teamStatus != null">team_status,</if>
+            <if test="teamSort != null">team_sort,</if>
+            <if test="createBy != null">create_by,</if>
+            <if test="createTime != null">create_time,</if>
+            <if test="updateBy != null">update_by,</if>
+            <if test="updateTime != null">update_time,</if>
+            <if test="delFlag != null">del_flag,</if>
+            <if test="userId != null">user_id,</if>
+        </trim>
+        <trim prefix="values (" suffix=")" suffixOverrides=",">
+            <if test="teamCode != null and teamCode != ''">#{teamCode},</if>
+            <if test="teamName != null and teamName != ''">#{teamName},</if>
+            <if test="teamNameShort != null">#{teamNameShort},</if>
+            <if test="teamNameEn != null">#{teamNameEn},</if>
+            <if test="teamLogoUrl != null">#{teamLogoUrl},</if>
+            <if test="teamCountry != null">#{teamCountry},</if>
+            <if test="teamTag != null">#{teamTag},</if>
+            <if test="teamRemark != null">#{teamRemark},</if>
+            <if test="teamStatus != null">#{teamStatus},</if>
+            <if test="teamSort != null">#{teamSort},</if>
+            <if test="createBy != null">#{createBy},</if>
+            <if test="createTime != null">#{createTime},</if>
+            <if test="updateBy != null">#{updateBy},</if>
+            <if test="updateTime != null">#{updateTime},</if>
+            <if test="delFlag != null">#{delFlag},</if>
+            <if test="userId != null">#{userId},</if>
+        </trim>
+    </insert>
+
+    <update id="updateFx67llDortmundBasicTeam" parameterType="Fx67llDortmundBasicTeam">
+        update fx67ll_dortmund_team
+        <trim prefix="SET" suffixOverrides=",">
+            <if test="teamCode != null and teamCode != ''">team_code = #{teamCode},</if>
+            <if test="teamName != null and teamName != ''">team_name = #{teamName},</if>
+            <if test="teamNameShort != null">team_name_short = #{teamNameShort},</if>
+            <if test="teamNameEn != null">team_name_en = #{teamNameEn},</if>
+            <if test="teamLogoUrl != null">team_logo_url = #{teamLogoUrl},</if>
+            <if test="teamCountry != null">team_country = #{teamCountry},</if>
+            <if test="teamTag != null">team_tag = #{teamTag},</if>
+            <if test="teamRemark != null">team_remark = #{teamRemark},</if>
+            <if test="teamStatus != null">team_status = #{teamStatus},</if>
+            <if test="teamSort != null">team_sort = #{teamSort},</if>
+            <if test="createBy != null">create_by = #{createBy},</if>
+            <if test="createTime != null">create_time = #{createTime},</if>
+            <if test="updateBy != null">update_by = #{updateBy},</if>
+            <if test="updateTime != null">update_time = #{updateTime},</if>
+            <if test="delFlag != null">del_flag = #{delFlag},</if>
+            <if test="userId != null">user_id = #{userId},</if>
+        </trim>
+        where team_id = #{teamId}
+    </update>
+
+    <delete id="deleteFx67llDortmundBasicTeamByTeamId" parameterType="Long">
+        delete
+        from fx67ll_dortmund_team
+        where team_id = #{teamId}
+    </delete>
+
+    <delete id="deleteFx67llDortmundBasicTeamByTeamIds" parameterType="String">
+        delete from fx67ll_dortmund_team where team_id in
+        <foreach item="teamId" collection="array" open="(" separator="," close=")">
+            #{teamId}
+        </foreach>
+    </delete>
+</mapper>

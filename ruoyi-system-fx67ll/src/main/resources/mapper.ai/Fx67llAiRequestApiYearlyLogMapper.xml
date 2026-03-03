@@ -1,0 +1,99 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.ruoyi.fx67ll.ai.mapper.Fx67llAiRequestApiYearlyLogMapper">
+
+    <resultMap type="Fx67llAiRequestApiYearlyLog" id="Fx67llAiRequestApiYearlyLogResult">
+        <result property="yearlyLogYear" column="yearly_log_year"/>
+        <result property="modelId" column="model_id"/>
+        <result property="sceneId" column="scene_id"/>
+        <result property="totalRequests" column="total_requests"/>
+        <result property="totalPromptTokens" column="total_prompt_tokens"/>
+        <result property="totalCompletionTokens" column="total_completion_tokens"/>
+        <result property="totalCost" column="total_cost"/>
+        <result property="avgDurationMs" column="avg_duration_ms"/>
+    </resultMap>
+
+    <sql id="selectFx67llAiRequestApiYearlyLogVo">
+        select yearly_log_year,
+               model_id,
+               scene_id,
+               total_requests,
+               total_prompt_tokens,
+               total_completion_tokens,
+               total_cost,
+               avg_duration_ms
+        from fx67ll_ai_request_yearly_log
+    </sql>
+
+    <select id="selectFx67llAiRequestApiYearlyLogList" parameterType="Fx67llAiRequestApiYearlyLog"
+            resultMap="Fx67llAiRequestApiYearlyLogResult">
+        <include refid="selectFx67llAiRequestApiYearlyLogVo"/>
+        <where>
+            <if test="totalRequests != null ">and total_requests = #{totalRequests}</if>
+            <if test="totalPromptTokens != null ">and total_prompt_tokens = #{totalPromptTokens}</if>
+            <if test="totalCompletionTokens != null ">and total_completion_tokens = #{totalCompletionTokens}</if>
+            <if test="totalCost != null ">and total_cost = #{totalCost}</if>
+            <if test="avgDurationMs != null ">and avg_duration_ms = #{avgDurationMs}</if>
+        </where>
+        order by STR_TO_DATE(create_time, "%Y-%m-%d %H:%i:%s") desc
+    </select>
+
+    <select id="selectFx67llAiRequestApiYearlyLogByYearlyLogYear" parameterType="String"
+            resultMap="Fx67llAiRequestApiYearlyLogResult">
+        <include refid="selectFx67llAiRequestApiYearlyLogVo"/>
+        where yearly_log_year = #{yearlyLogYear}
+    </select>
+
+    <insert id="insertFx67llAiRequestApiYearlyLog" parameterType="Fx67llAiRequestApiYearlyLog">
+        insert into fx67ll_ai_request_yearly_log
+        <trim prefix="(" suffix=")" suffixOverrides=",">
+            <if test="yearlyLogYear != null">yearly_log_year,</if>
+            <if test="modelId != null">model_id,</if>
+            <if test="sceneId != null">scene_id,</if>
+            <if test="totalRequests != null">total_requests,</if>
+            <if test="totalPromptTokens != null">total_prompt_tokens,</if>
+            <if test="totalCompletionTokens != null">total_completion_tokens,</if>
+            <if test="totalCost != null">total_cost,</if>
+            <if test="avgDurationMs != null">avg_duration_ms,</if>
+        </trim>
+        <trim prefix="values (" suffix=")" suffixOverrides=",">
+            <if test="yearlyLogYear != null">#{yearlyLogYear},</if>
+            <if test="modelId != null">#{modelId},</if>
+            <if test="sceneId != null">#{sceneId},</if>
+            <if test="totalRequests != null">#{totalRequests},</if>
+            <if test="totalPromptTokens != null">#{totalPromptTokens},</if>
+            <if test="totalCompletionTokens != null">#{totalCompletionTokens},</if>
+            <if test="totalCost != null">#{totalCost},</if>
+            <if test="avgDurationMs != null">#{avgDurationMs},</if>
+        </trim>
+    </insert>
+
+    <update id="updateFx67llAiRequestApiYearlyLog" parameterType="Fx67llAiRequestApiYearlyLog">
+        update fx67ll_ai_request_yearly_log
+        <trim prefix="SET" suffixOverrides=",">
+            <if test="modelId != null">model_id = #{modelId},</if>
+            <if test="sceneId != null">scene_id = #{sceneId},</if>
+            <if test="totalRequests != null">total_requests = #{totalRequests},</if>
+            <if test="totalPromptTokens != null">total_prompt_tokens = #{totalPromptTokens},</if>
+            <if test="totalCompletionTokens != null">total_completion_tokens = #{totalCompletionTokens},</if>
+            <if test="totalCost != null">total_cost = #{totalCost},</if>
+            <if test="avgDurationMs != null">avg_duration_ms = #{avgDurationMs},</if>
+        </trim>
+        where yearly_log_year = #{yearlyLogYear}
+    </update>
+
+    <delete id="deleteFx67llAiRequestApiYearlyLogByYearlyLogYear" parameterType="String">
+        delete
+        from fx67ll_ai_request_yearly_log
+        where yearly_log_year = #{yearlyLogYear}
+    </delete>
+
+    <delete id="deleteFx67llAiRequestApiYearlyLogByYearlyLogYears" parameterType="String">
+        delete from fx67ll_ai_request_yearly_log where yearly_log_year in
+        <foreach item="yearlyLogYear" collection="array" open="(" separator="," close=")">
+            #{yearlyLogYear}
+        </foreach>
+    </delete>
+</mapper>

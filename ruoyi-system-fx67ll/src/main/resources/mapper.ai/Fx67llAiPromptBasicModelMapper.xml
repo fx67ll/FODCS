@@ -1,0 +1,195 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.ruoyi.fx67ll.ai.mapper.Fx67llAiPromptBasicModelMapper">
+
+    <resultMap type="Fx67llAiPromptBasicModel" id="Fx67llAiPromptBasicModelResult">
+        <result property="modelId" column="model_id"/>
+        <result property="modelCode" column="model_code"/>
+        <result property="modelName" column="model_name"/>
+        <result property="modelVendor" column="model_vendor"/>
+        <result property="modelApiKey" column="model_api_key"/>
+        <result property="modelSecretKey" column="model_secret_key"/>
+        <result property="modelApiUrl" column="model_api_url"/>
+        <result property="modelApiVersion" column="model_api_version"/>
+        <result property="modelConfigParams" column="model_config_params"/>
+        <result property="modelRequestHeader" column="model_request_header"/>
+        <result property="modelRemark" column="model_remark"/>
+        <result property="modelStatus" column="model_status"/>
+        <result property="modelSort" column="model_sort"/>
+        <result property="modelTokenPrice" column="model_token_price"/>
+        <result property="modelTokenCurrency" column="model_token_currency"/>
+        <result property="userId" column="user_id"/>
+        <result property="createBy" column="create_by"/>
+        <result property="createTime" column="create_time"/>
+        <result property="updateBy" column="update_by"/>
+        <result property="updateTime" column="update_time"/>
+        <result property="delFlag" column="del_flag"/>
+    </resultMap>
+
+    <sql id="selectFx67llAiPromptBasicModelVo">
+        select model_id,
+               model_code,
+               model_name,
+               model_vendor,
+               model_api_key,
+               model_secret_key,
+               model_api_url,
+               model_api_version,
+               model_config_params,
+               model_request_header,
+               model_remark,
+               model_status,
+               model_sort,
+               model_token_price,
+               model_token_currency,
+               user_id,
+               create_by,
+               create_time,
+               update_by,
+               update_time,
+               del_flag
+        from fx67ll_ai_prompt_model
+    </sql>
+
+    <select id="selectFx67llAiPromptBasicModelList" parameterType="Fx67llAiPromptBasicModel"
+            resultMap="Fx67llAiPromptBasicModelResult">
+        <include refid="selectFx67llAiPromptBasicModelVo"/>
+        <where>
+            <if test="modelCode != null  and modelCode != ''">and model_code = #{modelCode}</if>
+            <if test="modelName != null  and modelName != ''">and model_name like concat('%', #{modelName}, '%')</if>
+            <if test="modelVendor != null  and modelVendor != ''">and model_vendor = #{modelVendor}</if>
+            <if test="modelApiKey != null ">and model_api_key = #{modelApiKey}</if>
+            <if test="modelSecretKey != null ">and model_secret_key = #{modelSecretKey}</if>
+            <if test="modelApiUrl != null  and modelApiUrl != ''">and model_api_url = #{modelApiUrl}</if>
+            <if test="modelApiVersion != null  and modelApiVersion != ''">and model_api_version = #{modelApiVersion}
+            </if>
+            <if test="modelConfigParams != null  and modelConfigParams != ''">and model_config_params =
+                #{modelConfigParams}
+            </if>
+            <if test="modelRequestHeader != null  and modelRequestHeader != ''">and model_request_header =
+                #{modelRequestHeader}
+            </if>
+            <if test="modelRemark != null  and modelRemark != ''">and model_remark = #{modelRemark}</if>
+            <if test="modelStatus != null  and modelStatus != ''">and model_status = #{modelStatus}</if>
+            <if test="modelSort != null ">and model_sort = #{modelSort}</if>
+            <if test="modelTokenPrice != null ">and model_token_price = #{modelTokenPrice}</if>
+            <if test="modelTokenCurrency != null  and modelTokenCurrency != ''">and model_token_currency =
+                #{modelTokenCurrency}
+            </if>
+            <if test="delFlag != null  and delFlag != ''">and del_flag = #{delFlag}</if>
+            <if test="userId != null ">and user_id = #{userId}</if>
+            <if test="createBy != null  and createBy != ''">and create_by like concat('%',
+                #{createBy}, '%')
+            </if>
+            <if test="beginCreateTime != null and endCreateTime != ''">and create_time between #{beginCreateTime} and
+                #{endCreateTime}
+            </if>
+            <if test="updateBy != null  and updateBy != ''">and update_by like concat('%',
+                #{updateBy}, '%')
+            </if>
+            <if test="beginUpdateTime != null and endUpdateTime != ''">and update_time between #{beginUpdateTime} and
+                #{endUpdateTime}
+            </if>
+        </where>
+        order by STR_TO_DATE(create_time, "%Y-%m-%d %H:%i:%s") desc
+    </select>
+
+    <select id="selectFx67llAiPromptBasicModelByModelId" parameterType="Long"
+            resultMap="Fx67llAiPromptBasicModelResult">
+        <include refid="selectFx67llAiPromptBasicModelVo"/>
+        where model_id = #{modelId}
+    </select>
+
+    <insert id="insertFx67llAiPromptBasicModel" parameterType="Fx67llAiPromptBasicModel" useGeneratedKeys="true"
+            keyProperty="modelId">
+        insert into fx67ll_ai_prompt_model
+        <trim prefix="(" suffix=")" suffixOverrides=",">
+            <if test="modelCode != null and modelCode != ''">model_code,</if>
+            <if test="modelName != null and modelName != ''">model_name,</if>
+            <if test="modelVendor != null and modelVendor != ''">model_vendor,</if>
+            <if test="modelApiKey != null">model_api_key,</if>
+            <if test="modelSecretKey != null">model_secret_key,</if>
+            <if test="modelApiUrl != null and modelApiUrl != ''">model_api_url,</if>
+            <if test="modelApiVersion != null">model_api_version,</if>
+            <if test="modelConfigParams != null and modelConfigParams != ''">model_config_params,</if>
+            <if test="modelRequestHeader != null">model_request_header,</if>
+            <if test="modelRemark != null">model_remark,</if>
+            <if test="modelStatus != null">model_status,</if>
+            <if test="modelSort != null">model_sort,</if>
+            <if test="modelTokenPrice != null">model_token_price,</if>
+            <if test="modelTokenCurrency != null">model_token_currency,</if>
+            <if test="createBy != null">create_by,</if>
+            <if test="createTime != null">create_time,</if>
+            <if test="updateBy != null">update_by,</if>
+            <if test="updateTime != null">update_time,</if>
+            <if test="delFlag != null">del_flag,</if>
+            <if test="userId != null">user_id,</if>
+        </trim>
+        <trim prefix="values (" suffix=")" suffixOverrides=",">
+            <if test="modelCode != null and modelCode != ''">#{modelCode},</if>
+            <if test="modelName != null and modelName != ''">#{modelName},</if>
+            <if test="modelVendor != null and modelVendor != ''">#{modelVendor},</if>
+            <if test="modelApiKey != null">#{modelApiKey},</if>
+            <if test="modelSecretKey != null">#{modelSecretKey},</if>
+            <if test="modelApiUrl != null and modelApiUrl != ''">#{modelApiUrl},</if>
+            <if test="modelApiVersion != null">#{modelApiVersion},</if>
+            <if test="modelConfigParams != null and modelConfigParams != ''">#{modelConfigParams},</if>
+            <if test="modelRequestHeader != null">#{modelRequestHeader},</if>
+            <if test="modelRemark != null">#{modelRemark},</if>
+            <if test="modelStatus != null">#{modelStatus},</if>
+            <if test="modelSort != null">#{modelSort},</if>
+            <if test="modelTokenPrice != null">#{modelTokenPrice},</if>
+            <if test="modelTokenCurrency != null">#{modelTokenCurrency},</if>
+            <if test="createBy != null">#{createBy},</if>
+            <if test="createTime != null">#{createTime},</if>
+            <if test="updateBy != null">#{updateBy},</if>
+            <if test="updateTime != null">#{updateTime},</if>
+            <if test="delFlag != null">#{delFlag},</if>
+            <if test="userId != null">#{userId},</if>
+        </trim>
+    </insert>
+
+    <update id="updateFx67llAiPromptBasicModel" parameterType="Fx67llAiPromptBasicModel">
+        update fx67ll_ai_prompt_model
+        <trim prefix="SET" suffixOverrides=",">
+            <if test="modelCode != null and modelCode != ''">model_code = #{modelCode},</if>
+            <if test="modelName != null and modelName != ''">model_name = #{modelName},</if>
+            <if test="modelVendor != null and modelVendor != ''">model_vendor = #{modelVendor},</if>
+            <if test="modelApiKey != null">model_api_key = #{modelApiKey},</if>
+            <if test="modelSecretKey != null">model_secret_key = #{modelSecretKey},</if>
+            <if test="modelApiUrl != null and modelApiUrl != ''">model_api_url = #{modelApiUrl},</if>
+            <if test="modelApiVersion != null">model_api_version = #{modelApiVersion},</if>
+            <if test="modelConfigParams != null and modelConfigParams != ''">model_config_params =
+                #{modelConfigParams},
+            </if>
+            <if test="modelRequestHeader != null">model_request_header = #{modelRequestHeader},</if>
+            <if test="modelRemark != null">model_remark = #{modelRemark},</if>
+            <if test="modelStatus != null">model_status = #{modelStatus},</if>
+            <if test="modelSort != null">model_sort = #{modelSort},</if>
+            <if test="modelTokenPrice != null">model_token_price = #{modelTokenPrice},</if>
+            <if test="modelTokenCurrency != null">model_token_currency = #{modelTokenCurrency},</if>
+            <if test="createBy != null">create_by = #{createBy},</if>
+            <if test="createTime != null">create_time = #{createTime},</if>
+            <if test="updateBy != null">update_by = #{updateBy},</if>
+            <if test="updateTime != null">update_time = #{updateTime},</if>
+            <if test="delFlag != null">del_flag = #{delFlag},</if>
+            <if test="userId != null">user_id = #{userId},</if>
+        </trim>
+        where model_id = #{modelId}
+    </update>
+
+    <delete id="deleteFx67llAiPromptBasicModelByModelId" parameterType="Long">
+        delete
+        from fx67ll_ai_prompt_model
+        where model_id = #{modelId}
+    </delete>
+
+    <delete id="deleteFx67llAiPromptBasicModelByModelIds" parameterType="String">
+        delete from fx67ll_ai_prompt_model where model_id in
+        <foreach item="modelId" collection="array" open="(" separator="," close=")">
+            #{modelId}
+        </foreach>
+    </delete>
+</mapper>
