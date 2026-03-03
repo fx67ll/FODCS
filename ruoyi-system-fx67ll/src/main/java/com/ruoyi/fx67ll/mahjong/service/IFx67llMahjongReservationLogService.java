@@ -30,7 +30,7 @@ public interface IFx67llMahjongReservationLogService {
     public List<Fx67llMahjongReservationLog> selectFx67llMahjongReservationLogList(Fx67llMahjongReservationLog fx67llMahjongReservationLog);
 
     /**
-     * 查询麻将室预约记录列表
+     * 通过 UserId 查询麻将室预约记录列表
      *
      * @param fx67llMahjongReservationLog 麻将室预约记录
      * @return 麻将室预约记录集合

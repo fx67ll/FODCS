@@ -46,7 +46,7 @@ public class Fx67llPunchLogServiceImpl implements IFx67llPunchLogService {
     }
 
     /**
-     * 查询打卡记录列表
+     * 通过 UserId 查询打卡记录列表
      *
      * @param fx67llPunchLog 打卡记录
      * @return 打卡记录

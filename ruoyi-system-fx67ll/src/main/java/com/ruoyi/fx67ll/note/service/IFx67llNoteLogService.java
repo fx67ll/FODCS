@@ -28,7 +28,7 @@ public interface IFx67llNoteLogService {
     public List<Fx67llNoteLog> selectFx67llNoteLogList(Fx67llNoteLog fx67llNoteLog);
 
     /**
-     * 查询富文本记录列表
+     * 通过 UserId 查询富文本记录列表
      *
      * @param fx67llNoteLog 富文本记录
      * @return 富文本记录集合

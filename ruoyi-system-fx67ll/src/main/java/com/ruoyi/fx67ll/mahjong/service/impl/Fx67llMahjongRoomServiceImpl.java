@@ -90,7 +90,7 @@ public class Fx67llMahjongRoomServiceImpl implements IFx67llMahjongRoomService {
     }
 
     /**
-     * 查询麻将室列表
+     * 通过 UserId 查询麻将室列表
      *
      * @param fx67llMahjongRoom 麻将室
      * @return 麻将室

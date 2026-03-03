@@ -129,7 +129,7 @@ public class Fx67llMahjongReservationLogServiceImpl implements IFx67llMahjongRes
     }
 
     /**
-     * 查询麻将室预约记录列表
+     * 通过 UserId 查询麻将室预约记录列表
      *
      * @param fx67llMahjongReservationLog 麻将室预约记录
      * @return 麻将室预约记录

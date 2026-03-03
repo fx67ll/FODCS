@@ -45,7 +45,7 @@ public class Fx67llDortmundExtraServiceImpl implements IFx67llDortmundExtraServi
     }
 
     /**
-     * 查询外快盈亏记录列表
+     * 通过 UserId 查询外快盈亏记录列表
      *
      * @param fx67llDortmundExtra 外快盈亏记录
      * @return 外快盈亏记录

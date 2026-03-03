@@ -36,7 +36,7 @@ public interface IFx67llMahjongRoomService {
     public List<Fx67llMahjongRoom> selectFx67llMahjongRoomList(Fx67llMahjongRoom fx67llMahjongRoom);
 
     /**
-     * 查询麻将室列表
+     * 通过 UserId 查询麻将室列表
      *
      * @param fx67llMahjongRoom 麻将室
      * @return 麻将室集合
