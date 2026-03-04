@@ -8,12 +8,12 @@ import com.ruoyi.common.annotation.Excel;
 import com.ruoyi.common.core.domain.BaseEntity;
 
 /**
- * AI Prompt 限流/熔断规则（适配Sentinel框架）对象 fx67ll_ai_prompt_limit_rule
+ * AI Prompt 限流/熔断规则（适配Sentinel框架）对象 fx67ll_ai_request_limit_rule
  *
  * @author ruoyi
  * @date 2026-03-03
  */
-public class Fx67llAiPromptLimitRule extends BaseEntity {
+public class Fx67llAiRequestLimitRule extends BaseEntity {
     private static final long serialVersionUID = 1L;
 
     /**

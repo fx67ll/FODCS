@@ -2,7 +2,7 @@
 <!DOCTYPE mapper
         PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
-<mapper namespace="com.ruoyi.fx67ll.ai.mapper.Fx67llAiPromptLimitRuleMapper">
+<mapper namespace="com.ruoyi.fx67ll.ai.mapper.Fx67llAiRequestLimitRuleMapper">
 
     <resultMap type="Fx67llAiPromptLimitRule" id="Fx67llAiPromptLimitRuleResult">
         <result property="limitRuleId" column="limit_rule_id"/>
@@ -48,7 +48,7 @@
                update_by,
                update_time,
                del_flag
-        from fx67ll_ai_prompt_limit_rule
+        from fx67ll_ai_request_limit_rule
     </sql>
 
     <select id="selectFx67llAiPromptLimitRuleList" parameterType="Fx67llAiPromptLimitRule"
@@ -100,7 +100,7 @@
 
     <insert id="insertFx67llAiPromptLimitRule" parameterType="Fx67llAiPromptLimitRule" useGeneratedKeys="true"
             keyProperty="limitRuleId">
-        insert into fx67ll_ai_prompt_limit_rule
+        insert into fx67ll_ai_request_limit_rule
         <trim prefix="(" suffix=")" suffixOverrides=",">
             <if test="limitRuleDimension != null and limitRuleDimension != ''">limit_rule_dimension,</if>
             <if test="limitRuleTargetId != null">limit_rule_target_id,</if>
@@ -146,7 +146,7 @@
     </insert>
 
     <update id="updateFx67llAiPromptLimitRule" parameterType="Fx67llAiPromptLimitRule">
-        update fx67ll_ai_prompt_limit_rule
+        update fx67ll_ai_request_limit_rule
         <trim prefix="SET" suffixOverrides=",">
             <if test="limitRuleDimension != null and limitRuleDimension != ''">limit_rule_dimension =
                 #{limitRuleDimension},
@@ -175,12 +175,12 @@
 
     <delete id="deleteFx67llAiPromptLimitRuleByLimitRuleId" parameterType="Long">
         delete
-        from fx67ll_ai_prompt_limit_rule
+        from fx67ll_ai_request_limit_rule
         where limit_rule_id = #{limitRuleId}
     </delete>
 
     <delete id="deleteFx67llAiPromptLimitRuleByLimitRuleIds" parameterType="String">
-        delete from fx67ll_ai_prompt_limit_rule where limit_rule_id in
+        delete from fx67ll_ai_request_limit_rule where limit_rule_id in
         <foreach item="limitRuleId" collection="array" open="(" separator="," close=")">
             #{limitRuleId}
         </foreach>
