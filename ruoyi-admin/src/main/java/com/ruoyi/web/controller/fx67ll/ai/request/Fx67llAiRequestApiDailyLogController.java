@@ -1,5 +1,6 @@
 package com.ruoyi.web.controller.fx67ll.ai.request;
 
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 import javax.servlet.http.HttpServletResponse;
@@ -32,7 +33,7 @@ import com.ruoyi.common.core.page.TableDataInfo;
  * @date 2026-03-03
  */
 @RestController
-@RequestMapping("/system/log")
+@RequestMapping("/ai/request/daily/log")
 public class Fx67llAiRequestApiDailyLogController extends BaseController {
     @Autowired
     private IFx67llAiRequestApiDailyLogService fx67llAiRequestApiDailyLogService;
@@ -40,18 +41,26 @@ public class Fx67llAiRequestApiDailyLogController extends BaseController {
     /**
      * 查询AI 调用请求日统计日志列表
      */
-    @PreAuthorize("@ss.hasPermi('system:log:list')")
+    @PreAuthorize("@ss.hasPermi('ai:request:daily:log:list')")
     @GetMapping("/list")
     public TableDataInfo list(Fx67llAiRequestApiDailyLog fx67llAiRequestApiDailyLog) {
         startPage();
-        List<Fx67llAiRequestApiDailyLog> list = fx67llAiRequestApiDailyLogService.selectFx67llAiRequestApiDailyLogList(fx67llAiRequestApiDailyLog);
-        return getDataTable(list);
+        if (SecurityUtils.getUsername().equals("fx67ll")) {
+            List<Fx67llAiRequestApiDailyLog> list = fx67llAiRequestApiDailyLogService.selectFx67llAiRequestApiDailyLogList(fx67llAiRequestApiDailyLog);
+            return getDataTable(list);
+        } else {
+             TableDataInfo tableDataInfo = new TableDataInfo();
+             tableDataInfo.setRows(new ArrayList<>());
+             tableDataInfo.setTotal(0);
+             tableDataInfo.setMsg("没有权限查询！");
+             return tableDataInfo;
+        }
     }
 
     /**
      * 导出AI 调用请求日统计日志列表
      */
-    @PreAuthorize("@ss.hasPermi('system:log:export')")
+    @PreAuthorize("@ss.hasPermi('ai:request:daily:log:export')")
     @Log(title = "AI 调用请求日统计日志", businessType = BusinessType.EXPORT)
     @PostMapping("/export")
     public void export(HttpServletResponse response, Fx67llAiRequestApiDailyLog fx67llAiRequestApiDailyLog) {
@@ -63,7 +72,7 @@ public class Fx67llAiRequestApiDailyLogController extends BaseController {
     /**
      * 获取AI 调用请求日统计日志详细信息
      */
-    @PreAuthorize("@ss.hasPermi('system:log:query')")
+    @PreAuthorize("@ss.hasPermi('ai:request:daily:log:query')")
     @GetMapping(value = "/{dailyLogDate}")
     public AjaxResult getInfo(@PathVariable("dailyLogDate") Date dailyLogDate) {
         return success(fx67llAiRequestApiDailyLogService.selectFx67llAiRequestApiDailyLogByDailyLogDate(dailyLogDate));
@@ -72,7 +81,7 @@ public class Fx67llAiRequestApiDailyLogController extends BaseController {
     /**
      * 新增AI 调用请求日统计日志
      */
-    @PreAuthorize("@ss.hasPermi('system:log:add')")
+    @PreAuthorize("@ss.hasPermi('ai:request:daily:log:add')")
     @Log(title = "AI 调用请求日统计日志", businessType = BusinessType.INSERT)
     @PostMapping
     public AjaxResult add(@RequestBody Fx67llAiRequestApiDailyLog fx67llAiRequestApiDailyLog) {
@@ -82,7 +91,7 @@ public class Fx67llAiRequestApiDailyLogController extends BaseController {
     /**
      * 修改AI 调用请求日统计日志
      */
-    @PreAuthorize("@ss.hasPermi('system:log:edit')")
+    @PreAuthorize("@ss.hasPermi('ai:request:daily:log:edit')")
     @Log(title = "AI 调用请求日统计日志", businessType = BusinessType.UPDATE)
     @PutMapping
     public AjaxResult edit(@RequestBody Fx67llAiRequestApiDailyLog fx67llAiRequestApiDailyLog) {
@@ -92,7 +101,7 @@ public class Fx67llAiRequestApiDailyLogController extends BaseController {
     /**
      * 删除AI 调用请求日统计日志
      */
-    @PreAuthorize("@ss.hasPermi('system:log:remove')")
+    @PreAuthorize("@ss.hasPermi('ai:request:daily:log:remove')")
     @Log(title = "AI 调用请求日统计日志", businessType = BusinessType.DELETE)
     @DeleteMapping("/{dailyLogDates}")
     public AjaxResult remove(@PathVariable Date[] dailyLogDates) {

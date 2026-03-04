@@ -31,7 +31,7 @@ import com.ruoyi.common.core.page.TableDataInfo;
  * @date 2026-03-03
  */
 @RestController
-@RequestMapping("/ai/group")
+@RequestMapping("/ai/prompt/group")
 public class Fx67llAiPromptBasicGroupController extends BaseController {
     @Autowired
     private IFx67llAiPromptBasicGroupService fx67llAiPromptBasicGroupService;
@@ -39,11 +39,11 @@ public class Fx67llAiPromptBasicGroupController extends BaseController {
     /**
      * 查询AI Prompt模板分组列表
      */
-    @PreAuthorize("@ss.hasPermi('ai:group:list')")
+    @PreAuthorize("@ss.hasPermi('ai:prompt:group:list')")
     @GetMapping("/list")
     public TableDataInfo list(Fx67llAiPromptBasicGroup fx67llAiPromptBasicGroup) {
         startPage();
-        if (SecurityUtils.getUsername().equals("fx67ll") || SecurityUtils.getUsername().equals("chaoshen")) {
+        if (SecurityUtils.getUsername().equals("fx67ll")) {
             List<Fx67llAiPromptBasicGroup> list = fx67llAiPromptBasicGroupService.selectFx67llAiPromptBasicGroupList(fx67llAiPromptBasicGroup);
             return getDataTable(list);
         } else {
@@ -55,7 +55,7 @@ public class Fx67llAiPromptBasicGroupController extends BaseController {
     /**
      * 导出AI Prompt模板分组列表
      */
-    @PreAuthorize("@ss.hasPermi('ai:group:export')")
+    @PreAuthorize("@ss.hasPermi('ai:prompt:group:export')")
     @Log(title = "AI Prompt模板分组", businessType = BusinessType.EXPORT)
     @PostMapping("/export")
     public void export(HttpServletResponse response, Fx67llAiPromptBasicGroup fx67llAiPromptBasicGroup) {
@@ -67,7 +67,7 @@ public class Fx67llAiPromptBasicGroupController extends BaseController {
     /**
      * 获取AI Prompt模板分组详细信息
      */
-    @PreAuthorize("@ss.hasPermi('ai:group:query')")
+    @PreAuthorize("@ss.hasPermi('ai:prompt:group:query')")
     @GetMapping(value = "/{groupId}")
     public AjaxResult getInfo(@PathVariable("groupId") Long groupId) {
         return success(fx67llAiPromptBasicGroupService.selectFx67llAiPromptBasicGroupByGroupId(groupId));
@@ -76,7 +76,7 @@ public class Fx67llAiPromptBasicGroupController extends BaseController {
     /**
      * 新增AI Prompt模板分组
      */
-    @PreAuthorize("@ss.hasPermi('ai:group:add')")
+    @PreAuthorize("@ss.hasPermi('ai:prompt:group:add')")
     @Log(title = "AI Prompt模板分组", businessType = BusinessType.INSERT)
     @PostMapping
     public AjaxResult add(@RequestBody Fx67llAiPromptBasicGroup fx67llAiPromptBasicGroup) {
@@ -86,7 +86,7 @@ public class Fx67llAiPromptBasicGroupController extends BaseController {
     /**
      * 修改AI Prompt模板分组
      */
-    @PreAuthorize("@ss.hasPermi('ai:group:edit')")
+    @PreAuthorize("@ss.hasPermi('ai:prompt:group:edit')")
     @Log(title = "AI Prompt模板分组", businessType = BusinessType.UPDATE)
     @PutMapping
     public AjaxResult edit(@RequestBody Fx67llAiPromptBasicGroup fx67llAiPromptBasicGroup) {
@@ -96,7 +96,7 @@ public class Fx67llAiPromptBasicGroupController extends BaseController {
     /**
      * 删除AI Prompt模板分组
      */
-    @PreAuthorize("@ss.hasPermi('ai:group:remove')")
+    @PreAuthorize("@ss.hasPermi('ai:prompt:group:remove')")
     @Log(title = "AI Prompt模板分组", businessType = BusinessType.DELETE)
     @DeleteMapping("/{groupIds}")
     public AjaxResult remove(@PathVariable Long[] groupIds) {

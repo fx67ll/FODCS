@@ -31,7 +31,7 @@ import com.ruoyi.common.core.page.TableDataInfo;
  * @date 2026-03-03
  */
 @RestController
-@RequestMapping("/ai/template")
+@RequestMapping("/ai/prompt/template")
 public class Fx67llAiPromptTemplateController extends BaseController {
     @Autowired
     private IFx67llAiPromptTemplateService fx67llAiPromptTemplateService;
@@ -39,11 +39,11 @@ public class Fx67llAiPromptTemplateController extends BaseController {
     /**
      * 查询AI Prompt模板管理列表
      */
-    @PreAuthorize("@ss.hasPermi('ai:template:list')")
+    @PreAuthorize("@ss.hasPermi('ai:prompt:template:list')")
     @GetMapping("/list")
     public TableDataInfo list(Fx67llAiPromptTemplate fx67llAiPromptTemplate) {
         startPage();
-        if (SecurityUtils.getUsername().equals("fx67ll") || SecurityUtils.getUsername().equals("chaoshen")) {
+        if (SecurityUtils.getUsername().equals("fx67ll")) {
             List<Fx67llAiPromptTemplate> list = fx67llAiPromptTemplateService.selectFx67llAiPromptTemplateList(fx67llAiPromptTemplate);
             return getDataTable(list);
         } else {
@@ -55,7 +55,7 @@ public class Fx67llAiPromptTemplateController extends BaseController {
     /**
      * 导出AI Prompt模板管理列表
      */
-    @PreAuthorize("@ss.hasPermi('ai:template:export')")
+    @PreAuthorize("@ss.hasPermi('ai:prompt:template:export')")
     @Log(title = "AI Prompt模板管理", businessType = BusinessType.EXPORT)
     @PostMapping("/export")
     public void export(HttpServletResponse response, Fx67llAiPromptTemplate fx67llAiPromptTemplate) {
@@ -67,7 +67,7 @@ public class Fx67llAiPromptTemplateController extends BaseController {
     /**
      * 获取AI Prompt模板管理详细信息
      */
-    @PreAuthorize("@ss.hasPermi('ai:template:query')")
+    @PreAuthorize("@ss.hasPermi('ai:prompt:template:query')")
     @GetMapping(value = "/{promptId}")
     public AjaxResult getInfo(@PathVariable("promptId") Long promptId) {
         return success(fx67llAiPromptTemplateService.selectFx67llAiPromptTemplateByPromptId(promptId));
@@ -76,7 +76,7 @@ public class Fx67llAiPromptTemplateController extends BaseController {
     /**
      * 新增AI Prompt模板管理
      */
-    @PreAuthorize("@ss.hasPermi('ai:template:add')")
+    @PreAuthorize("@ss.hasPermi('ai:prompt:template:add')")
     @Log(title = "AI Prompt模板管理", businessType = BusinessType.INSERT)
     @PostMapping
     public AjaxResult add(@RequestBody Fx67llAiPromptTemplate fx67llAiPromptTemplate) {
@@ -86,7 +86,7 @@ public class Fx67llAiPromptTemplateController extends BaseController {
     /**
      * 修改AI Prompt模板管理
      */
-    @PreAuthorize("@ss.hasPermi('ai:template:edit')")
+    @PreAuthorize("@ss.hasPermi('ai:prompt:template:edit')")
     @Log(title = "AI Prompt模板管理", businessType = BusinessType.UPDATE)
     @PutMapping
     public AjaxResult edit(@RequestBody Fx67llAiPromptTemplate fx67llAiPromptTemplate) {
@@ -96,7 +96,7 @@ public class Fx67llAiPromptTemplateController extends BaseController {
     /**
      * 删除AI Prompt模板管理
      */
-    @PreAuthorize("@ss.hasPermi('ai:template:remove')")
+    @PreAuthorize("@ss.hasPermi('ai:prompt:template:remove')")
     @Log(title = "AI Prompt模板管理", businessType = BusinessType.DELETE)
     @DeleteMapping("/{promptIds}")
     public AjaxResult remove(@PathVariable Long[] promptIds) {

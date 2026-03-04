@@ -39,11 +39,11 @@ public class Fx67llDortmundBasicMatchController extends BaseController {
     /**
      * 查询比赛记录列表
      */
-    @PreAuthorize("@ss.hasPermi('system:match:list')")
+    @PreAuthorize("@ss.hasPermi('dortmund:match:list')")
     @GetMapping("/list")
     public TableDataInfo list(Fx67llDortmundBasicMatch fx67llDortmundBasicMatch) {
         startPage();
-        if (SecurityUtils.getUsername().equals("fx67ll") || SecurityUtils.getUsername().equals("chaoshen")) {
+        if (SecurityUtils.getUsername().equals("fx67ll") ) {
             List<Fx67llDortmundBasicMatch> list = fx67llDortmundBasicMatchService.selectFx67llDortmundBasicMatchList(fx67llDortmundBasicMatch);
             return getDataTable(list);
         } else {
@@ -55,7 +55,7 @@ public class Fx67llDortmundBasicMatchController extends BaseController {
     /**
      * 导出比赛记录列表
      */
-    @PreAuthorize("@ss.hasPermi('system:match:export')")
+    @PreAuthorize("@ss.hasPermi('dortmund:match:export')")
     @Log(title = "比赛记录", businessType = BusinessType.EXPORT)
     @PostMapping("/export")
     public void export(HttpServletResponse response, Fx67llDortmundBasicMatch fx67llDortmundBasicMatch) {
@@ -67,7 +67,7 @@ public class Fx67llDortmundBasicMatchController extends BaseController {
     /**
      * 获取比赛记录详细信息
      */
-    @PreAuthorize("@ss.hasPermi('system:match:query')")
+    @PreAuthorize("@ss.hasPermi('dortmund:match:query')")
     @GetMapping(value = "/{matchId}")
     public AjaxResult getInfo(@PathVariable("matchId") Long matchId) {
         return success(fx67llDortmundBasicMatchService.selectFx67llDortmundBasicMatchByMatchId(matchId));
@@ -76,7 +76,7 @@ public class Fx67llDortmundBasicMatchController extends BaseController {
     /**
      * 新增比赛记录
      */
-    @PreAuthorize("@ss.hasPermi('system:match:add')")
+    @PreAuthorize("@ss.hasPermi('dortmund:match:add')")
     @Log(title = "比赛记录", businessType = BusinessType.INSERT)
     @PostMapping
     public AjaxResult add(@RequestBody Fx67llDortmundBasicMatch fx67llDortmundBasicMatch) {
@@ -86,7 +86,7 @@ public class Fx67llDortmundBasicMatchController extends BaseController {
     /**
      * 修改比赛记录
      */
-    @PreAuthorize("@ss.hasPermi('system:match:edit')")
+    @PreAuthorize("@ss.hasPermi('dortmund:match:edit')")
     @Log(title = "比赛记录", businessType = BusinessType.UPDATE)
     @PutMapping
     public AjaxResult edit(@RequestBody Fx67llDortmundBasicMatch fx67llDortmundBasicMatch) {
@@ -96,7 +96,7 @@ public class Fx67llDortmundBasicMatchController extends BaseController {
     /**
      * 删除比赛记录
      */
-    @PreAuthorize("@ss.hasPermi('system:match:remove')")
+    @PreAuthorize("@ss.hasPermi('dortmund:match:remove')")
     @Log(title = "比赛记录", businessType = BusinessType.DELETE)
     @DeleteMapping("/{matchIds}")
     public AjaxResult remove(@PathVariable Long[] matchIds) {

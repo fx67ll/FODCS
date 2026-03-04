@@ -39,11 +39,11 @@ public class Fx67llDortmundMatchAnalysisController extends BaseController {
     /**
      * 查询比赛AI分析原始结果列表
      */
-    @PreAuthorize("@ss.hasPermi('system:analysis:list')")
+    @PreAuthorize("@ss.hasPermi('dortmund:analysis:list')")
     @GetMapping("/list")
     public TableDataInfo list(Fx67llDortmundMatchAnalysis fx67llDortmundMatchAnalysis) {
         startPage();
-        if (SecurityUtils.getUsername().equals("fx67ll") || SecurityUtils.getUsername().equals("chaoshen")) {
+        if (SecurityUtils.getUsername().equals("fx67ll") ) {
             List<Fx67llDortmundMatchAnalysis> list = fx67llDortmundMatchAnalysisService.selectFx67llDortmundMatchAnalysisList(fx67llDortmundMatchAnalysis);
             return getDataTable(list);
         } else {
@@ -55,7 +55,7 @@ public class Fx67llDortmundMatchAnalysisController extends BaseController {
     /**
      * 导出比赛AI分析原始结果列表
      */
-    @PreAuthorize("@ss.hasPermi('system:analysis:export')")
+    @PreAuthorize("@ss.hasPermi('dortmund:analysis:export')")
     @Log(title = "比赛AI分析原始结果", businessType = BusinessType.EXPORT)
     @PostMapping("/export")
     public void export(HttpServletResponse response, Fx67llDortmundMatchAnalysis fx67llDortmundMatchAnalysis) {
@@ -67,7 +67,7 @@ public class Fx67llDortmundMatchAnalysisController extends BaseController {
     /**
      * 获取比赛AI分析原始结果详细信息
      */
-    @PreAuthorize("@ss.hasPermi('system:analysis:query')")
+    @PreAuthorize("@ss.hasPermi('dortmund:analysis:query')")
     @GetMapping(value = "/{analysisId}")
     public AjaxResult getInfo(@PathVariable("analysisId") Long analysisId) {
         return success(fx67llDortmundMatchAnalysisService.selectFx67llDortmundMatchAnalysisByAnalysisId(analysisId));
@@ -76,7 +76,7 @@ public class Fx67llDortmundMatchAnalysisController extends BaseController {
     /**
      * 新增比赛AI分析原始结果
      */
-    @PreAuthorize("@ss.hasPermi('system:analysis:add')")
+    @PreAuthorize("@ss.hasPermi('dortmund:analysis:add')")
     @Log(title = "比赛AI分析原始结果", businessType = BusinessType.INSERT)
     @PostMapping
     public AjaxResult add(@RequestBody Fx67llDortmundMatchAnalysis fx67llDortmundMatchAnalysis) {
@@ -86,7 +86,7 @@ public class Fx67llDortmundMatchAnalysisController extends BaseController {
     /**
      * 修改比赛AI分析原始结果
      */
-    @PreAuthorize("@ss.hasPermi('system:analysis:edit')")
+    @PreAuthorize("@ss.hasPermi('dortmund:analysis:edit')")
     @Log(title = "比赛AI分析原始结果", businessType = BusinessType.UPDATE)
     @PutMapping
     public AjaxResult edit(@RequestBody Fx67llDortmundMatchAnalysis fx67llDortmundMatchAnalysis) {
@@ -96,7 +96,7 @@ public class Fx67llDortmundMatchAnalysisController extends BaseController {
     /**
      * 删除比赛AI分析原始结果
      */
-    @PreAuthorize("@ss.hasPermi('system:analysis:remove')")
+    @PreAuthorize("@ss.hasPermi('dortmund:analysis:remove')")
     @Log(title = "比赛AI分析原始结果", businessType = BusinessType.DELETE)
     @DeleteMapping("/{analysisIds}")
     public AjaxResult remove(@PathVariable Long[] analysisIds) {

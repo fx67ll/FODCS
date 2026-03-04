@@ -39,11 +39,11 @@ public class Fx67llDortmundBasicTeamController extends BaseController {
     /**
      * 查询球队管理列表
      */
-    @PreAuthorize("@ss.hasPermi('system:team:list')")
+    @PreAuthorize("@ss.hasPermi('dortmund:team:list')")
     @GetMapping("/list")
     public TableDataInfo list(Fx67llDortmundBasicTeam fx67llDortmundBasicTeam) {
         startPage();
-        if (SecurityUtils.getUsername().equals("fx67ll") || SecurityUtils.getUsername().equals("chaoshen")) {
+        if (SecurityUtils.getUsername().equals("fx67ll") ) {
             List<Fx67llDortmundBasicTeam> list = fx67llDortmundBasicTeamService.selectFx67llDortmundBasicTeamList(fx67llDortmundBasicTeam);
             return getDataTable(list);
         } else {
@@ -55,7 +55,7 @@ public class Fx67llDortmundBasicTeamController extends BaseController {
     /**
      * 导出球队管理列表
      */
-    @PreAuthorize("@ss.hasPermi('system:team:export')")
+    @PreAuthorize("@ss.hasPermi('dortmund:team:export')")
     @Log(title = "球队管理", businessType = BusinessType.EXPORT)
     @PostMapping("/export")
     public void export(HttpServletResponse response, Fx67llDortmundBasicTeam fx67llDortmundBasicTeam) {
@@ -67,7 +67,7 @@ public class Fx67llDortmundBasicTeamController extends BaseController {
     /**
      * 获取球队管理详细信息
      */
-    @PreAuthorize("@ss.hasPermi('system:team:query')")
+    @PreAuthorize("@ss.hasPermi('dortmund:team:query')")
     @GetMapping(value = "/{teamId}")
     public AjaxResult getInfo(@PathVariable("teamId") Long teamId) {
         return success(fx67llDortmundBasicTeamService.selectFx67llDortmundBasicTeamByTeamId(teamId));
@@ -76,7 +76,7 @@ public class Fx67llDortmundBasicTeamController extends BaseController {
     /**
      * 新增球队管理
      */
-    @PreAuthorize("@ss.hasPermi('system:team:add')")
+    @PreAuthorize("@ss.hasPermi('dortmund:team:add')")
     @Log(title = "球队管理", businessType = BusinessType.INSERT)
     @PostMapping
     public AjaxResult add(@RequestBody Fx67llDortmundBasicTeam fx67llDortmundBasicTeam) {
@@ -86,7 +86,7 @@ public class Fx67llDortmundBasicTeamController extends BaseController {
     /**
      * 修改球队管理
      */
-    @PreAuthorize("@ss.hasPermi('system:team:edit')")
+    @PreAuthorize("@ss.hasPermi('dortmund:team:edit')")
     @Log(title = "球队管理", businessType = BusinessType.UPDATE)
     @PutMapping
     public AjaxResult edit(@RequestBody Fx67llDortmundBasicTeam fx67llDortmundBasicTeam) {
@@ -96,7 +96,7 @@ public class Fx67llDortmundBasicTeamController extends BaseController {
     /**
      * 删除球队管理
      */
-    @PreAuthorize("@ss.hasPermi('system:team:remove')")
+    @PreAuthorize("@ss.hasPermi('dortmund:team:remove')")
     @Log(title = "球队管理", businessType = BusinessType.DELETE)
     @DeleteMapping("/{teamIds}")
     public AjaxResult remove(@PathVariable Long[] teamIds) {

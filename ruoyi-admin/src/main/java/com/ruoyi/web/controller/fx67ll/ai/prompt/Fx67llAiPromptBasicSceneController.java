@@ -32,7 +32,7 @@ import com.ruoyi.common.core.page.TableDataInfo;
  * @date 2026-03-03
  */
 @RestController
-@RequestMapping("/ai/scene")
+@RequestMapping("/ai/prompt/scene")
 public class Fx67llAiPromptBasicSceneController extends BaseController {
     @Autowired
     private IFx67llAiPromptBasicSceneService fx67llAiPromptBasicSceneService;
@@ -40,11 +40,11 @@ public class Fx67llAiPromptBasicSceneController extends BaseController {
     /**
      * 查询AI Prompt场景管理列表
      */
-    @PreAuthorize("@ss.hasPermi('ai:scene:list')")
+    @PreAuthorize("@ss.hasPermi('ai:prompt:scene:list')")
     @GetMapping("/list")
     public TableDataInfo list(Fx67llAiPromptBasicScene fx67llAiPromptBasicScene) {
         startPage();
-        if (SecurityUtils.getUsername().equals("fx67ll") || SecurityUtils.getUsername().equals("chaoshen")) {
+        if (SecurityUtils.getUsername().equals("fx67ll")) {
             List<Fx67llAiPromptBasicScene> list = fx67llAiPromptBasicSceneService.selectFx67llAiPromptBasicSceneList(fx67llAiPromptBasicScene);
             return getDataTable(list);
         } else {
@@ -56,7 +56,7 @@ public class Fx67llAiPromptBasicSceneController extends BaseController {
     /**
      * 导出AI Prompt场景管理列表
      */
-    @PreAuthorize("@ss.hasPermi('ai:scene:export')")
+    @PreAuthorize("@ss.hasPermi('ai:prompt:scene:export')")
     @Log(title = "AI Prompt场景管理", businessType = BusinessType.EXPORT)
     @PostMapping("/export")
     public void export(HttpServletResponse response, Fx67llAiPromptBasicScene fx67llAiPromptBasicScene) {
@@ -68,7 +68,7 @@ public class Fx67llAiPromptBasicSceneController extends BaseController {
     /**
      * 获取AI Prompt场景管理详细信息
      */
-    @PreAuthorize("@ss.hasPermi('ai:scene:query')")
+    @PreAuthorize("@ss.hasPermi('ai:prompt:scene:query')")
     @GetMapping(value = "/{sceneId}")
     public AjaxResult getInfo(@PathVariable("sceneId") Long sceneId) {
         return success(fx67llAiPromptBasicSceneService.selectFx67llAiPromptBasicSceneBySceneId(sceneId));
@@ -77,7 +77,7 @@ public class Fx67llAiPromptBasicSceneController extends BaseController {
     /**
      * 新增AI Prompt场景管理
      */
-    @PreAuthorize("@ss.hasPermi('ai:scene:add')")
+    @PreAuthorize("@ss.hasPermi('ai:prompt:scene:add')")
     @Log(title = "AI Prompt场景管理", businessType = BusinessType.INSERT)
     @PostMapping
     public AjaxResult add(@RequestBody Fx67llAiPromptBasicScene fx67llAiPromptBasicScene) {
@@ -87,7 +87,7 @@ public class Fx67llAiPromptBasicSceneController extends BaseController {
     /**
      * 修改AI Prompt场景管理
      */
-    @PreAuthorize("@ss.hasPermi('ai:scene:edit')")
+    @PreAuthorize("@ss.hasPermi('ai:prompt:scene:edit')")
     @Log(title = "AI Prompt场景管理", businessType = BusinessType.UPDATE)
     @PutMapping
     public AjaxResult edit(@RequestBody Fx67llAiPromptBasicScene fx67llAiPromptBasicScene) {
@@ -97,7 +97,7 @@ public class Fx67llAiPromptBasicSceneController extends BaseController {
     /**
      * 删除AI Prompt场景管理
      */
-    @PreAuthorize("@ss.hasPermi('ai:scene:remove')")
+    @PreAuthorize("@ss.hasPermi('ai:prompt:scene:remove')")
     @Log(title = "AI Prompt场景管理", businessType = BusinessType.DELETE)
     @DeleteMapping("/{sceneIds}")
     public AjaxResult remove(@PathVariable Long[] sceneIds) {

@@ -31,7 +31,7 @@ import com.ruoyi.common.core.page.TableDataInfo;
  * @date 2026-03-03
  */
 @RestController
-@RequestMapping("/ai/model")
+@RequestMapping("/ai/prompt/model")
 public class Fx67llAiPromptBasicModelController extends BaseController {
     @Autowired
     private IFx67llAiPromptBasicModelService fx67llAiPromptBasicModelService;
@@ -39,11 +39,11 @@ public class Fx67llAiPromptBasicModelController extends BaseController {
     /**
      * 查询AI Prompt模型配置列表
      */
-    @PreAuthorize("@ss.hasPermi('ai:model:list')")
+    @PreAuthorize("@ss.hasPermi('ai:prompt:model:list')")
     @GetMapping("/list")
     public TableDataInfo list(Fx67llAiPromptBasicModel fx67llAiPromptBasicModel) {
         startPage();
-        if (SecurityUtils.getUsername().equals("fx67ll") || SecurityUtils.getUsername().equals("chaoshen")) {
+        if (SecurityUtils.getUsername().equals("fx67ll")) {
             List<Fx67llAiPromptBasicModel> list = fx67llAiPromptBasicModelService.selectFx67llAiPromptBasicModelList(fx67llAiPromptBasicModel);
             return getDataTable(list);
         } else {
@@ -55,7 +55,7 @@ public class Fx67llAiPromptBasicModelController extends BaseController {
     /**
      * 导出AI Prompt模型配置列表
      */
-    @PreAuthorize("@ss.hasPermi('ai:model:export')")
+    @PreAuthorize("@ss.hasPermi('ai:prompt:model:export')")
     @Log(title = "AI Prompt模型配置", businessType = BusinessType.EXPORT)
     @PostMapping("/export")
     public void export(HttpServletResponse response, Fx67llAiPromptBasicModel fx67llAiPromptBasicModel) {
@@ -67,7 +67,7 @@ public class Fx67llAiPromptBasicModelController extends BaseController {
     /**
      * 获取AI Prompt模型配置详细信息
      */
-    @PreAuthorize("@ss.hasPermi('ai:model:query')")
+    @PreAuthorize("@ss.hasPermi('ai:prompt:model:query')")
     @GetMapping(value = "/{modelId}")
     public AjaxResult getInfo(@PathVariable("modelId") Long modelId) {
         return success(fx67llAiPromptBasicModelService.selectFx67llAiPromptBasicModelByModelId(modelId));
@@ -76,7 +76,7 @@ public class Fx67llAiPromptBasicModelController extends BaseController {
     /**
      * 新增AI Prompt模型配置
      */
-    @PreAuthorize("@ss.hasPermi('ai:model:add')")
+    @PreAuthorize("@ss.hasPermi('ai:prompt:model:add')")
     @Log(title = "AI Prompt模型配置", businessType = BusinessType.INSERT)
     @PostMapping
     public AjaxResult add(@RequestBody Fx67llAiPromptBasicModel fx67llAiPromptBasicModel) {
@@ -86,7 +86,7 @@ public class Fx67llAiPromptBasicModelController extends BaseController {
     /**
      * 修改AI Prompt模型配置
      */
-    @PreAuthorize("@ss.hasPermi('ai:model:edit')")
+    @PreAuthorize("@ss.hasPermi('ai:prompt:model:edit')")
     @Log(title = "AI Prompt模型配置", businessType = BusinessType.UPDATE)
     @PutMapping
     public AjaxResult edit(@RequestBody Fx67llAiPromptBasicModel fx67llAiPromptBasicModel) {
@@ -96,7 +96,7 @@ public class Fx67llAiPromptBasicModelController extends BaseController {
     /**
      * 删除AI Prompt模型配置
      */
-    @PreAuthorize("@ss.hasPermi('ai:model:remove')")
+    @PreAuthorize("@ss.hasPermi('ai:prompt:model:remove')")
     @Log(title = "AI Prompt模型配置", businessType = BusinessType.DELETE)
     @DeleteMapping("/{modelIds}")
     public AjaxResult remove(@PathVariable Long[] modelIds) {

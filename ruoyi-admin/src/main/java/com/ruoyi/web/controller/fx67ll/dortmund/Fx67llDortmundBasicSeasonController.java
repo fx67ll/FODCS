@@ -39,11 +39,11 @@ public class Fx67llDortmundBasicSeasonController extends BaseController {
     /**
      * 查询赛季管理列表
      */
-    @PreAuthorize("@ss.hasPermi('system:season:list')")
+    @PreAuthorize("@ss.hasPermi('dortmund:season:list')")
     @GetMapping("/list")
     public TableDataInfo list(Fx67llDortmundBasicSeason fx67llDortmundBasicSeason) {
         startPage();
-        if (SecurityUtils.getUsername().equals("fx67ll") || SecurityUtils.getUsername().equals("chaoshen")) {
+        if (SecurityUtils.getUsername().equals("fx67ll") ) {
             List<Fx67llDortmundBasicSeason> list = fx67llDortmundBasicSeasonService.selectFx67llDortmundBasicSeasonList(fx67llDortmundBasicSeason);
             return getDataTable(list);
         } else {
@@ -55,7 +55,7 @@ public class Fx67llDortmundBasicSeasonController extends BaseController {
     /**
      * 导出赛季管理列表
      */
-    @PreAuthorize("@ss.hasPermi('system:season:export')")
+    @PreAuthorize("@ss.hasPermi('dortmund:season:export')")
     @Log(title = "赛季管理", businessType = BusinessType.EXPORT)
     @PostMapping("/export")
     public void export(HttpServletResponse response, Fx67llDortmundBasicSeason fx67llDortmundBasicSeason) {
@@ -67,7 +67,7 @@ public class Fx67llDortmundBasicSeasonController extends BaseController {
     /**
      * 获取赛季管理详细信息
      */
-    @PreAuthorize("@ss.hasPermi('system:season:query')")
+    @PreAuthorize("@ss.hasPermi('dortmund:season:query')")
     @GetMapping(value = "/{seasonId}")
     public AjaxResult getInfo(@PathVariable("seasonId") Long seasonId) {
         return success(fx67llDortmundBasicSeasonService.selectFx67llDortmundBasicSeasonBySeasonId(seasonId));
@@ -76,7 +76,7 @@ public class Fx67llDortmundBasicSeasonController extends BaseController {
     /**
      * 新增赛季管理
      */
-    @PreAuthorize("@ss.hasPermi('system:season:add')")
+    @PreAuthorize("@ss.hasPermi('dortmund:season:add')")
     @Log(title = "赛季管理", businessType = BusinessType.INSERT)
     @PostMapping
     public AjaxResult add(@RequestBody Fx67llDortmundBasicSeason fx67llDortmundBasicSeason) {
@@ -86,7 +86,7 @@ public class Fx67llDortmundBasicSeasonController extends BaseController {
     /**
      * 修改赛季管理
      */
-    @PreAuthorize("@ss.hasPermi('system:season:edit')")
+    @PreAuthorize("@ss.hasPermi('dortmund:season:edit')")
     @Log(title = "赛季管理", businessType = BusinessType.UPDATE)
     @PutMapping
     public AjaxResult edit(@RequestBody Fx67llDortmundBasicSeason fx67llDortmundBasicSeason) {
@@ -96,7 +96,7 @@ public class Fx67llDortmundBasicSeasonController extends BaseController {
     /**
      * 删除赛季管理
      */
-    @PreAuthorize("@ss.hasPermi('system:season:remove')")
+    @PreAuthorize("@ss.hasPermi('dortmund:season:remove')")
     @Log(title = "赛季管理", businessType = BusinessType.DELETE)
     @DeleteMapping("/{seasonIds}")
     public AjaxResult remove(@PathVariable Long[] seasonIds) {

@@ -1,10 +1,12 @@
 package com.ruoyi.web.controller.fx67ll.ai.request;
 
+import java.util.ArrayList;
 import java.util.List;
 import javax.servlet.http.HttpServletResponse;
 
 import com.ruoyi.common.utils.SecurityUtils;
 import com.ruoyi.fx67ll.ai.domain.Fx67llAiPromptBasicGroup;
+import com.ruoyi.fx67ll.ai.domain.Fx67llAiRequestApiDailyLog;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -31,7 +33,7 @@ import com.ruoyi.common.core.page.TableDataInfo;
  * @date 2026-03-03
  */
 @RestController
-@RequestMapping("/system/log")
+@RequestMapping("/ai/request/monthly/log")
 public class Fx67llAiRequestApiMonthlyLogController extends BaseController {
     @Autowired
     private IFx67llAiRequestApiMonthlyLogService fx67llAiRequestApiMonthlyLogService;
@@ -39,18 +41,26 @@ public class Fx67llAiRequestApiMonthlyLogController extends BaseController {
     /**
      * 查询AI 调用请求月统计日志列表
      */
-    @PreAuthorize("@ss.hasPermi('system:log:list')")
+    @PreAuthorize("@ss.hasPermi('ai:request:monthly:log:list')")
     @GetMapping("/list")
     public TableDataInfo list(Fx67llAiRequestApiMonthlyLog fx67llAiRequestApiMonthlyLog) {
         startPage();
-        List<Fx67llAiRequestApiMonthlyLog> list = fx67llAiRequestApiMonthlyLogService.selectFx67llAiRequestApiMonthlyLogList(fx67llAiRequestApiMonthlyLog);
-        return getDataTable(list);
+        if (SecurityUtils.getUsername().equals("fx67ll")) {
+            List<Fx67llAiRequestApiMonthlyLog> list = fx67llAiRequestApiMonthlyLogService.selectFx67llAiRequestApiMonthlyLogList(fx67llAiRequestApiMonthlyLog);
+            return getDataTable(list);
+        } else {
+            TableDataInfo tableDataInfo = new TableDataInfo();
+            tableDataInfo.setRows(new ArrayList<>());
+            tableDataInfo.setTotal(0);
+            tableDataInfo.setMsg("没有权限查询！");
+            return tableDataInfo;
+        }
     }
 
     /**
      * 导出AI 调用请求月统计日志列表
      */
-    @PreAuthorize("@ss.hasPermi('system:log:export')")
+    @PreAuthorize("@ss.hasPermi('ai:request:monthly:log:export')")
     @Log(title = "AI 调用请求月统计日志", businessType = BusinessType.EXPORT)
     @PostMapping("/export")
     public void export(HttpServletResponse response, Fx67llAiRequestApiMonthlyLog fx67llAiRequestApiMonthlyLog) {
@@ -62,7 +72,7 @@ public class Fx67llAiRequestApiMonthlyLogController extends BaseController {
     /**
      * 获取AI 调用请求月统计日志详细信息
      */
-    @PreAuthorize("@ss.hasPermi('system:log:query')")
+    @PreAuthorize("@ss.hasPermi('ai:request:monthly:log:query')")
     @GetMapping(value = "/{monthlyLogMonth}")
     public AjaxResult getInfo(@PathVariable("monthlyLogMonth") String monthlyLogMonth) {
         return success(fx67llAiRequestApiMonthlyLogService.selectFx67llAiRequestApiMonthlyLogByMonthlyLogMonth(monthlyLogMonth));
@@ -71,7 +81,7 @@ public class Fx67llAiRequestApiMonthlyLogController extends BaseController {
     /**
      * 新增AI 调用请求月统计日志
      */
-    @PreAuthorize("@ss.hasPermi('system:log:add')")
+    @PreAuthorize("@ss.hasPermi('ai:request:monthly:log:add')")
     @Log(title = "AI 调用请求月统计日志", businessType = BusinessType.INSERT)
     @PostMapping
     public AjaxResult add(@RequestBody Fx67llAiRequestApiMonthlyLog fx67llAiRequestApiMonthlyLog) {
@@ -81,7 +91,7 @@ public class Fx67llAiRequestApiMonthlyLogController extends BaseController {
     /**
      * 修改AI 调用请求月统计日志
      */
-    @PreAuthorize("@ss.hasPermi('system:log:edit')")
+    @PreAuthorize("@ss.hasPermi('ai:request:monthly:log:edit')")
     @Log(title = "AI 调用请求月统计日志", businessType = BusinessType.UPDATE)
     @PutMapping
     public AjaxResult edit(@RequestBody Fx67llAiRequestApiMonthlyLog fx67llAiRequestApiMonthlyLog) {
@@ -91,7 +101,7 @@ public class Fx67llAiRequestApiMonthlyLogController extends BaseController {
     /**
      * 删除AI 调用请求月统计日志
      */
-    @PreAuthorize("@ss.hasPermi('system:log:remove')")
+    @PreAuthorize("@ss.hasPermi('ai:request:monthly:log:remove')")
     @Log(title = "AI 调用请求月统计日志", businessType = BusinessType.DELETE)
     @DeleteMapping("/{monthlyLogMonths}")
     public AjaxResult remove(@PathVariable String[] monthlyLogMonths) {

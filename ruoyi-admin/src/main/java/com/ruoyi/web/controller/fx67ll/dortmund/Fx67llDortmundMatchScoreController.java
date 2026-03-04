@@ -39,11 +39,11 @@ public class Fx67llDortmundMatchScoreController extends BaseController {
     /**
      * 查询比赛标准化评分列表
      */
-    @PreAuthorize("@ss.hasPermi('system:score:list')")
+    @PreAuthorize("@ss.hasPermi('dortmund:score:list')")
     @GetMapping("/list")
     public TableDataInfo list(Fx67llDortmundMatchScore fx67llDortmundMatchScore) {
         startPage();
-        if (SecurityUtils.getUsername().equals("fx67ll") || SecurityUtils.getUsername().equals("chaoshen")) {
+        if (SecurityUtils.getUsername().equals("fx67ll") ) {
             List<Fx67llDortmundMatchScore> list = fx67llDortmundMatchScoreService.selectFx67llDortmundMatchScoreList(fx67llDortmundMatchScore);
             return getDataTable(list);
         } else {
@@ -55,7 +55,7 @@ public class Fx67llDortmundMatchScoreController extends BaseController {
     /**
      * 导出比赛标准化评分列表
      */
-    @PreAuthorize("@ss.hasPermi('system:score:export')")
+    @PreAuthorize("@ss.hasPermi('dortmund:score:export')")
     @Log(title = "比赛标准化评分", businessType = BusinessType.EXPORT)
     @PostMapping("/export")
     public void export(HttpServletResponse response, Fx67llDortmundMatchScore fx67llDortmundMatchScore) {
@@ -67,7 +67,7 @@ public class Fx67llDortmundMatchScoreController extends BaseController {
     /**
      * 获取比赛标准化评分详细信息
      */
-    @PreAuthorize("@ss.hasPermi('system:score:query')")
+    @PreAuthorize("@ss.hasPermi('dortmund:score:query')")
     @GetMapping(value = "/{scoreId}")
     public AjaxResult getInfo(@PathVariable("scoreId") Long scoreId) {
         return success(fx67llDortmundMatchScoreService.selectFx67llDortmundMatchScoreByScoreId(scoreId));
@@ -76,7 +76,7 @@ public class Fx67llDortmundMatchScoreController extends BaseController {
     /**
      * 新增比赛标准化评分
      */
-    @PreAuthorize("@ss.hasPermi('system:score:add')")
+    @PreAuthorize("@ss.hasPermi('dortmund:score:add')")
     @Log(title = "比赛标准化评分", businessType = BusinessType.INSERT)
     @PostMapping
     public AjaxResult add(@RequestBody Fx67llDortmundMatchScore fx67llDortmundMatchScore) {
@@ -86,7 +86,7 @@ public class Fx67llDortmundMatchScoreController extends BaseController {
     /**
      * 修改比赛标准化评分
      */
-    @PreAuthorize("@ss.hasPermi('system:score:edit')")
+    @PreAuthorize("@ss.hasPermi('dortmund:score:edit')")
     @Log(title = "比赛标准化评分", businessType = BusinessType.UPDATE)
     @PutMapping
     public AjaxResult edit(@RequestBody Fx67llDortmundMatchScore fx67llDortmundMatchScore) {
@@ -96,7 +96,7 @@ public class Fx67llDortmundMatchScoreController extends BaseController {
     /**
      * 删除比赛标准化评分
      */
-    @PreAuthorize("@ss.hasPermi('system:score:remove')")
+    @PreAuthorize("@ss.hasPermi('dortmund:score:remove')")
     @Log(title = "比赛标准化评分", businessType = BusinessType.DELETE)
     @DeleteMapping("/{scoreIds}")
     public AjaxResult remove(@PathVariable Long[] scoreIds) {

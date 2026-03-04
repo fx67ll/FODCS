@@ -31,7 +31,7 @@ import com.ruoyi.common.core.page.TableDataInfo;
  * @date 2026-03-03
  */
 @RestController
-@RequestMapping("/system/log")
+@RequestMapping("/ai/request/log")
 public class Fx67llAiRequestLogController extends BaseController {
     @Autowired
     private IFx67llAiRequestLogService fx67llAiRequestLogService;
@@ -39,11 +39,11 @@ public class Fx67llAiRequestLogController extends BaseController {
     /**
      * 查询AI 调用请求日志列表
      */
-    @PreAuthorize("@ss.hasPermi('system:log:list')")
+    @PreAuthorize("@ss.hasPermi('ai:request:log:list')")
     @GetMapping("/list")
     public TableDataInfo list(Fx67llAiRequestLog fx67llAiRequestLog) {
         startPage();
-        if (SecurityUtils.getUsername().equals("fx67ll") || SecurityUtils.getUsername().equals("chaoshen")) {
+        if (SecurityUtils.getUsername().equals("fx67ll")) {
             List<Fx67llAiRequestLog> list = fx67llAiRequestLogService.selectFx67llAiRequestLogList(fx67llAiRequestLog);
             return getDataTable(list);
         } else {
@@ -55,7 +55,7 @@ public class Fx67llAiRequestLogController extends BaseController {
     /**
      * 导出AI 调用请求日志列表
      */
-    @PreAuthorize("@ss.hasPermi('system:log:export')")
+    @PreAuthorize("@ss.hasPermi('ai:request:log:export')")
     @Log(title = "AI 调用请求日志", businessType = BusinessType.EXPORT)
     @PostMapping("/export")
     public void export(HttpServletResponse response, Fx67llAiRequestLog fx67llAiRequestLog) {
@@ -67,7 +67,7 @@ public class Fx67llAiRequestLogController extends BaseController {
     /**
      * 获取AI 调用请求日志详细信息
      */
-    @PreAuthorize("@ss.hasPermi('system:log:query')")
+    @PreAuthorize("@ss.hasPermi('ai:request:log:query')")
     @GetMapping(value = "/{requestLogId}")
     public AjaxResult getInfo(@PathVariable("requestLogId") Long requestLogId) {
         return success(fx67llAiRequestLogService.selectFx67llAiRequestLogByRequestLogId(requestLogId));
@@ -76,7 +76,7 @@ public class Fx67llAiRequestLogController extends BaseController {
     /**
      * 新增AI 调用请求日志
      */
-    @PreAuthorize("@ss.hasPermi('system:log:add')")
+    @PreAuthorize("@ss.hasPermi('ai:request:log:add')")
     @Log(title = "AI 调用请求日志", businessType = BusinessType.INSERT)
     @PostMapping
     public AjaxResult add(@RequestBody Fx67llAiRequestLog fx67llAiRequestLog) {
@@ -86,7 +86,7 @@ public class Fx67llAiRequestLogController extends BaseController {
     /**
      * 修改AI 调用请求日志
      */
-    @PreAuthorize("@ss.hasPermi('system:log:edit')")
+    @PreAuthorize("@ss.hasPermi('ai:request:log:edit')")
     @Log(title = "AI 调用请求日志", businessType = BusinessType.UPDATE)
     @PutMapping
     public AjaxResult edit(@RequestBody Fx67llAiRequestLog fx67llAiRequestLog) {
@@ -96,7 +96,7 @@ public class Fx67llAiRequestLogController extends BaseController {
     /**
      * 删除AI 调用请求日志
      */
-    @PreAuthorize("@ss.hasPermi('system:log:remove')")
+    @PreAuthorize("@ss.hasPermi('ai:request:log:remove')")
     @Log(title = "AI 调用请求日志", businessType = BusinessType.DELETE)
     @DeleteMapping("/{requestLogIds}")
     public AjaxResult remove(@PathVariable Long[] requestLogIds) {
