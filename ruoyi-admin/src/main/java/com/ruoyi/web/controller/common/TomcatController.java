@@ -13,11 +13,14 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.io.*;
+import java.lang.management.ManagementFactory;
 import java.net.InetSocketAddress;
 import java.net.Socket;
 import java.net.SocketTimeoutException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.concurrent.*;
 
 /**
@@ -71,13 +74,27 @@ public class TomcatController extends BaseController {
     }
 
     /**
-     * 查询Tomcat状态
+     * 查询Tomcat状态（增强版）
+     * 返回数据结构：
+     * {
+     * "status": "运行中",
+     * "memoryInfo": {
+     * "totalMemoryMb": 1023,
+     * "availableMemoryMb": 1023,
+     * "usedMemoryMb": 1023,
+     * "tomcatResidentMemoryMb": 1023
+     * }
+     * }
      */
     @PreAuthorize("@ss.hasPermi('system:tomcat:view')")
     @GetMapping("/status")
     public AjaxResult getTomcatStatus() {
         Process process = null;
         BufferedReader reader = null;
+        String status = "已停止";
+        int pid = -1; // 记录Tomcat进程ID
+        boolean isRunning = false;
+
         try {
             // 执行ps命令查找Tomcat进程
             ProcessBuilder pb = new ProcessBuilder("ps", "aux");
@@ -86,22 +103,29 @@ public class TomcatController extends BaseController {
 
             reader = new BufferedReader(new InputStreamReader(process.getInputStream(), "UTF-8"));
             String line;
-            boolean isRunning = false;
 
             // 查找包含Tomcat关键字的进程
             while ((line = reader.readLine()) != null) {
                 if (line.contains(TOMCAT_PROCESS_KEYWORD) && !line.contains("grep")) {
                     isRunning = true;
-                    break;
+                    // 提取PID（ps aux 的第二列）
+                    String[] parts = line.split("\\s+");
+                    if (parts.length > 1) {
+                        try {
+                            pid = Integer.parseInt(parts[1]);
+                        } catch (NumberFormatException e) {
+                            log.warn("解析PID失败，行内容: {}", line);
+                        }
+                    }
+                    break; // 只取第一个匹配的进程
                 }
             }
 
-            // 等待命令完成
+            // 等待ps命令完成
             process.waitFor(5, TimeUnit.SECONDS);
-
-            String status = isRunning ? "运行中" : "已停止";
+            status = isRunning ? "运行中" : "已停止";
             log.info("Tomcat当前状态：{}", status);
-            return AjaxResult.success("查询Tomcat状态成功", status);
+
         } catch (Exception e) {
             log.error("查询Tomcat状态失败：", e);
             return AjaxResult.error("查询Tomcat状态失败：" + e.getMessage());
@@ -109,6 +133,90 @@ public class TomcatController extends BaseController {
             closeReader(reader);
             destroyProcess(process);
         }
+
+        // 获取系统内存信息
+        Map<String, Long> systemMemory = getSystemMemoryInfo();
+
+        // 获取Tomcat进程内存占用（仅当Tomcat运行时）
+        long tomcatMemoryMb = -1;
+        if (isRunning && pid != -1) {
+            tomcatMemoryMb = getTomcatMemoryUsage(pid);
+        } else {
+            tomcatMemoryMb = 0; // 未运行或无法获取时返回0
+        }
+
+        // 组装返回数据
+        Map<String, Object> resultData = new HashMap<>();
+        resultData.put("status", status);
+
+        Map<String, Long> memoryInfo = new HashMap<>();
+        memoryInfo.put("totalMemoryMb", systemMemory.get("totalMemoryMb"));
+        memoryInfo.put("availableMemoryMb", systemMemory.get("availableMemoryMb"));
+        memoryInfo.put("usedMemoryMb", systemMemory.get("usedMemoryMb"));
+        memoryInfo.put("tomcatResidentMemoryMb", tomcatMemoryMb);
+        resultData.put("memoryInfo", memoryInfo);
+
+        return AjaxResult.success("查询Tomcat状态成功", resultData);
+    }
+
+    /**
+     * 获取系统物理内存信息（单位MB）
+     * 返回Map包含：totalMemoryMb, availableMemoryMb, usedMemoryMb
+     */
+    private Map<String, Long> getSystemMemoryInfo() {
+        Map<String, Long> memoryInfo = new HashMap<>();
+        try {
+            com.sun.management.OperatingSystemMXBean osBean =
+                    (com.sun.management.OperatingSystemMXBean) ManagementFactory.getOperatingSystemMXBean();
+            long total = osBean.getTotalPhysicalMemorySize() / (1024 * 1024);
+            long free = osBean.getFreePhysicalMemorySize() / (1024 * 1024);
+            long used = total - free;
+
+            memoryInfo.put("totalMemoryMb", total);
+            memoryInfo.put("availableMemoryMb", free);
+            memoryInfo.put("usedMemoryMb", used);
+        } catch (Exception e) {
+            log.error("获取系统内存信息失败", e);
+            memoryInfo.put("totalMemoryMb", -1L);
+            memoryInfo.put("availableMemoryMb", -1L);
+            memoryInfo.put("usedMemoryMb", -1L);
+        }
+        return memoryInfo;
+    }
+
+    /**
+     * 获取指定进程的常驻内存（RSS）大小，单位MB
+     *
+     * @param pid 进程ID
+     * @return 内存MB数，失败返回-1
+     */
+    private long getTomcatMemoryUsage(int pid) {
+        Process process = null;
+        BufferedReader reader = null;
+        try {
+            ProcessBuilder pb = new ProcessBuilder("ps", "-o", "rss=", "-p", String.valueOf(pid));
+            pb.redirectErrorStream(true);
+            process = pb.start();
+            reader = new BufferedReader(new InputStreamReader(process.getInputStream(), "UTF-8"));
+            String line = reader.readLine();
+            if (line != null && !line.trim().isEmpty()) {
+                String rssStr = line.trim();
+                try {
+                    long rssKB = Long.parseLong(rssStr);
+                    return rssKB / 1024; // 转换为MB
+                } catch (NumberFormatException e) {
+                    log.error("解析RSS数值失败: {}", rssStr, e);
+                }
+            }
+            // 等待命令完成
+            process.waitFor(5, TimeUnit.SECONDS);
+        } catch (Exception e) {
+            log.error("获取Tomcat进程内存失败, PID: {}", pid, e);
+        } finally {
+            closeReader(reader);
+            destroyProcess(process);
+        }
+        return -1;
     }
 
     /**
@@ -226,6 +334,69 @@ public class TomcatController extends BaseController {
             String errorMsg = operationDesc + "失败：流读取异常";
             log.error(errorMsg, e);
             return AjaxResult.error(errorMsg + "，原因：" + e.getMessage());
+        } finally {
+            destroyProcess(process);
+        }
+    }
+
+    /**
+     * 清理系统缓存（执行 sync; echo 3 > /proc/sys/vm/drop_caches）
+     * 注意：需要 root 权限，否则可能失败
+     */
+    @PreAuthorize("@ss.hasPermi('system:tomcat:operate')")
+    @Log(title = "系统缓存清理", businessType = BusinessType.OTHER)
+    @PostMapping("/clearCache")
+    public AjaxResult clearSystemCache() {
+        String operationDesc = "清理系统缓存";
+        log.info("开始{}", operationDesc);
+
+        // 构建命令：使用 sh -c 执行多条命令
+        String[] cmd = {"/bin/sh", "-c", "sync; echo 3 > /proc/sys/vm/drop_caches"};
+        Process process = null;
+        try {
+            ProcessBuilder pb = new ProcessBuilder(cmd);
+            pb.redirectErrorStream(true);
+            process = pb.start();
+
+            // 创建 final 引用供 lambda 使用
+            final Process finalProcess = process;
+
+            // 异步读取输出
+            Future<String> outputFuture = STREAM_EXECUTOR.submit(() -> readStream(finalProcess.getInputStream()));
+
+            // 等待完成，设置超时
+            boolean finished = process.waitFor(COMMAND_TIMEOUT, TimeUnit.SECONDS);
+            if (!finished) {
+                process.destroyForcibly();
+                String errorMsg = operationDesc + "超时，已强制终止";
+                log.error(errorMsg);
+                return AjaxResult.error(errorMsg);
+            }
+
+            String output = outputFuture.get();
+            int exitCode = process.exitValue();
+
+            if (exitCode == 0) {
+                log.info("{}成功，输出：{}", operationDesc, output);
+                return AjaxResult.success(operationDesc + "成功", output);
+            } else {
+                log.error("{}失败，退出码：{}，输出：{}", operationDesc, exitCode, output);
+                // 检查是否权限不足
+                if (output.contains("Permission denied") || output.contains("不允许的操作")) {
+                    return AjaxResult.error(operationDesc + "失败：权限不足，请以root用户运行或配置sudo权限");
+                }
+                return AjaxResult.error(operationDesc + "失败（退出码：" + exitCode + "），详情：" + output);
+            }
+        } catch (IOException e) {
+            log.error(operationDesc + "失败：IO异常", e);
+            return AjaxResult.error(operationDesc + "失败：" + e.getMessage());
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            log.error(operationDesc + "被中断", e);
+            return AjaxResult.error(operationDesc + "被中断");
+        } catch (ExecutionException e) {
+            log.error(operationDesc + "失败：流读取异常", e);
+            return AjaxResult.error(operationDesc + "失败：" + e.getMessage());
         } finally {
             destroyProcess(process);
         }
