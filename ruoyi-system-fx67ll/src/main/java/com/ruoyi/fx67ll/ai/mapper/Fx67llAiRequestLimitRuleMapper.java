@@ -17,7 +17,7 @@ public interface Fx67llAiRequestLimitRuleMapper {
      * @param limitRuleId AI Prompt 限流/熔断规则（适配Sentinel框架）主键
      * @return AI Prompt 限流/熔断规则（适配Sentinel框架）
      */
-    public Fx67llAiRequestLimitRule selectFx67llAiPromptLimitRuleByLimitRuleId(Long limitRuleId);
+    public Fx67llAiRequestLimitRule selectFx67llAiRequestLimitRuleByLimitRuleId(Long limitRuleId);
 
     /**
      * 查询AI Prompt 限流/熔断规则（适配Sentinel框架）列表
@@ -25,7 +25,7 @@ public interface Fx67llAiRequestLimitRuleMapper {
      * @param fx67LlAiRequestLimitRule AI Prompt 限流/熔断规则（适配Sentinel框架）
      * @return AI Prompt 限流/熔断规则（适配Sentinel框架）集合
      */
-    public List<Fx67llAiRequestLimitRule> selectFx67llAiPromptLimitRuleList(Fx67llAiRequestLimitRule fx67LlAiRequestLimitRule);
+    public List<Fx67llAiRequestLimitRule> selectFx67llAiRequestLimitRuleList(Fx67llAiRequestLimitRule fx67LlAiRequestLimitRule);
 
     /**
      * 新增AI Prompt 限流/熔断规则（适配Sentinel框架）
@@ -33,7 +33,7 @@ public interface Fx67llAiRequestLimitRuleMapper {
      * @param fx67LlAiRequestLimitRule AI Prompt 限流/熔断规则（适配Sentinel框架）
      * @return 结果
      */
-    public int insertFx67llAiPromptLimitRule(Fx67llAiRequestLimitRule fx67LlAiRequestLimitRule);
+    public int insertFx67llAiRequestLimitRule(Fx67llAiRequestLimitRule fx67LlAiRequestLimitRule);
 
     /**
      * 修改AI Prompt 限流/熔断规则（适配Sentinel框架）
@@ -41,7 +41,7 @@ public interface Fx67llAiRequestLimitRuleMapper {
      * @param fx67LlAiRequestLimitRule AI Prompt 限流/熔断规则（适配Sentinel框架）
      * @return 结果
      */
-    public int updateFx67llAiPromptLimitRule(Fx67llAiRequestLimitRule fx67LlAiRequestLimitRule);
+    public int updateFx67llAiRequestLimitRule(Fx67llAiRequestLimitRule fx67LlAiRequestLimitRule);
 
     /**
      * 删除AI Prompt 限流/熔断规则（适配Sentinel框架）
@@ -49,7 +49,7 @@ public interface Fx67llAiRequestLimitRuleMapper {
      * @param limitRuleId AI Prompt 限流/熔断规则（适配Sentinel框架）主键
      * @return 结果
      */
-    public int deleteFx67llAiPromptLimitRuleByLimitRuleId(Long limitRuleId);
+    public int deleteFx67llAiRequestLimitRuleByLimitRuleId(Long limitRuleId);
 
     /**
      * 批量删除AI Prompt 限流/熔断规则（适配Sentinel框架）
@@ -57,5 +57,5 @@ public interface Fx67llAiRequestLimitRuleMapper {
      * @param limitRuleIds 需要删除的数据主键集合
      * @return 结果
      */
-    public int deleteFx67llAiPromptLimitRuleByLimitRuleIds(Long[] limitRuleIds);
+    public int deleteFx67llAiRequestLimitRuleByLimitRuleIds(Long[] limitRuleIds);
 }

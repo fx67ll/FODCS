@@ -28,8 +28,8 @@ public class Fx67LlAiRequestLimitRuleServiceImpl implements IFx67llAiRequestLimi
      * @return AI Prompt 限流/熔断规则（适配Sentinel框架）
      */
     @Override
-    public Fx67llAiRequestLimitRule selectFx67llAiPromptLimitRuleByLimitRuleId(Long limitRuleId) {
-        return fx67LlAiRequestLimitRuleMapper.selectFx67llAiPromptLimitRuleByLimitRuleId(limitRuleId);
+    public Fx67llAiRequestLimitRule selectFx67llAiRequestLimitRuleByLimitRuleId(Long limitRuleId) {
+        return fx67LlAiRequestLimitRuleMapper.selectFx67llAiRequestLimitRuleByLimitRuleId(limitRuleId);
     }
 
     /**
@@ -39,8 +39,8 @@ public class Fx67LlAiRequestLimitRuleServiceImpl implements IFx67llAiRequestLimi
      * @return AI Prompt 限流/熔断规则（适配Sentinel框架）
      */
     @Override
-    public List<Fx67llAiRequestLimitRule> selectFx67llAiPromptLimitRuleList(Fx67llAiRequestLimitRule fx67LlAiRequestLimitRule) {
-        return fx67LlAiRequestLimitRuleMapper.selectFx67llAiPromptLimitRuleList(fx67LlAiRequestLimitRule);
+    public List<Fx67llAiRequestLimitRule> selectFx67llAiRequestLimitRuleList(Fx67llAiRequestLimitRule fx67LlAiRequestLimitRule) {
+        return fx67LlAiRequestLimitRuleMapper.selectFx67llAiRequestLimitRuleList(fx67LlAiRequestLimitRule);
     }
 
     /**
@@ -50,9 +50,9 @@ public class Fx67LlAiRequestLimitRuleServiceImpl implements IFx67llAiRequestLimi
      * @return AI Prompt 限流/熔断规则（适配Sentinel框架）
      */
     @Override
-    public List<Fx67llAiRequestLimitRule> selectFx67llAiPromptLimitRuleListByUserId(Fx67llAiRequestLimitRule fx67LlAiRequestLimitRule) {
+    public List<Fx67llAiRequestLimitRule> selectFx67llAiRequestLimitRuleListByUserId(Fx67llAiRequestLimitRule fx67LlAiRequestLimitRule) {
         fx67LlAiRequestLimitRule.setUserId(SecurityUtils.getUserId());
-        return fx67LlAiRequestLimitRuleMapper.selectFx67llAiPromptLimitRuleList(fx67LlAiRequestLimitRule);
+        return fx67LlAiRequestLimitRuleMapper.selectFx67llAiRequestLimitRuleList(fx67LlAiRequestLimitRule);
     }
 
     /**
@@ -62,11 +62,11 @@ public class Fx67LlAiRequestLimitRuleServiceImpl implements IFx67llAiRequestLimi
      * @return 结果
      */
     @Override
-    public int insertFx67llAiPromptLimitRule(Fx67llAiRequestLimitRule fx67LlAiRequestLimitRule) {
+    public int insertFx67llAiRequestLimitRule(Fx67llAiRequestLimitRule fx67LlAiRequestLimitRule) {
         fx67LlAiRequestLimitRule.setUserId(SecurityUtils.getUserId());
         fx67LlAiRequestLimitRule.setCreateBy(SecurityUtils.getUsername());
         fx67LlAiRequestLimitRule.setCreateTime(DateUtils.getNowDate());
-        return fx67LlAiRequestLimitRuleMapper.insertFx67llAiPromptLimitRule(fx67LlAiRequestLimitRule);
+        return fx67LlAiRequestLimitRuleMapper.insertFx67llAiRequestLimitRule(fx67LlAiRequestLimitRule);
     }
 
     /**
@@ -76,10 +76,10 @@ public class Fx67LlAiRequestLimitRuleServiceImpl implements IFx67llAiRequestLimi
      * @return 结果
      */
     @Override
-    public int updateFx67llAiPromptLimitRule(Fx67llAiRequestLimitRule fx67LlAiRequestLimitRule) {
+    public int updateFx67llAiRequestLimitRule(Fx67llAiRequestLimitRule fx67LlAiRequestLimitRule) {
         fx67LlAiRequestLimitRule.setUpdateBy(SecurityUtils.getUsername());
         fx67LlAiRequestLimitRule.setUpdateTime(DateUtils.getNowDate());
-        return fx67LlAiRequestLimitRuleMapper.updateFx67llAiPromptLimitRule(fx67LlAiRequestLimitRule);
+        return fx67LlAiRequestLimitRuleMapper.updateFx67llAiRequestLimitRule(fx67LlAiRequestLimitRule);
     }
 
     /**
@@ -89,8 +89,8 @@ public class Fx67LlAiRequestLimitRuleServiceImpl implements IFx67llAiRequestLimi
      * @return 结果
      */
     @Override
-    public int deleteFx67llAiPromptLimitRuleByLimitRuleIds(Long[] limitRuleIds) {
-        return fx67LlAiRequestLimitRuleMapper.deleteFx67llAiPromptLimitRuleByLimitRuleIds(limitRuleIds);
+    public int deleteFx67llAiRequestLimitRuleByLimitRuleIds(Long[] limitRuleIds) {
+        return fx67LlAiRequestLimitRuleMapper.deleteFx67llAiRequestLimitRuleByLimitRuleIds(limitRuleIds);
     }
 
     /**
@@ -100,7 +100,7 @@ public class Fx67LlAiRequestLimitRuleServiceImpl implements IFx67llAiRequestLimi
      * @return 结果
      */
     @Override
-    public int deleteFx67llAiPromptLimitRuleByLimitRuleId(Long limitRuleId) {
-        return fx67LlAiRequestLimitRuleMapper.deleteFx67llAiPromptLimitRuleByLimitRuleId(limitRuleId);
+    public int deleteFx67llAiRequestLimitRuleByLimitRuleId(Long limitRuleId) {
+        return fx67LlAiRequestLimitRuleMapper.deleteFx67llAiRequestLimitRuleByLimitRuleId(limitRuleId);
     }
 }

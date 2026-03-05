@@ -1,22 +1,22 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <!DOCTYPE mapper
-PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
-"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="com.ruoyi.fx67ll.ai.mapper.Fx67llAiPromptBasicGroupMapper">
-    
+
     <resultMap type="Fx67llAiPromptBasicGroup" id="Fx67llAiPromptBasicGroupResult">
-        <result property="groupId"    column="group_id"    />
-        <result property="groupCode"    column="group_code"    />
-        <result property="groupName"    column="group_name"    />
-        <result property="groupRemark"    column="group_remark"    />
-        <result property="groupStatus"    column="group_status"    />
-        <result property="groupSort"    column="group_sort"    />
+        <result property="groupId" column="group_id"/>
+        <result property="groupCode" column="group_code"/>
+        <result property="groupName" column="group_name"/>
+        <result property="groupRemark" column="group_remark"/>
+        <result property="groupStatus" column="group_status"/>
+        <result property="groupSort" column="group_sort"/>
         <result property="userId" column="user_id"/>
-        <result property="createBy"    column="create_by"    />
-        <result property="createTime"    column="create_time"    />
-        <result property="updateBy"    column="update_by"    />
-        <result property="updateTime"    column="update_time"    />
-        <result property="delFlag"    column="del_flag"    />
+        <result property="createBy" column="create_by"/>
+        <result property="createTime" column="create_time"/>
+        <result property="updateBy" column="update_by"/>
+        <result property="updateTime" column="update_time"/>
+        <result property="delFlag" column="del_flag"/>
     </resultMap>
 
     <sql id="selectFx67llAiPromptBasicGroupVo">
@@ -35,14 +35,15 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         from fx67ll_ai_prompt_group
     </sql>
 
-    <select id="selectFx67llAiPromptBasicGroupList" parameterType="Fx67llAiPromptBasicGroup" resultMap="Fx67llAiPromptBasicGroupResult">
+    <select id="selectFx67llAiPromptBasicGroupList" parameterType="Fx67llAiPromptBasicGroup"
+            resultMap="Fx67llAiPromptBasicGroupResult">
         <include refid="selectFx67llAiPromptBasicGroupVo"/>
-        <where>  
-            <if test="groupCode != null  and groupCode != ''"> and group_code = #{groupCode}</if>
-            <if test="groupName != null  and groupName != ''"> and group_name like concat('%', #{groupName}, '%')</if>
-            <if test="groupRemark != null  and groupRemark != ''"> and group_remark = #{groupRemark}</if>
-            <if test="groupStatus != null  and groupStatus != ''"> and group_status = #{groupStatus}</if>
-            <if test="groupSort != null "> and group_sort = #{groupSort}</if>
+        <where>
+            <if test="groupCode != null  and groupCode != ''">and group_code = #{groupCode}</if>
+            <if test="groupName != null  and groupName != ''">and group_name like concat('%', #{groupName}, '%')</if>
+            <if test="groupRemark != null  and groupRemark != ''">and group_remark = #{groupRemark}</if>
+            <if test="groupStatus != null  and groupStatus != ''">and group_status = #{groupStatus}</if>
+            <if test="groupSort != null ">and group_sort = #{groupSort}</if>
             <if test="delFlag != null  and delFlag != ''">and del_flag = #{delFlag}</if>
             <if test="userId != null ">and user_id = #{userId}</if>
             <if test="createBy != null  and createBy != ''">and create_by like concat('%',
@@ -60,13 +61,15 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         </where>
         order by STR_TO_DATE(create_time, "%Y-%m-%d %H:%i:%s") desc
     </select>
-    
-    <select id="selectFx67llAiPromptBasicGroupByGroupId" parameterType="Long" resultMap="Fx67llAiPromptBasicGroupResult">
+
+    <select id="selectFx67llAiPromptBasicGroupByGroupId" parameterType="Long"
+            resultMap="Fx67llAiPromptBasicGroupResult">
         <include refid="selectFx67llAiPromptBasicGroupVo"/>
         where group_id = #{groupId}
     </select>
-        
-    <insert id="insertFx67llAiPromptBasicGroup" parameterType="Fx67llAiPromptBasicGroup" useGeneratedKeys="true" keyProperty="groupId">
+
+    <insert id="insertFx67llAiPromptBasicGroup" parameterType="Fx67llAiPromptBasicGroup" useGeneratedKeys="true"
+            keyProperty="groupId">
         insert into fx67ll_ai_prompt_group
         <trim prefix="(" suffix=")" suffixOverrides=",">
             <if test="groupCode != null and groupCode != ''">group_code,</if>
@@ -80,7 +83,7 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
             <if test="updateTime != null">update_time,</if>
             <if test="delFlag != null">del_flag,</if>
             <if test="userId != null">user_id,</if>
-         </trim>
+        </trim>
         <trim prefix="values (" suffix=")" suffixOverrides=",">
             <if test="groupCode != null and groupCode != ''">#{groupCode},</if>
             <if test="groupName != null and groupName != ''">#{groupName},</if>
@@ -93,7 +96,7 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
             <if test="updateTime != null">#{updateTime},</if>
             <if test="delFlag != null">#{delFlag},</if>
             <if test="userId != null">#{userId},</if>
-         </trim>
+        </trim>
     </insert>
 
     <update id="updateFx67llAiPromptBasicGroup" parameterType="Fx67llAiPromptBasicGroup">
@@ -115,11 +118,13 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
     </update>
 
     <delete id="deleteFx67llAiPromptBasicGroupByGroupId" parameterType="Long">
-        delete from fx67ll_ai_prompt_group where group_id = #{groupId}
+        delete
+        from fx67ll_ai_prompt_group
+        where group_id = #{groupId}
     </delete>
 
     <delete id="deleteFx67llAiPromptBasicGroupByGroupIds" parameterType="String">
-        delete from fx67ll_ai_prompt_group where group_id in 
+        delete from fx67ll_ai_prompt_group where group_id in
         <foreach item="groupId" collection="array" open="(" separator="," close=")">
             #{groupId}
         </foreach>

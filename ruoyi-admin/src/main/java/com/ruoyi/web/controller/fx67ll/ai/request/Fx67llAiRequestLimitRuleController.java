@@ -33,7 +33,7 @@ import com.ruoyi.common.core.page.TableDataInfo;
 @RequestMapping("/ai/request/rule")
 public class Fx67llAiRequestLimitRuleController extends BaseController {
     @Autowired
-    private IFx67llAiRequestLimitRuleService fx67llAiPromptLimitRuleService;
+    private IFx67llAiRequestLimitRuleService Fx67llAiRequestLimitRuleService;
 
     /**
      * 查询AI Prompt 限流/熔断规则（适配Sentinel框架）列表
@@ -43,10 +43,10 @@ public class Fx67llAiRequestLimitRuleController extends BaseController {
     public TableDataInfo list(Fx67llAiRequestLimitRule fx67LlAiRequestLimitRule) {
         startPage();
         if (SecurityUtils.getUsername().equals("fx67ll")) {
-            List<Fx67llAiRequestLimitRule> list = fx67llAiPromptLimitRuleService.selectFx67llAiPromptLimitRuleList(fx67LlAiRequestLimitRule);
+            List<Fx67llAiRequestLimitRule> list = Fx67llAiRequestLimitRuleService.selectFx67llAiRequestLimitRuleList(fx67LlAiRequestLimitRule);
             return getDataTable(list);
         } else {
-            List<Fx67llAiRequestLimitRule> list = fx67llAiPromptLimitRuleService.selectFx67llAiPromptLimitRuleListByUserId(fx67LlAiRequestLimitRule);
+            List<Fx67llAiRequestLimitRule> list = Fx67llAiRequestLimitRuleService.selectFx67llAiRequestLimitRuleListByUserId(fx67LlAiRequestLimitRule);
             return getDataTable(list);
         }
     }
@@ -58,7 +58,7 @@ public class Fx67llAiRequestLimitRuleController extends BaseController {
     @Log(title = "AI Prompt 限流/熔断规则（适配Sentinel框架）", businessType = BusinessType.EXPORT)
     @PostMapping("/export")
     public void export(HttpServletResponse response, Fx67llAiRequestLimitRule fx67LlAiRequestLimitRule) {
-        List<Fx67llAiRequestLimitRule> list = fx67llAiPromptLimitRuleService.selectFx67llAiPromptLimitRuleList(fx67LlAiRequestLimitRule);
+        List<Fx67llAiRequestLimitRule> list = Fx67llAiRequestLimitRuleService.selectFx67llAiRequestLimitRuleList(fx67LlAiRequestLimitRule);
         ExcelUtil<Fx67llAiRequestLimitRule> util = new ExcelUtil<Fx67llAiRequestLimitRule>(Fx67llAiRequestLimitRule.class);
         util.exportExcel(response, list, "AI Prompt 限流/熔断规则（适配Sentinel框架）数据");
     }
@@ -69,7 +69,7 @@ public class Fx67llAiRequestLimitRuleController extends BaseController {
     @PreAuthorize("@ss.hasPermi('ai:request:rule:query')")
     @GetMapping(value = "/{limitRuleId}")
     public AjaxResult getInfo(@PathVariable("limitRuleId") Long limitRuleId) {
-        return success(fx67llAiPromptLimitRuleService.selectFx67llAiPromptLimitRuleByLimitRuleId(limitRuleId));
+        return success(Fx67llAiRequestLimitRuleService.selectFx67llAiRequestLimitRuleByLimitRuleId(limitRuleId));
     }
 
     /**
@@ -79,7 +79,7 @@ public class Fx67llAiRequestLimitRuleController extends BaseController {
     @Log(title = "AI Prompt 限流/熔断规则（适配Sentinel框架）", businessType = BusinessType.INSERT)
     @PostMapping
     public AjaxResult add(@RequestBody Fx67llAiRequestLimitRule fx67LlAiRequestLimitRule) {
-        return toAjax(fx67llAiPromptLimitRuleService.insertFx67llAiPromptLimitRule(fx67LlAiRequestLimitRule));
+        return toAjax(Fx67llAiRequestLimitRuleService.insertFx67llAiRequestLimitRule(fx67LlAiRequestLimitRule));
     }
 
     /**
@@ -89,7 +89,7 @@ public class Fx67llAiRequestLimitRuleController extends BaseController {
     @Log(title = "AI Prompt 限流/熔断规则（适配Sentinel框架）", businessType = BusinessType.UPDATE)
     @PutMapping
     public AjaxResult edit(@RequestBody Fx67llAiRequestLimitRule fx67LlAiRequestLimitRule) {
-        return toAjax(fx67llAiPromptLimitRuleService.updateFx67llAiPromptLimitRule(fx67LlAiRequestLimitRule));
+        return toAjax(Fx67llAiRequestLimitRuleService.updateFx67llAiRequestLimitRule(fx67LlAiRequestLimitRule));
     }
 
     /**
@@ -99,6 +99,6 @@ public class Fx67llAiRequestLimitRuleController extends BaseController {
     @Log(title = "AI Prompt 限流/熔断规则（适配Sentinel框架）", businessType = BusinessType.DELETE)
     @DeleteMapping("/{limitRuleIds}")
     public AjaxResult remove(@PathVariable Long[] limitRuleIds) {
-        return toAjax(fx67llAiPromptLimitRuleService.deleteFx67llAiPromptLimitRuleByLimitRuleIds(limitRuleIds));
+        return toAjax(Fx67llAiRequestLimitRuleService.deleteFx67llAiRequestLimitRuleByLimitRuleIds(limitRuleIds));
     }
 }

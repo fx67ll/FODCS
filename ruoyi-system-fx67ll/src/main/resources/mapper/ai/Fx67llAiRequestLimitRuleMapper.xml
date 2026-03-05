@@ -4,7 +4,7 @@
         "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="com.ruoyi.fx67ll.ai.mapper.Fx67llAiRequestLimitRuleMapper">
 
-    <resultMap type="Fx67llAiPromptLimitRule" id="Fx67llAiPromptLimitRuleResult">
+    <resultMap type="Fx67llAiRequestLimitRule" id="Fx67llAiRequestLimitRuleResult">
         <result property="limitRuleId" column="limit_rule_id"/>
         <result property="limitRuleDimension" column="limit_rule_dimension"/>
         <result property="limitRuleTargetId" column="limit_rule_target_id"/>
@@ -27,7 +27,7 @@
         <result property="delFlag" column="del_flag"/>
     </resultMap>
 
-    <sql id="selectFx67llAiPromptLimitRuleVo">
+    <sql id="selectFx67llAiRequestLimitRuleVo">
         select limit_rule_id,
                limit_rule_dimension,
                limit_rule_target_id,
@@ -51,9 +51,9 @@
         from fx67ll_ai_request_limit_rule
     </sql>
 
-    <select id="selectFx67llAiPromptLimitRuleList" parameterType="Fx67llAiPromptLimitRule"
-            resultMap="Fx67llAiPromptLimitRuleResult">
-        <include refid="selectFx67llAiPromptLimitRuleVo"/>
+    <select id="selectFx67llAiRequestLimitRuleList" parameterType="Fx67llAiRequestLimitRule"
+            resultMap="Fx67llAiRequestLimitRuleResult">
+        <include refid="selectFx67llAiRequestLimitRuleVo"/>
         <where>
             <if test="limitRuleDimension != null  and limitRuleDimension != ''">and limit_rule_dimension =
                 #{limitRuleDimension}
@@ -92,13 +92,13 @@
         order by STR_TO_DATE(create_time, "%Y-%m-%d %H:%i:%s") desc
     </select>
 
-    <select id="selectFx67llAiPromptLimitRuleByLimitRuleId" parameterType="Long"
-            resultMap="Fx67llAiPromptLimitRuleResult">
-        <include refid="selectFx67llAiPromptLimitRuleVo"/>
+    <select id="selectFx67llAiRequestLimitRuleByLimitRuleId" parameterType="Long"
+            resultMap="Fx67llAiRequestLimitRuleResult">
+        <include refid="selectFx67llAiRequestLimitRuleVo"/>
         where limit_rule_id = #{limitRuleId}
     </select>
 
-    <insert id="insertFx67llAiPromptLimitRule" parameterType="Fx67llAiPromptLimitRule" useGeneratedKeys="true"
+    <insert id="insertFx67llAiRequestLimitRule" parameterType="Fx67llAiRequestLimitRule" useGeneratedKeys="true"
             keyProperty="limitRuleId">
         insert into fx67ll_ai_request_limit_rule
         <trim prefix="(" suffix=")" suffixOverrides=",">
@@ -145,7 +145,7 @@
         </trim>
     </insert>
 
-    <update id="updateFx67llAiPromptLimitRule" parameterType="Fx67llAiPromptLimitRule">
+    <update id="updateFx67llAiRequestLimitRule" parameterType="Fx67llAiRequestLimitRule">
         update fx67ll_ai_request_limit_rule
         <trim prefix="SET" suffixOverrides=",">
             <if test="limitRuleDimension != null and limitRuleDimension != ''">limit_rule_dimension =
@@ -173,13 +173,13 @@
         where limit_rule_id = #{limitRuleId}
     </update>
 
-    <delete id="deleteFx67llAiPromptLimitRuleByLimitRuleId" parameterType="Long">
+    <delete id="deleteFx67llAiRequestLimitRuleByLimitRuleId" parameterType="Long">
         delete
         from fx67ll_ai_request_limit_rule
         where limit_rule_id = #{limitRuleId}
     </delete>
 
-    <delete id="deleteFx67llAiPromptLimitRuleByLimitRuleIds" parameterType="String">
+    <delete id="deleteFx67llAiRequestLimitRuleByLimitRuleIds" parameterType="String">
         delete from fx67ll_ai_request_limit_rule where limit_rule_id in
         <foreach item="limitRuleId" collection="array" open="(" separator="," close=")">
             #{limitRuleId}
