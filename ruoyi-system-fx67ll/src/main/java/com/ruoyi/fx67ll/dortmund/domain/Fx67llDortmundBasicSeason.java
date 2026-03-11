@@ -35,12 +35,6 @@ public class Fx67llDortmundBasicSeason extends BaseEntity {
     private String seasonName;
 
     /**
-     * 赛季业务备注（说明赛事级别、规则等）
-     */
-    @Excel(name = "赛季业务备注", readConverterExp = "说=明赛事级别、规则等")
-    private String seasonRemark;
-
-    /**
      * 赛季开始日期
      */
     @JsonFormat(pattern = "yyyy-MM-dd")
@@ -55,6 +49,18 @@ public class Fx67llDortmundBasicSeason extends BaseEntity {
     private Date seasonEndDate;
 
     /**
+     * 查询条件：赛季开始日期 >= 此日期
+     */
+    @JsonFormat(pattern = "yyyy-MM-dd")
+    private Date seasonStartQueryDate;
+
+    /**
+     * 查询条件：赛季结束日期 <= 此日期
+     */
+    @JsonFormat(pattern = "yyyy-MM-dd")
+    private Date seasonEndQueryDate;
+
+    /**
      * 赛季状态（字典码：0-进行中，1-已结束，2-未开始）
      */
     @Excel(name = "赛季状态", readConverterExp = "字=典码：0-进行中，1-已结束，2-未开始")
@@ -65,6 +71,12 @@ public class Fx67llDortmundBasicSeason extends BaseEntity {
      */
     @Excel(name = "赛季展示排序", readConverterExp = "升=序排列，数值越小越靠前")
     private Integer seasonSort;
+
+    /**
+     * 赛季业务备注（说明赛事级别、规则等）
+     */
+    @Excel(name = "赛季业务备注", readConverterExp = "说=明赛事级别、规则等")
+    private String seasonRemark;
 
     /**
      * 逻辑删除标志（字典码：0-存在，2-已删除）
@@ -121,14 +133,6 @@ public class Fx67llDortmundBasicSeason extends BaseEntity {
         return seasonName;
     }
 
-    public void setSeasonRemark(String seasonRemark) {
-        this.seasonRemark = seasonRemark;
-    }
-
-    public String getSeasonRemark() {
-        return seasonRemark;
-    }
-
     public void setSeasonStartDate(Date seasonStartDate) {
         this.seasonStartDate = seasonStartDate;
     }
@@ -159,6 +163,14 @@ public class Fx67llDortmundBasicSeason extends BaseEntity {
 
     public Integer getSeasonSort() {
         return seasonSort;
+    }
+
+    public void setSeasonRemark(String seasonRemark) {
+        this.seasonRemark = seasonRemark;
+    }
+
+    public String getSeasonRemark() {
+        return seasonRemark;
     }
 
     public void setDelFlag(String delFlag) {
@@ -215,11 +227,11 @@ public class Fx67llDortmundBasicSeason extends BaseEntity {
                 .append("seasonId", getSeasonId())
                 .append("seasonCode", getSeasonCode())
                 .append("seasonName", getSeasonName())
-                .append("seasonRemark", getSeasonRemark())
                 .append("seasonStartDate", getSeasonStartDate())
                 .append("seasonEndDate", getSeasonEndDate())
                 .append("seasonStatus", getSeasonStatus())
                 .append("seasonSort", getSeasonSort())
+                .append("seasonRemark", getSeasonRemark())
                 .append("createBy", getCreateBy())
                 .append("createTime", getCreateTime())
                 .append("updateBy", getUpdateBy())

@@ -8,11 +8,11 @@
         <result property="seasonId" column="season_id"/>
         <result property="seasonCode" column="season_code"/>
         <result property="seasonName" column="season_name"/>
-        <result property="seasonRemark" column="season_remark"/>
         <result property="seasonStartDate" column="season_start_date"/>
         <result property="seasonEndDate" column="season_end_date"/>
         <result property="seasonStatus" column="season_status"/>
         <result property="seasonSort" column="season_sort"/>
+        <result property="seasonRemark" column="season_remark"/>
         <result property="userId" column="user_id"/>
         <result property="createBy" column="create_by"/>
         <result property="createTime" column="create_time"/>
@@ -46,11 +46,27 @@
             <if test="seasonCode != null  and seasonCode != ''">and season_code = #{seasonCode}</if>
             <if test="seasonName != null  and seasonName != ''">and season_name like concat('%', #{seasonName}, '%')
             </if>
-            <if test="seasonRemark != null  and seasonRemark != ''">and season_remark = #{seasonRemark}</if>
-            <if test="seasonStartDate != null ">and season_start_date = #{seasonStartDate}</if>
-            <if test="seasonEndDate != null ">and season_end_date = #{seasonEndDate}</if>
+            <if test="seasonStartDate != null and seasonEndDate != null">
+                and season_start_date >= #{seasonStartDate}
+                and #{seasonEndDate} >= season_end_date
+            </if>
             <if test="seasonStatus != null  and seasonStatus != ''">and season_status = #{seasonStatus}</if>
             <if test="seasonSort != null ">and season_sort = #{seasonSort}</if>
+            <if test="seasonRemark != null  and seasonRemark != ''">and season_remark = #{seasonRemark}</if>
+            <if test="delFlag != null  and delFlag != ''">and del_flag = #{delFlag}</if>
+            <if test="userId != null ">and user_id = #{userId}</if>
+            <if test="createBy != null  and createBy != ''">and create_by like concat('%',
+                #{createBy}, '%')
+            </if>
+            <if test="beginCreateTime != null and endCreateTime != ''">and create_time between #{beginCreateTime} and
+                #{endCreateTime}
+            </if>
+            <if test="updateBy != null  and updateBy != ''">and update_by like concat('%',
+                #{updateBy}, '%')
+            </if>
+            <if test="beginUpdateTime != null and endUpdateTime != ''">and update_time between #{beginUpdateTime} and
+                #{endUpdateTime}
+            </if>
         </where>
         order by STR_TO_DATE(create_time, "%Y-%m-%d %H:%i:%s") desc
     </select>

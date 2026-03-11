@@ -76,10 +76,16 @@ public class Fx67llAiPromptBasicModel extends BaseEntity {
     private String modelRequestHeader;
 
     /**
-     * 模型业务备注（说明模型特点、使用限制等）
+     * 模型计费单价（元/千Token，用于成本估算）
      */
-    @Excel(name = "模型业务备注", readConverterExp = "说=明模型特点、使用限制等")
-    private String modelRemark;
+    @Excel(name = "模型计费单价", readConverterExp = "元=/千Token，用于成本估算")
+    private BigDecimal modelTokenPrice;
+
+    /**
+     * 计价货币类型（ISO 4217货币码，如CNY、USD）
+     */
+    @Excel(name = "计价货币类型", readConverterExp = "I=SO,4=217货币码，如CNY、USD")
+    private String modelTokenCurrency;
 
     /**
      * 模型启用状态（字典码：0-启用，1-停用）
@@ -94,16 +100,10 @@ public class Fx67llAiPromptBasicModel extends BaseEntity {
     private Integer modelSort;
 
     /**
-     * 模型计费单价（元/千Token，用于成本估算）
+     * 模型业务备注（说明模型特点、使用限制等）
      */
-    @Excel(name = "模型计费单价", readConverterExp = "元=/千Token，用于成本估算")
-    private BigDecimal modelTokenPrice;
-
-    /**
-     * 计价货币类型（ISO 4217货币码，如CNY、USD）
-     */
-    @Excel(name = "计价货币类型", readConverterExp = "I=SO,4=217货币码，如CNY、USD")
-    private String modelTokenCurrency;
+    @Excel(name = "模型业务备注", readConverterExp = "说=明模型特点、使用限制等")
+    private String modelRemark;
 
     /**
      * 逻辑删除标志（字典码：0-存在，2-已删除）
@@ -216,12 +216,20 @@ public class Fx67llAiPromptBasicModel extends BaseEntity {
         return modelRequestHeader;
     }
 
-    public void setModelRemark(String modelRemark) {
-        this.modelRemark = modelRemark;
+    public void setModelTokenPrice(BigDecimal modelTokenPrice) {
+        this.modelTokenPrice = modelTokenPrice;
     }
 
-    public String getModelRemark() {
-        return modelRemark;
+    public BigDecimal getModelTokenPrice() {
+        return modelTokenPrice;
+    }
+
+    public void setModelTokenCurrency(String modelTokenCurrency) {
+        this.modelTokenCurrency = modelTokenCurrency;
+    }
+
+    public String getModelTokenCurrency() {
+        return modelTokenCurrency;
     }
 
     public void setModelStatus(String modelStatus) {
@@ -240,20 +248,12 @@ public class Fx67llAiPromptBasicModel extends BaseEntity {
         return modelSort;
     }
 
-    public void setModelTokenPrice(BigDecimal modelTokenPrice) {
-        this.modelTokenPrice = modelTokenPrice;
+    public void setModelRemark(String modelRemark) {
+        this.modelRemark = modelRemark;
     }
 
-    public BigDecimal getModelTokenPrice() {
-        return modelTokenPrice;
-    }
-
-    public void setModelTokenCurrency(String modelTokenCurrency) {
-        this.modelTokenCurrency = modelTokenCurrency;
-    }
-
-    public String getModelTokenCurrency() {
-        return modelTokenCurrency;
+    public String getModelRemark() {
+        return modelRemark;
     }
 
     public void setDelFlag(String delFlag) {
@@ -317,11 +317,11 @@ public class Fx67llAiPromptBasicModel extends BaseEntity {
                 .append("modelApiVersion", getModelApiVersion())
                 .append("modelConfigParams", getModelConfigParams())
                 .append("modelRequestHeader", getModelRequestHeader())
-                .append("modelRemark", getModelRemark())
-                .append("modelStatus", getModelStatus())
-                .append("modelSort", getModelSort())
                 .append("modelTokenPrice", getModelTokenPrice())
                 .append("modelTokenCurrency", getModelTokenCurrency())
+                .append("modelStatus", getModelStatus())
+                .append("modelSort", getModelSort())
+                .append("modelRemark", getModelRemark())
                 .append("createBy", getCreateBy())
                 .append("createTime", getCreateTime())
                 .append("updateBy", getUpdateBy())

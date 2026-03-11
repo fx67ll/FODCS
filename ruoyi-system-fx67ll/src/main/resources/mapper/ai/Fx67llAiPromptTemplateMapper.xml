@@ -8,8 +8,11 @@
         <result property="promptId" column="prompt_id"/>
         <result property="promptName" column="prompt_name"/>
         <result property="groupId" column="group_id"/>
+        <result property="groupName" column="group_name"/>
         <result property="sceneId" column="scene_id"/>
+        <result property="sceneName" column="scene_name"/>
         <result property="modelId" column="model_id"/>
+        <result property="modelName" column="model_name"/>
         <result property="promptContent" column="prompt_content"/>
         <result property="promptVariableConfig" column="prompt_variable_config"/>
         <result property="promptCustomConfigParams" column="prompt_custom_config_params"/>
@@ -45,34 +48,54 @@
 
     <select id="selectFx67llAiPromptTemplateList" parameterType="Fx67llAiPromptTemplate"
             resultMap="Fx67llAiPromptTemplateResult">
-        <include refid="selectFx67llAiPromptTemplateVo"/>
+        select
+        t.prompt_id,
+        t.prompt_name,
+        t.group_id,
+        t.scene_id,
+        t.model_id,
+        t.prompt_content,
+        t.prompt_variable_config,
+        t.prompt_custom_config_params,
+        t.prompt_status,
+        t.prompt_remark,
+        t.user_id,
+        t.create_by,
+        t.create_time,
+        t.update_by,
+        t.update_time,
+        t.del_flag,
+        g.group_name as group_name, -- 关联分组名称
+        s.scene_name as scene_name, -- 关联场景名称
+        m.model_name as model_name -- 关联模型名称
+        from fx67ll_ai_prompt_template t
+        left join fx67ll_ai_prompt_group g on t.group_id = g.group_id and g.del_flag = '0'
+        left join fx67ll_ai_prompt_scene s on t.scene_id = s.scene_id and s.del_flag = '0'
+        left join fx67ll_ai_prompt_model m on t.model_id = m.model_id and m.del_flag = '0'
         <where>
-            <if test="promptName != null  and promptName != ''">and prompt_name like concat('%', #{promptName}, '%')
+            t.del_flag = '0'   <!-- 只查询未删除的模板，可根据需要调整 -->
+            <if test="promptName != null and promptName != ''">and t.prompt_name like concat('%', #{promptName}, '%')
             </if>
-            <if test="groupId != null ">and group_id = #{groupId}</if>
-            <if test="sceneId != null ">and scene_id = #{sceneId}</if>
-            <if test="modelId != null ">and model_id = #{modelId}</if>
-            <if test="promptContent != null  and promptContent != ''">and prompt_content = #{promptContent}</if>
-            <if test="promptVariableConfig != null  and promptVariableConfig != ''">and prompt_variable_config =
+            <if test="groupId != null ">and t.group_id = #{groupId}</if>
+            <if test="sceneId != null ">and t.scene_id = #{sceneId}</if>
+            <if test="modelId != null ">and t.model_id = #{modelId}</if>
+            <if test="promptContent != null and promptContent != ''">and t.prompt_content = #{promptContent}</if>
+            <if test="promptVariableConfig != null and promptVariableConfig != ''">and t.prompt_variable_config =
                 #{promptVariableConfig}
             </if>
-            <if test="promptCustomConfigParams != null  and promptCustomConfigParams != ''">and
-                prompt_custom_config_params = #{promptCustomConfigParams}
+            <if test="promptCustomConfigParams != null and promptCustomConfigParams != ''">and
+                t.prompt_custom_config_params = #{promptCustomConfigParams}
             </if>
-            <if test="promptStatus != null  and promptStatus != ''">and prompt_status = #{promptStatus}</if>
-            <if test="promptRemark != null  and promptRemark != ''">and prompt_remark = #{promptRemark}</if>
+            <if test="promptStatus != null and promptStatus != ''">and t.prompt_status = #{promptStatus}</if>
+            <if test="promptRemark != null and promptRemark != ''">and t.prompt_remark = #{promptRemark}</if>
             <if test="delFlag != null  and delFlag != ''">and del_flag = #{delFlag}</if>
-            <if test="userId != null ">and user_id = #{userId}</if>
-            <if test="createBy != null  and createBy != ''">and create_by like concat('%',
-                #{createBy}, '%')
-            </if>
-            <if test="beginCreateTime != null and endCreateTime != ''">and create_time between #{beginCreateTime} and
+            <if test="userId != null ">and t.user_id = #{userId}</if>
+            <if test="createBy != null and createBy != ''">and t.create_by like concat('%', #{createBy}, '%')</if>
+            <if test="beginCreateTime != null and endCreateTime != ''">and t.create_time between #{beginCreateTime} and
                 #{endCreateTime}
             </if>
-            <if test="updateBy != null  and updateBy != ''">and update_by like concat('%',
-                #{updateBy}, '%')
-            </if>
-            <if test="beginUpdateTime != null and endUpdateTime != ''">and update_time between #{beginUpdateTime} and
+            <if test="updateBy != null and updateBy != ''">and t.update_by like concat('%', #{updateBy}, '%')</if>
+            <if test="beginUpdateTime != null and endUpdateTime != ''">and t.update_time between #{beginUpdateTime} and
                 #{endUpdateTime}
             </if>
         </where>

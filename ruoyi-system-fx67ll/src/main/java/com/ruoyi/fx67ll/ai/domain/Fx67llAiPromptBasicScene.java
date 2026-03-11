@@ -38,12 +38,6 @@ public class Fx67llAiPromptBasicScene extends BaseEntity {
     private String sceneDesc;
 
     /**
-     * 场景扩展备注
-     */
-    @Excel(name = "场景扩展备注")
-    private String sceneRemark;
-
-    /**
      * 场景启用状态（字典码：0-启用，1-停用）
      */
     @Excel(name = "场景启用状态", readConverterExp = "字=典码：0-启用，1-停用")
@@ -54,6 +48,12 @@ public class Fx67llAiPromptBasicScene extends BaseEntity {
      */
     @Excel(name = "场景展示排序", readConverterExp = "升=序排列，数值越小越靠前")
     private Integer sceneSort;
+
+    /**
+     * 场景扩展备注
+     */
+    @Excel(name = "场景扩展备注")
+    private String sceneRemark;
 
     /**
      * 逻辑删除标志（字典码：0-存在，2-已删除）
@@ -118,14 +118,6 @@ public class Fx67llAiPromptBasicScene extends BaseEntity {
         return sceneDesc;
     }
 
-    public void setSceneRemark(String sceneRemark) {
-        this.sceneRemark = sceneRemark;
-    }
-
-    public String getSceneRemark() {
-        return sceneRemark;
-    }
-
     public void setSceneStatus(String sceneStatus) {
         this.sceneStatus = sceneStatus;
     }
@@ -140,6 +132,14 @@ public class Fx67llAiPromptBasicScene extends BaseEntity {
 
     public Integer getSceneSort() {
         return sceneSort;
+    }
+
+    public void setSceneRemark(String sceneRemark) {
+        this.sceneRemark = sceneRemark;
+    }
+
+    public String getSceneRemark() {
+        return sceneRemark;
     }
 
     public void setDelFlag(String delFlag) {
@@ -197,9 +197,9 @@ public class Fx67llAiPromptBasicScene extends BaseEntity {
                 .append("sceneCode", getSceneCode())
                 .append("sceneName", getSceneName())
                 .append("sceneDesc", getSceneDesc())
-                .append("sceneRemark", getSceneRemark())
                 .append("sceneStatus", getSceneStatus())
                 .append("sceneSort", getSceneSort())
+                .append("sceneRemark", getSceneRemark())
                 .append("createBy", getCreateBy())
                 .append("createTime", getCreateTime())
                 .append("updateBy", getUpdateBy())

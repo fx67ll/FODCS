@@ -9,9 +9,9 @@
         <result property="sceneCode" column="scene_code"/>
         <result property="sceneName" column="scene_name"/>
         <result property="sceneDesc" column="scene_desc"/>
-        <result property="sceneRemark" column="scene_remark"/>
         <result property="sceneStatus" column="scene_status"/>
         <result property="sceneSort" column="scene_sort"/>
+        <result property="sceneRemark" column="scene_remark"/>
         <result property="userId" column="user_id"/>
         <result property="createBy" column="create_by"/>
         <result property="createTime" column="create_time"/>
@@ -44,9 +44,9 @@
             <if test="sceneCode != null  and sceneCode != ''">and scene_code = #{sceneCode}</if>
             <if test="sceneName != null  and sceneName != ''">and scene_name like concat('%', #{sceneName}, '%')</if>
             <if test="sceneDesc != null  and sceneDesc != ''">and scene_desc = #{sceneDesc}</if>
-            <if test="sceneRemark != null  and sceneRemark != ''">and scene_remark = #{sceneRemark}</if>
             <if test="sceneStatus != null  and sceneStatus != ''">and scene_status = #{sceneStatus}</if>
             <if test="sceneSort != null ">and scene_sort = #{sceneSort}</if>
+            <if test="sceneRemark != null  and sceneRemark != ''">and scene_remark = #{sceneRemark}</if>
             <if test="delFlag != null  and delFlag != ''">and del_flag = #{delFlag}</if>
             <if test="userId != null ">and user_id = #{userId}</if>
             <if test="createBy != null  and createBy != ''">and create_by like concat('%',

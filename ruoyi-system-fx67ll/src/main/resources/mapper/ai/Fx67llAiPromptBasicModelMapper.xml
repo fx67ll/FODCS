@@ -15,11 +15,11 @@
         <result property="modelApiVersion" column="model_api_version"/>
         <result property="modelConfigParams" column="model_config_params"/>
         <result property="modelRequestHeader" column="model_request_header"/>
-        <result property="modelRemark" column="model_remark"/>
-        <result property="modelStatus" column="model_status"/>
-        <result property="modelSort" column="model_sort"/>
         <result property="modelTokenPrice" column="model_token_price"/>
         <result property="modelTokenCurrency" column="model_token_currency"/>
+        <result property="modelStatus" column="model_status"/>
+        <result property="modelSort" column="model_sort"/>
+        <result property="modelRemark" column="model_remark"/>
         <result property="userId" column="user_id"/>
         <result property="createBy" column="create_by"/>
         <result property="createTime" column="create_time"/>
@@ -71,13 +71,13 @@
             <if test="modelRequestHeader != null  and modelRequestHeader != ''">and model_request_header =
                 #{modelRequestHeader}
             </if>
-            <if test="modelRemark != null  and modelRemark != ''">and model_remark = #{modelRemark}</if>
-            <if test="modelStatus != null  and modelStatus != ''">and model_status = #{modelStatus}</if>
-            <if test="modelSort != null ">and model_sort = #{modelSort}</if>
             <if test="modelTokenPrice != null ">and model_token_price = #{modelTokenPrice}</if>
             <if test="modelTokenCurrency != null  and modelTokenCurrency != ''">and model_token_currency =
                 #{modelTokenCurrency}
             </if>
+            <if test="modelStatus != null  and modelStatus != ''">and model_status = #{modelStatus}</if>
+            <if test="modelSort != null ">and model_sort = #{modelSort}</if>
+            <if test="modelRemark != null  and modelRemark != ''">and model_remark = #{modelRemark}</if>
             <if test="delFlag != null  and delFlag != ''">and del_flag = #{delFlag}</if>
             <if test="userId != null ">and user_id = #{userId}</if>
             <if test="createBy != null  and createBy != ''">and create_by like concat('%',

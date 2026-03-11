@@ -31,17 +31,29 @@ public class Fx67llAiPromptTemplate extends BaseEntity {
     @Excel(name = "所属分组ID", readConverterExp = "外=键，关联fx67ll_ai_prompt_group.group_id，强制约束模板与分组的归属关系")
     private Long groupId;
 
+    /** 分组名称（非数据库字段，用于列表展示） */
+    @Excel(name = "分组名称")
+    private String groupName;
+
     /**
      * 所属场景ID（外键，关联fx67ll_ai_prompt_scene.scene_id，定义模板的业务应用场景）
      */
     @Excel(name = "所属场景ID", readConverterExp = "外=键，关联fx67ll_ai_prompt_scene.scene_id，定义模板的业务应用场景")
     private Long sceneId;
 
+    /** 场景名称（非数据库字段，用于列表展示） */
+    @Excel(name = "场景名称")
+    private String sceneName;
+
     /**
      * 默认绑定模型ID（外键，关联fx67ll_ai_prompt_model.model_id，指定模板调用的AI模型）
      */
     @Excel(name = "默认绑定模型ID", readConverterExp = "外=键，关联fx67ll_ai_prompt_model.model_id，指定模板调用的AI模型")
     private Long modelId;
+
+    /** 模型名称（非数据库字段，用于列表展示） */
+    @Excel(name = "模型名称")
+    private String modelName;
 
     /**
      * Prompt模板主体内容（含变量占位符，如{{team_name}}）

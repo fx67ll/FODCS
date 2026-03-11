@@ -8,9 +8,9 @@
         <result property="groupId" column="group_id"/>
         <result property="groupCode" column="group_code"/>
         <result property="groupName" column="group_name"/>
-        <result property="groupRemark" column="group_remark"/>
         <result property="groupStatus" column="group_status"/>
         <result property="groupSort" column="group_sort"/>
+        <result property="groupRemark" column="group_remark"/>
         <result property="userId" column="user_id"/>
         <result property="createBy" column="create_by"/>
         <result property="createTime" column="create_time"/>

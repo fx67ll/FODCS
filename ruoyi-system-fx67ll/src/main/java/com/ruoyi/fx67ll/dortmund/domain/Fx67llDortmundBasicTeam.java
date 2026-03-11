@@ -62,12 +62,6 @@ public class Fx67llDortmundBasicTeam extends BaseEntity {
     private String teamTag;
 
     /**
-     * 球队业务备注
-     */
-    @Excel(name = "球队业务备注")
-    private String teamRemark;
-
-    /**
      * 球队状态（字典码：0-启用，1-停用）
      */
     @Excel(name = "球队状态", readConverterExp = "字=典码：0-启用，1-停用")
@@ -78,6 +72,12 @@ public class Fx67llDortmundBasicTeam extends BaseEntity {
      */
     @Excel(name = "球队展示排序", readConverterExp = "升=序排列，数值越小越靠前")
     private Integer teamSort;
+
+    /**
+     * 球队业务备注
+     */
+    @Excel(name = "球队业务备注")
+    private String teamRemark;
 
     /**
      * 逻辑删除标志（字典码：0-存在，2-已删除）
@@ -174,14 +174,6 @@ public class Fx67llDortmundBasicTeam extends BaseEntity {
         return teamTag;
     }
 
-    public void setTeamRemark(String teamRemark) {
-        this.teamRemark = teamRemark;
-    }
-
-    public String getTeamRemark() {
-        return teamRemark;
-    }
-
     public void setTeamStatus(String teamStatus) {
         this.teamStatus = teamStatus;
     }
@@ -196,6 +188,14 @@ public class Fx67llDortmundBasicTeam extends BaseEntity {
 
     public Integer getTeamSort() {
         return teamSort;
+    }
+
+    public void setTeamRemark(String teamRemark) {
+        this.teamRemark = teamRemark;
+    }
+
+    public String getTeamRemark() {
+        return teamRemark;
     }
 
     public void setDelFlag(String delFlag) {
@@ -257,9 +257,9 @@ public class Fx67llDortmundBasicTeam extends BaseEntity {
                 .append("teamLogoUrl", getTeamLogoUrl())
                 .append("teamCountry", getTeamCountry())
                 .append("teamTag", getTeamTag())
-                .append("teamRemark", getTeamRemark())
                 .append("teamStatus", getTeamStatus())
                 .append("teamSort", getTeamSort())
+                .append("teamRemark", getTeamRemark())
                 .append("createBy", getCreateBy())
                 .append("createTime", getCreateTime())
                 .append("updateBy", getUpdateBy())

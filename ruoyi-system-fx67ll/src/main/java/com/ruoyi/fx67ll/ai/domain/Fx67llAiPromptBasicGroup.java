@@ -38,16 +38,16 @@ public class Fx67llAiPromptBasicGroup extends BaseEntity {
     private String groupStatus;
 
     /**
-     * 分组业务备注（说明分组的用途、范围）
-     */
-    @Excel(name = "分组业务备注", readConverterExp = "说=明分组的用途、范围")
-    private String groupRemark;
-
-    /**
      * 分组展示排序（升序排列，数值越小越靠前）
      */
     @Excel(name = "分组展示排序", readConverterExp = "升=序排列，数值越小越靠前")
     private Integer groupSort;
+
+    /**
+     * 分组业务备注（说明分组的用途、范围）
+     */
+    @Excel(name = "分组业务备注", readConverterExp = "说=明分组的用途、范围")
+    private String groupRemark;
 
     /**
      * 逻辑删除标志（字典码：0-存在，2-已删除）
@@ -104,14 +104,6 @@ public class Fx67llAiPromptBasicGroup extends BaseEntity {
         return groupName;
     }
 
-    public void setgroupRemark(String groupRemark) {
-        this.groupRemark = groupRemark;
-    }
-
-    public String getgroupRemark() {
-        return groupRemark;
-    }
-
     public void setGroupStatus(String groupStatus) {
         this.groupStatus = groupStatus;
     }
@@ -126,6 +118,14 @@ public class Fx67llAiPromptBasicGroup extends BaseEntity {
 
     public Integer getGroupSort() {
         return groupSort;
+    }
+
+    public void setgroupRemark(String groupRemark) {
+        this.groupRemark = groupRemark;
+    }
+
+    public String getgroupRemark() {
+        return groupRemark;
     }
 
     public void setDelFlag(String delFlag) {
@@ -182,9 +182,9 @@ public class Fx67llAiPromptBasicGroup extends BaseEntity {
                 .append("groupId", getGroupId())
                 .append("groupCode", getGroupCode())
                 .append("groupName", getGroupName())
-                .append("groupRemark", getgroupRemark())
                 .append("groupStatus", getGroupStatus())
                 .append("groupSort", getGroupSort())
+                .append("groupRemark", getgroupRemark())
                 .append("createBy", getCreateBy())
                 .append("createTime", getCreateTime())
                 .append("updateBy", getUpdateBy())

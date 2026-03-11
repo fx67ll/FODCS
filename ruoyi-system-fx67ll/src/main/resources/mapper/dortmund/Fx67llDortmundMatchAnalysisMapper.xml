@@ -53,6 +53,20 @@
             <if test="rawPrompt != null  and rawPrompt != ''">and raw_prompt = #{rawPrompt}</if>
             <if test="rawAiResponse != null  and rawAiResponse != ''">and raw_ai_response = #{rawAiResponse}</if>
             <if test="analysisRemark != null  and analysisRemark != ''">and analysis_remark = #{analysisRemark}</if>
+            <if test="delFlag != null  and delFlag != ''">and del_flag = #{delFlag}</if>
+            <if test="userId != null ">and user_id = #{userId}</if>
+            <if test="createBy != null  and createBy != ''">and create_by like concat('%',
+                #{createBy}, '%')
+            </if>
+            <if test="beginCreateTime != null and endCreateTime != ''">and create_time between #{beginCreateTime} and
+                #{endCreateTime}
+            </if>
+            <if test="updateBy != null  and updateBy != ''">and update_by like concat('%',
+                #{updateBy}, '%')
+            </if>
+            <if test="beginUpdateTime != null and endUpdateTime != ''">and update_time between #{beginUpdateTime} and
+                #{endUpdateTime}
+            </if>
         </where>
         order by STR_TO_DATE(create_time, "%Y-%m-%d %H:%i:%s") desc
     </select>
