@@ -1,7 +1,10 @@
 # FODCS
 fx67ll One Data Center Server
 
-欢迎访问 [fx67ll's 管理系统](https://vip.fx67ll.com) ~
+欢迎访问 [fx67ll's 管理系统](https://vip.fx67ll.com) 
+
+## 0.8.7.20260312
+* 增强球队名称模糊搜索  
 
 ## 0.8.6.20260311
 * 完善`模版管理 + 分组管理 + 场景管理 + 模型管理 + 赛季管理 + 球队管理`的实体类和SQL  
