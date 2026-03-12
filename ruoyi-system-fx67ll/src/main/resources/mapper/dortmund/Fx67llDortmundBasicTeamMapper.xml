@@ -50,7 +50,11 @@
         <include refid="selectFx67llDortmundBasicTeamVo"/>
         <where>
             <if test="teamCode != null  and teamCode != ''">and team_code = #{teamCode}</if>
-            <if test="teamName != null  and teamName != ''">and team_name like concat('%', #{teamName}, '%')</if>
+            <if test="teamName != null  and teamName != ''">
+                and (team_name like concat('%', #{teamName}, '%')
+                or team_name_short like concat('%', #{teamName}, '%')
+                or team_name_en like concat('%', #{teamName}, '%'))
+            </if>
             <if test="teamNameShort != null  and teamNameShort != ''">and team_name_short = #{teamNameShort}</if>
             <if test="teamNameEn != null  and teamNameEn != ''">and team_name_en = #{teamNameEn}</if>
             <if test="teamLogoUrl != null  and teamLogoUrl != ''">and team_logo_url = #{teamLogoUrl}</if>
