@@ -807,9 +807,9 @@ CREATE TABLE `fx67ll_ai_request_limit_rule` (
 CREATE TABLE `fx67ll_ai_request_log` (
   `request_log_id` bigint(20) NOT NULL AUTO_INCREMENT COMMENT '日志唯一标识（分区表主键，与request_time组成复合聚集索引）',
   `prompt_id` bigint(20) DEFAULT NULL COMMENT '关联模板ID（外键，直接调用模型时为空）',
+  `group_id` bigint(20) DEFAULT NULL COMMENT '关联分组ID（外键，直接调用模型时为空）',
   `scene_id` bigint(20) DEFAULT NULL COMMENT '关联场景ID（外键，直接调用模型时为空）',
   `model_id` bigint(20) NOT NULL COMMENT '调用模型ID（外键，关联fx67ll_ai_prompt_model.model_id）',
-  `model_vendor` varchar(66) NOT NULL COMMENT '模型厂商标识（冗余字段，避免关联查询）',
   `request_content` text COMMENT '请求完整内容（含最终渲染后的Prompt文本）',
   `response_content` text COMMENT '响应完整内容（大文本存储AI返回结果）',
   `prompt_tokens` int(11) DEFAULT 0 COMMENT '输入Token消耗量（Prompt部分）',
@@ -828,27 +828,37 @@ CREATE TABLE `fx67ll_ai_request_log` (
   KEY `idx_request_log_id` (`request_log_id`),
   KEY `idx_request_time` (`request_time`),
   KEY `idx_prompt_id` (`prompt_id`),
+  KEY `idx_group_id` (`group_id`),
   KEY `idx_scene_id` (`scene_id`),
   KEY `idx_model_id` (`model_id`),
   KEY `idx_call_status` (`call_status`),
-  KEY `idx_request_time_vendor` (`request_time`, `model_vendor`),
-  KEY `idx_scene_model_time` (`scene_id`, `model_id`, `request_time`),
+  KEY `idx_group_scene_model_time` (`group_id`, `scene_id`, `model_id`, `request_time`),
   KEY `idx_user_id` (`user_id`) COMMENT '用户ID索引（加速按用户查询调用日志）',
   KEY `idx_user_id_time` (`user_id`, `request_time`) COMMENT '用户+时间组合索引（优化按用户查询时间段日志）',
   KEY `idx_user_id_status` (`user_id`, `call_status`) COMMENT '用户+调用状态组合索引（优化按用户筛选失败日志）'
 ) ENGINE=innodb DEFAULT CHARSET=utf8mb4 
 COMMENT='AI 调用请求日志表（按request_time月份分区，记录所有AI API调用的详细信息）'
 PARTITION BY RANGE (TO_DAYS(request_time)) (
+  PARTITION p202602 VALUES LESS THAN (TO_DAYS('2026-03-01')),
   PARTITION p202603 VALUES LESS THAN (TO_DAYS('2026-04-01')),
   PARTITION p202604 VALUES LESS THAN (TO_DAYS('2026-05-01')),
   PARTITION p202605 VALUES LESS THAN (TO_DAYS('2026-06-01')),
+  PARTITION p202606 VALUES LESS THAN (TO_DAYS('2026-07-01')),
+  PARTITION p202607 VALUES LESS THAN (TO_DAYS('2026-08-01')),
+  PARTITION p202608 VALUES LESS THAN (TO_DAYS('2026-09-01')),
+  PARTITION p202609 VALUES LESS THAN (TO_DAYS('2026-10-01')),
+  PARTITION p202610 VALUES LESS THAN (TO_DAYS('2026-11-01')),
+  PARTITION p202611 VALUES LESS THAN (TO_DAYS('2026-12-01')),
+  PARTITION p202612 VALUES LESS THAN (TO_DAYS('2027-01-01')),
   PARTITION p_default VALUES LESS THAN MAXVALUE
 );
 
 CREATE TABLE `fx67ll_ai_request_daily_log` (
   `daily_log_date` date NOT NULL COMMENT '统计日期（yyyy-MM-dd，分区键）',
-  `model_id` bigint(20) NOT NULL COMMENT '统计维度：模型ID（-1表示全模型汇总）',
+  `prompt_id` bigint(20) NOT NULL COMMENT '统计维度：模版ID（-1表示全模版汇总）',
+  `group_id` bigint(20) NOT NULL COMMENT '统计维度：分组ID（-1表示全分组汇总）',
   `scene_id` bigint(20) NOT NULL COMMENT '统计维度：场景ID（-1表示全场景汇总）',
+  `model_id` bigint(20) NOT NULL COMMENT '统计维度：模型ID（-1表示全模型汇总）',
   `total_requests` int(11) DEFAULT 0 COMMENT '统计周期内API总调用次数（含所有状态）',
   `fail_requests` int(11) DEFAULT 0 COMMENT '统计周期内业务失败调用次数',
   `limit_requests` int(11) DEFAULT 0 COMMENT '统计周期内限流拦截调用次数',
@@ -857,13 +867,15 @@ CREATE TABLE `fx67ll_ai_request_daily_log` (
   `total_completion_tokens` bigint(20) DEFAULT 0 COMMENT '统计周期内总输出Token消耗量',
   `total_cost` decimal(12,6) DEFAULT 0.000000 COMMENT '统计周期内总预估费用（元）',
   `avg_duration_ms` int(11) DEFAULT 0 COMMENT '统计周期内平均请求耗时（毫秒，总耗时/成功请求数）',
-  PRIMARY KEY (`daily_log_date`, `model_id`, `scene_id`) COMMENT '复合主键：日期+模型+场景（唯一确定一条统计记录）'
+  PRIMARY KEY (`daily_log_date`, `model_id`) COMMENT '复合主键：日期+模型（唯一确定一条统计记录）'
 ) ENGINE=innodb DEFAULT CHARSET=utf8mb4 COMMENT='AI 调用请求日统计日志表';
 
 CREATE TABLE `fx67ll_ai_request_monthly_log` (
   `monthly_log_month` varchar(7) NOT NULL COMMENT '统计月份（yyyy-MM，分区键）',
-  `model_id` bigint(20) NOT NULL COMMENT '统计维度：模型ID（-1表示全模型汇总）',
+  `prompt_id` bigint(20) NOT NULL COMMENT '统计维度：模版ID（-1表示全模版汇总）',
+  `group_id` bigint(20) NOT NULL COMMENT '统计维度：分组ID（-1表示全分组汇总）',
   `scene_id` bigint(20) NOT NULL COMMENT '统计维度：场景ID（-1表示全场景汇总）',
+  `model_id` bigint(20) NOT NULL COMMENT '统计维度：模型ID（-1表示全模型汇总）',
   `total_requests` int(11) DEFAULT 0 COMMENT '统计周期内API总调用次数（含所有状态）',
   `fail_requests` int(11) DEFAULT 0 COMMENT '统计周期内业务失败调用次数',
   `limit_requests` int(11) DEFAULT 0 COMMENT '统计周期内限流拦截调用次数',
@@ -872,19 +884,21 @@ CREATE TABLE `fx67ll_ai_request_monthly_log` (
   `total_completion_tokens` bigint(20) DEFAULT 0 COMMENT '统计周期内总输出Token消耗量',
   `total_cost` decimal(12,6) DEFAULT 0.000000 COMMENT '统计周期内总预估费用（元）',
   `avg_duration_ms` int(11) DEFAULT 0 COMMENT '统计周期内平均请求耗时（毫秒）',
-  PRIMARY KEY (`monthly_log_month`, `model_id`, `scene_id`) COMMENT '复合主键：月份+模型+场景（唯一确定一条统计记录）'
+  PRIMARY KEY (`monthly_log_month`, `model_id`) COMMENT '复合主键：月份+模型（唯一确定一条统计记录）'
 ) ENGINE=innodb DEFAULT CHARSET=utf8mb4 COMMENT='AI 调用请求月统计日志表';
 
 CREATE TABLE `fx67ll_ai_request_yearly_log` (
   `yearly_log_year` varchar(4) NOT NULL COMMENT '统计年份（yyyy，分区键）',
-  `model_id` bigint(20) NOT NULL COMMENT '统计维度：模型ID（-1表示全模型汇总）',
+  `prompt_id` bigint(20) NOT NULL COMMENT '统计维度：模版ID（-1表示全模版汇总）',
+  `group_id` bigint(20) NOT NULL COMMENT '统计维度：分组ID（-1表示全分组汇总）',
   `scene_id` bigint(20) NOT NULL COMMENT '统计维度：场景ID（-1表示全场景汇总）',
+  `model_id` bigint(20) NOT NULL COMMENT '统计维度：模型ID（-1表示全模型汇总）',
   `total_requests` bigint(20) DEFAULT 0 COMMENT '统计周期内API总调用次数（含所有状态）',
   `total_prompt_tokens` bigint(20) DEFAULT 0 COMMENT '统计周期内总输入Token消耗量',
   `total_completion_tokens` bigint(20) DEFAULT 0 COMMENT '统计周期内总输出Token消耗量',
   `total_cost` decimal(14,6) DEFAULT 0.000000 COMMENT '统计周期内总预估费用（元）',
   `avg_duration_ms` int(11) DEFAULT 0 COMMENT '统计周期内平均请求耗时（毫秒）',
-  PRIMARY KEY (`yearly_log_year`, `model_id`, `scene_id`) COMMENT '复合主键：年份+模型+场景（唯一确定一条统计记录）'
+  PRIMARY KEY (`yearly_log_year`, `model_id`) COMMENT '复合主键：年份+模型（唯一确定一条统计记录）'
 ) ENGINE=innodb DEFAULT CHARSET=utf8mb4 COMMENT='AI 调用请求年统计日志表';
 
 
@@ -933,6 +947,7 @@ CREATE TABLE `fx67ll_dortmund_team` (
   `team_name_short` varchar(10) NOT NULL COMMENT '球队简称或昵称（如我横、大黄蜂）',
   `team_name_en` varchar(233) NOT NULL COMMENT '球队英文全称（如Borussia Dortmund）',
   `team_logo_url` varchar(1023) NOT NULL COMMENT '球队Logo图片URL地址',
+  `team_venue` varchar(233) NOT NULL COMMENT '球队主场（如伊杜纳信号公园球场）',
   `team_country` varchar(23) NOT NULL COMMENT '球队所属国家/地区（如德国、英格兰）',
   `team_tag` varchar(1023) NOT NULL COMMENT '球队标签（如主场龙、客场虫）',
   `team_status` char(1)  NOT NULL DEFAULT '0' COMMENT '球队状态（字典码：0-启用，1-停用）',
@@ -961,8 +976,8 @@ CREATE TABLE `fx67ll_dortmund_match` (
   `away_team_id` bigint(20) NOT NULL COMMENT '客队球队ID（外键，关联fx67ll_dortmund_team.team_id）',
   `match_time` datetime NOT NULL COMMENT '比赛开球时间',
   `match_venue` varchar(233) DEFAULT '' COMMENT '比赛举办场地名称',
-  `match_status` char(1) DEFAULT '0' COMMENT '比赛状态（字典码：0-未开始，1-进行中，2-已结束）',
-  `analysis_count` int(4) DEFAULT 0 COMMENT 'AI分析次数（统计该比赛已生成的分析报告数量）',
+  `match_status` char(1) NOT NULL COMMENT '比赛状态（字典码：0-正常，1-关闭）',
+  `analysis_count` int(4) NOT NULL COMMENT 'AI分析次数（统计该比赛已生成的分析报告数量）',
   `match_remark` varchar(1023) DEFAULT '' COMMENT '比赛业务备注（如轮次、特殊说明）',
   `user_id` bigint(20) NOT NULL COMMENT '用户ID',
   `create_by` varchar(64) DEFAULT '' COMMENT '记录创建者用户名',
