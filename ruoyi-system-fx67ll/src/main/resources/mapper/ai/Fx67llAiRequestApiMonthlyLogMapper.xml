@@ -6,8 +6,10 @@
 
     <resultMap type="Fx67llAiRequestApiMonthlyLog" id="Fx67llAiRequestApiMonthlyLogResult">
         <result property="monthlyLogMonth" column="monthly_log_month"/>
-        <result property="modelId" column="model_id"/>
+        <result property="promptId" column="prompt_id"/>
+        <result property="groupId" column="group_id"/>
         <result property="sceneId" column="scene_id"/>
+        <result property="modelId" column="model_id"/>
         <result property="totalRequests" column="total_requests"/>
         <result property="failRequests" column="fail_requests"/>
         <result property="limitRequests" column="limit_requests"/>
@@ -20,8 +22,10 @@
 
     <sql id="selectFx67llAiRequestApiMonthlyLogVo">
         select monthly_log_month,
-               model_id,
+               prompt_id,
+               group_id,
                scene_id,
+               model_id,
                total_requests,
                fail_requests,
                limit_requests,
@@ -59,8 +63,10 @@
         insert into fx67ll_ai_request_monthly_log
         <trim prefix="(" suffix=")" suffixOverrides=",">
             <if test="monthlyLogMonth != null">monthly_log_month,</if>
-            <if test="modelId != null">model_id,</if>
+            <if test="promptId != null">prompt_id,</if>
+            <if test="groupId != null">group_id,</if>
             <if test="sceneId != null">scene_id,</if>
+            <if test="modelId != null">model_id,</if>
             <if test="totalRequests != null">total_requests,</if>
             <if test="failRequests != null">fail_requests,</if>
             <if test="limitRequests != null">limit_requests,</if>
@@ -72,8 +78,10 @@
         </trim>
         <trim prefix="values (" suffix=")" suffixOverrides=",">
             <if test="monthlyLogMonth != null">#{monthlyLogMonth},</if>
-            <if test="modelId != null">#{modelId},</if>
+            <if test="promptId != null">#{promptId},</if>
+            <if test="groupId != null">#{groupId},</if>
             <if test="sceneId != null">#{sceneId},</if>
+            <if test="modelId != null">#{modelId},</if>
             <if test="totalRequests != null">#{totalRequests},</if>
             <if test="failRequests != null">#{failRequests},</if>
             <if test="limitRequests != null">#{limitRequests},</if>
@@ -88,8 +96,10 @@
     <update id="updateFx67llAiRequestApiMonthlyLog" parameterType="Fx67llAiRequestApiMonthlyLog">
         update fx67ll_ai_request_monthly_log
         <trim prefix="SET" suffixOverrides=",">
-            <if test="modelId != null">model_id = #{modelId},</if>
+            <if test="promptId != null">prompt_id = #{promptId},</if>
+            <if test="groupId != null ">group_id = #{groupId},</if>
             <if test="sceneId != null">scene_id = #{sceneId},</if>
+            <if test="modelId != null">model_id = #{modelId},</if>
             <if test="totalRequests != null">total_requests = #{totalRequests},</if>
             <if test="failRequests != null">fail_requests = #{failRequests},</if>
             <if test="limitRequests != null">limit_requests = #{limitRequests},</if>

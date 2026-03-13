@@ -23,14 +23,50 @@ public class Fx67llAiRequestApiDailyLog extends BaseEntity {
     private Date dailyLogDate;
 
     /**
-     * 统计维度：模型ID（-1表示全模型汇总）
+     * 关联模板ID（外键，直接调用模型时为空）
      */
+    @Excel(name = "关联模板ID", readConverterExp = "外=键，直接调用模型时为空")
+    private Long promptId;
+
+    /**
+     * 模板名称（非数据库字段，用于列表展示）
+     */
+    @Excel(name = "模板名称")
+    private String promptName;
+
+    /**
+     * 所属分组ID（外键，关联fx67ll_ai_prompt_group.group_id，强制约束模板与分组的归属关系）
+     */
+    @Excel(name = "所属分组ID", readConverterExp = "外=键，关联fx67ll_ai_prompt_group.group_id，强制约束模板与分组的归属关系")
+    private Long groupId;
+
+    /** 分组名称（非数据库字段，用于列表展示） */
+    @Excel(name = "分组名称")
+    private String groupName;
+
+    /**
+     * 关联场景ID（外键，直接调用模型时为空）
+     */
+    @Excel(name = "关联场景ID", readConverterExp = "外=键，直接调用模型时为空")
+    private Long sceneId;
+
+    /**
+     * 场景名称（非数据库字段，用于列表展示）
+     */
+    @Excel(name = "场景名称")
+    private String sceneName;
+
+    /**
+     * 调用模型ID（外键，关联fx67ll_ai_prompt_model.model_id）
+     */
+    @Excel(name = "调用模型ID", readConverterExp = "外=键，关联fx67ll_ai_prompt_model.model_id")
     private Long modelId;
 
     /**
-     * 统计维度：场景ID（-1表示全场景汇总）
+     * 模型名称（非数据库字段，用于列表展示）
      */
-    private Long sceneId;
+    @Excel(name = "模型名称")
+    private String modelName;
 
     /**
      * 统计周期内API总调用次数（含所有状态）
@@ -88,12 +124,36 @@ public class Fx67llAiRequestApiDailyLog extends BaseEntity {
         return dailyLogDate;
     }
 
-    public void setModelId(Long modelId) {
-        this.modelId = modelId;
+    public void setPromptId(Long promptId) {
+        this.promptId = promptId;
     }
 
-    public Long getModelId() {
-        return modelId;
+    public Long getPromptId() {
+        return promptId;
+    }
+
+    public void setPromptName(String promptName) {
+        this.promptName = promptName;
+    }
+
+    public String getPromptName() {
+        return promptName;
+    }
+
+    public void setGroupId(Long groupId) {
+        this.groupId = groupId;
+    }
+
+    public Long getGroupId() {
+        return groupId;
+    }
+
+    public void setGroupName(String groupName) {
+        this.groupName = groupName;
+    }
+
+    public String getGroupName() {
+        return groupName;
     }
 
     public void setSceneId(Long sceneId) {
@@ -102,6 +162,30 @@ public class Fx67llAiRequestApiDailyLog extends BaseEntity {
 
     public Long getSceneId() {
         return sceneId;
+    }
+
+    public void setSceneName(String sceneName) {
+        this.sceneName = sceneName;
+    }
+
+    public String getSceneName() {
+        return sceneName;
+    }
+
+    public void setModelId(Long modelId) {
+        this.modelId = modelId;
+    }
+
+    public Long getModelId() {
+        return modelId;
+    }
+
+    public void setModelName(String modelName) {
+        this.modelName = modelName;
+    }
+
+    public String getModelName() {
+        return modelName;
     }
 
     public void setTotalRequests(Long totalRequests) {
@@ -172,8 +256,14 @@ public class Fx67llAiRequestApiDailyLog extends BaseEntity {
     public String toString() {
         return new ToStringBuilder(this, ToStringStyle.MULTI_LINE_STYLE)
                 .append("dailyLogDate", getDailyLogDate())
-                .append("modelId", getModelId())
+                .append("promptId", getPromptId())
+                .append("promptName", getPromptName())
+                .append("groupId", getGroupId())
+                .append("groupName", getGroupName())
                 .append("sceneId", getSceneId())
+                .append("sceneName", getSceneName())
+                .append("modelId", getModelId())
+                .append("modelName", getModelName())
                 .append("totalRequests", getTotalRequests())
                 .append("failRequests", getFailRequests())
                 .append("limitRequests", getLimitRequests())
