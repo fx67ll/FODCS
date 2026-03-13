@@ -35,16 +35,34 @@ public class Fx67llDortmundBasicMatch extends BaseEntity {
     private Long seasonId;
 
     /**
+     * 赛季名称（关联查询）
+     */
+    @Excel(name = "赛季名称")
+    private String seasonName;
+
+    /**
      * 主队球队ID（外键，关联fx67ll_dortmund_team.team_id）
      */
     @Excel(name = "主队球队ID", readConverterExp = "外=键，关联fx67ll_dortmund_team.team_id")
     private Long homeTeamId;
 
     /**
+     * 主队名称（关联查询）
+     */
+    @Excel(name = "主队名称")
+    private String homeTeamName;
+
+    /**
      * 客队球队ID（外键，关联fx67ll_dortmund_team.team_id）
      */
     @Excel(name = "客队球队ID", readConverterExp = "外=键，关联fx67ll_dortmund_team.team_id")
     private Long awayTeamId;
+
+    /**
+     * 客队名称（关联查询）
+     */
+    @Excel(name = "客队名称")
+    private String awayTeamName;
 
     /**
      * 比赛开球时间
@@ -108,6 +126,17 @@ public class Fx67llDortmundBasicMatch extends BaseEntity {
      */
     private String endUpdateTime;
 
+    /**
+     * 比赛开始时间查询参数
+     */
+    private String beginMatchTime;
+
+    /**
+     * 比赛结束时间查询参数
+     */
+    private String endMatchTime;
+
+
     public void setMatchId(Long matchId) {
         this.matchId = matchId;
     }
@@ -132,12 +161,28 @@ public class Fx67llDortmundBasicMatch extends BaseEntity {
         return seasonId;
     }
 
+    public String getSeasonName() {
+        return seasonName;
+    }
+
+    public void setSeasonName(String seasonName) {
+        this.seasonName = seasonName;
+    }
+
     public void setHomeTeamId(Long homeTeamId) {
         this.homeTeamId = homeTeamId;
     }
 
     public Long getHomeTeamId() {
         return homeTeamId;
+    }
+
+    public String getHomeTeamName() {
+        return homeTeamName;
+    }
+
+    public void setHomeTeamName(String homeTeamName) {
+        this.homeTeamName = homeTeamName;
     }
 
     public void setAwayTeamId(Long awayTeamId) {
@@ -147,6 +192,15 @@ public class Fx67llDortmundBasicMatch extends BaseEntity {
     public Long getAwayTeamId() {
         return awayTeamId;
     }
+
+    public String getAwayTeamName() {
+        return awayTeamName;
+    }
+
+    public void setAwayTeamName(String awayTeamName) {
+        this.awayTeamName = awayTeamName;
+    }
+
 
     public void setMatchTime(Date matchTime) {
         this.matchTime = matchTime;
@@ -236,14 +290,33 @@ public class Fx67llDortmundBasicMatch extends BaseEntity {
         this.endUpdateTime = endUpdateTime;
     }
 
+    public String getBeginMatchTime() {
+        return beginMatchTime;
+    }
+
+    public void setBeginMatchTime(String beginMatchTime) {
+        this.beginMatchTime = beginMatchTime;
+    }
+
+    public String getEndMatchTime() {
+        return endMatchTime;
+    }
+
+    public void setEndMatchTime(String endMatchTime) {
+        this.endMatchTime = endMatchTime;
+    }
+
     @Override
     public String toString() {
         return new ToStringBuilder(this, ToStringStyle.MULTI_LINE_STYLE)
                 .append("matchId", getMatchId())
                 .append("matchCode", getMatchCode())
                 .append("seasonId", getSeasonId())
+                .append("seasonName", getSeasonName())
                 .append("homeTeamId", getHomeTeamId())
+                .append("homeTeamName", getHomeTeamName())
                 .append("awayTeamId", getAwayTeamId())
+                .append("awayTeamName", getAwayTeamName())
                 .append("matchTime", getMatchTime())
                 .append("matchVenue", getMatchVenue())
                 .append("matchRemark", getMatchRemark())
@@ -259,6 +332,8 @@ public class Fx67llDortmundBasicMatch extends BaseEntity {
                 .append("endCreateTime", getEndCreateTime())
                 .append("beginUpdateTime", getBeginUpdateTime())
                 .append("endUpdateTime", getEndUpdateTime())
+                .append("beginMatchTime", getBeginMatchTime())
+                .append("endMatchTime", getEndMatchTime())
                 .toString();
     }
 }

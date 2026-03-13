@@ -140,6 +140,14 @@ public class Fx67llAiPromptTemplate extends BaseEntity {
         return groupId;
     }
 
+    public String getGroupName() {
+        return groupName;
+    }
+
+    public void setGroupName(String groupName) {
+        this.groupName = groupName;
+    }
+
     public void setSceneId(Long sceneId) {
         this.sceneId = sceneId;
     }
@@ -148,12 +156,28 @@ public class Fx67llAiPromptTemplate extends BaseEntity {
         return sceneId;
     }
 
+    public String getSceneName() {
+        return sceneName;
+    }
+
+    public void setSceneName(String sceneName) {
+        this.sceneName = sceneName;
+    }
+
     public void setModelId(Long modelId) {
         this.modelId = modelId;
     }
 
     public Long getModelId() {
         return modelId;
+    }
+
+    public String getModelName() {
+        return modelName;
+    }
+
+    public void setModelName(String modelName) {
+        this.modelName = modelName;
     }
 
     public void setPromptContent(String promptContent) {
@@ -250,8 +274,11 @@ public class Fx67llAiPromptTemplate extends BaseEntity {
                 .append("promptId", getPromptId())
                 .append("promptName", getPromptName())
                 .append("groupId", getGroupId())
+                .append("groupName", getGroupName())
                 .append("sceneId", getSceneId())
+                .append("sceneName", getSceneName())
                 .append("modelId", getModelId())
+                .append("modelName", getModelName())
                 .append("promptContent", getPromptContent())
                 .append("promptVariableConfig", getPromptVariableConfig())
                 .append("promptCustomConfigParams", getPromptCustomConfigParams())

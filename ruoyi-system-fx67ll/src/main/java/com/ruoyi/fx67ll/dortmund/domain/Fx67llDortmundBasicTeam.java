@@ -50,6 +50,12 @@ public class Fx67llDortmundBasicTeam extends BaseEntity {
     private String teamLogoUrl;
 
     /**
+     * 球队主场（如伊杜纳信号公园球场）
+     */
+    @Excel(name = "球队主场", readConverterExp = "如=伊杜纳信号公园球场")
+    private String teamVenue;
+
+    /**
      * 球队所属国家/地区（如德国、英格兰）
      */
     @Excel(name = "球队所属国家/地区", readConverterExp = "如=德国、英格兰")
@@ -158,6 +164,14 @@ public class Fx67llDortmundBasicTeam extends BaseEntity {
         return teamLogoUrl;
     }
 
+    public void setTeamVenue(String teamVenue) {
+        this.teamVenue = teamVenue;
+    }
+
+    public String getTeamVenue() {
+        return teamVenue;
+    }
+
     public void setTeamCountry(String teamCountry) {
         this.teamCountry = teamCountry;
     }
@@ -255,6 +269,7 @@ public class Fx67llDortmundBasicTeam extends BaseEntity {
                 .append("teamNameShort", getTeamNameShort())
                 .append("teamNameEn", getTeamNameEn())
                 .append("teamLogoUrl", getTeamLogoUrl())
+                .append("teamVenue", getTeamVenue())
                 .append("teamCountry", getTeamCountry())
                 .append("teamTag", getTeamTag())
                 .append("teamStatus", getTeamStatus())

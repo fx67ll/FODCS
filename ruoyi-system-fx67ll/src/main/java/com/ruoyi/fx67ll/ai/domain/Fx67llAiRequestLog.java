@@ -29,10 +29,34 @@ public class Fx67llAiRequestLog extends BaseEntity {
     private Long promptId;
 
     /**
+     * 模板名称（非数据库字段，用于列表展示）
+     */
+    @Excel(name = "模板名称")
+    private String promptName;
+
+    /**
+     * 所属分组ID（外键，关联fx67ll_ai_prompt_group.group_id，强制约束模板与分组的归属关系）
+     */
+    @Excel(name = "所属分组ID", readConverterExp = "外=键，关联fx67ll_ai_prompt_group.group_id，强制约束模板与分组的归属关系")
+    private Long groupId;
+
+    /**
+     * 分组名称（非数据库字段，用于列表展示）
+     */
+    @Excel(name = "分组名称")
+    private String groupName;
+
+    /**
      * 关联场景ID（外键，直接调用模型时为空）
      */
     @Excel(name = "关联场景ID", readConverterExp = "外=键，直接调用模型时为空")
     private Long sceneId;
+
+    /**
+     * 场景名称（非数据库字段，用于列表展示）
+     */
+    @Excel(name = "场景名称")
+    private String sceneName;
 
     /**
      * 调用模型ID（外键，关联fx67ll_ai_prompt_model.model_id）
@@ -41,10 +65,10 @@ public class Fx67llAiRequestLog extends BaseEntity {
     private Long modelId;
 
     /**
-     * 模型厂商标识（冗余字段，避免关联查询）
+     * 模型名称（非数据库字段，用于列表展示）
      */
-    @Excel(name = "模型厂商标识", readConverterExp = "冗=余字段，避免关联查询")
-    private String modelVendor;
+    @Excel(name = "模型名称")
+    private String modelName;
 
     /**
      * 请求完整内容（含最终渲染后的Prompt文本）
@@ -149,12 +173,44 @@ public class Fx67llAiRequestLog extends BaseEntity {
         return promptId;
     }
 
+    public void setPromptName(String promptName) {
+        this.promptName = promptName;
+    }
+
+    public String getPromptName() {
+        return promptName;
+    }
+
+    public void setGroupId(Long groupId) {
+        this.groupId = groupId;
+    }
+
+    public Long getGroupId() {
+        return groupId;
+    }
+
+    public void setGroupName(String groupName) {
+        this.groupName = groupName;
+    }
+
+    public String getGroupName() {
+        return groupName;
+    }
+
     public void setSceneId(Long sceneId) {
         this.sceneId = sceneId;
     }
 
     public Long getSceneId() {
         return sceneId;
+    }
+
+    public void setSceneName(String sceneName) {
+        this.sceneName = sceneName;
+    }
+
+    public String getSceneName() {
+        return sceneName;
     }
 
     public void setModelId(Long modelId) {
@@ -165,12 +221,12 @@ public class Fx67llAiRequestLog extends BaseEntity {
         return modelId;
     }
 
-    public void setModelVendor(String modelVendor) {
-        this.modelVendor = modelVendor;
+    public void setModelName(String modelName) {
+        this.modelName = modelName;
     }
 
-    public String getModelVendor() {
-        return modelVendor;
+    public String getModelName() {
+        return modelName;
     }
 
     public void setRequestContent(String requestContent) {
@@ -293,15 +349,18 @@ public class Fx67llAiRequestLog extends BaseEntity {
         this.endRequestTime = endRequestTime;
     }
 
-
     @Override
     public String toString() {
         return new ToStringBuilder(this, ToStringStyle.MULTI_LINE_STYLE)
                 .append("requestLogId", getRequestLogId())
                 .append("promptId", getPromptId())
+                .append("promptName", getPromptName())
+                .append("groupId", getGroupId())
+                .append("groupName", getGroupName())
                 .append("sceneId", getSceneId())
+                .append("sceneName", getSceneName())
                 .append("modelId", getModelId())
-                .append("modelVendor", getModelVendor())
+                .append("modelName", getModelName())
                 .append("requestContent", getRequestContent())
                 .append("responseContent", getResponseContent())
                 .append("promptTokens", getPromptTokens())

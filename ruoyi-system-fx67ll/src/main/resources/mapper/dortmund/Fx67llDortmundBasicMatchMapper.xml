@@ -8,8 +8,11 @@
         <result property="matchId" column="match_id"/>
         <result property="matchCode" column="match_code"/>
         <result property="seasonId" column="season_id"/>
+        <result property="seasonName" column="season_name"/>
         <result property="homeTeamId" column="home_team_id"/>
+        <result property="homeTeamName" column="home_team_name"/>
         <result property="awayTeamId" column="away_team_id"/>
+        <result property="awayTeamName" column="away_team_name"/>
         <result property="matchTime" column="match_time"/>
         <result property="matchVenue" column="match_venue"/>
         <result property="matchRemark" column="match_remark"/>
@@ -23,61 +26,67 @@
         <result property="delFlag" column="del_flag"/>
     </resultMap>
 
-    <sql id="selectFx67llDortmundBasicMatchVo">
-        select match_id,
-               match_code,
-               season_id,
-               home_team_id,
-               away_team_id,
-               match_time,
-               match_venue,
-               match_remark,
-               match_status,
-               analysis_count,
-               user_id,
-               create_by,
-               create_time,
-               update_by,
-               update_time,
-               del_flag
-        from fx67ll_dortmund_match
+    <sql id="selectFx67llDortmundBasicMatchWithJoinVo">
+        select m.match_id,
+               m.match_code,
+               m.season_id,
+               s.season_name as season_name,
+               m.home_team_id,
+               ht.team_name  as home_team_name,
+               m.away_team_id,
+               at.team_name  as away_team_name,
+               m.match_time,
+               m.match_venue,
+               m.match_remark,
+               m.match_status,
+               m.analysis_count,
+               m.user_id,
+               m.create_by,
+               m.create_time,
+               m.update_by,
+               m.update_time,
+               m.del_flag
+        from fx67ll_dortmund_match m
+                 left join fx67ll_dortmund_season s on m.season_id = s.season_id
+                 left join fx67ll_dortmund_team ht on m.home_team_id = ht.team_id
+                 left join fx67ll_dortmund_team at
+        on m.away_team_id = at.team_id
     </sql>
 
     <select id="selectFx67llDortmundBasicMatchList" parameterType="Fx67llDortmundBasicMatch"
             resultMap="Fx67llDortmundBasicMatchResult">
-        <include refid="selectFx67llDortmundBasicMatchVo"/>
+        <include refid="selectFx67llDortmundBasicMatchWithJoinVo"/>
         <where>
-            <if test="matchCode != null  and matchCode != ''">and match_code = #{matchCode}</if>
-            <if test="seasonId != null ">and season_id = #{seasonId}</if>
-            <if test="homeTeamId != null ">and home_team_id = #{homeTeamId}</if>
-            <if test="awayTeamId != null ">and away_team_id = #{awayTeamId}</if>
-            <if test="matchTime != null ">and match_time = #{matchTime}</if>
-            <if test="matchVenue != null  and matchVenue != ''">and match_venue = #{matchVenue}</if>
-            <if test="matchRemark != null  and matchRemark != ''">and match_remark = #{matchRemark}</if>
-            <if test="matchStatus != null  and matchStatus != ''">and match_status = #{matchStatus}</if>
-            <if test="analysisCount != null ">and analysis_count = #{analysisCount}</if>
-            <if test="delFlag != null  and delFlag != ''">and del_flag = #{delFlag}</if>
-            <if test="userId != null ">and user_id = #{userId}</if>
-            <if test="createBy != null  and createBy != ''">and create_by like concat('%',
-                #{createBy}, '%')
-            </if>
-            <if test="beginCreateTime != null and endCreateTime != ''">and create_time between #{beginCreateTime} and
+            <if test="matchCode != null  and matchCode != ''">and m.match_code = #{matchCode}</if>
+            <if test="seasonId != null ">and m.season_id = #{seasonId}</if>
+            <if test="homeTeamId != null ">and m.home_team_id = #{homeTeamId}</if>
+            <if test="awayTeamId != null ">and m.away_team_id = #{awayTeamId}</if>
+            <if test="matchTime != null ">and m.match_time = #{matchTime}</if>
+            <if test="matchVenue != null  and matchVenue != ''">and m.match_venue = #{matchVenue}</if>
+            <if test="matchRemark != null  and matchRemark != ''">and m.match_remark = #{matchRemark}</if>
+            <if test="matchStatus != null  and matchStatus != ''">and m.match_status = #{matchStatus}</if>
+            <if test="analysisCount != null ">and m.analysis_count = #{analysisCount}</if>
+            <if test="delFlag != null  and delFlag != ''">and m.del_flag = #{delFlag}</if>
+            <if test="userId != null ">and m.user_id = #{userId}</if>
+            <if test="createBy != null  and createBy != ''">and m.create_by like concat('%', #{createBy}, '%')</if>
+            <if test="beginCreateTime != null and endCreateTime != ''">and m.create_time between #{beginCreateTime} and
                 #{endCreateTime}
             </if>
-            <if test="updateBy != null  and updateBy != ''">and update_by like concat('%',
-                #{updateBy}, '%')
-            </if>
-            <if test="beginUpdateTime != null and endUpdateTime != ''">and update_time between #{beginUpdateTime} and
+            <if test="updateBy != null  and updateBy != ''">and m.update_by like concat('%', #{updateBy}, '%')</if>
+            <if test="beginUpdateTime != null and endUpdateTime != ''">and m.update_time between #{beginUpdateTime} and
                 #{endUpdateTime}
             </if>
+            <if test="beginMatchTime != null and endMatchTime != ''">and m.match_time between #{beginMatchTime} and
+                #{endMatchTime}
+            </if>
         </where>
-        order by STR_TO_DATE(create_time, "%Y-%m-%d %H:%i:%s") desc
+        order by STR_TO_DATE(m.create_time, "%Y-%m-%d %H:%i:%s") desc
     </select>
 
     <select id="selectFx67llDortmundBasicMatchByMatchId" parameterType="Long"
             resultMap="Fx67llDortmundBasicMatchResult">
-        <include refid="selectFx67llDortmundBasicMatchVo"/>
-        where match_id = #{matchId}
+        <include refid="selectFx67llDortmundBasicMatchWithJoinVo"/>
+        where m.match_id = #{matchId}
     </select>
 
     <insert id="insertFx67llDortmundBasicMatch" parameterType="Fx67llDortmundBasicMatch" useGeneratedKeys="true"

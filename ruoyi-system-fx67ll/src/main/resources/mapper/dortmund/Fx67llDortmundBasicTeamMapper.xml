@@ -11,6 +11,7 @@
         <result property="teamNameShort" column="team_name_short"/>
         <result property="teamNameEn" column="team_name_en"/>
         <result property="teamLogoUrl" column="team_logo_url"/>
+        <result property="teamVenue" column="team_venue"/>
         <result property="teamCountry" column="team_country"/>
         <result property="teamTag" column="team_tag"/>
         <result property="teamStatus" column="team_status"/>
@@ -31,6 +32,7 @@
                team_name_short,
                team_name_en,
                team_logo_url,
+               team_venue,
                team_country,
                team_tag,
                team_remark,
@@ -58,6 +60,7 @@
             <if test="teamNameShort != null  and teamNameShort != ''">and team_name_short = #{teamNameShort}</if>
             <if test="teamNameEn != null  and teamNameEn != ''">and team_name_en = #{teamNameEn}</if>
             <if test="teamLogoUrl != null  and teamLogoUrl != ''">and team_logo_url = #{teamLogoUrl}</if>
+            <if test="teamVenue != null  and teamVenue != ''">and team_venue = #{teamVenue}</if>
             <if test="teamCountry != null  and teamCountry != ''">and team_country = #{teamCountry}</if>
             <if test="teamTag != null  and teamTag != ''">and team_tag = #{teamTag}</if>
             <if test="teamStatus != null  and teamStatus != ''">and team_status = #{teamStatus}</if>
@@ -95,6 +98,7 @@
             <if test="teamNameShort != null">team_name_short,</if>
             <if test="teamNameEn != null">team_name_en,</if>
             <if test="teamLogoUrl != null">team_logo_url,</if>
+            <if test="teamVenue != null">team_venue,</if>
             <if test="teamCountry != null">team_country,</if>
             <if test="teamTag != null">team_tag,</if>
             <if test="teamRemark != null">team_remark,</if>
@@ -113,6 +117,7 @@
             <if test="teamNameShort != null">#{teamNameShort},</if>
             <if test="teamNameEn != null">#{teamNameEn},</if>
             <if test="teamLogoUrl != null">#{teamLogoUrl},</if>
+            <if test="teamVenue != null">#{teamVenue},</if>
             <if test="teamCountry != null">#{teamCountry},</if>
             <if test="teamTag != null">#{teamTag},</if>
             <if test="teamRemark != null">#{teamRemark},</if>
@@ -135,6 +140,7 @@
             <if test="teamNameShort != null">team_name_short = #{teamNameShort},</if>
             <if test="teamNameEn != null">team_name_en = #{teamNameEn},</if>
             <if test="teamLogoUrl != null">team_logo_url = #{teamLogoUrl},</if>
+            <if test="teamVenue != null">team_venue = #{teamVenue},</if>
             <if test="teamCountry != null">team_country = #{teamCountry},</if>
             <if test="teamTag != null">team_tag = #{teamTag},</if>
             <if test="teamRemark != null">team_remark = #{teamRemark},</if>

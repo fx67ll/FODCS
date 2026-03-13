@@ -7,9 +7,13 @@
     <resultMap type="Fx67llAiRequestLog" id="Fx67llAiRequestLogResult">
         <result property="requestLogId" column="request_log_id"/>
         <result property="promptId" column="prompt_id"/>
+        <result property="promptName" column="prompt_name"/>
+        <result property="groupId" column="group_id"/>
+        <result property="groupName" column="group_name"/>
         <result property="sceneId" column="scene_id"/>
+        <result property="sceneName" column="scene_name"/>
         <result property="modelId" column="model_id"/>
-        <result property="modelVendor" column="model_vendor"/>
+        <result property="modelName" column="model_name"/>
         <result property="requestContent" column="request_content"/>
         <result property="responseContent" column="response_content"/>
         <result property="promptTokens" column="prompt_tokens"/>
@@ -27,61 +31,68 @@
     </resultMap>
 
     <sql id="selectFx67llAiRequestLogVo">
-        select request_log_id,
-               prompt_id,
-               scene_id,
-               model_id,
-               model_vendor,
-               request_content,
-               response_content,
-               prompt_tokens,
-               completion_tokens,
-               total_tokens,
-               cost,
-               duration_ms,
-               http_status,
-               call_status,
-               error_msg,
-               caller_ip,
-               request_time,
-               user_id,
-               create_by
-        from fx67ll_ai_request_log
+        SELECT log.request_log_id,
+               log.prompt_id,
+               pt.prompt_name AS promptName,
+               log.group_id,
+               pg.group_name  AS groupName,
+               log.scene_id,
+               ps.scene_name  AS sceneName,
+               log.model_id,
+               pm.model_name  AS modelName,
+               log.request_content,
+               log.response_content,
+               log.prompt_tokens,
+               log.completion_tokens,
+               log.total_tokens,
+               log.cost,
+               log.duration_ms,
+               log.http_status,
+               log.call_status,
+               log.error_msg,
+               log.caller_ip,
+               log.request_time,
+               log.create_by,
+               log.user_id
+        FROM fx67ll_ai_request_log log
+                 LEFT JOIN fx67ll_ai_prompt_template pt ON log.prompt_id = pt.prompt_id
+                 LEFT JOIN fx67ll_ai_prompt_group pg ON log.group_id = pg.group_id
+                 LEFT JOIN fx67ll_ai_prompt_scene ps ON log.scene_id = ps.scene_id
+                 LEFT JOIN fx67ll_ai_prompt_model pm ON log.model_id = pm.model_id
     </sql>
 
     <select id="selectFx67llAiRequestLogList" parameterType="Fx67llAiRequestLog" resultMap="Fx67llAiRequestLogResult">
         <include refid="selectFx67llAiRequestLogVo"/>
         <where>
-            <if test="promptId != null ">and prompt_id = #{promptId}</if>
-            <if test="sceneId != null ">and scene_id = #{sceneId}</if>
-            <if test="modelId != null ">and model_id = #{modelId}</if>
-            <if test="modelVendor != null  and modelVendor != ''">and model_vendor = #{modelVendor}</if>
-            <if test="requestContent != null  and requestContent != ''">and request_content = #{requestContent}</if>
-            <if test="responseContent != null  and responseContent != ''">and response_content = #{responseContent}</if>
-            <if test="promptTokens != null ">and prompt_tokens = #{promptTokens}</if>
-            <if test="completionTokens != null ">and completion_tokens = #{completionTokens}</if>
-            <if test="totalTokens != null ">and total_tokens = #{totalTokens}</if>
-            <if test="cost != null ">and cost = #{cost}</if>
-            <if test="durationMs != null ">and duration_ms = #{durationMs}</if>
-            <if test="httpStatus != null ">and http_status = #{httpStatus}</if>
-            <if test="callStatus != null  and callStatus != ''">and call_status = #{callStatus}</if>
-            <if test="errorMsg != null  and errorMsg != ''">and error_msg = #{errorMsg}</if>
-            <if test="callerIp != null  and callerIp != ''">and caller_ip = #{callerIp}</if>
-            <if test="userId != null ">and user_id = #{userId}</if>
-            <if test="createBy != null  and createBy != ''">and create_by like concat('%',
-                #{createBy}, '%')
+            <if test="promptId != null ">and log.prompt_id = #{promptId}</if>
+            <if test="groupId != null ">and log.group_id = #{groupId}</if>
+            <if test="sceneId != null ">and log.scene_id = #{sceneId}</if>
+            <if test="modelId != null ">and log.model_id = #{modelId}</if>
+            <if test="requestContent != null  and requestContent != ''">and log.request_content = #{requestContent}</if>
+            <if test="responseContent != null  and responseContent != ''">and log.response_content =
+                #{responseContent}
             </if>
-            <if test="beginRequestTime != null and endRequestTime != ''">and request_time between #{beginRequestTime}
-                and
-                #{endRequestTime}
+            <if test="promptTokens != null ">and log.prompt_tokens = #{promptTokens}</if>
+            <if test="completionTokens != null ">and log.completion_tokens = #{completionTokens}</if>
+            <if test="totalTokens != null ">and log.total_tokens = #{totalTokens}</if>
+            <if test="cost != null ">and log.cost = #{cost}</if>
+            <if test="durationMs != null ">and log.duration_ms = #{durationMs}</if>
+            <if test="httpStatus != null ">and log.http_status = #{httpStatus}</if>
+            <if test="callStatus != null  and callStatus != ''">and log.call_status = #{callStatus}</if>
+            <if test="errorMsg != null  and errorMsg != ''">and log.error_msg = #{errorMsg}</if>
+            <if test="callerIp != null  and callerIp != ''">and log.caller_ip = #{callerIp}</if>
+            <if test="userId != null ">and log.user_id = #{userId}</if>
+            <if test="createBy != null  and createBy != ''">and log.create_by like concat('%', #{createBy}, '%')</if>
+            <if test="beginRequestTime != null and endRequestTime != ''">and log.request_time between
+                #{beginRequestTime} and #{endRequestTime}
             </if>
         </where>
-        order by STR_TO_DATE(request_time, "%Y-%m-%d %H:%i:%s") desc
+        ORDER BY STR_TO_DATE(log.request_time, "%Y-%m-%d %H:%i:%s") DESC
     </select>
 
     <select id="selectFx67llAiRequestLogByRequestLogId" parameterType="Long" resultMap="Fx67llAiRequestLogResult">
         <include refid="selectFx67llAiRequestLogVo"/>
-        where request_log_id = #{requestLogId}
+        WHERE log.request_log_id = #{requestLogId}
     </select>
 
     <insert id="insertFx67llAiRequestLog" parameterType="Fx67llAiRequestLog" useGeneratedKeys="true"
@@ -89,9 +100,9 @@
         insert into fx67ll_ai_request_log
         <trim prefix="(" suffix=")" suffixOverrides=",">
             <if test="promptId != null">prompt_id,</if>
+            <if test="groupId != null">group_id,</if>
             <if test="sceneId != null">scene_id,</if>
             <if test="modelId != null">model_id,</if>
-            <if test="modelVendor != null and modelVendor != ''">model_vendor,</if>
             <if test="requestContent != null">request_content,</if>
             <if test="responseContent != null">response_content,</if>
             <if test="promptTokens != null">prompt_tokens,</if>
@@ -109,6 +120,7 @@
         </trim>
         <trim prefix="values (" suffix=")" suffixOverrides=",">
             <if test="promptId != null">#{promptId},</if>
+            <if test="groupId != null">#{groupId},</if>
             <if test="sceneId != null">#{sceneId},</if>
             <if test="modelId != null">#{modelId},</if>
             <if test="modelVendor != null and modelVendor != ''">#{modelVendor},</if>
@@ -133,9 +145,9 @@
         update fx67ll_ai_request_log
         <trim prefix="SET" suffixOverrides=",">
             <if test="promptId != null">prompt_id = #{promptId},</if>
+            <if test="groupId != null ">group_id = #{groupId},</if>
             <if test="sceneId != null">scene_id = #{sceneId},</if>
             <if test="modelId != null">model_id = #{modelId},</if>
-            <if test="modelVendor != null and modelVendor != ''">model_vendor = #{modelVendor},</if>
             <if test="requestContent != null">request_content = #{requestContent},</if>
             <if test="responseContent != null">response_content = #{responseContent},</if>
             <if test="promptTokens != null">prompt_tokens = #{promptTokens},</if>
