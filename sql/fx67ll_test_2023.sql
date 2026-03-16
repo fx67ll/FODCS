@@ -970,7 +970,6 @@ CREATE TABLE `fx67ll_dortmund_team` (
 
 CREATE TABLE `fx67ll_dortmund_match` (
   `match_id` bigint(20) NOT NULL AUTO_INCREMENT COMMENT '比赛唯一标识（主键）',
-  `match_code` varchar(23) NOT NULL COMMENT '比赛唯一业务编码（规则：season_code + match_time + home_team_code + away_team_code）',
   `season_id` bigint(20) NOT NULL COMMENT '所属赛季ID（外键，关联fx67ll_dortmund_season.season_id）',
   `home_team_id` bigint(20) NOT NULL COMMENT '主队球队ID（外键，关联fx67ll_dortmund_team.team_id）',
   `away_team_id` bigint(20) NOT NULL COMMENT '客队球队ID（外键，关联fx67ll_dortmund_team.team_id）',
@@ -978,6 +977,7 @@ CREATE TABLE `fx67ll_dortmund_match` (
   `match_venue` varchar(233) DEFAULT '' COMMENT '比赛举办场地名称',
   `match_status` char(1) NOT NULL COMMENT '比赛状态（字典码：0-正常，1-关闭）',
   `analysis_count` int(4) NOT NULL COMMENT 'AI分析次数（统计该比赛已生成的分析报告数量）',
+  `match_result` char(1) DEFAULT '' COMMENT '比赛结果（字典码：0-主队胜，1-平局，2-客队胜）',
   `match_remark` varchar(1023) DEFAULT '' COMMENT '比赛业务备注（如轮次、特殊说明）',
   `user_id` bigint(20) NOT NULL COMMENT '用户ID',
   `create_by` varchar(64) DEFAULT '' COMMENT '记录创建者用户名',
@@ -986,7 +986,6 @@ CREATE TABLE `fx67ll_dortmund_match` (
   `update_time` datetime DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '记录最后更新时间',
   `del_flag` char(1) DEFAULT '0' COMMENT '逻辑删除标志（字典码：0-存在，2-已删除）',
   PRIMARY KEY (`match_id`),
-  UNIQUE KEY `uk_match_code` (`match_code`) COMMENT '比赛编码唯一索引（防止业务编码重复）',
   KEY `idx_season_id` (`season_id`) COMMENT '赛季ID索引（加速按赛季查询比赛）',
   KEY `idx_home_team_id` (`home_team_id`) COMMENT '主队ID索引（加速按主队查询比赛）',
   KEY `idx_away_team_id` (`away_team_id`) COMMENT '客队ID索引（加速按客队查询比赛）',
@@ -1052,7 +1051,7 @@ CREATE TABLE `fx67ll_dortmund_match_score` (
   `away_history_score` decimal(5,2) DEFAULT 0.00 COMMENT '客队历史交锋评分（值域：[0,100]，基于对阵主队的历史战绩计算）',
   `away_total_score` decimal(5,2) DEFAULT 0.00 COMMENT '客队综合能力总评分（值域：[0,100]，多维度加权计算）',
   -- 预测结果
-  `predicted_result` char(1) DEFAULT '0' COMMENT '比赛预测结果（字典码：0-主队胜，1-平局，2-客队胜）',
+  `predicted_result` char(1) DEFAULT '' COMMENT '比赛预测结果（字典码：0-主队胜，1-平局，2-客队胜）',
   `predicted_confidence` decimal(5,2) DEFAULT 0.00 COMMENT '预测结果置信度（值域：[0,100]，分值越高表示预测可靠性越强）',
   `score_calc_rule_version` varchar(23) DEFAULT '1' COMMENT '评分规则版本号（用于追溯评分逻辑变更）',
   -- 扩展评分字段

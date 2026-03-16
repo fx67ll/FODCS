@@ -6,7 +6,6 @@
 
     <resultMap type="Fx67llDortmundBasicMatch" id="Fx67llDortmundBasicMatchResult">
         <result property="matchId" column="match_id"/>
-        <result property="matchCode" column="match_code"/>
         <result property="seasonId" column="season_id"/>
         <result property="seasonName" column="season_name"/>
         <result property="homeTeamId" column="home_team_id"/>
@@ -15,9 +14,10 @@
         <result property="awayTeamName" column="away_team_name"/>
         <result property="matchTime" column="match_time"/>
         <result property="matchVenue" column="match_venue"/>
-        <result property="matchRemark" column="match_remark"/>
         <result property="matchStatus" column="match_status"/>
         <result property="analysisCount" column="analysis_count"/>
+        <result property="matchResult" column="match_result"/>
+        <result property="matchRemark" column="match_remark"/>
         <result property="userId" column="user_id"/>
         <result property="createBy" column="create_by"/>
         <result property="createTime" column="create_time"/>
@@ -28,7 +28,6 @@
 
     <sql id="selectFx67llDortmundBasicMatchWithJoinVo">
         select m.match_id,
-               m.match_code,
                m.season_id,
                s.season_name as season_name,
                m.home_team_id,
@@ -37,9 +36,10 @@
                at.team_name  as away_team_name,
                m.match_time,
                m.match_venue,
-               m.match_remark,
                m.match_status,
                m.analysis_count,
+               m.match_result,
+               m.match_remark,
                m.user_id,
                m.create_by,
                m.create_time,
@@ -57,15 +57,15 @@
             resultMap="Fx67llDortmundBasicMatchResult">
         <include refid="selectFx67llDortmundBasicMatchWithJoinVo"/>
         <where>
-            <if test="matchCode != null  and matchCode != ''">and m.match_code = #{matchCode}</if>
             <if test="seasonId != null ">and m.season_id = #{seasonId}</if>
             <if test="homeTeamId != null ">and m.home_team_id = #{homeTeamId}</if>
             <if test="awayTeamId != null ">and m.away_team_id = #{awayTeamId}</if>
             <if test="matchTime != null ">and m.match_time = #{matchTime}</if>
             <if test="matchVenue != null  and matchVenue != ''">and m.match_venue = #{matchVenue}</if>
-            <if test="matchRemark != null  and matchRemark != ''">and m.match_remark = #{matchRemark}</if>
             <if test="matchStatus != null  and matchStatus != ''">and m.match_status = #{matchStatus}</if>
             <if test="analysisCount != null ">and m.analysis_count = #{analysisCount}</if>
+            <if test="matchResult != null  and matchResult != ''"> and match_result = #{matchResult}</if>
+            <if test="matchRemark != null  and matchRemark != ''"> and match_remark = #{matchRemark}</if>
             <if test="delFlag != null  and delFlag != ''">and m.del_flag = #{delFlag}</if>
             <if test="userId != null ">and m.user_id = #{userId}</if>
             <if test="createBy != null  and createBy != ''">and m.create_by like concat('%', #{createBy}, '%')</if>
@@ -93,15 +93,15 @@
             keyProperty="matchId">
         insert into fx67ll_dortmund_match
         <trim prefix="(" suffix=")" suffixOverrides=",">
-            <if test="matchCode != null and matchCode != ''">match_code,</if>
             <if test="seasonId != null">season_id,</if>
             <if test="homeTeamId != null">home_team_id,</if>
             <if test="awayTeamId != null">away_team_id,</if>
             <if test="matchTime != null">match_time,</if>
             <if test="matchVenue != null">match_venue,</if>
-            <if test="matchRemark != null">match_remark,</if>
             <if test="matchStatus != null">match_status,</if>
             <if test="analysisCount != null">analysis_count,</if>
+            <if test="matchResult != null">match_result,</if>
+            <if test="matchRemark != null">match_remark,</if>
             <if test="createBy != null">create_by,</if>
             <if test="createTime != null">create_time,</if>
             <if test="updateBy != null">update_by,</if>
@@ -110,15 +110,15 @@
             <if test="userId != null">user_id,</if>
         </trim>
         <trim prefix="values (" suffix=")" suffixOverrides=",">
-            <if test="matchCode != null and matchCode != ''">#{matchCode},</if>
             <if test="seasonId != null">#{seasonId},</if>
             <if test="homeTeamId != null">#{homeTeamId},</if>
             <if test="awayTeamId != null">#{awayTeamId},</if>
             <if test="matchTime != null">#{matchTime},</if>
             <if test="matchVenue != null">#{matchVenue},</if>
-            <if test="matchRemark != null">#{matchRemark},</if>
             <if test="matchStatus != null">#{matchStatus},</if>
             <if test="analysisCount != null">#{analysisCount},</if>
+            <if test="matchResult != null">#{matchResult},</if>
+            <if test="matchRemark != null">#{matchRemark},</if>
             <if test="createBy != null">#{createBy},</if>
             <if test="createTime != null">#{createTime},</if>
             <if test="updateBy != null">#{updateBy},</if>
@@ -131,15 +131,15 @@
     <update id="updateFx67llDortmundBasicMatch" parameterType="Fx67llDortmundBasicMatch">
         update fx67ll_dortmund_match
         <trim prefix="SET" suffixOverrides=",">
-            <if test="matchCode != null and matchCode != ''">match_code = #{matchCode},</if>
             <if test="seasonId != null">season_id = #{seasonId},</if>
             <if test="homeTeamId != null">home_team_id = #{homeTeamId},</if>
             <if test="awayTeamId != null">away_team_id = #{awayTeamId},</if>
             <if test="matchTime != null">match_time = #{matchTime},</if>
             <if test="matchVenue != null">match_venue = #{matchVenue},</if>
-            <if test="matchRemark != null">match_remark = #{matchRemark},</if>
             <if test="matchStatus != null">match_status = #{matchStatus},</if>
             <if test="analysisCount != null">analysis_count = #{analysisCount},</if>
+            <if test="matchResult != null">match_result = #{matchResult},</if>
+            <if test="matchRemark != null">match_remark = #{matchRemark},</if>
             <if test="createBy != null">create_by = #{createBy},</if>
             <if test="createTime != null">create_time = #{createTime},</if>
             <if test="updateBy != null">update_by = #{updateBy},</if>

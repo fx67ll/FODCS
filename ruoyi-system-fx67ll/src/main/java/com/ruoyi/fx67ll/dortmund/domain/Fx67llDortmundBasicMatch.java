@@ -23,12 +23,6 @@ public class Fx67llDortmundBasicMatch extends BaseEntity {
     private Long matchId;
 
     /**
-     * 比赛唯一业务编码（规则：season_code + match_time + home_team_code + away_team_code）
-     */
-    @Excel(name = "比赛唯一业务编码", readConverterExp = "规=则：season_code,+=,m=atch_time,+=,h=ome_team_code,+=,a=way_team_code")
-    private String matchCode;
-
-    /**
      * 所属赛季ID（外键，关联fx67ll_dortmund_season.season_id）
      */
     @Excel(name = "所属赛季ID", readConverterExp = "外=键，关联fx67ll_dortmund_season.season_id")
@@ -78,12 +72,6 @@ public class Fx67llDortmundBasicMatch extends BaseEntity {
     private String matchVenue;
 
     /**
-     * 比赛业务备注（如轮次、特殊说明）
-     */
-    @Excel(name = "比赛业务备注", readConverterExp = "如=轮次、特殊说明")
-    private String matchRemark;
-
-    /**
      * 比赛状态（字典码：0-未开始，1-进行中，2-已结束）
      */
     @Excel(name = "比赛状态", readConverterExp = "字=典码：0-未开始，1-进行中，2-已结束")
@@ -94,6 +82,17 @@ public class Fx67llDortmundBasicMatch extends BaseEntity {
      */
     @Excel(name = "AI分析次数", readConverterExp = "统=计该比赛已生成的分析报告数量")
     private Integer analysisCount;
+
+    /** 比赛结果（字典码：0-主队胜，1-平局，2-客队胜） */
+    @Excel(name = "比赛结果", readConverterExp = "字=典码：0-主队胜，1-平局，2-客队胜")
+    private String matchResult;
+
+    /**
+     * 比赛业务备注（如轮次、特殊说明）
+     */
+    @Excel(name = "比赛业务备注", readConverterExp = "如=轮次、特殊说明")
+    private String matchRemark;
+
 
     /**
      * 逻辑删除标志（字典码：0-存在，2-已删除）
@@ -143,14 +142,6 @@ public class Fx67llDortmundBasicMatch extends BaseEntity {
 
     public Long getMatchId() {
         return matchId;
-    }
-
-    public void setMatchCode(String matchCode) {
-        this.matchCode = matchCode;
-    }
-
-    public String getMatchCode() {
-        return matchCode;
     }
 
     public void setSeasonId(Long seasonId) {
@@ -218,14 +209,6 @@ public class Fx67llDortmundBasicMatch extends BaseEntity {
         return matchVenue;
     }
 
-    public void setMatchRemark(String matchRemark) {
-        this.matchRemark = matchRemark;
-    }
-
-    public String getMatchRemark() {
-        return matchRemark;
-    }
-
     public void setMatchStatus(String matchStatus) {
         this.matchStatus = matchStatus;
     }
@@ -240,6 +223,24 @@ public class Fx67llDortmundBasicMatch extends BaseEntity {
 
     public Integer getAnalysisCount() {
         return analysisCount;
+    }
+
+    public void setMatchResult(String matchResult)
+    {
+        this.matchResult = matchResult;
+    }
+
+    public String getMatchResult()
+    {
+        return matchResult;
+    }
+
+    public void setMatchRemark(String matchRemark) {
+        this.matchRemark = matchRemark;
+    }
+
+    public String getMatchRemark() {
+        return matchRemark;
     }
 
     public void setDelFlag(String delFlag) {
@@ -310,7 +311,6 @@ public class Fx67llDortmundBasicMatch extends BaseEntity {
     public String toString() {
         return new ToStringBuilder(this, ToStringStyle.MULTI_LINE_STYLE)
                 .append("matchId", getMatchId())
-                .append("matchCode", getMatchCode())
                 .append("seasonId", getSeasonId())
                 .append("seasonName", getSeasonName())
                 .append("homeTeamId", getHomeTeamId())
@@ -319,9 +319,10 @@ public class Fx67llDortmundBasicMatch extends BaseEntity {
                 .append("awayTeamName", getAwayTeamName())
                 .append("matchTime", getMatchTime())
                 .append("matchVenue", getMatchVenue())
-                .append("matchRemark", getMatchRemark())
                 .append("matchStatus", getMatchStatus())
                 .append("analysisCount", getAnalysisCount())
+                .append("matchResult", getMatchResult())
+                .append("matchRemark", getMatchRemark())
                 .append("createBy", getCreateBy())
                 .append("createTime", getCreateTime())
                 .append("updateBy", getUpdateBy())
