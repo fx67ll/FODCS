@@ -45,6 +45,9 @@ insert into sys_dict_type values(16, 'IP记录类型',    'fx67ll_ip_type',     
 -- 麻将室预约订单记录管理枚举项
 insert into sys_dict_type values(17, '订单记录类型',  'fx67ll_order_status',    '0', 'admin', sysdate(), '', null, '订单状态类型列表');
 
+-- 比赛标准化评分记录管理枚举项插入值
+insert into sys_dict_type values(18, '比赛结果类型',  'fx67ll_match_result',    '0', 'admin', sysdate(), '', null, '比赛结果类型列表');
+
 
 
 -- ----------------------------
@@ -139,6 +142,11 @@ insert into sys_dict_data values(52, 3,  '接口',     '2',       'fx67ll_ip_typ
 insert into sys_dict_data values(53, 1,  '正常',     '0',       'fx67ll_order_status',         '',   '',     'N', '0', 'admin', sysdate(), '', null, '正常');
 insert into sys_dict_data values(54, 2,  '取消',     '1',       'fx67ll_order_status',         '',   '',     'N', '0', 'admin', sysdate(), '', null, '取消');
 insert into sys_dict_data values(55, 3,  '完成',     '2',       'fx67ll_order_status',         '',   '',     'N', '0', 'admin', sysdate(), '', null, '完成');
+
+-- 比赛标准化评分记录管理枚举项插入值
+insert into sys_dict_data values(56, 1,  '胜',       '0',       'fx67ll_match_result',         '',   '',     'N', '0', 'admin', sysdate(), '', null, '胜');
+insert into sys_dict_data values(57, 2,  '平',       '1',       'fx67ll_match_result',         '',   '',     'N', '0', 'admin', sysdate(), '', null, '平');
+insert into sys_dict_data values(58, 3,  '负',       '2',       'fx67ll_match_result',         '',   '',     'N', '0', 'admin', sysdate(), '', null, '负');
 
 
 
