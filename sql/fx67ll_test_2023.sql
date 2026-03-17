@@ -777,7 +777,7 @@ CREATE TABLE `fx67ll_ai_prompt_model` (
 
 CREATE TABLE `fx67ll_ai_request_limit_rule` (
   `limit_rule_id` bigint(20) NOT NULL AUTO_INCREMENT COMMENT '规则唯一标识（主键）',
-  `limit_rule_dimension` char(2) NOT NULL COMMENT '规则作用维度（字典码：1-模型，2-模板，3-场景，4-分组）',
+  `limit_rule_dimension` char(2) NOT NULL COMMENT '规则作用维度（字典码：1-模板，2-场景，3-分组，4-模型）',
   `limit_rule_target_id` bigint(20) NOT NULL COMMENT '规则作用目标ID（对应维度的业务ID，如model_id、prompt_id）',
   `limit_rule_type` char(2) NOT NULL COMMENT '规则类型（字典码：1-流量控制，2-熔断保护）',
   `flow_control_mode` char(1) DEFAULT 'D' COMMENT '流控模式（字典码：D-直接拒绝，A-关联控制，L-链路流控，仅流控规则有效）',
