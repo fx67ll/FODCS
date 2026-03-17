@@ -99,6 +99,10 @@ public class Fx67llAiRequestLimitRule extends BaseEntity {
     @Excel(name = "规则启用状态", readConverterExp = "字=典码：0-启用，1-停用")
     private String limitRuleStatus;
 
+    /** 规则备注 */
+    @Excel(name = "规则备注")
+    private String limitRuleRemark;
+
     /**
      * 逻辑删除标志（字典码：0-存在，2-已删除）
      */
@@ -242,6 +246,16 @@ public class Fx67llAiRequestLimitRule extends BaseEntity {
         return limitRuleStatus;
     }
 
+    public void setLimitRuleRemark(String limitRuleRemark)
+    {
+        this.limitRuleRemark = limitRuleRemark;
+    }
+
+    public String getLimitRuleRemark()
+    {
+        return limitRuleRemark;
+    }
+
     public void setDelFlag(String delFlag) {
         this.delFlag = delFlag;
     }
@@ -307,6 +321,7 @@ public class Fx67llAiRequestLimitRule extends BaseEntity {
                 .append("circuitWindow", getCircuitWindow())
                 .append("circuitTimeout", getCircuitTimeout())
                 .append("limitRuleStatus", getLimitRuleStatus())
+                .append("limitRuleRemark", getLimitRuleRemark())
                 .append("createBy", getCreateBy())
                 .append("createTime", getCreateTime())
                 .append("updateBy", getUpdateBy())

@@ -19,6 +19,7 @@
         <result property="circuitWindow" column="circuit_window"/>
         <result property="circuitTimeout" column="circuit_timeout"/>
         <result property="limitRuleStatus" column="limit_rule_status"/>
+        <result property="limitRuleRemark" column="limit_rule_remark"/>
         <result property="userId" column="user_id"/>
         <result property="createBy" column="create_by"/>
         <result property="createTime" column="create_time"/>
@@ -42,6 +43,7 @@
                circuit_window,
                circuit_timeout,
                limit_rule_status,
+               limit_rule_remark,
                user_id,
                create_by,
                create_time,
@@ -55,6 +57,7 @@
             resultMap="Fx67llAiRequestLimitRuleResult">
         <include refid="selectFx67llAiRequestLimitRuleVo"/>
         <where>
+            <if test="limitRuleId != null ">and limit_rule_id = #{limitRuleId}</if>
             <if test="limitRuleDimension != null  and limitRuleDimension != ''">and limit_rule_dimension =
                 #{limitRuleDimension}
             </if>
@@ -73,6 +76,8 @@
             <if test="circuitWindow != null ">and circuit_window = #{circuitWindow}</if>
             <if test="circuitTimeout != null ">and circuit_timeout = #{circuitTimeout}</if>
             <if test="limitRuleStatus != null  and limitRuleStatus != ''">and limit_rule_status = #{limitRuleStatus}
+            </if>
+            <if test="limitRuleRemark != null  and limitRuleRemark != ''">and limit_rule_remark = #{limitRuleRemark}
             </if>
             <if test="delFlag != null  and delFlag != ''">and del_flag = #{delFlag}</if>
             <if test="userId != null ">and user_id = #{userId}</if>
@@ -115,6 +120,7 @@
             <if test="circuitWindow != null">circuit_window,</if>
             <if test="circuitTimeout != null">circuit_timeout,</if>
             <if test="limitRuleStatus != null">limit_rule_status,</if>
+            <if test="limitRuleRemark != null">limit_rule_remark,</if>
             <if test="createBy != null">create_by,</if>
             <if test="createTime != null">create_time,</if>
             <if test="updateBy != null">update_by,</if>
@@ -136,6 +142,7 @@
             <if test="circuitWindow != null">#{circuitWindow},</if>
             <if test="circuitTimeout != null">#{circuitTimeout},</if>
             <if test="limitRuleStatus != null">#{limitRuleStatus},</if>
+            <if test="limitRuleRemark != null">#{limitRuleRemark},</if>
             <if test="createBy != null">#{createBy},</if>
             <if test="createTime != null">#{createTime},</if>
             <if test="updateBy != null">#{updateBy},</if>
@@ -163,6 +170,7 @@
             <if test="circuitWindow != null">circuit_window = #{circuitWindow},</if>
             <if test="circuitTimeout != null">circuit_timeout = #{circuitTimeout},</if>
             <if test="limitRuleStatus != null">limit_rule_status = #{limitRuleStatus},</if>
+            <if test="limitRuleRemark != null">limit_rule_remark = #{limitRuleRemark},</if>
             <if test="createBy != null">create_by = #{createBy},</if>
             <if test="createTime != null">create_time = #{createTime},</if>
             <if test="updateBy != null">update_by = #{updateBy},</if>
