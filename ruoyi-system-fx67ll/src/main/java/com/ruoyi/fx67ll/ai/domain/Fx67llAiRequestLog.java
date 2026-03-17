@@ -107,6 +107,12 @@ public class Fx67llAiRequestLog extends BaseEntity {
     private BigDecimal cost;
 
     /**
+     * 计价货币类型（ISO 4217货币码，如CNY、USD）
+     */
+    @Excel(name = "计价货币类型", readConverterExp = "I=SO,4=217货币码，如CNY、USD")
+    private String costCurrency;
+
+    /**
      * 请求耗时（毫秒，从发送请求到接收响应的总时长）
      */
     @Excel(name = "请求耗时", readConverterExp = "毫=秒，从发送请求到接收响应的总时长")
@@ -277,6 +283,14 @@ public class Fx67llAiRequestLog extends BaseEntity {
         return cost;
     }
 
+    public void setCostCurrency(String costCurrency) {
+        this.costCurrency = costCurrency;
+    }
+
+    public String getCostCurrency() {
+        return costCurrency;
+    }
+
     public void setDurationMs(Long durationMs) {
         this.durationMs = durationMs;
     }
@@ -367,6 +381,7 @@ public class Fx67llAiRequestLog extends BaseEntity {
                 .append("completionTokens", getCompletionTokens())
                 .append("totalTokens", getTotalTokens())
                 .append("cost", getCost())
+                .append("costCurrency", getCostCurrency())
                 .append("durationMs", getDurationMs())
                 .append("httpStatus", getHttpStatus())
                 .append("callStatus", getCallStatus())

@@ -20,6 +20,7 @@
         <result property="completionTokens" column="completion_tokens"/>
         <result property="totalTokens" column="total_tokens"/>
         <result property="cost" column="cost"/>
+        <result property="costCurrency" column="cost_currency"/>
         <result property="durationMs" column="duration_ms"/>
         <result property="httpStatus" column="http_status"/>
         <result property="callStatus" column="call_status"/>
@@ -33,19 +34,20 @@
     <sql id="selectFx67llAiRequestLogVo">
         SELECT log.request_log_id,
                log.prompt_id,
-               pt.prompt_name AS promptName,
+               pt.prompt_name,
                log.group_id,
-               pg.group_name  AS groupName,
+               pg.group_name,
                log.scene_id,
-               ps.scene_name  AS sceneName,
+               ps.scene_name,
                log.model_id,
-               pm.model_name  AS modelName,
+               pm.model_name,
                log.request_content,
                log.response_content,
                log.prompt_tokens,
                log.completion_tokens,
                log.total_tokens,
                log.cost,
+               log.cost_currency,
                log.duration_ms,
                log.http_status,
                log.call_status,
@@ -64,6 +66,7 @@
     <select id="selectFx67llAiRequestLogList" parameterType="Fx67llAiRequestLog" resultMap="Fx67llAiRequestLogResult">
         <include refid="selectFx67llAiRequestLogVo"/>
         <where>
+            <if test="requestLogId != null ">and log.request_log_id = #{requestLogId}</if>
             <if test="promptId != null ">and log.prompt_id = #{promptId}</if>
             <if test="groupId != null ">and log.group_id = #{groupId}</if>
             <if test="sceneId != null ">and log.scene_id = #{sceneId}</if>
@@ -76,6 +79,7 @@
             <if test="completionTokens != null ">and log.completion_tokens = #{completionTokens}</if>
             <if test="totalTokens != null ">and log.total_tokens = #{totalTokens}</if>
             <if test="cost != null ">and log.cost = #{cost}</if>
+            <if test="costCurrency != null  and costCurrency != ''"> and cost_currency = #{costCurrency}</if>
             <if test="durationMs != null ">and log.duration_ms = #{durationMs}</if>
             <if test="httpStatus != null ">and log.http_status = #{httpStatus}</if>
             <if test="callStatus != null  and callStatus != ''">and log.call_status = #{callStatus}</if>
@@ -109,6 +113,7 @@
             <if test="completionTokens != null">completion_tokens,</if>
             <if test="totalTokens != null">total_tokens,</if>
             <if test="cost != null">cost,</if>
+            <if test="costCurrency != null">cost_currency,</if>
             <if test="durationMs != null">duration_ms,</if>
             <if test="httpStatus != null">http_status,</if>
             <if test="callStatus != null">call_status,</if>
@@ -130,6 +135,7 @@
             <if test="completionTokens != null">#{completionTokens},</if>
             <if test="totalTokens != null">#{totalTokens},</if>
             <if test="cost != null">#{cost},</if>
+            <if test="costCurrency != null">#{costCurrency},</if>
             <if test="durationMs != null">#{durationMs},</if>
             <if test="httpStatus != null">#{httpStatus},</if>
             <if test="callStatus != null">#{callStatus},</if>
@@ -154,6 +160,7 @@
             <if test="completionTokens != null">completion_tokens = #{completionTokens},</if>
             <if test="totalTokens != null">total_tokens = #{totalTokens},</if>
             <if test="cost != null">cost = #{cost},</if>
+            <if test="costCurrency != null">cost_currency = #{costCurrency},</if>
             <if test="durationMs != null">duration_ms = #{durationMs},</if>
             <if test="httpStatus != null">http_status = #{httpStatus},</if>
             <if test="callStatus != null">call_status = #{callStatus},</if>
