@@ -57,6 +57,7 @@
             resultMap="Fx67llDortmundBasicMatchResult">
         <include refid="selectFx67llDortmundBasicMatchWithJoinVo"/>
         <where>
+            <if test="matchId != null ">and m.match_id = #{matchId}</if>
             <if test="seasonId != null ">and m.season_id = #{seasonId}</if>
             <if test="homeTeamId != null ">and m.home_team_id = #{homeTeamId}</if>
             <if test="awayTeamId != null ">and m.away_team_id = #{awayTeamId}</if>

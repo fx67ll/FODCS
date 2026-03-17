@@ -63,6 +63,7 @@
             resultMap="Fx67llDortmundMatchScoreResult">
         <include refid="selectFx67llDortmundMatchScoreVo"/>
         <where>
+            <if test="scoreId != null ">and score_id = #{scoreId}</if>
             <if test="analysisId != null ">and analysis_id = #{analysisId}</if>
             <if test="matchId != null ">and match_id = #{matchId}</if>
             <if test="homeAttackScore != null ">and home_attack_score = #{homeAttackScore}</if>

@@ -45,6 +45,7 @@
             resultMap="Fx67llDortmundMatchAnalysisResult">
         <include refid="selectFx67llDortmundMatchAnalysisVo"/>
         <where>
+            <if test="analysisId != null ">and analysis_id = #{analysisId}</if>
             <if test="matchId != null ">and match_id = #{matchId}</if>
             <if test="promptId != null ">and prompt_id = #{promptId}</if>
             <if test="modelId != null ">and model_id = #{modelId}</if>
