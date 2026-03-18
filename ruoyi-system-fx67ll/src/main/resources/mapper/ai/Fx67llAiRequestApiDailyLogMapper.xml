@@ -7,9 +7,13 @@
     <resultMap type="Fx67llAiRequestApiDailyLog" id="Fx67llAiRequestApiDailyLogResult">
         <result property="dailyLogDate" column="daily_log_date"/>
         <result property="promptId" column="prompt_id"/>
+        <result property="promptName" column="prompt_name"/>
         <result property="groupId" column="group_id"/>
+        <result property="groupName" column="group_name"/>
         <result property="sceneId" column="scene_id"/>
+        <result property="sceneName" column="scene_name"/>
         <result property="modelId" column="model_id"/>
+        <result property="modelName" column="model_name"/>
         <result property="totalRequests" column="total_requests"/>
         <result property="failRequests" column="fail_requests"/>
         <result property="limitRequests" column="limit_requests"/>
@@ -21,42 +25,50 @@
     </resultMap>
 
     <sql id="selectFx67llAiRequestApiDailyLogVo">
-        select daily_log_date,
-               prompt_id,
-               group_id,
-               scene_id,
-               model_id,
-               total_requests,
-               fail_requests,
-               limit_requests,
-               circuit_requests,
-               total_prompt_tokens,
-               total_completion_tokens,
-               total_cost,
-               avg_duration_ms
-        from fx67ll_ai_request_daily_log
+        SELECT log.daily_log_date,
+               log.prompt_id,
+               pt.prompt_name,
+               log.group_id,
+               pg.group_name,
+               log.scene_id,
+               ps.scene_name,
+               log.model_id,
+               pm.model_name,
+               log.total_requests,
+               log.fail_requests,
+               log.limit_requests,
+               log.circuit_requests,
+               log.total_prompt_tokens,
+               log.total_completion_tokens,
+               log.total_cost,
+               log.avg_duration_ms
+        FROM fx67ll_ai_request_daily_log log
+                 LEFT JOIN fx67ll_ai_prompt_template pt ON log.prompt_id = pt.prompt_id
+                 LEFT JOIN fx67ll_ai_prompt_group pg ON log.group_id = pg.group_id
+                 LEFT JOIN fx67ll_ai_prompt_scene ps ON log.scene_id = ps.scene_id
+                 LEFT JOIN fx67ll_ai_prompt_model pm ON log.model_id = pm.model_id
     </sql>
 
     <select id="selectFx67llAiRequestApiDailyLogList" parameterType="Fx67llAiRequestApiDailyLog"
             resultMap="Fx67llAiRequestApiDailyLogResult">
         <include refid="selectFx67llAiRequestApiDailyLogVo"/>
         <where>
-            <if test="totalRequests != null ">and total_requests = #{totalRequests}</if>
-            <if test="failRequests != null ">and fail_requests = #{failRequests}</if>
-            <if test="limitRequests != null ">and limit_requests = #{limitRequests}</if>
-            <if test="circuitRequests != null ">and circuit_requests = #{circuitRequests}</if>
-            <if test="totalPromptTokens != null ">and total_prompt_tokens = #{totalPromptTokens}</if>
-            <if test="totalCompletionTokens != null ">and total_completion_tokens = #{totalCompletionTokens}</if>
-            <if test="totalCost != null ">and total_cost = #{totalCost}</if>
-            <if test="avgDurationMs != null ">and avg_duration_ms = #{avgDurationMs}</if>
+            <if test="totalRequests != null ">and log.total_requests = #{totalRequests}</if>
+            <if test="failRequests != null ">and log.fail_requests = #{failRequests}</if>
+            <if test="limitRequests != null ">and log.limit_requests = #{limitRequests}</if>
+            <if test="circuitRequests != null ">and log.circuit_requests = #{circuitRequests}</if>
+            <if test="totalPromptTokens != null ">and log.total_prompt_tokens = #{totalPromptTokens}</if>
+            <if test="totalCompletionTokens != null ">and log.total_completion_tokens = #{totalCompletionTokens}</if>
+            <if test="totalCost != null ">and log.total_cost = #{totalCost}</if>
+            <if test="avgDurationMs != null ">and log.avg_duration_ms = #{avgDurationMs}</if>
         </where>
-        order by STR_TO_DATE(create_time, "%Y-%m-%d %H:%i:%s") desc
+        order by STR_TO_DATE(log.create_time, "%Y-%m-%d %H:%i:%s") desc
     </select>
 
     <select id="selectFx67llAiRequestApiDailyLogByDailyLogDate" parameterType="Date"
             resultMap="Fx67llAiRequestApiDailyLogResult">
         <include refid="selectFx67llAiRequestApiDailyLogVo"/>
-        where daily_log_date = #{dailyLogDate}
+        where log.daily_log_date = #{dailyLogDate}
     </select>
 
     <insert id="insertFx67llAiRequestApiDailyLog" parameterType="Fx67llAiRequestApiDailyLog">
