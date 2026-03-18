@@ -34,6 +34,18 @@ public class Fx67llDortmundMatchScore extends BaseEntity {
     private Long matchId;
 
     /**
+     * 主队名称（关联查询）
+     */
+    @Excel(name = "主队名称")
+    private String homeTeamName;
+
+    /**
+     * 客队名称（关联查询）
+     */
+    @Excel(name = "客队名称")
+    private String awayTeamName;
+
+    /**
      * 主队进攻能力标准化评分（值域：[0,100]，基于近期进攻数据计算）
      */
     @Excel(name = "主队进攻能力标准化评分", readConverterExp = "值=域：[0,100]，基于近期进攻数据计算")
@@ -176,6 +188,22 @@ public class Fx67llDortmundMatchScore extends BaseEntity {
 
     public Long getMatchId() {
         return matchId;
+    }
+
+    public String getHomeTeamName() {
+        return homeTeamName;
+    }
+
+    public void setHomeTeamName(String homeTeamName) {
+        this.homeTeamName = homeTeamName;
+    }
+
+    public String getAwayTeamName() {
+        return awayTeamName;
+    }
+
+    public void setAwayTeamName(String awayTeamName) {
+        this.awayTeamName = awayTeamName;
     }
 
     public void setHomeAttackScore(BigDecimal homeAttackScore) {
@@ -352,6 +380,8 @@ public class Fx67llDortmundMatchScore extends BaseEntity {
                 .append("scoreId", getScoreId())
                 .append("analysisId", getAnalysisId())
                 .append("matchId", getMatchId())
+                .append("homeTeamName", getHomeTeamName())
+                .append("awayTeamName", getAwayTeamName())
                 .append("homeAttackScore", getHomeAttackScore())
                 .append("homeDefenseScore", getHomeDefenseScore())
                 .append("homeInjuryScore", getHomeInjuryScore())

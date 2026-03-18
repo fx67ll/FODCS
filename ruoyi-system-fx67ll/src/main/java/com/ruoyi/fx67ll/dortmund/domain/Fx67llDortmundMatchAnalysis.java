@@ -26,16 +26,40 @@ public class Fx67llDortmundMatchAnalysis extends BaseEntity {
     private Long matchId;
 
     /**
+     * 主队名称（关联查询）
+     */
+    @Excel(name = "主队名称")
+    private String homeTeamName;
+
+    /**
+     * 客队名称（关联查询）
+     */
+    @Excel(name = "客队名称")
+    private String awayTeamName;
+
+    /**
      * 使用的模板ID（外键，关联fx67ll_ai_prompt_template.prompt_id，自定义分析时为空）
      */
     @Excel(name = "使用的模板ID", readConverterExp = "外=键，关联fx67ll_ai_prompt_template.prompt_id，自定义分析时为空")
     private Long promptId;
 
     /**
+     * 模板名称（非数据库字段，用于列表展示）
+     */
+    @Excel(name = "模板名称")
+    private String promptName;
+
+    /**
      * 使用的模型ID（外键，关联fx67ll_ai_prompt_model.model_id）
      */
     @Excel(name = "使用的模型ID", readConverterExp = "外=键，关联fx67ll_ai_prompt_model.model_id")
     private Long modelId;
+
+    /**
+     * 模型业务名称（用于前端展示）
+     */
+    @Excel(name = "模型业务名称", readConverterExp = "用=于前端展示")
+    private String modelName;
 
     /**
      * AI调用日志关联码（格式：request_log_id|request_time，用于手动关联fx67ll_ai_request_log表）
@@ -114,6 +138,22 @@ public class Fx67llDortmundMatchAnalysis extends BaseEntity {
         return matchId;
     }
 
+    public String getHomeTeamName() {
+        return homeTeamName;
+    }
+
+    public void setHomeTeamName(String homeTeamName) {
+        this.homeTeamName = homeTeamName;
+    }
+
+    public String getAwayTeamName() {
+        return awayTeamName;
+    }
+
+    public void setAwayTeamName(String awayTeamName) {
+        this.awayTeamName = awayTeamName;
+    }
+
     public void setPromptId(Long promptId) {
         this.promptId = promptId;
     }
@@ -122,12 +162,28 @@ public class Fx67llDortmundMatchAnalysis extends BaseEntity {
         return promptId;
     }
 
+    public void setPromptName(String promptName) {
+        this.promptName = promptName;
+    }
+
+    public String getPromptName() {
+        return promptName;
+    }
+
     public void setModelId(Long modelId) {
         this.modelId = modelId;
     }
 
     public Long getModelId() {
         return modelId;
+    }
+
+    public void setModelName(String modelName) {
+        this.modelName = modelName;
+    }
+
+    public String getModelName() {
+        return modelName;
     }
 
     public void setRequestLogCode(String requestLogCode) {
@@ -223,8 +279,12 @@ public class Fx67llDortmundMatchAnalysis extends BaseEntity {
         return new ToStringBuilder(this, ToStringStyle.MULTI_LINE_STYLE)
                 .append("analysisId", getAnalysisId())
                 .append("matchId", getMatchId())
+                .append("homeTeamName", getHomeTeamName())
+                .append("awayTeamName", getAwayTeamName())
                 .append("promptId", getPromptId())
+                .append("promptName", getPromptName())
                 .append("modelId", getModelId())
+                .append("modelName", getModelName())
                 .append("requestLogCode", getRequestLogCode())
                 .append("analysisType", getAnalysisType())
                 .append("rawPrompt", getRawPrompt())

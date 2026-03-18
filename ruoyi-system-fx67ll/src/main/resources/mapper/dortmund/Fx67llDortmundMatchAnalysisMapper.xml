@@ -7,8 +7,12 @@
     <resultMap type="Fx67llDortmundMatchAnalysis" id="Fx67llDortmundMatchAnalysisResult">
         <result property="analysisId" column="analysis_id"/>
         <result property="matchId" column="match_id"/>
+        <result property="homeTeamName" column="home_team_name"/>
+        <result property="awayTeamName" column="away_team_name"/>
         <result property="promptId" column="prompt_id"/>
+        <result property="promptName" column="prompt_name"/>
         <result property="modelId" column="model_id"/>
+        <result property="modelName" column="model_name"/>
         <result property="requestLogCode" column="request_log_code"/>
         <result property="analysisType" column="analysis_type"/>
         <result property="rawPrompt" column="raw_prompt"/>
@@ -23,59 +27,68 @@
     </resultMap>
 
     <sql id="selectFx67llDortmundMatchAnalysisVo">
-        select analysis_id,
-               match_id,
-               prompt_id,
-               model_id,
-               request_log_code,
-               analysis_type,
-               raw_prompt,
-               raw_ai_response,
-               analysis_remark,
-               user_id,
-               create_by,
-               create_time,
-               update_by,
-               update_time,
-               del_flag
-        from fx67ll_dortmund_match_analysis
+        SELECT analysis.analysis_id,
+               analysis.match_id,
+               ht.team_name_short AS home_team_name,
+               at.team_name_short AS away_team_name,
+               analysis.prompt_id,
+               pt.prompt_name,
+               analysis.model_id,
+               pm.model_name,
+               analysis.request_log_code,
+               analysis.analysis_type,
+               analysis.raw_prompt,
+               analysis.raw_ai_response,
+               analysis.analysis_remark,
+               analysis.user_id,
+               analysis.create_by,
+               analysis.create_time,
+               analysis.update_by,
+               analysis.update_time,
+               analysis.del_flag
+        FROM fx67ll_dortmund_match_analysis analysis
+                 LEFT JOIN fx67ll_dortmund_match m ON analysis.match_id = m.match_id
+                 LEFT JOIN fx67ll_dortmund_team ht ON m.home_team_id = ht.team_id
+                 LEFT JOIN fx67ll_dortmund_team at ON m.away_team_id = at.team_id
+            LEFT JOIN fx67ll_ai_prompt_template pt ON analysis.prompt_id = pt.prompt_id
+            LEFT JOIN fx67ll_ai_prompt_model pm ON analysis.model_id = pm.model_id
     </sql>
 
     <select id="selectFx67llDortmundMatchAnalysisList" parameterType="Fx67llDortmundMatchAnalysis"
             resultMap="Fx67llDortmundMatchAnalysisResult">
         <include refid="selectFx67llDortmundMatchAnalysisVo"/>
         <where>
-            <if test="analysisId != null ">and analysis_id = #{analysisId}</if>
-            <if test="matchId != null ">and match_id = #{matchId}</if>
-            <if test="promptId != null ">and prompt_id = #{promptId}</if>
-            <if test="modelId != null ">and model_id = #{modelId}</if>
-            <if test="requestLogCode != null  and requestLogCode != ''">and request_log_code = #{requestLogCode}</if>
-            <if test="analysisType != null  and analysisType != ''">and analysis_type = #{analysisType}</if>
-            <if test="rawPrompt != null  and rawPrompt != ''">and raw_prompt = #{rawPrompt}</if>
-            <if test="rawAiResponse != null  and rawAiResponse != ''">and raw_ai_response = #{rawAiResponse}</if>
-            <if test="analysisRemark != null  and analysisRemark != ''">and analysis_remark = #{analysisRemark}</if>
-            <if test="delFlag != null  and delFlag != ''">and del_flag = #{delFlag}</if>
-            <if test="userId != null ">and user_id = #{userId}</if>
-            <if test="createBy != null  and createBy != ''">and create_by like concat('%',
+            <if test="analysisId != null ">and analysis.analysis_id = #{analysisId}</if>
+            <if test="matchId != null ">and analysis.match_id = #{matchId}</if>
+            <if test="promptId != null ">and analysis.prompt_id = #{promptId}</if>
+            <if test="modelId != null ">and analysis.model_id = #{modelId}</if>
+            <if test="requestLogCode != null  and requestLogCode != ''">and analysis.request_log_code = #{requestLogCode}</if>
+            <if test="analysisType != null  and analysisType != ''">and analysis.analysis_type = #{analysisType}</if>
+            <if test="rawPrompt != null  and rawPrompt != ''">and analysis.raw_prompt = #{rawPrompt}</if>
+            <if test="rawAiResponse != null  and rawAiResponse != ''">and analysis.raw_ai_response = #{rawAiResponse}</if>
+            <if test="analysisRemark != null  and analysisRemark != ''">and analysis.analysis_remark = #{analysisRemark}</if>
+            <if test="delFlag != null  and delFlag != ''">and analysis.del_flag = #{delFlag}</if>
+            <if test="userId != null ">and analysis.user_id = #{userId}</if>
+            <if test="createBy != null  and createBy != ''">and analysis.create_by like concat('%',
                 #{createBy}, '%')
             </if>
-            <if test="beginCreateTime != null and endCreateTime != ''">and create_time between #{beginCreateTime} and
+            <if test="beginCreateTime != null and endCreateTime != ''">and analysis.create_time between #{beginCreateTime} and
                 #{endCreateTime}
             </if>
-            <if test="updateBy != null  and updateBy != ''">and update_by like concat('%',
+            <if test="updateBy != null  and updateBy != ''">and analysis.update_by like concat('%',
                 #{updateBy}, '%')
             </if>
-            <if test="beginUpdateTime != null and endUpdateTime != ''">and update_time between #{beginUpdateTime} and
+            <if test="beginUpdateTime != null and endUpdateTime != ''">and analysis.update_time between #{beginUpdateTime} and
                 #{endUpdateTime}
             </if>
         </where>
-        order by STR_TO_DATE(create_time, "%Y-%m-%d %H:%i:%s") desc
+        order by STR_TO_DATE(analysis.create_time, "%Y-%m-%d %H:%i:%s") desc
     </select>
 
     <select id="selectFx67llDortmundMatchAnalysisByAnalysisId" parameterType="Long"
             resultMap="Fx67llDortmundMatchAnalysisResult">
         <include refid="selectFx67llDortmundMatchAnalysisVo"/>
-        where analysis_id = #{analysisId}
+        where analysis.analysis_id = #{analysisId}
     </select>
 
     <insert id="insertFx67llDortmundMatchAnalysis" parameterType="Fx67llDortmundMatchAnalysis" useGeneratedKeys="true"

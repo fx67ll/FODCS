@@ -34,6 +34,12 @@ public class Fx67llAiRequestLimitRule extends BaseEntity {
     private Long limitRuleTargetId;
 
     /**
+     * 规则作用目标名称（对应维度的业务名称，如model_name、prompt_name）
+     */
+    @Excel(name = "规则作用目标名称", readConverterExp = "对应维度的业务名称，如model_name、prompt_name")
+    private String limitRuleTargetName;
+
+    /**
      * 规则类型（字典码：1-流量控制，2-熔断保护）
      */
     @Excel(name = "规则类型", readConverterExp = "字=典码：1-流量控制，2-熔断保护")
@@ -99,7 +105,9 @@ public class Fx67llAiRequestLimitRule extends BaseEntity {
     @Excel(name = "规则启用状态", readConverterExp = "字=典码：0-启用，1-停用")
     private String limitRuleStatus;
 
-    /** 规则备注 */
+    /**
+     * 规则备注
+     */
     @Excel(name = "规则备注")
     private String limitRuleRemark;
 
@@ -157,6 +165,15 @@ public class Fx67llAiRequestLimitRule extends BaseEntity {
     public Long getLimitRuleTargetId() {
         return limitRuleTargetId;
     }
+
+    public String getLimitRuleTargetName() {
+        return limitRuleTargetName;
+    }
+
+    public void setLimitRuleTargetName(String limitRuleTargetName) {
+        this.limitRuleTargetName = limitRuleTargetName;
+    }
+
 
     public void setLimitRuleType(String limitRuleType) {
         this.limitRuleType = limitRuleType;
@@ -246,13 +263,11 @@ public class Fx67llAiRequestLimitRule extends BaseEntity {
         return limitRuleStatus;
     }
 
-    public void setLimitRuleRemark(String limitRuleRemark)
-    {
+    public void setLimitRuleRemark(String limitRuleRemark) {
         this.limitRuleRemark = limitRuleRemark;
     }
 
-    public String getLimitRuleRemark()
-    {
+    public String getLimitRuleRemark() {
         return limitRuleRemark;
     }
 
@@ -310,6 +325,7 @@ public class Fx67llAiRequestLimitRule extends BaseEntity {
                 .append("limitRuleId", getLimitRuleId())
                 .append("limitRuleDimension", getLimitRuleDimension())
                 .append("limitRuleTargetId", getLimitRuleTargetId())
+                .append("limitRuleTargetName", getLimitRuleTargetName())
                 .append("limitRuleType", getLimitRuleType())
                 .append("flowControlMode", getFlowControlMode())
                 .append("flowControlEffect", getFlowControlEffect())
