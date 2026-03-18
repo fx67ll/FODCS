@@ -117,6 +117,11 @@ public class Fx67llAiPromptBasicModel extends BaseEntity {
     private Long userId;
 
     /**
+     * 是否需要排序标志（Y-按sort排序，其他情况按create_time倒序）
+     */
+    private String isNeedSort;
+
+    /**
      * 创建开始时间
      */
     private String beginCreateTime;
@@ -272,6 +277,14 @@ public class Fx67llAiPromptBasicModel extends BaseEntity {
         return userId;
     }
 
+    public String getIsNeedSort() {
+        return isNeedSort;
+    }
+
+    public void setIsNeedSort(String isNeedSort) {
+        this.isNeedSort = isNeedSort;
+    }
+
     public String getBeginCreateTime() {
         return beginCreateTime;
     }
@@ -328,6 +341,7 @@ public class Fx67llAiPromptBasicModel extends BaseEntity {
                 .append("updateTime", getUpdateTime())
                 .append("delFlag", getDelFlag())
                 .append("userId", getUserId())
+                .append("isNeedSort", getIsNeedSort())
                 .append("beginCreateTime", getBeginCreateTime())
                 .append("endCreateTime", getEndCreateTime())
                 .append("beginUpdateTime", getBeginUpdateTime())

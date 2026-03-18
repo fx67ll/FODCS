@@ -61,6 +61,11 @@ public class Fx67llAiPromptBasicGroup extends BaseEntity {
     private Long userId;
 
     /**
+     * 是否需要排序标志（Y-按sort排序，其他情况按create_time倒序）
+     */
+    private String isNeedSort;
+
+    /**
      * 创建开始时间
      */
     private String beginCreateTime;
@@ -120,11 +125,11 @@ public class Fx67llAiPromptBasicGroup extends BaseEntity {
         return groupSort;
     }
 
-    public void setgroupRemark(String groupRemark) {
+    public void setGroupRemark(String groupRemark) {
         this.groupRemark = groupRemark;
     }
 
-    public String getgroupRemark() {
+    public String getGroupRemark() {
         return groupRemark;
     }
 
@@ -142,6 +147,14 @@ public class Fx67llAiPromptBasicGroup extends BaseEntity {
 
     public Long getUserId() {
         return userId;
+    }
+
+    public String getIsNeedSort() {
+        return isNeedSort;
+    }
+
+    public void setIsNeedSort(String isNeedSort) {
+        this.isNeedSort = isNeedSort;
     }
 
     public String getBeginCreateTime() {
@@ -184,13 +197,14 @@ public class Fx67llAiPromptBasicGroup extends BaseEntity {
                 .append("groupName", getGroupName())
                 .append("groupStatus", getGroupStatus())
                 .append("groupSort", getGroupSort())
-                .append("groupRemark", getgroupRemark())
+                .append("groupRemark", getGroupRemark())
                 .append("createBy", getCreateBy())
                 .append("createTime", getCreateTime())
                 .append("updateBy", getUpdateBy())
                 .append("updateTime", getUpdateTime())
                 .append("delFlag", getDelFlag())
                 .append("userId", getUserId())
+                .append("isNeedSort", getIsNeedSort())
                 .append("beginCreateTime", getBeginCreateTime())
                 .append("endCreateTime", getEndCreateTime())
                 .append("beginUpdateTime", getBeginUpdateTime())

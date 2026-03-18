@@ -81,7 +81,15 @@
                 #{endUpdateTime}
             </if>
         </where>
-        order by STR_TO_DATE(create_time, "%Y-%m-%d %H:%i:%s") desc
+        <!-- 动态排序：如果 isNeedSort == 'Y'，则按 sort 排序，否则按 create_time 排序 -->
+        <choose>
+            <when test="isNeedSort != null and isNeedSort == 'Y'.toString()">
+                order by team_sort
+            </when>
+            <otherwise>
+                order by STR_TO_DATE(create_time, "%Y-%m-%d %H:%i:%s") desc
+            </otherwise>
+        </choose>
     </select>
 
     <select id="selectFx67llDortmundBasicTeamByTeamId" parameterType="Long" resultMap="Fx67llDortmundBasicTeamResult">
