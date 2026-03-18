@@ -192,7 +192,6 @@ public class Fx67llDortmundBasicMatch extends BaseEntity {
         this.awayTeamName = awayTeamName;
     }
 
-
     public void setMatchTime(Date matchTime) {
         this.matchTime = matchTime;
     }
