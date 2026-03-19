@@ -8,6 +8,7 @@
         <result property="limitRuleId" column="limit_rule_id"/>
         <result property="limitRuleDimension" column="limit_rule_dimension"/>
         <result property="limitRuleTargetId" column="limit_rule_target_id"/>
+        <result property="limitRuleTargetName" column="limit_rule_target_name"/>
         <result property="limitRuleType" column="limit_rule_type"/>
         <result property="flowControlMode" column="flow_control_mode"/>
         <result property="flowControlEffect" column="flow_control_effect"/>
@@ -29,72 +30,88 @@
     </resultMap>
 
     <sql id="selectFx67llAiRequestLimitRuleVo">
-        select limit_rule_id,
-               limit_rule_dimension,
-               limit_rule_target_id,
-               limit_rule_type,
-               flow_control_mode,
-               flow_control_effect,
-               flow_rule_type,
-               flow_threshold,
-               circuit_strategy,
-               circuit_threshold,
-               circuit_grade,
-               circuit_window,
-               circuit_timeout,
-               limit_rule_status,
-               limit_rule_remark,
-               user_id,
-               create_by,
-               create_time,
-               update_by,
-               update_time,
-               del_flag
-        from fx67ll_ai_request_limit_rule
+        SELECT
+            rlr.limit_rule_id,
+            rlr.limit_rule_dimension,
+            rlr.limit_rule_target_id,
+            CASE
+                WHEN rlr.limit_rule_dimension = '1' THEN t.prompt_name    -- 1-模板
+                WHEN rlr.limit_rule_dimension = '2' THEN s.scene_name     -- 2-场景
+                WHEN rlr.limit_rule_dimension = '3' THEN g.group_name     -- 3-分组
+                WHEN rlr.limit_rule_dimension = '4' THEN m.model_name     -- 4-模型
+                ELSE NULL
+                END AS limit_rule_target_name,
+            rlr.limit_rule_type,
+            rlr.flow_control_mode,
+            rlr.flow_control_effect,
+            rlr.flow_rule_type,
+            rlr.flow_threshold,
+            rlr.circuit_strategy,
+            rlr.circuit_threshold,
+            rlr.circuit_grade,
+            rlr.circuit_window,
+            rlr.circuit_timeout,
+            rlr.limit_rule_status,
+            rlr.limit_rule_remark,
+            rlr.user_id,
+            rlr.create_by,
+            rlr.create_time,
+            rlr.update_by,
+            rlr.update_time,
+            rlr.del_flag
+        FROM fx67ll_ai_request_limit_rule rlr
+                 LEFT JOIN fx67ll_ai_prompt_template t
+                           ON rlr.limit_rule_dimension = '1' AND rlr.limit_rule_target_id = t.prompt_id
+                 LEFT JOIN fx67ll_ai_prompt_scene s
+                           ON rlr.limit_rule_dimension = '2' AND rlr.limit_rule_target_id = s.scene_id
+                 LEFT JOIN fx67ll_ai_prompt_group g
+                           ON rlr.limit_rule_dimension = '3' AND rlr.limit_rule_target_id = g.group_id
+                 LEFT JOIN fx67ll_ai_prompt_model m
+                           ON rlr.limit_rule_dimension = '4' AND rlr.limit_rule_target_id = m.model_id
     </sql>
 
     <select id="selectFx67llAiRequestLimitRuleList" parameterType="Fx67llAiRequestLimitRule"
             resultMap="Fx67llAiRequestLimitRuleResult">
         <include refid="selectFx67llAiRequestLimitRuleVo"/>
         <where>
-            <if test="limitRuleId != null ">and limit_rule_id = #{limitRuleId}</if>
-            <if test="limitRuleDimension != null  and limitRuleDimension != ''">and limit_rule_dimension =
+            <if test="limitRuleId != null ">and rlr.limit_rule_id = #{limitRuleId}</if>
+            <if test="limitRuleDimension != null  and limitRuleDimension != ''">and rlr.limit_rule_dimension =
                 #{limitRuleDimension}
             </if>
-            <if test="limitRuleTargetId != null ">and limit_rule_target_id = #{limitRuleTargetId}</if>
-            <if test="limitRuleType != null  and limitRuleType != ''">and limit_rule_type = #{limitRuleType}</if>
-            <if test="flowControlMode != null  and flowControlMode != ''">and flow_control_mode = #{flowControlMode}
+            <if test="limitRuleTargetId != null ">and rlr.limit_rule_target_id = #{limitRuleTargetId}</if>
+            <if test="limitRuleType != null  and limitRuleType != ''">and rlr.limit_rule_type = #{limitRuleType}</if>
+            <if test="flowControlMode != null  and flowControlMode != ''">and rlr.flow_control_mode = #{flowControlMode}
             </if>
-            <if test="flowControlEffect != null  and flowControlEffect != ''">and flow_control_effect =
+            <if test="flowControlEffect != null  and flowControlEffect != ''">and rlr.flow_control_effect =
                 #{flowControlEffect}
             </if>
-            <if test="flowRuleType != null  and flowRuleType != ''">and flow_rule_type = #{flowRuleType}</if>
-            <if test="flowThreshold != null ">and flow_threshold = #{flowThreshold}</if>
-            <if test="circuitStrategy != null  and circuitStrategy != ''">and circuit_strategy = #{circuitStrategy}</if>
-            <if test="circuitThreshold != null ">and circuit_threshold = #{circuitThreshold}</if>
-            <if test="circuitGrade != null ">and circuit_grade = #{circuitGrade}</if>
-            <if test="circuitWindow != null ">and circuit_window = #{circuitWindow}</if>
-            <if test="circuitTimeout != null ">and circuit_timeout = #{circuitTimeout}</if>
-            <if test="limitRuleStatus != null  and limitRuleStatus != ''">and limit_rule_status = #{limitRuleStatus}
+            <if test="flowRuleType != null  and flowRuleType != ''">and rlr.flow_rule_type = #{flowRuleType}</if>
+            <if test="flowThreshold != null ">and rlr.flow_threshold = #{flowThreshold}</if>
+            <if test="circuitStrategy != null  and circuitStrategy != ''">and rlr.circuit_strategy = #{circuitStrategy}</if>
+            <if test="circuitThreshold != null ">and rlr.circuit_threshold = #{circuitThreshold}</if>
+            <if test="circuitGrade != null ">and rlr.circuit_grade = #{circuitGrade}</if>
+            <if test="circuitWindow != null ">and rlr.circuit_window = #{circuitWindow}</if>
+            <if test="circuitTimeout != null ">and rlr.circuit_timeout = #{circuitTimeout}</if>
+            <if test="limitRuleStatus != null  and limitRuleStatus != ''">and rlr.limit_rule_status = #{limitRuleStatus}
             </if>
-            <if test="limitRuleRemark != null  and limitRuleRemark != ''">and limit_rule_remark = #{limitRuleRemark}
+            <if test="limitRuleRemark != null  and limitRuleRemark != ''">and rlr.limit_rule_remark = #{limitRuleRemark}
             </if>
-            <if test="delFlag != null  and delFlag != ''">and del_flag = #{delFlag}</if>
-            <if test="userId != null ">and user_id = #{userId}</if>
-            <if test="createBy != null  and createBy != ''">and create_by like concat('%',
+            <if test="delFlag != null  and delFlag != ''">and rlr.del_flag = #{delFlag}</if>
+            <if test="userId != null ">and rlr.user_id = #{userId}</if>
+            <if test="createBy != null  and createBy != ''">and rlr.create_by like concat('%',
                 #{createBy}, '%')
             </if>
-            <if test="beginCreateTime != null and endCreateTime != ''">and create_time between #{beginCreateTime} and
+            <if test="beginCreateTime != null and endCreateTime != ''">and rlr.create_time between #{beginCreateTime} and
                 #{endCreateTime}
             </if>
-            <if test="updateBy != null  and updateBy != ''">and update_by like concat('%',
+            <if test="updateBy != null  and updateBy != ''">and rlr.update_by like concat('%',
                 #{updateBy}, '%')
             </if>
-            <if test="beginUpdateTime != null and endUpdateTime != ''">and update_time between #{beginUpdateTime} and
+            <if test="beginUpdateTime != null and endUpdateTime != ''">and rlr.update_time between #{beginUpdateTime} and
                 #{endUpdateTime}
             </if>
         </where>
-        order by STR_TO_DATE(create_time, "%Y-%m-%d %H:%i:%s") desc
+        order by STR_TO_DATE(rlr.create_time, "%Y-%m-%d %H:%i:%s") desc
     </select>
 
     <select id="selectFx67llAiRequestLimitRuleByLimitRuleId" parameterType="Long"
