@@ -214,6 +214,7 @@ public class Fx67llLotteryLogController extends BaseController {
     /**
      * 提供给 APP 查询历史号码记录中奖数据统计
      */
+    @PreAuthorize("@ss.hasPermi('lottery:log:total')")
     @GetMapping("/getLotteryTotalReward")
     public TableDataInfo getLotteryTotalReward(Fx67llLotteryLog fx67llLotteryLog) {
         if (!isFx67llSelf()) {
@@ -228,7 +229,7 @@ public class Fx67llLotteryLogController extends BaseController {
     /**
      * 历史号码出现频率统计
      */
-    @PreAuthorize("@ss.hasPermi('lottery:log:query')")
+    @PreAuthorize("@ss.hasPermi('lottery:log:statistics')")
     @GetMapping("/getLotteryHistoryStatistics")
     public TableDataInfo getLotteryHistoryStatistics() {
         if (!isFx67llSelf()) {
