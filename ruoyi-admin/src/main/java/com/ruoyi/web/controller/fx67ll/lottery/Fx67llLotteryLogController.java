@@ -18,6 +18,8 @@ import com.ruoyi.common.annotation.Log;
 import com.ruoyi.common.core.controller.BaseController;
 import com.ruoyi.common.core.domain.AjaxResult;
 import com.ruoyi.common.enums.BusinessType;
+import com.ruoyi.common.constant.HttpStatus;
+import com.ruoyi.fx67ll.lottery.domain.Fx67llLotteryHistory;
 import com.ruoyi.fx67ll.lottery.domain.Fx67llLotteryLog;
 import com.ruoyi.fx67ll.lottery.domain.Fx67llLotteryTotalReward;
 import com.ruoyi.fx67ll.lottery.service.IFx67llLotteryLogService;
@@ -36,12 +38,43 @@ public class Fx67llLotteryLogController extends BaseController {
     @Autowired
     private IFx67llLotteryLogService fx67llLotteryLogService;
 
+    // ==================== 公共处理方法开始 ====================
+
+    /**
+     * 校验是否为 fx67ll 本人
+     */
+    private boolean isFx67llSelf() {
+        return SecurityUtils.getUsername().equals("fx67ll");
+    }
+
+    /**
+     * 获取标准化的 AjaxResult 权限错误返回
+     */
+    private AjaxResult getForbiddenAjaxResult() {
+        return error("内部测试功能，仅限 fx67ll 本人使用！");
+    }
+
+    /**
+     * 获取标准化的 TableDataInfo 权限错误返回
+     */
+    private TableDataInfo getForbiddenTableDataInfo() {
+        TableDataInfo errorRsp = new TableDataInfo();
+        errorRsp.setCode(HttpStatus.FORBIDDEN);
+        errorRsp.setMsg("内部测试功能，仅限 fx67ll 本人使用！");
+        return errorRsp;
+    }
+
+    // ==================== 公共处理方法结束 ====================
+
     /**
      * 查询每日号码记录列表
      */
     @PreAuthorize("@ss.hasPermi('lottery:log:list')")
     @GetMapping("/list")
     public TableDataInfo list(Fx67llLotteryLog fx67llLotteryLog) {
+        if (!isFx67llSelf()) {
+            return getForbiddenTableDataInfo();
+        }
         startPage();
         List<Fx67llLotteryLog> list = fx67llLotteryLogService.selectFx67llLotteryLogList(fx67llLotteryLog);
         return getDataTable(list);
@@ -50,8 +83,8 @@ public class Fx67llLotteryLogController extends BaseController {
     /**
      * 提供给 APP 查询每日号码记录列表
      */
-//    如果只放开SecurityConfig中允许匿名请求的配置，不放开这里的权限配置，会返回获取用户信息异常的错误
-//    @PreAuthorize("@ss.hasPermi('lottery:log:list')")
+    // 如果只放开SecurityConfig中允许匿名请求的配置，不放开这里的权限配置，会返回获取用户信息异常的错误
+    // @PreAuthorize("@ss.hasPermi('lottery:log:list')")
     @GetMapping("/getLotteryLogListForApp")
     public TableDataInfo getLotteryLogListForApp(Fx67llLotteryLog fx67llLotteryLog) {
         startPageForApp();
@@ -78,14 +111,17 @@ public class Fx67llLotteryLogController extends BaseController {
     @PreAuthorize("@ss.hasPermi('lottery:log:query')")
     @GetMapping(value = "/{lotteryId}")
     public AjaxResult getInfo(@PathVariable("lotteryId") Long lotteryId) {
+        if (!isFx67llSelf()) {
+            return getForbiddenAjaxResult();
+        }
         return success(fx67llLotteryLogService.selectFx67llLotteryLogByLotteryId(lotteryId));
     }
 
     /**
      * 提供给 APP 获取每日号码记录详细信息
      */
-//    如果只放开SecurityConfig中允许匿名请求的配置，不放开这里的权限配置，会返回获取用户信息异常的错误
-//    @PreAuthorize("@ss.hasPermi('lottery:log:query')")
+    // 如果只放开SecurityConfig中允许匿名请求的配置，不放开这里的权限配置，会返回获取用户信息异常的错误
+    // @PreAuthorize("@ss.hasPermi('lottery:log:query')")
     @GetMapping(value = "/getLotteryLogInfoForApp/{lotteryId}")
     public AjaxResult getLotteryLogInfoForApp(@PathVariable("lotteryId") Long lotteryId) {
         if (fx67llLotteryLogService.selectFx67llLotteryLogByLotteryId(lotteryId).getUserId() != SecurityUtils.getUserId()) {
@@ -102,14 +138,17 @@ public class Fx67llLotteryLogController extends BaseController {
     @Log(title = "新增每日号码记录", businessType = BusinessType.INSERT)
     @PostMapping
     public AjaxResult add(@RequestBody Fx67llLotteryLog fx67llLotteryLog) {
+        if (!isFx67llSelf()) {
+            return getForbiddenAjaxResult();
+        }
         return toAjax(fx67llLotteryLogService.insertFx67llLotteryLog(fx67llLotteryLog));
     }
 
     /**
      * 提供给 APP 新增每日号码记录
      */
-//    如果只放开SecurityConfig中允许匿名请求的配置，不放开这里的权限配置，会返回获取用户信息异常的错误
-//    @PreAuthorize("@ss.hasPermi('lottery:log:add')")
+    // 如果只放开SecurityConfig中允许匿名请求的配置，不放开这里的权限配置，会返回获取用户信息异常的错误
+    // @PreAuthorize("@ss.hasPermi('lottery:log:add')")
     @Log(title = "提供给 APP 新增每日号码记录", businessType = BusinessType.INSERT)
     @PostMapping("/addLotteryLogForApp")
     public AjaxResult addLotteryLogForApp(@RequestBody Fx67llLotteryLog fx67llLotteryLog) {
@@ -123,14 +162,17 @@ public class Fx67llLotteryLogController extends BaseController {
     @Log(title = "修改每日号码记录", businessType = BusinessType.UPDATE)
     @PutMapping
     public AjaxResult edit(@RequestBody Fx67llLotteryLog fx67llLotteryLog) {
+        if (!isFx67llSelf()) {
+            return getForbiddenAjaxResult();
+        }
         return toAjax(fx67llLotteryLogService.updateFx67llLotteryLog(fx67llLotteryLog));
     }
 
     /**
      * 提供给 APP 修改每日号码记录
      */
-//    如果只放开SecurityConfig中允许匿名请求的配置，不放开这里的权限配置，会返回获取用户信息异常的错误
-//    @PreAuthorize("@ss.hasPermi('lottery:log:edit')")
+    // 如果只放开SecurityConfig中允许匿名请求的配置，不放开这里的权限配置，会返回获取用户信息异常的错误
+    // @PreAuthorize("@ss.hasPermi('lottery:log:edit')")
     @Log(title = "提供给 APP 修改每日号码记录", businessType = BusinessType.UPDATE)
     @PutMapping("/editLotteryLogForApp")
     public AjaxResult editLotteryLogForApp(@RequestBody Fx67llLotteryLog fx67llLotteryLog) {
@@ -148,14 +190,17 @@ public class Fx67llLotteryLogController extends BaseController {
     @Log(title = "删除每日号码记录", businessType = BusinessType.DELETE)
     @DeleteMapping("/{lotteryIds}")
     public AjaxResult remove(@PathVariable Long[] lotteryIds) {
+        if (!isFx67llSelf()) {
+            return getForbiddenAjaxResult();
+        }
         return toAjax(fx67llLotteryLogService.deleteFx67llLotteryLogByLotteryIds(lotteryIds));
     }
 
     /**
      * 提供给 APP 删除每日号码记录
      */
-//    如果只放开SecurityConfig中允许匿名请求的配置，不放开这里的权限配置，会返回获取用户信息异常的错误
-//    @PreAuthorize("@ss.hasPermi('lottery:log:remove')")
+    // 如果只放开SecurityConfig中允许匿名请求的配置，不放开这里的权限配置，会返回获取用户信息异常的错误
+    // @PreAuthorize("@ss.hasPermi('lottery:log:remove')")
     @Log(title = "提供给 APP 删除每日号码记录", businessType = BusinessType.DELETE)
     @DeleteMapping("/deleteLogByIdForApp/{lotteryId}")
     public AjaxResult deleteLogByIdForApp(@PathVariable Long lotteryId) {
@@ -171,10 +216,25 @@ public class Fx67llLotteryLogController extends BaseController {
      */
     @GetMapping("/getLotteryTotalReward")
     public TableDataInfo getLotteryTotalReward(Fx67llLotteryLog fx67llLotteryLog) {
+        if (!isFx67llSelf()) {
+            return getForbiddenTableDataInfo();
+        }
         startPageForApp();
         fx67llLotteryLog.setUserId(SecurityUtils.getUserId());
         List<Fx67llLotteryTotalReward> list = fx67llLotteryLogService.selectFx67llLotteryTotalReward(fx67llLotteryLog);
         return getDataTable(list);
     }
 
+    /**
+     * 历史号码出现频率统计
+     */
+    @PreAuthorize("@ss.hasPermi('lottery:log:query')")
+    @GetMapping("/getLotteryHistoryStatistics")
+    public TableDataInfo getLotteryHistoryStatistics() {
+        if (!isFx67llSelf()) {
+            return getForbiddenTableDataInfo();
+        }
+        List<Fx67llLotteryHistory> list = fx67llLotteryLogService.selectFx67llLotteryLogHistoryStatistics();
+        return getDataTable(list);
+    }
 }

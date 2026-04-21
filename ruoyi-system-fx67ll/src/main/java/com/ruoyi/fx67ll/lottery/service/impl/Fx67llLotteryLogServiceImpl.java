@@ -4,6 +4,7 @@ import java.util.List;
 
 import com.ruoyi.common.utils.DateUtils;
 import com.ruoyi.common.utils.SecurityUtils;
+import com.ruoyi.fx67ll.lottery.domain.Fx67llLotteryHistory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import com.ruoyi.fx67ll.lottery.mapper.Fx67llLotteryLogMapper;
@@ -127,5 +128,15 @@ public class Fx67llLotteryLogServiceImpl implements IFx67llLotteryLogService {
     public List<Fx67llLotteryTotalReward> selectFx67llLotteryTotalReward(Fx67llLotteryLog fx67llLotteryLog) {
         fx67llLotteryLog.setUserId(SecurityUtils.getUserId());
         return fx67llLotteryLogMapper.selectFx67llLotteryTotalReward(fx67llLotteryLog);
+    }
+
+    /**
+     * 查询历史号码出现频率统计
+     *
+     * @return 历史号码出现频率统计结果
+     */
+    @Override
+    public List<Fx67llLotteryHistory> selectFx67llLotteryLogHistoryStatistics() {
+        return fx67llLotteryLogMapper.selectFx67llLotteryLogHistoryStatistics();
     }
 }

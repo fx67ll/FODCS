@@ -4,7 +4,7 @@
         "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="com.ruoyi.fx67ll.lottery.mapper.Fx67llLotteryLogMapper">
 
-    <resultMap type="Fx67llLotteryLog" id="Fx67llLotteryLogResult">
+    <resultMap type="com.ruoyi.fx67ll.lottery.domain.Fx67llLotteryLog" id="Fx67llLotteryLogResult">
         <result property="lotteryId" column="lottery_id"/>
         <result property="dateCode" column="date_code"/>
         <result property="recordNumber" column="record_number"/>
@@ -43,7 +43,8 @@
         from fx67ll_lottery_log
     </sql>
 
-    <select id="selectFx67llLotteryLogList" parameterType="Fx67llLotteryLog" resultMap="Fx67llLotteryLogResult">
+    <select id="selectFx67llLotteryLogList" parameterType="com.ruoyi.fx67ll.lottery.domain.Fx67llLotteryLog"
+            resultMap="Fx67llLotteryLogResult">
         <include refid="selectFx67llLotteryLogVo"/>
         <where>
             <if test="dateCode != null  and dateCode != ''">and date_code = #{dateCode}</if>
@@ -114,7 +115,8 @@
         order by STR_TO_DATE(create_time, "%Y-%m-%d %H:%i:%s") desc
     </select>
 
-    <insert id="insertFx67llLotteryLog" parameterType="Fx67llLotteryLog" useGeneratedKeys="true"
+    <insert id="insertFx67llLotteryLog" parameterType="com.ruoyi.fx67ll.lottery.domain.Fx67llLotteryLog"
+            useGeneratedKeys="true"
             keyProperty="lotteryId">
         insert into fx67ll_lottery_log
         <trim prefix="(" suffix=")" suffixOverrides=",">
@@ -153,7 +155,7 @@
         </trim>
     </insert>
 
-    <update id="updateFx67llLotteryLog" parameterType="Fx67llLotteryLog">
+    <update id="updateFx67llLotteryLog" parameterType="com.ruoyi.fx67ll.lottery.domain.Fx67llLotteryLog">
         update fx67ll_lottery_log
         <trim prefix="SET" suffixOverrides=",">
             <if test="dateCode != null and dateCode != ''">date_code = #{dateCode},</if>
@@ -189,7 +191,7 @@
         </foreach>
     </delete>
 
-    <resultMap type="Fx67llLotteryTotalReward" id="Fx67llLotteryTotalRewardResult">
+    <resultMap type="com.ruoyi.fx67ll.lottery.domain.Fx67llLotteryTotalReward" id="Fx67llLotteryTotalRewardResult">
         <result property="lotteryType" column="lottery_type"/>
         <result property="totalTickets" column="total_tickets"/>
         <result property="totalNumbers" column="total_numbers"/>
@@ -197,7 +199,7 @@
         <result property="totalWinningAmount" column="total_winning_amount"/>
     </resultMap>
 
-    <select id="selectFx67llLotteryTotalReward" parameterType="Fx67llPunchLog"
+    <select id="selectFx67llLotteryTotalReward" parameterType="com.ruoyi.fx67ll.lottery.domain.Fx67llLotteryLog"
             resultMap="Fx67llLotteryTotalRewardResult">
         SELECT
         CASE
@@ -226,4 +228,76 @@
         number_type
         WITH ROLLUP
     </select>
+
+    <!-- 历史号码出现频率统计 结果映射 -->
+    <resultMap type="com.ruoyi.fx67ll.lottery.domain.Fx67llLotteryHistory"
+               id="Fx67llLotteryHistoryStatisticsResult">
+        <result property="numberType" column="number_type"/>
+        <result property="zone" column="zone"/>
+        <result property="occurrenceCount" column="occurrence_count"/>
+        <result property="numbers" column="numbers"/>
+    </resultMap>
+
+    <!-- 历史号码出现频率统计 查询SQL -->
+    <!-- @formatter:off -->
+    <select id="selectFx67llLotteryLogHistoryStatistics" resultMap="Fx67llLotteryHistoryStatisticsResult">
+        SELECT number_type, zone, occurrence_count, numbers
+        FROM (
+            SELECT
+            number_type,
+            zone,
+            occurrence_count,
+            GROUP_CONCAT(number ORDER BY CAST(number AS UNSIGNED) ASC SEPARATOR ',') AS numbers
+            FROM (
+            SELECT
+            number_type,
+            zone,
+            number,
+            COUNT(*) AS occurrence_count
+            FROM (
+            -- 解析前区号码
+            SELECT
+            number_type,
+            '前区' AS zone,
+            SUBSTRING_INDEX(SUBSTRING_INDEX(SUBSTRING_INDEX(winning_number, '-', 1), ',', nums.pos), ',', -1) AS number
+            FROM fx67ll_lottery_log
+            JOIN (
+            SELECT 1 AS pos UNION SELECT 2 UNION SELECT 3 UNION SELECT 4 UNION SELECT 5
+            UNION SELECT 6 UNION SELECT 7 UNION SELECT 8 UNION SELECT 9 UNION SELECT 10
+            ) nums
+            WHERE del_flag = '0'
+            AND number_type IN (1, 2)
+            AND winning_number != ''
+            AND winning_number IS NOT NULL
+            AND nums.pos &lt;= (LENGTH(SUBSTRING_INDEX(winning_number, '-', 1))
+            - LENGTH(REPLACE(SUBSTRING_INDEX(winning_number, '-', 1), ',', '')) + 1)
+            AND TRIM(SUBSTRING_INDEX(SUBSTRING_INDEX(SUBSTRING_INDEX(winning_number, '-', 1), ',', nums.pos), ',', -1)) != ''
+
+            UNION ALL
+
+            -- 解析后区号码
+            SELECT
+            number_type,
+            '后区' AS zone,
+            SUBSTRING_INDEX(SUBSTRING_INDEX(SUBSTRING_INDEX(winning_number, '-', -1), ',', nums.pos), ',', -1) AS number
+            FROM fx67ll_lottery_log
+            JOIN (
+            SELECT 1 AS pos UNION SELECT 2 UNION SELECT 3 UNION SELECT 4 UNION SELECT 5
+            UNION SELECT 6 UNION SELECT 7 UNION SELECT 8 UNION SELECT 9 UNION SELECT 10
+            ) nums
+            WHERE del_flag = '0'
+            AND number_type IN (1, 2)
+            AND winning_number != ''
+            AND winning_number IS NOT NULL
+            AND nums.pos &lt;= (LENGTH(SUBSTRING_INDEX(winning_number, '-', -1))
+            - LENGTH(REPLACE(SUBSTRING_INDEX(winning_number, '-', -1), ',', '')) + 1)
+            AND TRIM(SUBSTRING_INDEX(SUBSTRING_INDEX(SUBSTRING_INDEX(winning_number, '-', -1), ',', nums.pos), ',', -1)) != ''
+            ) split_data
+            GROUP BY number_type, zone, number
+            ) freq_data
+            GROUP BY number_type, zone, occurrence_count
+            ) result
+        ORDER BY number_type ASC, zone ASC, occurrence_count DESC
+    </select>
+    <!-- @formatter:on -->
 </mapper>

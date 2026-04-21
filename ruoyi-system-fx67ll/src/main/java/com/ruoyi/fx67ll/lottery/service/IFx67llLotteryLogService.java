@@ -2,6 +2,7 @@ package com.ruoyi.fx67ll.lottery.service;
 
 import java.util.List;
 
+import com.ruoyi.fx67ll.lottery.domain.Fx67llLotteryHistory;
 import com.ruoyi.fx67ll.lottery.domain.Fx67llLotteryLog;
 import com.ruoyi.fx67ll.lottery.domain.Fx67llLotteryTotalReward;
 
@@ -83,4 +84,11 @@ public interface IFx67llLotteryLogService {
      * @return 历史号码记录中奖统计集合
      */
     public List<Fx67llLotteryTotalReward> selectFx67llLotteryTotalReward(Fx67llLotteryLog fx67llLotteryLog);
+
+    /**
+     * 查询历史号码出现频率统计
+     *
+     * @return 历史号码出现频率统计结果
+     */
+    public List<Fx67llLotteryHistory> selectFx67llLotteryLogHistoryStatistics();
 }
