@@ -3,6 +3,10 @@ fx67ll One Data Center Server
 
 欢迎访问 [fx67ll's 管理系统](https://vip.fx67ll.com)
 
+## 0.8.13.20260421
+* 新增历史号码出现频率统计接口  
+* 添加权限校验明文禁止非管理员使用号码相关接口  
+
 ## 0.8.12.20260319
 * 规则配置接口，按不同规则维度，返回对应维度目标的名称`limitRuleTargetName`  
 
