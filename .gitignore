@@ -54,3 +54,8 @@ nbdist/
 /.history
 /ruoyi-admin/src/main/resources/application-druid.yml
 /ruoyi-admin/src/main/resources/application.yml
+
+
+######################################################################
+# AI
+/.claude
