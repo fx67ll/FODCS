@@ -40,21 +40,35 @@ public class Fail2BanController extends BaseController {
     private static final Logger log = LoggerFactory.getLogger(Fail2BanController.class);
 
     // ==================== 系统配置常量 ====================
-    /** 命令执行超时时间（秒），防止进程阻塞 */
+    /**
+     * 命令执行超时时间（秒），防止进程阻塞
+     */
     private static final int COMMAND_TIMEOUT = 15;
-    /** 线程池用于异步读取流，避免缓冲区满导致进程挂死 */
+    /**
+     * 线程池用于异步读取流，避免缓冲区满导致进程挂死
+     */
     private static final ExecutorService STREAM_EXECUTOR = Executors.newFixedThreadPool(2);
-    /** 日志最大返回条数上限（安全限制），防止恶意请求导致内存溢出 */
+    /**
+     * 日志最大返回条数上限（安全限制），防止恶意请求导致内存溢出
+     */
     private static final int MAX_LOG_LIMIT = 1023;
-    /** 日志默认返回条数，兼顾性能和实用性 */
-    private static final int DEFAULT_LOG_LIMIT = 233;
-    /** 日期格式化器，用于解析日志时间 */
+    /**
+     * 日志默认返回条数，兼顾性能和实用性
+     */
+    private static final int DEFAULT_LOG_LIMIT = 200;
+    /**
+     * 日期格式化器，用于解析日志时间
+     */
     private static final DateTimeFormatter DATE_FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
 
     // ==================== 系统命令路径 ====================
-    /** Fail2ban客户端命令路径 */
+    /**
+     * Fail2ban客户端命令路径
+     */
     private static final String FAIL2BAN_CLIENT = "fail2ban-client";
-    /** Fail2ban日志文件路径 */
+    /**
+     * Fail2ban日志文件路径
+     */
     private static final String FAIL2BAN_LOG_PATH = "/var/log/fail2ban.log";
 
     /**
@@ -96,10 +110,14 @@ public class Fail2BanController extends BaseController {
             // 解析版本信息
             String versionOutput = executeCommand(new String[]{FAIL2BAN_CLIENT, "version"});
             if (versionOutput != null) {
-                Pattern versionPattern = Pattern.compile("Fail2Ban v([\\d.]+)");
-                Matcher versionMatcher = versionPattern.matcher(versionOutput);
+                // 兼容两种输出格式：带Fail2Ban v前缀 / 纯数字版本
+                Pattern versionPattern = Pattern.compile("(?:Fail2Ban v)?([0-9.]+)");
+                Matcher versionMatcher = versionPattern.matcher(versionOutput.trim());
                 if (versionMatcher.find()) {
-                    version = versionMatcher.group(1);
+                    String verNum = versionMatcher.group(1);
+                    if (verNum.matches("[0-9.]+")) {
+                        version = verNum;
+                    }
                 }
             }
 
@@ -233,15 +251,15 @@ public class Fail2BanController extends BaseController {
     /**
      * 获取最近的Fail2ban日志（支持参数化配置）
      *
-     * @param limit 返回日志条数（1-1023，默认233）
+     * @param limit 返回日志条数（1-1023，默认200）
      * @param level 日志级别筛选（ERROR/WARN/INFO/DEBUG，可选）
-     * @param jail 监狱名称筛选（可选）
+     * @param jail  监狱名称筛选（可选）
      * @return AjaxResult 包含日志列表的响应对象
      */
     @PreAuthorize("@ss.hasPermi('system:fail2ban:view')")
     @GetMapping("/logs")
     public AjaxResult getRecentLogs(
-            @RequestParam(defaultValue = "233") int limit,
+            @RequestParam(defaultValue = "200") int limit,
             @RequestParam(required = false) String level,
             @RequestParam(required = false) String jail
     ) {
