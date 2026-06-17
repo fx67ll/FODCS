@@ -7,12 +7,11 @@ import com.ruoyi.common.enums.BusinessType;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.security.access.prepost.PreAuthorize;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
+import org.springframework.web.context.request.RequestContextHolder;
+import org.springframework.web.context.request.ServletRequestAttributes;
 
+import javax.servlet.http.HttpServletRequest;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.InputStream;
@@ -27,19 +26,28 @@ import java.util.regex.Pattern;
 
 /**
  * Fail2ban监控控制器（适配0.11.2版本优化版）
- * 【安全承诺】：本控制器仅提供只读监控功能，不包含任何修改系统状态的操作
- * 所有命令均为查询操作，彻底杜绝被黑客利用的风险
+ * 【安全承诺】：
+ * 1. 所有监控接口均为只读查询，不修改系统状态
+ * 2. 所有操作接口（封禁/解封/启停）均严格限制：仅fx67ll角色 + IP白名单双重校验
+ * 3. 所有命令均采用数组方式执行，彻底杜绝命令注入风险
  * 适配若依框架，针对Fail2ban 0.11.x版本优化
  *
  * @author ruoyi
- * @version 1.2.0
+ * @version 1.3.0
  * @update 2026-06-17
- * @fixes 修复监狱名称解析错误、移除不兼容命令、实现精确运行时间计算
+ * @fixes 新增服务与监狱启停控制、监狱配置详情展示、动态威胁等级判断
  */
 @RestController
 @RequestMapping("/server/fail2ban")
 public class Fail2BanController extends BaseController {
     private static final Logger log = LoggerFactory.getLogger(Fail2BanController.class);
+
+    // 注入IP白名单配置类
+    private final Fail2BanConfig fail2BanConfig;
+
+    public Fail2BanController(Fail2BanConfig fail2BanConfig) {
+        this.fail2BanConfig = fail2BanConfig;
+    }
 
     // ==================== 系统配置常量 ====================
     /**
@@ -73,9 +81,13 @@ public class Fail2BanController extends BaseController {
 
     // ==================== 系统命令路径 ====================
     /**
-     * Fail2ban客户端命令路径
+     * sudo命令路径
      */
-    private static final String FAIL2BAN_CLIENT = "fail2ban-client";
+    private static final String SUDO_CMD = "sudo";
+    /**
+     * Fail2ban客户端命令绝对路径
+     */
+    private static final String FAIL2BAN_CLIENT = "/usr/bin/fail2ban-client";
     /**
      * Fail2ban日志文件路径
      */
@@ -86,6 +98,61 @@ public class Fail2BanController extends BaseController {
     private static long statusCacheTime;
     private static List<Map<String, Object>> jailsCache;
     private static long jailsCacheTime;
+
+    // ==================== 内部工具方法 ====================
+
+    /**
+     * 清除所有缓存（操作后立即更新状态）
+     */
+    private void clearAllCaches() {
+        statusCache = null;
+        statusCacheTime = 0;
+        jailsCache = null;
+        jailsCacheTime = 0;
+    }
+
+    /**
+     * IP地址工具类
+     * 获取客户端真实IP地址（支持反向代理）
+     */
+    private static String getClientIp(HttpServletRequest request) {
+        String ip = request.getHeader("X-Forwarded-For");
+        if (ip == null || ip.isEmpty() || "unknown".equalsIgnoreCase(ip)) {
+            ip = request.getHeader("Proxy-Client-IP");
+        }
+        if (ip == null || ip.isEmpty() || "unknown".equalsIgnoreCase(ip)) {
+            ip = request.getHeader("WL-Proxy-Client-IP");
+        }
+        if (ip == null || ip.isEmpty() || "unknown".equalsIgnoreCase(ip)) {
+            ip = request.getRemoteAddr();
+        }
+
+        // 处理多个代理的情况，取第一个真实客户端IP
+        if (ip != null && ip.contains(",")) {
+            ip = ip.split(",")[0].trim();
+        }
+
+        return ip;
+    }
+
+    /**
+     * 秒数格式化工具
+     * 将秒数转换为易读的时长字符串
+     *
+     * @param seconds 秒数
+     * @return String 格式化后的时长
+     */
+    private String formatSeconds(long seconds) {
+        if (seconds < 60) {
+            return seconds + "秒";
+        } else if (seconds < 3600) {
+            return (seconds / 60) + "分钟";
+        } else if (seconds < 86400) {
+            return (seconds / 3600) + "小时";
+        } else {
+            return (seconds / 86400) + "天";
+        }
+    }
 
     // ==================== 公共接口 ====================
 
@@ -119,7 +186,7 @@ public class Fail2BanController extends BaseController {
         }
 
         // 2. 执行fail2ban-client status命令获取整体状态
-        String statusOutput = executeCommand(new String[]{FAIL2BAN_CLIENT, "status"});
+        String statusOutput = executeCommand(new String[]{SUDO_CMD, FAIL2BAN_CLIENT, "status"});
         if (statusOutput != null && !statusOutput.isEmpty()) {
             status = "运行中";
 
@@ -131,7 +198,7 @@ public class Fail2BanController extends BaseController {
             }
 
             // 解析版本信息
-            String versionOutput = executeCommand(new String[]{FAIL2BAN_CLIENT, "version"});
+            String versionOutput = executeCommand(new String[]{SUDO_CMD, FAIL2BAN_CLIENT, "version"});
             if (versionOutput != null) {
                 version = versionOutput.trim();
             }
@@ -171,7 +238,7 @@ public class Fail2BanController extends BaseController {
 
     /**
      * 获取所有监狱的状态列表
-     * 返回每个监狱的基本统计信息（当前封禁、累计封禁、失败尝试）
+     * 返回每个监狱的基本统计信息、运行状态
      *
      * @return AjaxResult 包含监狱列表的响应对象
      */
@@ -185,7 +252,7 @@ public class Fail2BanController extends BaseController {
 
         List<Map<String, Object>> jailList = new ArrayList<>();
 
-        String statusOutput = executeCommand(new String[]{FAIL2BAN_CLIENT, "status"});
+        String statusOutput = executeCommand(new String[]{SUDO_CMD, FAIL2BAN_CLIENT, "status"});
         if (statusOutput == null || statusOutput.isEmpty()) {
             return AjaxResult.success("Fail2ban服务未运行", jailList);
         }
@@ -205,7 +272,7 @@ public class Fail2BanController extends BaseController {
 
     /**
      * 获取单个监狱的详细信息
-     * 包含监狱基本统计、当前被封禁的IP列表和日志文件路径
+     * 包含监狱基本统计、当前被封禁的IP列表、日志路径、只读配置信息
      *
      * @param jailName 监狱名称（安全校验：禁止包含特殊字符）
      * @return AjaxResult 包含监狱详情的响应对象
@@ -219,27 +286,24 @@ public class Fail2BanController extends BaseController {
             return AjaxResult.error("无效的监狱名称");
         }
 
-        // 额外安全检查：只允许查询实际存在的监狱
-        String statusOutput = executeCommand(new String[]{FAIL2BAN_CLIENT, "status"});
-        if (statusOutput == null || statusOutput.isEmpty()) {
-            return AjaxResult.error("Fail2ban服务未运行");
-        }
-        List<String> validJailNames = getJailNames(statusOutput);
-        if (!validJailNames.contains(jailName)) {
-            log.warn("检测到不存在的监狱名称请求：{}", jailName);
-            return AjaxResult.error("监狱不存在");
-        }
-
         Map<String, Object> jailDetail = new HashMap<>();
         Map<String, Object> basicStats = getJailStatsInternal(jailName);
         jailDetail.putAll(basicStats);
 
-        // 获取当前被封禁的IP列表
-        String bannedIpsOutput = executeCommand(new String[]{FAIL2BAN_CLIENT, "get", jailName, "banned"});
-        if (bannedIpsOutput != null) {
-            List<String> bannedIps = parseBannedIps(bannedIpsOutput);
-            jailDetail.put("bannedIps", bannedIps);
+        // 仅运行中的监狱可获取封禁IP列表
+        if ("运行中".equals(basicStats.get("status"))) {
+            String bannedIpsOutput = executeCommand(new String[]{SUDO_CMD, FAIL2BAN_CLIENT, "get", jailName, "banned"});
+            if (bannedIpsOutput != null) {
+                List<String> bannedIps = parseBannedIps(bannedIpsOutput);
+                jailDetail.put("bannedIps", bannedIps);
+            }
+        } else {
+            jailDetail.put("bannedIps", new ArrayList<>());
         }
+
+        // 获取监狱只读配置信息
+        Map<String, Object> jailConfig = getJailConfigInternal(jailName);
+        jailDetail.put("config", jailConfig);
 
         return AjaxResult.success("查询监狱详情成功", jailDetail);
     }
@@ -256,14 +320,14 @@ public class Fail2BanController extends BaseController {
         Map<String, List<String>> allBannedIps = new HashMap<>();
         int totalCount = 0;
 
-        String statusOutput = executeCommand(new String[]{FAIL2BAN_CLIENT, "status"});
+        String statusOutput = executeCommand(new String[]{SUDO_CMD, FAIL2BAN_CLIENT, "status"});
         if (statusOutput == null || statusOutput.isEmpty()) {
             return AjaxResult.success("Fail2ban服务未运行", allBannedIps);
         }
 
         List<String> jailNames = getJailNames(statusOutput);
         for (String jailName : jailNames) {
-            String bannedIpsOutput = executeCommand(new String[]{FAIL2BAN_CLIENT, "get", jailName, "banned"});
+            String bannedIpsOutput = executeCommand(new String[]{SUDO_CMD, FAIL2BAN_CLIENT, "get", jailName, "banned"});
             if (bannedIpsOutput != null) {
                 List<String> bannedIps = parseBannedIps(bannedIpsOutput);
                 if (!bannedIps.isEmpty()) {
@@ -386,20 +450,27 @@ public class Fail2BanController extends BaseController {
 
     /**
      * 获取攻击统计数据
-     * 包含按监狱统计的攻击次数、攻击来源Top 20和最近24小时攻击趋势
-     * 【修复】：支持包含连字符的监狱名称，现在会统计所有监狱的攻击数据
+     * 包含按监狱统计的攻击次数、攻击来源Top 20、最近24小时攻击趋势、动态威胁等级基准
+     * 【优化】：新增 logLines 参数，支持前端自定义统计日志行数，默认10000，最大100000
      *
      * @return AjaxResult 包含统计数据的响应对象
      */
     @PreAuthorize("@ss.hasPermi('system:fail2ban:view')")
     @GetMapping("/stats")
-    public AjaxResult getAttackStats() {
+    public AjaxResult getAttackStats(
+            @RequestParam(required = false, defaultValue = "10000") int logLines
+    ) {
+        // 参数安全校验：限制范围，防止恶意请求
+        logLines = Math.max(100, Math.min(logLines, 100000));
+
         Map<String, Object> stats = new HashMap<>();
 
         // 按监狱统计攻击次数
         Map<String, Integer> jailAttackCount = new HashMap<>();
         // 按IP统计攻击次数（Top 20）
         Map<String, Integer> ipAttackCount = new HashMap<>();
+        // 记录每个IP命中的监狱集合（自动去重）
+        Map<String, Set<String>> ipJailMap = new HashMap<>();
         // 最近24小时攻击趋势（按小时统计）
         Map<String, Integer> hourlyTrend = new LinkedHashMap<>();
 
@@ -411,16 +482,14 @@ public class Fail2BanController extends BaseController {
             hourlyTrend.put(hourKey, 0);
         }
 
-        // 只读取最近10000行日志进行统计，避免大文件性能问题
-        String logOutput = executeCommand(new String[]{"tail", "-n", "10000", FAIL2BAN_LOG_PATH});
+        // 使用前端传入的行数读取日志
+        String logOutput = executeCommand(new String[]{"tail", "-n", String.valueOf(logLines), FAIL2BAN_LOG_PATH});
         if (logOutput != null) {
             String[] lines = logOutput.split("\n");
-            // ✅ 修复后的正则表达式，支持连字符
             Pattern jailPattern = Pattern.compile("\\[([\\w-]+)\\]\\s+Found\\s+(\\d+\\.\\d+\\.\\d+\\.\\d+)");
             Pattern timePattern = Pattern.compile("(\\d{4}-\\d{2}-\\d{2})\\s+(\\d{2}):\\d{2}:\\d{2}");
 
             for (String line : lines) {
-                // 统计攻击次数
                 Matcher jailMatcher = jailPattern.matcher(line);
                 if (jailMatcher.find()) {
                     String jail = jailMatcher.group(1);
@@ -428,6 +497,8 @@ public class Fail2BanController extends BaseController {
 
                     jailAttackCount.put(jail, jailAttackCount.getOrDefault(jail, 0) + 1);
                     ipAttackCount.put(ip, ipAttackCount.getOrDefault(ip, 0) + 1);
+                    // 记录该IP命中的监狱
+                    ipJailMap.computeIfAbsent(ip, k -> new HashSet<>()).add(jail);
 
                     // 统计小时趋势
                     Matcher timeMatcher = timePattern.matcher(line);
@@ -436,7 +507,6 @@ public class Fail2BanController extends BaseController {
                         String hourStr = timeMatcher.group(2);
                         String hourKey = hourStr + ":00";
 
-                        // 只统计最近24小时的数据
                         try {
                             LocalDateTime logTime = LocalDateTime.parse(
                                     dateStr + " " + hourStr + ":00:00",
@@ -446,7 +516,6 @@ public class Fail2BanController extends BaseController {
                                 hourlyTrend.put(hourKey, hourlyTrend.getOrDefault(hourKey, 0) + 1);
                             }
                         } catch (Exception e) {
-                            // 忽略时间解析错误
                             log.debug("日志时间解析失败：{}", line);
                         }
                     }
@@ -460,19 +529,328 @@ public class Fail2BanController extends BaseController {
         List<Map<String, Object>> topIps = new ArrayList<>();
         for (int i = 0; i < Math.min(20, ipList.size()); i++) {
             Map<String, Object> ipEntry = new HashMap<>();
-            ipEntry.put("ip", ipList.get(i).getKey());
+            String ip = ipList.get(i).getKey();
+            ipEntry.put("ip", ip);
             ipEntry.put("count", ipList.get(i).getValue());
+            // 拼接来源监狱，逗号分隔
+            Set<String> jails = ipJailMap.getOrDefault(ip, new HashSet<>());
+            ipEntry.put("jails", String.join(", ", jails));
             topIps.add(ipEntry);
+        }
+
+        // 获取威胁等级基准阈值
+        int baselineMaxRetry = 5;
+        String statusOutput = executeCommand(new String[]{SUDO_CMD, FAIL2BAN_CLIENT, "status"});
+        if (statusOutput != null && !statusOutput.isEmpty()) {
+            List<String> jailNames = getJailNames(statusOutput);
+            if (jailNames.contains("sshd")) {
+                Map<String, Object> config = getJailConfigInternal("sshd");
+                baselineMaxRetry = (Integer) config.getOrDefault("maxretry", 5);
+            } else if (!jailNames.isEmpty()) {
+                Map<String, Object> config = getJailConfigInternal(jailNames.get(0));
+                baselineMaxRetry = (Integer) config.getOrDefault("maxretry", 5);
+            }
         }
 
         stats.put("jailAttackCount", jailAttackCount);
         stats.put("topAttackIps", topIps);
         stats.put("hourlyTrend", hourlyTrend);
+        stats.put("baselineMaxRetry", baselineMaxRetry);
 
         return AjaxResult.success("查询统计数据成功", stats);
     }
 
-    // ==================== 内部工具方法 ====================
+    /**
+     * 获取当前访问者的IP地址
+     * 用于白名单自查，方便用户快速确认当前IP是否在授权列表内
+     *
+     * @return AjaxResult 当前客户端IP
+     */
+    @PreAuthorize("@ss.hasPermi('system:fail2ban:view')")
+    @GetMapping("/current-ip")
+    public AjaxResult getCurrentIp() {
+        HttpServletRequest request = ((ServletRequestAttributes) RequestContextHolder.getRequestAttributes()).getRequest();
+        return AjaxResult.success("获取成功", getClientIp(request));
+    }
+
+    // ==================== 操作接口 ====================
+
+    /**
+     * 启动Fail2ban服务
+     * 【安全限制】：仅超级管理员可操作，仅白名单IP允许执行
+     *
+     * @return AjaxResult 操作结果
+     */
+    @PreAuthorize("@ss.hasRole('fx67ll')")
+    @Log(title = "Fail2ban启动服务", businessType = BusinessType.UPDATE)
+    @PostMapping("/service/start")
+    public AjaxResult startService() {
+        HttpServletRequest request = ((ServletRequestAttributes) RequestContextHolder.getRequestAttributes()).getRequest();
+        String clientIp = getClientIp(request);
+
+        if (!fail2BanConfig.isIpAllowed(clientIp)) {
+            log.warn("非法操作尝试：IP {} 试图启动Fail2ban服务", clientIp);
+            return AjaxResult.error("权限不足，只有指定IP地址可以执行此操作");
+        }
+
+        String[] command = {"sudo", "systemctl", "start", "fail2ban"};
+        String output = executeCommand(command);
+        if (output != null) {
+            log.info("成功启动Fail2ban服务，操作人：{}，操作IP：{}", getUsername(), clientIp);
+            clearAllCaches();
+            return AjaxResult.success("启动Fail2ban服务成功");
+        } else {
+            log.error("启动Fail2ban服务失败，操作IP：{}", clientIp);
+            return AjaxResult.error("启动服务失败，请检查系统sudo权限");
+        }
+    }
+
+    /**
+     * 停止Fail2ban服务
+     * 【安全限制】：仅超级管理员可操作，仅白名单IP允许执行
+     *
+     * @return AjaxResult 操作结果
+     */
+    @PreAuthorize("@ss.hasRole('fx67ll')")
+    @Log(title = "Fail2ban停止服务", businessType = BusinessType.UPDATE)
+    @PostMapping("/service/stop")
+    public AjaxResult stopService() {
+        HttpServletRequest request = ((ServletRequestAttributes) RequestContextHolder.getRequestAttributes()).getRequest();
+        String clientIp = getClientIp(request);
+
+        if (!fail2BanConfig.isIpAllowed(clientIp)) {
+            log.warn("非法操作尝试：IP {} 试图停止Fail2ban服务", clientIp);
+            return AjaxResult.error("权限不足，只有指定IP地址可以执行此操作");
+        }
+
+        String[] command = {"sudo", "systemctl", "stop", "fail2ban"};
+        String output = executeCommand(command);
+        if (output != null) {
+            log.info("成功停止Fail2ban服务，操作人：{}，操作IP：{}", getUsername(), clientIp);
+            clearAllCaches();
+            return AjaxResult.success("停止Fail2ban服务成功");
+        } else {
+            log.error("停止Fail2ban服务失败，操作IP：{}", clientIp);
+            return AjaxResult.error("停止服务失败，请检查系统sudo权限");
+        }
+    }
+
+    /**
+     * 启动指定监狱
+     * 【安全限制】：仅超级管理员可操作，仅白名单IP允许执行
+     *
+     * @param jailName 监狱名称
+     * @return AjaxResult 操作结果
+     */
+    @PreAuthorize("@ss.hasRole('fx67ll')")
+    @Log(title = "Fail2ban启动监狱", businessType = BusinessType.UPDATE)
+    @PostMapping("/jail/{jailName}/start")
+    public AjaxResult startJail(@PathVariable String jailName) {
+        HttpServletRequest request = ((ServletRequestAttributes) RequestContextHolder.getRequestAttributes()).getRequest();
+        String clientIp = getClientIp(request);
+
+        if (!fail2BanConfig.isIpAllowed(clientIp)) {
+            log.warn("非法操作尝试：IP {} 试图启动监狱 {}", clientIp, jailName);
+            return AjaxResult.error("权限不足，只有指定IP地址可以执行此操作");
+        }
+
+        // 安全校验：监狱名称
+        if (jailName.contains("/") || jailName.contains("..") || jailName.contains(" ") || jailName.contains(";")) {
+            log.warn("检测到无效的监狱名称请求：{}", jailName);
+            return AjaxResult.error("无效的监狱名称");
+        }
+
+        String[] command = {FAIL2BAN_CLIENT, "start", jailName};
+        String output = executeCommand(command);
+        if (output != null && output.trim().equals(jailName)) {
+            log.info("成功启动监狱：{}，操作人：{}，操作IP：{}", jailName, getUsername(), clientIp);
+            clearAllCaches();
+            return AjaxResult.success("成功启动监狱：" + jailName);
+        } else {
+            log.error("启动监狱失败：{}，输出：{}，操作IP：{}", jailName, output, clientIp);
+            return AjaxResult.error("启动监狱失败，请确认监狱配置存在");
+        }
+    }
+
+    /**
+     * 停止指定监狱
+     * 【安全限制】：仅超级管理员可操作，仅白名单IP允许执行
+     *
+     * @param jailName 监狱名称
+     * @return AjaxResult 操作结果
+     */
+    @PreAuthorize("@ss.hasRole('fx67ll')")
+    @Log(title = "Fail2ban停止监狱", businessType = BusinessType.UPDATE)
+    @PostMapping("/jail/{jailName}/stop")
+    public AjaxResult stopJail(@PathVariable String jailName) {
+        HttpServletRequest request = ((ServletRequestAttributes) RequestContextHolder.getRequestAttributes()).getRequest();
+        String clientIp = getClientIp(request);
+
+        if (!fail2BanConfig.isIpAllowed(clientIp)) {
+            log.warn("非法操作尝试：IP {} 试图停止监狱 {}", clientIp, jailName);
+            return AjaxResult.error("权限不足，只有指定IP地址可以执行此操作");
+        }
+
+        // 安全校验：监狱名称
+        if (jailName.contains("/") || jailName.contains("..") || jailName.contains(" ") || jailName.contains(";")) {
+            log.warn("检测到无效的监狱名称请求：{}", jailName);
+            return AjaxResult.error("无效的监狱名称");
+        }
+
+        // 检查监狱是否正在运行
+        String statusOutput = executeCommand(new String[]{SUDO_CMD, FAIL2BAN_CLIENT, "status"});
+        if (statusOutput == null || statusOutput.isEmpty()) {
+            return AjaxResult.error("Fail2ban服务未运行");
+        }
+        List<String> validJailNames = getJailNames(statusOutput);
+        if (!validJailNames.contains(jailName)) {
+            log.warn("检测到不存在或未运行的监狱名称请求：{}", jailName);
+            return AjaxResult.error("监狱不存在或未运行");
+        }
+
+        String[] command = {FAIL2BAN_CLIENT, "stop", jailName};
+        String output = executeCommand(command);
+        if (output != null && output.trim().equals(jailName)) {
+            log.info("成功停止监狱：{}，操作人：{}，操作IP：{}", jailName, getUsername(), clientIp);
+            clearAllCaches();
+            return AjaxResult.success("成功停止监狱：" + jailName);
+        } else {
+            log.error("停止监狱失败：{}，输出：{}", jailName, output);
+            return AjaxResult.error("停止监狱失败，请检查日志");
+        }
+    }
+
+    /**
+     * 手动封禁指定IP
+     * 【安全限制】：仅超级管理员可操作，严格校验IP格式和监狱名称
+     * 仅允许白名单IP执行此操作
+     *
+     * @param jailName 监狱名称
+     * @param ip       要封禁的IP地址
+     * @return AjaxResult 操作结果
+     */
+    @PreAuthorize("@ss.hasRole('fx67ll')")
+    @Log(title = "Fail2ban封禁IP", businessType = BusinessType.INSERT)
+    @PostMapping("/jail/{jailName}/ban")
+    public AjaxResult banIp(
+            @PathVariable String jailName,
+            @RequestParam String ip
+    ) {
+        // ✅ IP白名单校验（从配置文件读取）
+        HttpServletRequest request = ((ServletRequestAttributes) RequestContextHolder.getRequestAttributes()).getRequest();
+        String clientIp = getClientIp(request);
+
+        if (!fail2BanConfig.isIpAllowed(clientIp)) {
+            log.warn("非法操作尝试：IP {} 试图封禁IP {}，监狱 {}", clientIp, ip, jailName);
+            return AjaxResult.error("权限不足，只有指定IP地址可以执行此操作");
+        }
+
+        // 1. 安全校验：监狱名称
+        if (jailName.contains("/") || jailName.contains("..") || jailName.contains(" ") || jailName.contains(";")) {
+            log.warn("检测到无效的监狱名称请求：{}", jailName);
+            return AjaxResult.error("无效的监狱名称");
+        }
+
+        // 2. 安全校验：IP地址格式（只允许合法IPv4）
+        String ipPattern = "^((25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\\.){3}(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)$";
+        if (!ip.matches(ipPattern)) {
+            log.warn("检测到无效的IP地址请求：{}", ip);
+            return AjaxResult.error("无效的IP地址格式");
+        }
+
+        // 3. 检查监狱是否存在
+        String statusOutput = executeCommand(new String[]{SUDO_CMD, FAIL2BAN_CLIENT, "status"});
+        if (statusOutput == null || statusOutput.isEmpty()) {
+            return AjaxResult.error("Fail2ban服务未运行");
+        }
+        List<String> validJailNames = getJailNames(statusOutput);
+        if (!validJailNames.contains(jailName)) {
+            log.warn("检测到不存在的监狱名称请求：{}", jailName);
+            return AjaxResult.error("监狱不存在");
+        }
+
+        // 4. 执行封禁命令
+        String[] command = {FAIL2BAN_CLIENT, "set", jailName, "banip", ip};
+        String output = executeCommand(command);
+        if (output != null && output.trim().equals(ip)) {
+            log.info("成功封禁IP：{}，监狱：{}，操作人：{}",
+                    ip, jailName, getUsername());
+            // 清除缓存，确保状态立即更新
+            clearAllCaches();
+            return AjaxResult.success("成功封禁IP：" + ip);
+        } else {
+            log.error("封禁IP失败：{}，监狱：{}，输出：{}",
+                    ip, jailName, output);
+            return AjaxResult.error("封禁IP失败，请检查日志");
+        }
+    }
+
+    /**
+     * 手动解封指定IP
+     * 【安全限制】：仅超级管理员可操作，严格校验IP格式和监狱名称
+     * 仅允许白名单IP执行此操作
+     *
+     * @param jailName 监狱名称
+     * @param ip       要解封的IP地址
+     * @return AjaxResult 操作结果
+     */
+    @PreAuthorize("@ss.hasRole('fx67ll')")
+    @Log(title = "Fail2ban解封IP", businessType = BusinessType.DELETE)
+    @PostMapping("/jail/{jailName}/unban")
+    public AjaxResult unbanIp(
+            @PathVariable String jailName,
+            @RequestParam String ip
+    ) {
+        // ✅ IP白名单校验（从配置文件读取）
+        HttpServletRequest request = ((ServletRequestAttributes) RequestContextHolder.getRequestAttributes()).getRequest();
+        String clientIp = getClientIp(request);
+
+        if (!fail2BanConfig.isIpAllowed(clientIp)) {
+            log.warn("非法操作尝试：IP {} 试图解封IP {}，监狱 {}", clientIp, ip, jailName);
+            return AjaxResult.error("权限不足，只有指定IP地址可以执行此操作");
+        }
+
+        // 1. 安全校验：监狱名称
+        if (jailName.contains("/") || jailName.contains("..") || jailName.contains(" ") || jailName.contains(";")) {
+            log.warn("检测到无效的监狱名称请求：{}", jailName);
+            return AjaxResult.error("无效的监狱名称");
+        }
+
+        // 2. 安全校验：IP地址格式（只允许合法IPv4）
+        String ipPattern = "^((25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\\.){3}(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)$";
+        if (!ip.matches(ipPattern)) {
+            log.warn("检测到无效的IP地址请求：{}", ip);
+            return AjaxResult.error("无效的IP地址格式");
+        }
+
+        // 3. 检查监狱是否存在
+        String statusOutput = executeCommand(new String[]{SUDO_CMD, FAIL2BAN_CLIENT, "status"});
+        if (statusOutput == null || statusOutput.isEmpty()) {
+            return AjaxResult.error("Fail2ban服务未运行");
+        }
+        List<String> validJailNames = getJailNames(statusOutput);
+        if (!validJailNames.contains(jailName)) {
+            log.warn("检测到不存在的监狱名称请求：{}", jailName);
+            return AjaxResult.error("监狱不存在");
+        }
+
+        // 4. 执行解封命令
+        String[] command = {FAIL2BAN_CLIENT, "set", jailName, "unbanip", ip};
+        String output = executeCommand(command);
+        if (output != null && output.trim().equals(ip)) {
+            log.info("成功解封IP：{}，监狱：{}，操作人：{}",
+                    ip, jailName, getUsername());
+            // 清除缓存，确保状态立即更新
+            clearAllCaches();
+            return AjaxResult.success("成功解封IP：" + ip);
+        } else {
+            log.error("解封IP失败：{}，监狱：{}，输出：{}",
+                    ip, jailName, output);
+            return AjaxResult.error("解封IP失败，该IP可能未被封禁");
+        }
+    }
+
+    // ==================== 内部业务方法 ====================
 
     /**
      * 从fail2ban-client status输出中提取监狱名称列表
@@ -500,16 +878,18 @@ public class Fail2BanController extends BaseController {
     /**
      * 获取单个监狱的基本统计信息
      * 【修复】：适配Fail2ban 0.11.x版本的Filter/Actions分组格式
+     * 【新增】：增加运行状态字段
      *
      * @param jailName 监狱名称
-     * @return Map<String, Object> 包含当前封禁、累计封禁、失败尝试的统计信息
+     * @return Map<String, Object> 包含状态、封禁数、失败数的统计信息
      */
     private Map<String, Object> getJailStatsInternal(String jailName) {
         Map<String, Object> stats = new HashMap<>();
         stats.put("name", jailName);
 
-        String output = executeCommand(new String[]{FAIL2BAN_CLIENT, "status", jailName});
+        String output = executeCommand(new String[]{SUDO_CMD, FAIL2BAN_CLIENT, "status", jailName});
         if (output == null || output.isEmpty()) {
+            stats.put("status", "已停止");
             stats.put("currentlyBanned", 0);
             stats.put("totalBanned", 0);
             stats.put("totalFailed", 0);
@@ -517,6 +897,8 @@ public class Fail2BanController extends BaseController {
             stats.put("logPath", "未知");
             return stats;
         }
+
+        stats.put("status", "运行中");
 
         // 解析当前失败次数
         Pattern currentFailedPattern = Pattern.compile("Currently failed:\\s*(\\d+)");
@@ -564,6 +946,93 @@ public class Fail2BanController extends BaseController {
         }
 
         return stats;
+    }
+
+    /**
+     * 获取监狱配置信息（只读）
+     * 包含封禁时长、检测窗口、最大重试次数、白名单IP等核心参数
+     *
+     * @param jailName 监狱名称
+     * @return Map<String, Object> 配置信息
+     */
+    private Map<String, Object> getJailConfigInternal(String jailName) {
+        Map<String, Object> config = new HashMap<>();
+
+        // 获取封禁时长
+        String bantimeOutput = executeCommand(new String[]{SUDO_CMD, FAIL2BAN_CLIENT, "get", jailName, "bantime"});
+        if (bantimeOutput != null) {
+            try {
+                long bantimeSeconds = Long.parseLong(bantimeOutput.trim());
+                config.put("bantime", formatSeconds(bantimeSeconds));
+                config.put("bantimeSeconds", bantimeSeconds);
+            } catch (NumberFormatException e) {
+                config.put("bantime", "未知");
+                config.put("bantimeSeconds", 0);
+            }
+        } else {
+            config.put("bantime", "未知");
+            config.put("bantimeSeconds", 0);
+        }
+
+        // 获取检测时间窗口
+        String findtimeOutput = executeCommand(new String[]{SUDO_CMD, FAIL2BAN_CLIENT, "get", jailName, "findtime"});
+        if (findtimeOutput != null) {
+            try {
+                long findtimeSeconds = Long.parseLong(findtimeOutput.trim());
+                config.put("findtime", formatSeconds(findtimeSeconds));
+                config.put("findtimeSeconds", findtimeSeconds);
+            } catch (NumberFormatException e) {
+                config.put("findtime", "未知");
+                config.put("findtimeSeconds", 0);
+            }
+        } else {
+            config.put("findtime", "未知");
+            config.put("findtimeSeconds", 0);
+        }
+
+        // 获取最大重试次数（封禁阈值）
+        String maxretryOutput = executeCommand(new String[]{SUDO_CMD, FAIL2BAN_CLIENT, "get", jailName, "maxretry"});
+        if (maxretryOutput != null) {
+            try {
+                int maxretry = Integer.parseInt(maxretryOutput.trim());
+                config.put("maxretry", maxretry);
+            } catch (NumberFormatException e) {
+                config.put("maxretry", 5);
+            }
+        } else {
+            config.put("maxretry", 5);
+        }
+
+        // 获取忽略IP列表（监狱白名单）
+        String ignoreipOutput = executeCommand(new String[]{SUDO_CMD, FAIL2BAN_CLIENT, "get", jailName, "ignoreip"});
+        if (ignoreipOutput != null) {
+            List<String> ignoreIpList = new ArrayList<>();
+            String[] lines = ignoreipOutput.trim().split("\n");
+            // IPv4 正则，用于精准提取IP
+            Pattern ipPattern = Pattern.compile("\\b((25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\\.){3}(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\\b");
+
+            for (String line : lines) {
+                String trimmed = line.trim();
+                // 跳过标题行和空行
+                if (trimmed.isEmpty() || trimmed.contains("are ignored:")) {
+                    continue;
+                }
+                // 剥离树形前缀 |- 、 `-
+                if (trimmed.startsWith("|-") || trimmed.startsWith("`-")) {
+                    trimmed = trimmed.substring(2).trim();
+                }
+                // 正则匹配提取合法IP
+                Matcher matcher = ipPattern.matcher(trimmed);
+                if (matcher.find()) {
+                    ignoreIpList.add(matcher.group());
+                }
+            }
+            config.put("ignoreIpList", ignoreIpList);
+        } else {
+            config.put("ignoreIpList", new ArrayList<>());
+        }
+
+        return config;
     }
 
     /**
@@ -654,7 +1123,7 @@ public class Fail2BanController extends BaseController {
     }
 
     /**
-     * 执行Shell命令通用方法（只读操作专用）
+     * 执行Shell命令通用方法
      * 采用数组形式执行命令，避免命令注入漏洞
      *
      * @param command 命令参数数组
