@@ -14,6 +14,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.io.BufferedReader;
+import java.io.File;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.time.Duration;
@@ -281,6 +282,8 @@ public class Fail2BanController extends BaseController {
 
     /**
      * 获取最近的Fail2ban日志（支持参数化配置）
+     * 【修复】：解决正则表达式无法匹配包含点号的类名的问题
+     * 【增强】：添加文件存在性和可读性检查，返回明确的错误提示
      *
      * @param limit 返回日志条数（1-1023，默认200）
      * @param level 日志级别筛选（ERROR/WARN/INFO/DEBUG，可选）
@@ -300,6 +303,18 @@ public class Fail2BanController extends BaseController {
         limit = Math.min(limit, MAX_LOG_LIMIT);
         limit = Math.max(limit, 1); // 最小返回1条
 
+        // 检查日志文件是否存在且可读
+        File logFile = new File(FAIL2BAN_LOG_PATH);
+        if (!logFile.exists()) {
+            log.error("Fail2ban日志文件不存在：{}", FAIL2BAN_LOG_PATH);
+            return AjaxResult.error("日志文件不存在，请检查路径配置：" + FAIL2BAN_LOG_PATH);
+        }
+        if (!logFile.canRead()) {
+            log.error("没有权限读取Fail2ban日志文件：{}，当前运行用户：{}",
+                    FAIL2BAN_LOG_PATH, System.getProperty("user.name"));
+            return AjaxResult.error("权限不足，请将运行用户添加到adm组：sudo usermod -aG adm " + System.getProperty("user.name"));
+        }
+
         // 使用tail命令获取最后N行日志
         String logOutput = executeCommand(new String[]{"tail", "-n", String.valueOf(limit), FAIL2BAN_LOG_PATH});
         if (logOutput == null || logOutput.isEmpty()) {
@@ -308,8 +323,9 @@ public class Fail2BanController extends BaseController {
 
         // 解析日志行
         String[] lines = logOutput.split("\n");
+        // ✅ 修复后的正则表达式，支持包含点号的类名
         Pattern logPattern = Pattern.compile(
-                "(\\d{4}-\\d{2}-\\d{2})\\s+(\\d{2}:\\d{2}:\\d{2}),\\d+\\s+(\\w+)\\s+\\[\\d+\\]:\\s+(.+)"
+                "(\\d{4}-\\d{2}-\\d{2})\\s+(\\d{2}:\\d{2}:\\d{2}),\\d+\\s+([^\\s]+)\\s+\\[\\d+\\]:\\s+(.+)"
         );
 
         // 倒序遍历，最新日志在前
@@ -317,8 +333,26 @@ public class Fail2BanController extends BaseController {
             String line = lines[i];
             Matcher matcher = logPattern.matcher(line);
             if (matcher.find()) {
-                String logLevel = matcher.group(3);
+                String date = matcher.group(1);
+                String time = matcher.group(2);
+                // 提取日志级别（从消息部分中解析）
                 String message = matcher.group(4);
+                String logLevel = "INFO";
+
+                // 从消息开头提取级别（INFO/WARN/ERROR/DEBUG）
+                if (message.startsWith("INFO")) {
+                    logLevel = "INFO";
+                    message = message.substring(4).trim();
+                } else if (message.startsWith("WARN")) {
+                    logLevel = "WARN";
+                    message = message.substring(4).trim();
+                } else if (message.startsWith("ERROR")) {
+                    logLevel = "ERROR";
+                    message = message.substring(5).trim();
+                } else if (message.startsWith("DEBUG")) {
+                    logLevel = "DEBUG";
+                    message = message.substring(5).trim();
+                }
 
                 // 按级别筛选
                 if (level != null && !level.isEmpty() && !logLevel.equalsIgnoreCase(level)) {
@@ -331,8 +365,8 @@ public class Fail2BanController extends BaseController {
                 }
 
                 Map<String, Object> logEntry = new HashMap<>();
-                logEntry.put("date", matcher.group(1));
-                logEntry.put("time", matcher.group(2));
+                logEntry.put("date", date);
+                logEntry.put("time", time);
                 logEntry.put("level", logLevel);
                 logEntry.put("message", message);
 
