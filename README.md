@@ -3,6 +3,9 @@ fx67ll One Data Center Server
 
 欢迎访问 [fx67ll's 管理系统](https://vip.fx67ll.com)
 
+## 0.9.1.20260616
+* 优化`Fail2Ban`相关接口
+
 ## 0.9.0.20260616
 * 新增`Fail2Ban`相关接口  
 
