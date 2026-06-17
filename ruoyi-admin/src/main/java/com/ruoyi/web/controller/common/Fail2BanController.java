@@ -16,23 +16,24 @@ import org.springframework.web.bind.annotation.RestController;
 import java.io.BufferedReader;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.time.Duration;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.*;
 import java.util.concurrent.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-import java.time.LocalDateTime;
-import java.time.format.DateTimeFormatter;
 
 /**
- * Fail2ban监控控制器（最终优化版）
+ * Fail2ban监控控制器（适配0.11.2版本优化版）
  * 【安全承诺】：本控制器仅提供只读监控功能，不包含任何修改系统状态的操作
  * 所有命令均为查询操作，彻底杜绝被黑客利用的风险
- * 适配若依框架，遵循安全最佳实践
+ * 适配若依框架，针对Fail2ban 0.11.x版本优化
  *
  * @author ruoyi
- * @version 1.1.0
- * @update 2026-06-16
- * @features 日志条数参数化、前端分页支持、全量IP查询、攻击趋势统计
+ * @version 1.2.0
+ * @update 2026-06-17
+ * @fixes 修复监狱名称解析错误、移除不兼容命令、实现精确运行时间计算
  */
 @RestController
 @RequestMapping("/server/fail2ban")
@@ -57,9 +58,17 @@ public class Fail2BanController extends BaseController {
      */
     private static final int DEFAULT_LOG_LIMIT = 200;
     /**
+     * 请求缓存过期时间（秒），防止频繁执行命令
+     */
+    private static final int CACHE_TTL = 30;
+    /**
      * 日期格式化器，用于解析日志时间
      */
     private static final DateTimeFormatter DATE_FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
+    /**
+     * systemctl时间格式解析器
+     */
+    private static final DateTimeFormatter SYSTEMCTL_DATE_FORMATTER = DateTimeFormatter.ofPattern("EEE yyyy-MM-dd HH:mm:ss zzz", Locale.ENGLISH);
 
     // ==================== 系统命令路径 ====================
     /**
@@ -71,6 +80,14 @@ public class Fail2BanController extends BaseController {
      */
     private static final String FAIL2BAN_LOG_PATH = "/var/log/fail2ban.log";
 
+    // ==================== 缓存变量 ====================
+    private static Map<String, Object> statusCache;
+    private static long statusCacheTime;
+    private static List<Map<String, Object>> jailsCache;
+    private static long jailsCacheTime;
+
+    // ==================== 公共接口 ====================
+
     /**
      * 获取Fail2ban服务整体状态
      * 返回服务运行状态、版本号、运行时长、防火墙状态及全局统计数据
@@ -80,6 +97,11 @@ public class Fail2BanController extends BaseController {
     @PreAuthorize("@ss.hasPermi('system:fail2ban:view')")
     @GetMapping("/status")
     public AjaxResult getFail2banStatus() {
+        // 检查缓存
+        if (statusCache != null && System.currentTimeMillis() - statusCacheTime < CACHE_TTL * 1000) {
+            return AjaxResult.success("查询Fail2ban状态成功", statusCache);
+        }
+
         Map<String, Object> result = new HashMap<>();
         String status = "未知";
         String version = "未知";
@@ -110,15 +132,7 @@ public class Fail2BanController extends BaseController {
             // 解析版本信息
             String versionOutput = executeCommand(new String[]{FAIL2BAN_CLIENT, "version"});
             if (versionOutput != null) {
-                // 兼容两种输出格式：带Fail2Ban v前缀 / 纯数字版本
-                Pattern versionPattern = Pattern.compile("(?:Fail2Ban v)?([0-9.]+)");
-                Matcher versionMatcher = versionPattern.matcher(versionOutput.trim());
-                if (versionMatcher.find()) {
-                    String verNum = versionMatcher.group(1);
-                    if (verNum.matches("[0-9.]+")) {
-                        version = verNum;
-                    }
-                }
+                version = versionOutput.trim();
             }
 
             // 3. 遍历所有监狱统计总封禁数和失败次数
@@ -147,6 +161,10 @@ public class Fail2BanController extends BaseController {
         result.put("uptime", uptime);
         result.put("firewallStatus", firewallStatus);
 
+        // 更新缓存
+        statusCache = result;
+        statusCacheTime = System.currentTimeMillis();
+
         return AjaxResult.success("查询Fail2ban状态成功", result);
     }
 
@@ -159,6 +177,11 @@ public class Fail2BanController extends BaseController {
     @PreAuthorize("@ss.hasPermi('system:fail2ban:view')")
     @GetMapping("/jails")
     public AjaxResult getJailList() {
+        // 检查缓存
+        if (jailsCache != null && System.currentTimeMillis() - jailsCacheTime < CACHE_TTL * 1000) {
+            return AjaxResult.success("查询监狱列表成功", jailsCache);
+        }
+
         List<Map<String, Object>> jailList = new ArrayList<>();
 
         String statusOutput = executeCommand(new String[]{FAIL2BAN_CLIENT, "status"});
@@ -172,12 +195,16 @@ public class Fail2BanController extends BaseController {
             jailList.add(jailStats);
         }
 
+        // 更新缓存
+        jailsCache = jailList;
+        jailsCacheTime = System.currentTimeMillis();
+
         return AjaxResult.success("查询监狱列表成功", jailList);
     }
 
     /**
      * 获取单个监狱的详细信息
-     * 包含监狱基本统计、配置参数和当前被封禁的IP列表
+     * 包含监狱基本统计、当前被封禁的IP列表和日志文件路径
      *
      * @param jailName 监狱名称（安全校验：禁止包含特殊字符）
      * @return AjaxResult 包含监狱详情的响应对象
@@ -191,16 +218,20 @@ public class Fail2BanController extends BaseController {
             return AjaxResult.error("无效的监狱名称");
         }
 
+        // 额外安全检查：只允许查询实际存在的监狱
+        String statusOutput = executeCommand(new String[]{FAIL2BAN_CLIENT, "status"});
+        if (statusOutput == null || statusOutput.isEmpty()) {
+            return AjaxResult.error("Fail2ban服务未运行");
+        }
+        List<String> validJailNames = getJailNames(statusOutput);
+        if (!validJailNames.contains(jailName)) {
+            log.warn("检测到不存在的监狱名称请求：{}", jailName);
+            return AjaxResult.error("监狱不存在");
+        }
+
         Map<String, Object> jailDetail = new HashMap<>();
         Map<String, Object> basicStats = getJailStatsInternal(jailName);
         jailDetail.putAll(basicStats);
-
-        // 获取监狱配置信息（只读）
-        String configOutput = executeCommand(new String[]{FAIL2BAN_CLIENT, "get", jailName, "all"});
-        if (configOutput != null) {
-            Map<String, String> config = parseJailConfig(configOutput);
-            jailDetail.put("config", config);
-        }
 
         // 获取当前被封禁的IP列表
         String bannedIpsOutput = executeCommand(new String[]{FAIL2BAN_CLIENT, "get", jailName, "banned"});
@@ -305,7 +336,7 @@ public class Fail2BanController extends BaseController {
                 logEntry.put("level", logLevel);
                 logEntry.put("message", message);
 
-                // 提取日志中的IP地址
+                // 提取日志中的IP地址（支持IPv4）
                 Pattern ipPattern = Pattern.compile("\\b(?:\\d{1,3}\\.){3}\\d{1,3}\\b");
                 Matcher ipMatcher = ipPattern.matcher(message);
                 if (ipMatcher.find()) {
@@ -345,8 +376,8 @@ public class Fail2BanController extends BaseController {
             hourlyTrend.put(hourKey, 0);
         }
 
-        // 读取完整日志文件进行统计
-        String logOutput = executeCommand(new String[]{"cat", FAIL2BAN_LOG_PATH});
+        // 只读取最近10000行日志进行统计，避免大文件性能问题
+        String logOutput = executeCommand(new String[]{"tail", "-n", "10000", FAIL2BAN_LOG_PATH});
         if (logOutput != null) {
             String[] lines = logOutput.split("\n");
             Pattern jailPattern = Pattern.compile("\\[(\\w+)\\]\\s+Found\\s+(\\d+\\.\\d+\\.\\d+\\.\\d+)");
@@ -409,13 +440,15 @@ public class Fail2BanController extends BaseController {
 
     /**
      * 从fail2ban-client status输出中提取监狱名称列表
+     * 【修复】：正确解析包含连字符的监狱名称（如ssl-protect）
      *
      * @param statusOutput fail2ban-client status命令的输出
      * @return List<String> 监狱名称列表
      */
     private List<String> getJailNames(String statusOutput) {
         List<String> jailNames = new ArrayList<>();
-        Pattern pattern = Pattern.compile("Jail list:\\s*([\\w,\\s]+)");
+        // 修复正则：支持包含连字符的监狱名称
+        Pattern pattern = Pattern.compile("Jail list:\\s*([\\w,\\s-]+)");
         Matcher matcher = pattern.matcher(statusOutput);
         if (matcher.find()) {
             String[] names = matcher.group(1).split(",\\s*");
@@ -430,6 +463,7 @@ public class Fail2BanController extends BaseController {
 
     /**
      * 获取单个监狱的基本统计信息
+     * 【修复】：适配Fail2ban 0.11.x版本的Filter/Actions分组格式
      *
      * @param jailName 监狱名称
      * @return Map<String, Object> 包含当前封禁、累计封禁、失败尝试的统计信息
@@ -443,7 +477,36 @@ public class Fail2BanController extends BaseController {
             stats.put("currentlyBanned", 0);
             stats.put("totalBanned", 0);
             stats.put("totalFailed", 0);
+            stats.put("currentlyFailed", 0);
+            stats.put("logPath", "未知");
             return stats;
+        }
+
+        // 解析当前失败次数
+        Pattern currentFailedPattern = Pattern.compile("Currently failed:\\s*(\\d+)");
+        Matcher currentFailedMatcher = currentFailedPattern.matcher(output);
+        if (currentFailedMatcher.find()) {
+            stats.put("currentlyFailed", Integer.parseInt(currentFailedMatcher.group(1)));
+        } else {
+            stats.put("currentlyFailed", 0);
+        }
+
+        // 解析总失败次数
+        Pattern totalFailedPattern = Pattern.compile("Total failed:\\s*(\\d+)");
+        Matcher totalFailedMatcher = totalFailedPattern.matcher(output);
+        if (totalFailedMatcher.find()) {
+            stats.put("totalFailed", Integer.parseInt(totalFailedMatcher.group(1)));
+        } else {
+            stats.put("totalFailed", 0);
+        }
+
+        // 解析日志文件路径
+        Pattern logPathPattern = Pattern.compile("File list:\\s*(.+)");
+        Matcher logPathMatcher = logPathPattern.matcher(output);
+        if (logPathMatcher.find()) {
+            stats.put("logPath", logPathMatcher.group(1).trim());
+        } else {
+            stats.put("logPath", "未知");
         }
 
         // 解析当前封禁数
@@ -464,48 +527,7 @@ public class Fail2BanController extends BaseController {
             stats.put("totalBanned", 0);
         }
 
-        // 解析总失败次数
-        Pattern totalFailedPattern = Pattern.compile("Total failed:\\s*(\\d+)");
-        Matcher totalFailedMatcher = totalFailedPattern.matcher(output);
-        if (totalFailedMatcher.find()) {
-            stats.put("totalFailed", Integer.parseInt(totalFailedMatcher.group(1)));
-        } else {
-            stats.put("totalFailed", 0);
-        }
-
         return stats;
-    }
-
-    /**
-     * 解析监狱配置信息，只提取关键配置项
-     *
-     * @param configOutput fail2ban-client get jail all命令的输出
-     * @return Map<String, String> 关键配置项键值对
-     */
-    private Map<String, String> parseJailConfig(String configOutput) {
-        Map<String, String> config = new HashMap<>();
-        String[] lines = configOutput.split("\n");
-
-        // 只提取运维关心的关键配置项
-        Set<String> keyConfigs = new HashSet<>(Arrays.asList(
-                "bantime", "findtime", "maxretry", "port", "logpath", "backend", "action"
-        ));
-
-        for (String line : lines) {
-            line = line.trim();
-            if (line.isEmpty()) continue;
-
-            String[] parts = line.split("\\s*=\\s*", 2);
-            if (parts.length == 2) {
-                String key = parts[0].trim();
-                String value = parts[1].trim();
-                if (keyConfigs.contains(key)) {
-                    config.put(key, value);
-                }
-            }
-        }
-
-        return config;
     }
 
     /**
@@ -516,7 +538,7 @@ public class Fail2BanController extends BaseController {
      */
     private List<String> parseBannedIps(String bannedOutput) {
         List<String> ips = new ArrayList<>();
-        if (bannedOutput == null || bannedOutput.isEmpty()) {
+        if (bannedOutput == null || bannedOutput.isEmpty() || bannedOutput.trim().equals("[]")) {
             return ips;
         }
 
@@ -531,6 +553,7 @@ public class Fail2BanController extends BaseController {
 
     /**
      * 获取Fail2ban服务运行时间
+     * 【新增】：精确计算运行时长，显示"已运行X天X小时X分钟"
      *
      * @return String 服务运行状态描述
      */
@@ -544,8 +567,29 @@ public class Fail2BanController extends BaseController {
         Pattern pattern = Pattern.compile("ActiveEnterTimestamp=(.+)");
         Matcher matcher = pattern.matcher(output);
         if (matcher.find()) {
-            // 简化显示，实际生产环境可解析时间戳计算精确运行时间
-            return "正常运行中";
+            String timestampStr = matcher.group(1).trim();
+            try {
+                LocalDateTime startTime = LocalDateTime.parse(timestampStr, SYSTEMCTL_DATE_FORMATTER);
+                LocalDateTime now = LocalDateTime.now();
+                Duration duration = Duration.between(startTime, now);
+
+                // ✅ Java 8 100%兼容，计算结果和Java 9+完全一致
+                long totalMinutes = duration.toMinutes();
+                long days = totalMinutes / (24 * 60);
+                long hours = (totalMinutes % (24 * 60)) / 60;
+                long minutes = totalMinutes % 60;
+
+                if (days > 0) {
+                    return String.format("已运行 %d天%d小时%d分钟", days, hours, minutes);
+                } else if (hours > 0) {
+                    return String.format("已运行 %d小时%d分钟", hours, minutes);
+                } else {
+                    return String.format("已运行 %d分钟", minutes);
+                }
+            } catch (Exception e) {
+                log.warn("解析服务启动时间失败：{}", timestampStr, e);
+                return "正常运行中";
+            }
         }
 
         return "未知";
@@ -553,6 +597,7 @@ public class Fail2BanController extends BaseController {
 
     /**
      * 获取防火墙状态（支持firewalld和ufw）
+     * 【优化】：显示具体哪个防火墙在运行
      *
      * @return String 防火墙状态（运行中/未运行）
      */
@@ -560,13 +605,13 @@ public class Fail2BanController extends BaseController {
         // 检查firewalld状态
         String output = executeCommand(new String[]{"systemctl", "is-active", "firewalld"});
         if (output != null && output.trim().equals("active")) {
-            return "运行中";
+            return "运行中 (firewalld)";
         }
 
         // 检查ufw状态
         output = executeCommand(new String[]{"systemctl", "is-active", "ufw"});
         if (output != null && output.trim().equals("active")) {
-            return "运行中";
+            return "运行中 (ufw)";
         }
 
         return "未运行";
@@ -605,7 +650,8 @@ public class Fail2BanController extends BaseController {
             if (exitCode == 0) {
                 return output;
             } else {
-                log.error("命令执行失败，退出码：{}，命令：{}，输出：{}",
+                // 降低日志级别，避免大量错误日志
+                log.debug("命令执行失败，退出码：{}，命令：{}，输出：{}",
                         exitCode, String.join(" ", command), output);
                 return null;
             }
