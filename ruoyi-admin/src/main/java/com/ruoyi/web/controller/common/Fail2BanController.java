@@ -353,6 +353,7 @@ public class Fail2BanController extends BaseController {
     /**
      * 获取攻击统计数据
      * 包含按监狱统计的攻击次数、攻击来源Top 20和最近24小时攻击趋势
+     * 【修复】：支持包含连字符的监狱名称，现在会统计所有监狱的攻击数据
      *
      * @return AjaxResult 包含统计数据的响应对象
      */
@@ -380,7 +381,8 @@ public class Fail2BanController extends BaseController {
         String logOutput = executeCommand(new String[]{"tail", "-n", "10000", FAIL2BAN_LOG_PATH});
         if (logOutput != null) {
             String[] lines = logOutput.split("\n");
-            Pattern jailPattern = Pattern.compile("\\[(\\w+)\\]\\s+Found\\s+(\\d+\\.\\d+\\.\\d+\\.\\d+)");
+            // ✅ 修复后的正则表达式，支持连字符
+            Pattern jailPattern = Pattern.compile("\\[([\\w-]+)\\]\\s+Found\\s+(\\d+\\.\\d+\\.\\d+\\.\\d+)");
             Pattern timePattern = Pattern.compile("(\\d{4}-\\d{2}-\\d{2})\\s+(\\d{2}):\\d{2}:\\d{2}");
 
             for (String line : lines) {
