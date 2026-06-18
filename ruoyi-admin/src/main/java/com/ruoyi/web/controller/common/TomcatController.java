@@ -83,12 +83,42 @@ public class TomcatController extends BaseController {
      * "availableMemoryMb": 1023,
      * "usedMemoryMb": 1023,
      * "tomcatResidentMemoryMb": 1023
+     * },
+     * "systemInfo": {
+     * "osName": "Linux",
+     * "osVersion": "5.4.0-150-generic",
+     * "isSupported": true
+     * },
+     * "installInfo": {
+     * "isInstalled": true,
+     * "binPath": "/usr/soft/install/apache-tomcat-9.0.7/bin",
+     * "startupScriptExists": true,
+     * "shutdownScriptExists": true
      * }
      * }
      */
     @PreAuthorize("@ss.hasPermi('system:tomcat:view')")
     @GetMapping("/status")
     public AjaxResult getTomcatStatus() {
+        // 新增：系统类型检测
+        Map<String, Object> systemInfo = getSystemInfo();
+        boolean isSupportedSystem = (boolean) systemInfo.get("isSupported");
+
+        // 新增：Tomcat安装检测
+        Map<String, Object> installInfo = checkTomcatInstallation();
+        boolean isTomcatInstalled = (boolean) installInfo.get("isInstalled");
+
+        // 如果系统不匹配，直接返回提示
+        if (!isSupportedSystem) {
+            Map<String, Object> resultData = new HashMap<>();
+            resultData.put("status", "系统不匹配");
+            resultData.put("systemInfo", systemInfo);
+            resultData.put("installInfo", installInfo);
+            resultData.put("memoryInfo", new HashMap<>());
+            log.warn("当前系统不匹配Tomcat控制器功能：{}", systemInfo.get("osName"));
+            return AjaxResult.success("查询Tomcat状态成功（系统不匹配）", resultData);
+        }
+
         Process process = null;
         BufferedReader reader = null;
         String status = "已停止";
@@ -147,16 +177,59 @@ public class TomcatController extends BaseController {
 
         // 组装返回数据
         Map<String, Object> resultData = new HashMap<>();
-        resultData.put("status", status);
-
-        Map<String, Long> memoryInfo = new HashMap<>();
-        memoryInfo.put("totalMemoryMb", systemMemory.get("totalMemoryMb"));
-        memoryInfo.put("availableMemoryMb", systemMemory.get("availableMemoryMb"));
-        memoryInfo.put("usedMemoryMb", systemMemory.get("usedMemoryMb"));
-        memoryInfo.put("tomcatResidentMemoryMb", tomcatMemoryMb);
-        resultData.put("memoryInfo", memoryInfo);
+        resultData.put("status", isTomcatInstalled ? status : "未安装");
+        resultData.put("memoryInfo", systemMemory);
+        resultData.put("systemInfo", systemInfo);
+        resultData.put("installInfo", installInfo);
 
         return AjaxResult.success("查询Tomcat状态成功", resultData);
+    }
+
+    /**
+     * 获取系统基本信息及兼容性检测
+     * 返回Map包含：osName, osVersion, isSupported
+     */
+    private Map<String, Object> getSystemInfo() {
+        Map<String, Object> systemInfo = new HashMap<>();
+        String osName = System.getProperty("os.name");
+        String osVersion = System.getProperty("os.version");
+
+        // 判断是否为Linux/Unix系统
+        boolean isSupported = osName.toLowerCase().contains("linux")
+                || osName.toLowerCase().contains("unix")
+                || osName.toLowerCase().contains("mac");
+
+        systemInfo.put("osName", osName);
+        systemInfo.put("osVersion", osVersion);
+        systemInfo.put("isSupported", isSupported);
+
+        log.info("当前系统信息：{} {}，是否支持Tomcat控制器：{}", osName, osVersion, isSupported);
+        return systemInfo;
+    }
+
+    /**
+     * 检查Tomcat是否正确安装
+     * 返回Map包含：isInstalled, binPath, startupScriptExists, shutdownScriptExists
+     */
+    private Map<String, Object> checkTomcatInstallation() {
+        Map<String, Object> installInfo = new HashMap<>();
+        File tomcatBinDir = new File(TOMCAT_BIN_PATH);
+        File startupScript = new File(tomcatBinDir, "startup.sh");
+        File shutdownScript = new File(tomcatBinDir, "shutdown.sh");
+
+        boolean binDirExists = tomcatBinDir.exists() && tomcatBinDir.isDirectory();
+        boolean startupScriptExists = startupScript.exists() && startupScript.isFile();
+        boolean shutdownScriptExists = shutdownScript.exists() && shutdownScript.isFile();
+        boolean isInstalled = binDirExists && startupScriptExists && shutdownScriptExists;
+
+        installInfo.put("isInstalled", isInstalled);
+        installInfo.put("binPath", TOMCAT_BIN_PATH);
+        installInfo.put("startupScriptExists", startupScriptExists);
+        installInfo.put("shutdownScriptExists", shutdownScriptExists);
+
+        log.info("Tomcat安装检查：目录存在={}, 启动脚本存在={}, 停止脚本存在={}, 已安装={}",
+                binDirExists, startupScriptExists, shutdownScriptExists, isInstalled);
+        return installInfo;
     }
 
     /**
