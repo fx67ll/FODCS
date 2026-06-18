@@ -14,6 +14,7 @@ import org.springframework.web.context.request.ServletRequestAttributes;
 import javax.servlet.http.HttpServletRequest;
 import java.io.BufferedReader;
 import java.io.File;
+import java.io.FileReader;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.time.Duration;
@@ -33,9 +34,9 @@ import java.util.regex.Pattern;
  * 适配若依框架，针对Fail2ban 0.11.x版本优化
  *
  * @author ruoyi
- * @version 1.3.0
- * @update 2026-06-17
- * @fixes 新增服务与监狱启停控制、监狱配置详情展示、动态威胁等级判断
+ * @version 1.4.0
+ * @update 2026-06-18
+ * @fixes 新增Ubuntu系统检测、未安装检测、修复Ubuntu系统操作接口返回值判断逻辑
  */
 @RestController
 @RequestMapping("/server/fail2ban")
@@ -92,6 +93,10 @@ public class Fail2BanController extends BaseController {
      * Fail2ban日志文件路径
      */
     private static final String FAIL2BAN_LOG_PATH = "/var/log/fail2ban.log";
+    /**
+     * Linux系统发行版信息文件路径（标准路径）
+     */
+    private static final String OS_RELEASE_PATH = "/etc/os-release";
 
     // ==================== 缓存变量 ====================
     private static Map<String, Object> statusCache;
@@ -154,11 +159,52 @@ public class Fail2BanController extends BaseController {
         }
     }
 
+    /**
+     * 检测当前操作系统是否为Ubuntu系统
+     * 【新增】：2026-06-18 前置条件检查
+     * 通过读取标准的/etc/os-release文件判断，兼容所有Ubuntu版本
+     *
+     * @return boolean true=Ubuntu系统 false=其他系统
+     */
+    private boolean isUbuntuSystem() {
+        File osReleaseFile = new File(OS_RELEASE_PATH);
+        if (!osReleaseFile.exists() || !osReleaseFile.canRead()) {
+            log.warn("无法读取操作系统信息文件：{}", OS_RELEASE_PATH);
+            return false;
+        }
+
+        try (BufferedReader reader = new BufferedReader(new FileReader(osReleaseFile))) {
+            String line;
+            while ((line = reader.readLine()) != null) {
+                // 匹配ID=ubuntu或PRETTY_NAME包含Ubuntu
+                if (line.startsWith("ID=")) {
+                    String id = line.substring(3).trim().replace("\"", "");
+                    if ("ubuntu".equalsIgnoreCase(id)) {
+                        return true;
+                    }
+                }
+                if (line.startsWith("PRETTY_NAME=")) {
+                    String prettyName = line.substring(12).trim().replace("\"", "");
+                    if (prettyName.toLowerCase().contains("ubuntu")) {
+                        return true;
+                    }
+                }
+            }
+        } catch (Exception e) {
+            log.error("读取操作系统信息失败", e);
+            return false;
+        }
+
+        return false;
+    }
+
     // ==================== 公共接口 ====================
 
     /**
      * 获取Fail2ban服务整体状态
      * 返回服务运行状态、版本号、运行时长、防火墙状态及全局统计数据
+     * 【新增】：2026-06-18 增加Ubuntu系统检测和未安装检测前置检查
+     * 前台识别到系统不匹配或未安装状态时，会自动隐藏所有操作面板
      *
      * @return AjaxResult 包含服务状态信息的响应对象
      */
@@ -171,6 +217,27 @@ public class Fail2BanController extends BaseController {
         }
 
         Map<String, Object> result = new HashMap<>();
+
+        // ==================== 新增：前置条件检查开始 ====================
+        // 1. 检查操作系统是否为Ubuntu
+        if (!isUbuntuSystem()) {
+            log.warn("当前操作系统不是Ubuntu，Fail2ban功能不可用");
+            result.put("status", "系统不匹配");
+            result.put("error", "当前功能仅支持Ubuntu系统");
+            // 不缓存错误状态，方便用户安装后刷新页面
+            return AjaxResult.success("系统不匹配", result);
+        }
+
+        // 2. 检查fail2ban是否已安装
+        if (!isCommandAvailable(FAIL2BAN_CLIENT)) {
+            log.error("Fail2ban客户端命令不可用，请确认已安装fail2ban");
+            result.put("status", "未安装");
+            result.put("error", "Fail2ban服务未安装，请执行：sudo apt install fail2ban");
+            // 不缓存错误状态，方便用户安装后刷新页面
+            return AjaxResult.success("Fail2ban未安装", result);
+        }
+        // ==================== 新增：前置条件检查结束 ====================
+
         String status = "未知";
         String version = "未知";
         int totalJails = 0;
@@ -179,13 +246,7 @@ public class Fail2BanController extends BaseController {
         String uptime = "未知";
         String firewallStatus = "未知";
 
-        // 1. 检查fail2ban-client命令是否可用
-        if (!isCommandAvailable(FAIL2BAN_CLIENT)) {
-            log.error("Fail2ban客户端命令不可用，请确认已安装fail2ban");
-            return AjaxResult.error("Fail2ban未安装或命令不可用");
-        }
-
-        // 2. 执行fail2ban-client status命令获取整体状态
+        // 执行fail2ban-client status命令获取整体状态
         String statusOutput = executeCommand(new String[]{SUDO_CMD, FAIL2BAN_CLIENT, "status"});
         if (statusOutput != null && !statusOutput.isEmpty()) {
             status = "运行中";
@@ -203,7 +264,7 @@ public class Fail2BanController extends BaseController {
                 version = versionOutput.trim();
             }
 
-            // 3. 遍历所有监狱统计总封禁数和失败次数
+            // 遍历所有监狱统计总封禁数和失败次数
             List<String> jailNames = getJailNames(statusOutput);
             for (String jailName : jailNames) {
                 Map<String, Object> jailStats = getJailStatsInternal(jailName);
@@ -211,10 +272,10 @@ public class Fail2BanController extends BaseController {
                 totalFailedAttempts += (Integer) jailStats.getOrDefault("totalFailed", 0);
             }
 
-            // 4. 获取服务运行时间
+            // 获取服务运行时间
             uptime = getFail2banUptime();
 
-            // 5. 获取防火墙状态
+            // 获取防火墙状态
             firewallStatus = getFirewallStatus();
         } else {
             status = "已停止";
@@ -578,6 +639,7 @@ public class Fail2BanController extends BaseController {
     /**
      * 启动Fail2ban服务
      * 【安全限制】：仅超级管理员可操作，仅白名单IP允许执行
+     * 【修复】：2026-06-18 修复Ubuntu系统操作接口返回值判断逻辑
      *
      * @return AjaxResult 操作结果
      */
@@ -608,6 +670,7 @@ public class Fail2BanController extends BaseController {
     /**
      * 停止Fail2ban服务
      * 【安全限制】：仅超级管理员可操作，仅白名单IP允许执行
+     * 【修复】：2026-06-18 修复Ubuntu系统操作接口返回值判断逻辑
      *
      * @return AjaxResult 操作结果
      */
@@ -638,6 +701,7 @@ public class Fail2BanController extends BaseController {
     /**
      * 启动指定监狱
      * 【安全限制】：仅超级管理员可操作，仅白名单IP允许执行
+     * 【修复】：2026-06-18 修复Ubuntu系统操作接口返回值判断逻辑
      *
      * @param jailName 监狱名称
      * @return AjaxResult 操作结果
@@ -660,21 +724,28 @@ public class Fail2BanController extends BaseController {
             return AjaxResult.error("无效的监狱名称");
         }
 
-        String[] command = {FAIL2BAN_CLIENT, "start", jailName};
+        String[] command = {SUDO_CMD, FAIL2BAN_CLIENT, "start", jailName};
         String output = executeCommand(command);
-        if (output != null && output.trim().equals(jailName)) {
-            log.info("成功启动监狱：{}，操作人：{}，操作IP：{}", jailName, getUsername(), clientIp);
-            clearAllCaches();
-            return AjaxResult.success("成功启动监狱：" + jailName);
+        if (output != null) {
+            String trimmedOutput = output.trim();
+            if (trimmedOutput.equals(jailName)) {
+                log.info("成功启动监狱：{}，操作人：{}，操作IP：{}", jailName, getUsername(), clientIp);
+                clearAllCaches();
+                return AjaxResult.success("成功启动监狱：" + jailName);
+            } else {
+                log.error("启动监狱失败：{}，输出：{}，操作IP：{}", jailName, trimmedOutput, clientIp);
+                return AjaxResult.error("启动监狱失败，请确认监狱配置存在");
+            }
         } else {
-            log.error("启动监狱失败：{}，输出：{}，操作IP：{}", jailName, output, clientIp);
-            return AjaxResult.error("启动监狱失败，请确认监狱配置存在");
+            log.error("启动监狱命令执行无响应：{}，操作IP：{}", jailName, clientIp);
+            return AjaxResult.error("启动监狱失败，请检查系统sudo权限配置");
         }
     }
 
     /**
      * 停止指定监狱
      * 【安全限制】：仅超级管理员可操作，仅白名单IP允许执行
+     * 【修复】：2026-06-18 修复Ubuntu系统操作接口返回值判断逻辑
      *
      * @param jailName 监狱名称
      * @return AjaxResult 操作结果
@@ -708,15 +779,21 @@ public class Fail2BanController extends BaseController {
             return AjaxResult.error("监狱不存在或未运行");
         }
 
-        String[] command = {FAIL2BAN_CLIENT, "stop", jailName};
+        String[] command = {SUDO_CMD, FAIL2BAN_CLIENT, "stop", jailName};
         String output = executeCommand(command);
-        if (output != null && output.trim().equals(jailName)) {
-            log.info("成功停止监狱：{}，操作人：{}，操作IP：{}", jailName, getUsername(), clientIp);
-            clearAllCaches();
-            return AjaxResult.success("成功停止监狱：" + jailName);
+        if (output != null) {
+            String trimmedOutput = output.trim();
+            if (trimmedOutput.equals(jailName)) {
+                log.info("成功停止监狱：{}，操作人：{}，操作IP：{}", jailName, getUsername(), clientIp);
+                clearAllCaches();
+                return AjaxResult.success("成功停止监狱：" + jailName);
+            } else {
+                log.error("停止监狱失败：{}，输出：{}", jailName, trimmedOutput);
+                return AjaxResult.error("停止监狱失败，请检查日志");
+            }
         } else {
-            log.error("停止监狱失败：{}，输出：{}", jailName, output);
-            return AjaxResult.error("停止监狱失败，请检查日志");
+            log.error("停止监狱命令执行无响应：{}，操作IP：{}", jailName, clientIp);
+            return AjaxResult.error("停止监狱失败，请检查系统sudo权限配置");
         }
     }
 
@@ -724,6 +801,7 @@ public class Fail2BanController extends BaseController {
      * 手动封禁指定IP
      * 【安全限制】：仅超级管理员可操作，严格校验IP格式和监狱名称
      * 仅允许白名单IP执行此操作
+     * 【修复】：2026-06-18 修复Ubuntu系统操作接口返回值判断逻辑（成功返回1）
      *
      * @param jailName 监狱名称
      * @param ip       要封禁的IP地址
@@ -770,18 +848,26 @@ public class Fail2BanController extends BaseController {
         }
 
         // 4. 执行封禁命令
-        String[] command = {FAIL2BAN_CLIENT, "set", jailName, "banip", ip};
+        String[] command = {SUDO_CMD, FAIL2BAN_CLIENT, "set", jailName, "banip", ip};
         String output = executeCommand(command);
-        if (output != null && output.trim().equals(ip)) {
-            log.info("成功封禁IP：{}，监狱：{}，操作人：{}",
-                    ip, jailName, getUsername());
-            // 清除缓存，确保状态立即更新
-            clearAllCaches();
-            return AjaxResult.success("成功封禁IP：" + ip);
+
+        // ✅ 完全匹配Ubuntu系统输出（成功返回1）
+        if (output != null) {
+            String trimmedOutput = output.trim();
+            if (trimmedOutput.equals("1")) {
+                log.info("成功封禁IP：{}，监狱：{}，操作人：{}，操作IP：{}",
+                        ip, jailName, getUsername(), clientIp);
+                clearAllCaches();
+                return AjaxResult.success("成功封禁IP：" + ip);
+            } else {
+                log.error("封禁IP失败：{}，监狱：{}，命令输出：{}，操作IP：{}",
+                        ip, jailName, trimmedOutput, clientIp);
+                return AjaxResult.error("封禁IP失败，请检查监狱状态和日志");
+            }
         } else {
-            log.error("封禁IP失败：{}，监狱：{}，输出：{}",
-                    ip, jailName, output);
-            return AjaxResult.error("封禁IP失败，请检查日志");
+            log.error("封禁IP命令执行无响应：{}，监狱：{}，操作IP：{}",
+                    ip, jailName, clientIp);
+            return AjaxResult.error("封禁IP失败，请检查系统sudo权限配置");
         }
     }
 
@@ -789,6 +875,8 @@ public class Fail2BanController extends BaseController {
      * 手动解封指定IP
      * 【安全限制】：仅超级管理员可操作，严格校验IP格式和监狱名称
      * 仅允许白名单IP执行此操作
+     * 【修复】：2026-06-18 修复Ubuntu系统操作接口返回值判断逻辑
+     * （成功返回1，IP未被封禁返回0）
      *
      * @param jailName 监狱名称
      * @param ip       要解封的IP地址
@@ -835,19 +923,93 @@ public class Fail2BanController extends BaseController {
         }
 
         // 4. 执行解封命令
-        String[] command = {FAIL2BAN_CLIENT, "set", jailName, "unbanip", ip};
+        String[] command = {SUDO_CMD, FAIL2BAN_CLIENT, "set", jailName, "unbanip", ip};
         String output = executeCommand(command);
-        if (output != null && output.trim().equals(ip)) {
-            log.info("成功解封IP：{}，监狱：{}，操作人：{}",
-                    ip, jailName, getUsername());
-            // 清除缓存，确保状态立即更新
-            clearAllCaches();
-            return AjaxResult.success("成功解封IP：" + ip);
+
+        // ✅ 完全匹配Ubuntu系统输出
+        if (output != null) {
+            String trimmedOutput = output.trim();
+            if (trimmedOutput.equals("1")) {
+                log.info("成功解封IP：{}，监狱：{}，操作人：{}，操作IP：{}",
+                        ip, jailName, getUsername(), clientIp);
+                clearAllCaches();
+                return AjaxResult.success("成功解封IP：" + ip);
+            } else if (trimmedOutput.equals("0")) {
+                log.warn("解封IP失败：{}，监狱：{}，该IP未被封禁，操作IP：{}",
+                        ip, jailName, clientIp);
+                return AjaxResult.error("解封失败：该IP地址未在当前监狱中被封禁");
+            } else {
+                log.error("解封IP失败：{}，监狱：{}，命令输出：{}，操作IP：{}",
+                        ip, jailName, trimmedOutput, clientIp);
+                return AjaxResult.error("解封IP失败，请检查监狱状态和日志");
+            }
         } else {
-            log.error("解封IP失败：{}，监狱：{}，输出：{}",
-                    ip, jailName, output);
-            return AjaxResult.error("解封IP失败，该IP可能未被封禁");
+            log.error("解封IP命令执行无响应：{}，监狱：{}，操作IP：{}",
+                    ip, jailName, clientIp);
+            return AjaxResult.error("解封IP失败，请检查系统sudo权限配置");
         }
+    }
+
+    /**
+     * 批量解封指定监狱中的所有IP
+     * 【安全限制】：仅超级管理员可操作，仅白名单IP允许执行
+     * 【新增】：2026-06-18 实用功能，一键清空监狱所有封禁IP
+     *
+     * @param jailName 监狱名称
+     * @return AjaxResult 操作结果
+     */
+    @PreAuthorize("@ss.hasRole('fx67ll')")
+    @Log(title = "Fail2ban批量解封IP", businessType = BusinessType.DELETE)
+    @PostMapping("/jail/{jailName}/unban-all")
+    public AjaxResult unbanAllIps(@PathVariable String jailName) {
+        HttpServletRequest request = ((ServletRequestAttributes) RequestContextHolder.getRequestAttributes()).getRequest();
+        String clientIp = getClientIp(request);
+
+        if (!fail2BanConfig.isIpAllowed(clientIp)) {
+            log.warn("非法操作尝试：IP {} 试图批量解封监狱 {}", clientIp, jailName);
+            return AjaxResult.error("权限不足，只有指定IP地址可以执行此操作");
+        }
+
+        // 安全校验：监狱名称
+        if (jailName.contains("/") || jailName.contains("..") || jailName.contains(" ") || jailName.contains(";")) {
+            log.warn("检测到无效的监狱名称请求：{}", jailName);
+            return AjaxResult.error("无效的监狱名称");
+        }
+
+        // 检查监狱是否存在且运行中
+        String statusOutput = executeCommand(new String[]{SUDO_CMD, FAIL2BAN_CLIENT, "status"});
+        if (statusOutput == null || statusOutput.isEmpty()) {
+            return AjaxResult.error("Fail2ban服务未运行");
+        }
+        List<String> validJailNames = getJailNames(statusOutput);
+        if (!validJailNames.contains(jailName)) {
+            log.warn("检测到不存在或未运行的监狱名称请求：{}", jailName);
+            return AjaxResult.error("监狱不存在或未运行");
+        }
+
+        // 获取当前所有封禁IP
+        String bannedIpsOutput = executeCommand(new String[]{SUDO_CMD, FAIL2BAN_CLIENT, "get", jailName, "banned"});
+        List<String> bannedIps = parseBannedIps(bannedIpsOutput);
+
+        if (bannedIps.isEmpty()) {
+            return AjaxResult.success("当前监狱没有被封禁的IP");
+        }
+
+        // 批量解封
+        int successCount = 0;
+        for (String ip : bannedIps) {
+            String[] command = {SUDO_CMD, FAIL2BAN_CLIENT, "set", jailName, "unbanip", ip};
+            String output = executeCommand(command);
+            if (output != null && output.trim().equals("1")) {
+                successCount++;
+            }
+        }
+
+        log.info("批量解封完成：监狱{}，共{}个IP，成功{}个，操作人：{}，操作IP：{}",
+                jailName, bannedIps.size(), successCount, getUsername(), clientIp);
+        clearAllCaches();
+
+        return AjaxResult.success(String.format("批量解封完成：共%d个IP，成功%d个", bannedIps.size(), successCount));
     }
 
     // ==================== 内部业务方法 ====================
