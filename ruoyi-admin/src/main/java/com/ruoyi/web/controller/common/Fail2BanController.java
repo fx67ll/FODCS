@@ -814,9 +814,9 @@ public class Fail2BanController extends BaseController {
     }
 
     /**
-     * 启动指定监狱
+     * 启动指定监狱（优化版：三级重试兜底机制，适配现有executeCommand工具，修复返回值校验bug）
      * 【安全限制】：仅超级管理员可操作，仅白名单IP允许执行
-     * 修复：Ubuntu系统操作接口返回值判断逻辑
+     * 【优化说明】：修复fail2ban-client start返回值判断逻辑；分三层兜底：直启→reload→restart；命令非0返回null适配；启动后二次状态校验防假成功
      *
      * @param jailName 监狱名称
      * @return AjaxResult 操作结果
@@ -827,45 +827,177 @@ public class Fail2BanController extends BaseController {
     public AjaxResult startJail(@PathVariable String jailName) {
         HttpServletRequest request = ((ServletRequestAttributes) RequestContextHolder.getRequestAttributes()).getRequest();
         String clientIp = getClientIp(request);
+        String operator = getUsername();
+        final long startTime = System.currentTimeMillis();
+        final String SUCCESS_FLAG = "Jail started";
 
+        // 1. 白名单IP权限校验
         if (!fail2BanConfig.isIpAllowed(clientIp)) {
-            log.warn("非法操作尝试：IP {} 试图启动监狱 {}", clientIp, jailName);
-            return AjaxResult.error("权限不足，只有指定IP地址可以执行此操作");
+            log.warn("非法操作尝试：IP {} 试图启动监狱 {}，操作人：{}", clientIp, jailName, operator);
+            return AjaxResult.error("权限不足，仅指定白名单IP可执行该操作");
         }
 
-        // 安全校验：监狱名称
-        if (jailName.contains("/") || jailName.contains("..") || jailName.contains(" ") || jailName.contains(";")) {
-            log.warn("检测到无效的监狱名称请求：{}", jailName);
-            return AjaxResult.error("无效的监狱名称");
+        // 2. 防命令注入：监狱名称非法字符强过滤
+        if (jailName.contains("/") || jailName.contains("..") || jailName.contains(" ")
+                || jailName.contains(";") || jailName.contains("|") || jailName.contains("&")) {
+            log.warn("检测到非法监狱名称请求：{}，操作IP：{}，操作人：{}", jailName, clientIp, operator);
+            return AjaxResult.error("无效监狱名称，包含非法特殊字符");
         }
-        // 校验配置文件是否存在该监狱，不再依赖运行列表
+
+        // 3. 校验配置中存在该监狱，无配置直接拦截
         if (!isJailConfigured(jailName)) {
-            log.warn("启动监狱：配置中不存在 {} ", jailName);
-            return AjaxResult.error("监狱不存在");
+            log.warn("启动监狱拦截：配置文件中不存在 {}，操作IP：{}，操作人：{}", jailName, clientIp, operator);
+            return AjaxResult.error("监狱不存在，请先创建对应jail配置文件");
         }
 
-        String[] command = {SUDO_CMD, FAIL2BAN_CLIENT, "start", jailName};
-        String output = executeCommand(command);
-        if (output != null) {
-            String trimmedOutput = output.trim();
-            if (trimmedOutput.equals(jailName)) {
-                log.info("成功启动监狱：{}，操作人：{}，操作IP：{}", jailName, getUsername(), clientIp);
-                clearAllCaches();
-                return AjaxResult.success("成功启动监狱：" + jailName);
-            } else {
-                log.error("启动监狱失败：{}，输出：{}，操作IP：{}", jailName, trimmedOutput, clientIp);
-                return AjaxResult.error("启动监狱失败，请确认监狱配置存在");
-            }
-        } else {
-            log.error("启动监狱命令执行无响应：{}，操作IP：{}", jailName, clientIp);
-            return AjaxResult.error("启动监狱失败，请检查系统sudo权限配置");
+        // 4. 查询当前运行状态，已运行直接返回
+        Map<String, Object> currentStatus;
+        try {
+            currentStatus = getJailStatsInternal(jailName);
+        } catch (Exception e) {
+            log.error("查询监狱{}运行状态异常，继续执行启动流程", jailName, e);
+            Map<String, Object> tempMap = new HashMap<>();
+            tempMap.put("status", "未知");
+            currentStatus = tempMap;
         }
+        if ("运行中".equals(currentStatus.get("status"))) {
+            log.info("监狱{}已处于运行状态，无需重复启动，操作人：{}，操作IP：{}", jailName, operator, clientIp);
+            clearAllCaches();
+            return AjaxResult.success("监狱[" + jailName + "]当前已在运行，无需操作");
+        }
+
+        String cmdOutput;
+        boolean launchSuccess = false;
+        String launchWay = "";
+
+        // ====================== 方案1：直接 fail2ban-client start ======================
+        log.info("【启动方案1】尝试直接启动监狱：{}", jailName);
+        cmdOutput = executeCommand(new String[]{SUDO_CMD, FAIL2BAN_CLIENT, "start", jailName});
+        if (cmdOutput != null) {
+            String trimOut = cmdOutput.trim();
+            if (SUCCESS_FLAG.equals(trimOut)) {
+                // 命令返回成功标识，二次校验实际运行状态
+                try {
+                    Map<String, Object> checkStat = getJailStatsInternal(jailName);
+                    if ("运行中".equals(checkStat.get("status"))) {
+                        launchSuccess = true;
+                        launchWay = "直接启动";
+                    } else {
+                        log.warn("【方案1】命令返回成功标识，但监狱{}实际未运行，继续走兜底", jailName);
+                    }
+                } catch (Exception e) {
+                    log.warn("【方案1】启动后二次状态校验异常", e);
+                }
+            }
+        }
+        if (launchSuccess) {
+            long cost = System.currentTimeMillis() - startTime;
+            log.info("【方案1成功】{}监狱{}完成，总耗时{}ms，操作人：{}，IP：{}", launchWay, jailName, cost, operator, clientIp);
+            clearAllCaches();
+            return AjaxResult.success("操作成功：" + launchWay + "监狱[" + jailName + "]");
+        }
+        log.warn("【方案1失败】直接启动{}未生效，进入重载配置兜底", jailName);
+
+        // ====================== 方案2：systemctl reload fail2ban 重载后重试 ======================
+        log.warn("【启动方案2】执行systemctl reload fail2ban重载服务配置");
+        String reloadOut = executeCommand(new String[]{SUDO_CMD, "systemctl", "reload", "fail2ban"});
+        if (reloadOut == null) {
+            log.error("【方案2】重载fail2ban配置命令执行失败（退出码非0/超时）");
+        } else {
+            log.info("【方案2】重载配置执行输出：{}", reloadOut.trim());
+        }
+
+        // 等待配置加载完成
+        try {
+            Thread.sleep(1000);
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            log.warn("【方案2】重载后等待线程被中断");
+        }
+
+        // 重载后重试启动
+        log.info("【方案2】重载配置完成，重试启动监狱{}", jailName);
+        cmdOutput = executeCommand(new String[]{SUDO_CMD, FAIL2BAN_CLIENT, "start", jailName});
+        if (cmdOutput != null) {
+            String trimOut = cmdOutput.trim();
+            if (SUCCESS_FLAG.equals(trimOut)) {
+                try {
+                    Map<String, Object> checkStat = getJailStatsInternal(jailName);
+                    if ("运行中".equals(checkStat.get("status"))) {
+                        launchSuccess = true;
+                        launchWay = "重载配置后启动";
+                    } else {
+                        log.warn("【方案2】命令返回成功标识，但监狱{}实际未运行，进入重启兜底", jailName);
+                    }
+                } catch (Exception e) {
+                    log.warn("【方案2】启动后二次状态校验异常", e);
+                }
+            }
+        }
+        if (launchSuccess) {
+            long cost = System.currentTimeMillis() - startTime;
+            log.info("【方案2成功】{}监狱{}完成，总耗时{}ms，操作人：{}，IP：{}", launchWay, jailName, cost, operator, clientIp);
+            clearAllCaches();
+            return AjaxResult.success("操作成功：" + launchWay + "监狱[" + jailName + "]");
+        }
+        log.error("【方案2失败】重载配置后启动{}仍未生效，进入服务重启兜底", jailName);
+
+        // ====================== 方案3：systemctl restart fail2ban 完整重启兜底 ======================
+        log.error("【启动方案3】前两步全部失败，执行systemctl restart fail2ban重启服务");
+        String restartOut = executeCommand(new String[]{SUDO_CMD, "systemctl", "restart", "fail2ban"});
+        if (restartOut == null) {
+            log.error("【方案3】重启fail2ban服务命令执行失败（退出码非0/超时）");
+        } else {
+            log.info("【方案3】重启服务执行输出：{}", restartOut.trim());
+        }
+
+        // 服务重启等待更长时间
+        try {
+            Thread.sleep(3000);
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            log.warn("【方案3】重启后等待线程被中断");
+        }
+
+        // 最终一次启动尝试
+        log.info("【方案3】服务重启完成，最终重试启动监狱{}", jailName);
+        cmdOutput = executeCommand(new String[]{SUDO_CMD, FAIL2BAN_CLIENT, "start", jailName});
+        if (cmdOutput != null) {
+            String trimOut = cmdOutput.trim();
+            if (SUCCESS_FLAG.equals(trimOut)) {
+                try {
+                    Map<String, Object> checkStat = getJailStatsInternal(jailName);
+                    if ("运行中".equals(checkStat.get("status"))) {
+                        launchSuccess = true;
+                        launchWay = "重启服务后启动";
+                    }
+                } catch (Exception e) {
+                    log.warn("【方案3】启动后二次状态校验异常", e);
+                }
+            }
+        }
+        if (launchSuccess) {
+            long cost = System.currentTimeMillis() - startTime;
+            log.info("【方案3成功】{}监狱{}完成，总耗时{}ms，操作人：{}，IP：{}", launchWay, jailName, cost, operator, clientIp);
+            clearAllCaches();
+            return AjaxResult.success("操作成功：" + launchWay + "监狱[" + jailName + "]");
+        }
+
+        // ====================== 三层兜底全部失败 ======================
+        long totalCost = System.currentTimeMillis() - startTime;
+        log.error("【全部方案失败】启动监狱{}所有兜底流程执行完毕仍失败，总耗时{}ms，操作人：{}，IP：{}",
+                jailName, totalCost, operator, clientIp);
+        return AjaxResult.error("启动监狱[" + jailName + "]失败，已依次尝试：直接启动→重载配置→完整重启Fail2ban服务，请排查：\n" +
+                "1.jail配置文件语法是否正确（fail2ban-client reload 校验）\n" +
+                "2.监控日志文件路径、读取权限是否正常\n" +
+                "3.服务器fail2ban服务是否正常运行\n" +
+                "4.查看系统日志 /var/log/fail2ban.log 定位详细报错");
     }
 
     /**
-     * 停止指定监狱
+     * 停止指定监狱（修复版：修正成功输出判断逻辑）
      * 【安全限制】：仅超级管理员可操作，仅白名单IP允许执行
-     * 修复：删除运行列表存在校验，解决停止后无法二次操作、列表消失问题
+     * 【修复说明】：Fail2ban停止命令成功输出为固定字符串"Jail stopped"，不是监狱名称
      *
      * @param jailName 监狱名称
      * @return AjaxResult 操作结果
@@ -887,17 +1019,29 @@ public class Fail2BanController extends BaseController {
             log.warn("检测到无效的监狱名称请求：{}", jailName);
             return AjaxResult.error("无效的监狱名称");
         }
-        // 仅校验配置文件存在，删除原运行列表校验（停止后运行列表无该监狱会拦截操作）
+        // 仅校验配置文件存在
         if (!isJailConfigured(jailName)) {
             log.warn("停止监狱：配置中不存在 {} ", jailName);
             return AjaxResult.error("监狱不存在");
         }
 
+        // 先检查监狱是否已经停止
+        Map<String, Object> currentStatus = getJailStatsInternal(jailName);
+        if ("已停止".equals(currentStatus.get("status"))) {
+            log.info("监狱{}已经处于停止状态，无需重复操作，操作人：{}，操作IP：{}",
+                    jailName, getUsername(), clientIp);
+            clearAllCaches();
+            return AjaxResult.success("监狱" + jailName + "已经处于停止状态");
+        }
+
+        // 执行停止命令
         String[] command = {SUDO_CMD, FAIL2BAN_CLIENT, "stop", jailName};
         String output = executeCommand(command);
+
         if (output != null) {
             String trimmedOutput = output.trim();
-            if (trimmedOutput.equals(jailName)) {
+            // ✅ 修复：停止命令成功输出为固定字符串"Jail stopped"
+            if (trimmedOutput.equals("Jail stopped")) {
                 log.info("成功停止监狱：{}，操作人：{}，操作IP：{}", jailName, getUsername(), clientIp);
                 clearAllCaches();
                 return AjaxResult.success("成功停止监狱：" + jailName);
