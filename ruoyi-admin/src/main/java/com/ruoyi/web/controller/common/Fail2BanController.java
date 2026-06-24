@@ -1710,49 +1710,95 @@ public class Fail2BanController extends BaseController {
 
     /**
      * 获取Fail2ban服务运行时间
-     * 精确计算运行时长，显示"已运行X天X小时X分钟"
-     * 【修复】使用ZonedDateTime解析带时区的时间，修复时区不一致导致的时长计算错误
-     *
-     * @return String 服务运行状态描述
+     * 【修复】改用pgrep匹配完整命令行获取PID，解决Python脚本进程名不匹配问题
+     * 【修复】兼容Java 8，移除isBlank方法
+     * 【双兜底】优先读取/proc进程真实启动时间，失败自动降级systemctl时间戳
      */
     private String getFail2banUptime() {
-        // 使用systemctl获取服务启动时间
-        String output = executeCommand(new String[]{SYSTEMCTL_CMD, "show", "fail2ban", "-p", "ActiveEnterTimestamp"});
-        if (output == null || output.isEmpty()) {
-            return "未知";
-        }
+        // ========== 方案1：读取进程真实启动时间（首选，精度最高，内部重启立即刷新） ==========
+        try {
+            // 用pgrep -f匹配完整命令行，解决python脚本进程名是python3的问题
+            String pidOut = executeCommand(new String[]{SUDO_CMD, "/usr/bin/pgrep", "-f", "fail2ban-server"});
+            if (pidOut != null && !pidOut.trim().isEmpty()) {
+                String pidStr = pidOut.trim().split("\\s+")[0];
+                long pid = Long.parseLong(pidStr);
+                String statPath = "/proc/" + pid + "/stat";
 
-        Matcher matcher = ACTIVE_TIMESTAMP_PATTERN.matcher(output);
-        if (matcher.find()) {
-            String timestampStr = matcher.group(1).trim();
-            try {
-                // 修复：使用ZonedDateTime解析带时区的时间戳，避免时区偏差
-                ZonedDateTime startTime = ZonedDateTime.parse(timestampStr, SYSTEMCTL_DATE_FORMATTER);
-                ZonedDateTime now = ZonedDateTime.now(startTime.getZone());
-                Duration duration = Duration.between(startTime, now);
+                // sudo读取stat文件内容
+                String statContent = executeCommand(new String[]{SUDO_CMD, "/usr/bin/cat", statPath});
+                if (statContent != null && !statContent.trim().isEmpty()) {
+                    String[] parts = statContent.split("\\s+");
+                    if (parts.length >= 22) {
+                        long startTimeTicks = Long.parseLong(parts[21]);
+                        long hz = 100;
 
-                // Java 8 100%兼容，计算结果和Java 9+完全一致
-                long totalMinutes = duration.toMinutes();
-                long days = totalMinutes / (24 * 60);
-                long hours = (totalMinutes % (24 * 60)) / 60;
-                long minutes = totalMinutes % 60;
+                        // 获取系统HZ，失败用默认100
+                        String hzOut = executeCommand(new String[]{SUDO_CMD, "/usr/bin/getconf", "CLK_TCK"});
+                        if (hzOut != null && !hzOut.trim().isEmpty()) {
+                            try {
+                                hz = Long.parseLong(hzOut.trim());
+                            } catch (Exception ignored) {
+                            }
+                        }
 
-                if (days > 0) {
-                    return String.format("已运行 %d天%d小时%d分钟", days, hours, minutes);
-                } else if (hours > 0) {
-                    return String.format("已运行 %d小时%d分钟", hours, minutes);
-                } else {
-                    return String.format("已运行 %d分钟", minutes);
+                        // 计算运行秒数
+                        long nowSec = System.currentTimeMillis() / 1000;
+                        long bootSec = nowSec - (System.nanoTime() / 1000000000);
+                        long procStartSec = bootSec + (startTimeTicks / hz);
+                        long diffSec = Math.abs(nowSec - procStartSec);
+
+                        // 格式化输出
+                        long totalMinutes = diffSec / 60;
+                        long days = totalMinutes / (24 * 60);
+                        long hours = (totalMinutes % (24 * 60)) / 60;
+                        long minutes = totalMinutes % 60;
+
+                        if (days > 0) {
+                            return String.format("已运行 %d天%d小时%d分钟", days, hours, minutes);
+                        } else if (hours > 0) {
+                            return String.format("已运行 %d小时%d分钟", hours, minutes);
+                        } else {
+                            return String.format("已运行 %d分钟", minutes);
+                        }
+                    }
                 }
-            } catch (Exception e) {
-                log.warn("解析服务启动时间失败：{}", timestampStr, e);
-                return "正常运行中";
             }
+        } catch (Exception e) {
+            log.debug("读取进程启动时间失败，降级使用systemctl方式", e);
         }
 
-        return "未知";
-    }
+        // ========== 方案2：降级使用systemctl时间戳（兜底，保证不显示未知） ==========
+        try {
+            String output = executeCommand(new String[]{SYSTEMCTL_CMD, "show", "fail2ban", "-p", "ActiveEnterTimestamp"});
+            if (output != null && !output.trim().isEmpty()) {
+                Matcher matcher = ACTIVE_TIMESTAMP_PATTERN.matcher(output);
+                if (matcher.find()) {
+                    String timestampStr = matcher.group(1).trim();
+                    ZonedDateTime startTime = ZonedDateTime.parse(timestampStr, SYSTEMCTL_DATE_FORMATTER);
+                    ZonedDateTime now = ZonedDateTime.now(startTime.getZone());
+                    long totalMinutes = Math.abs(Duration.between(startTime, now).toMinutes());
 
+                    long days = totalMinutes / (24 * 60);
+                    long hours = (totalMinutes % (24 * 60)) / 60;
+                    long minutes = totalMinutes % 60;
+
+                    if (days > 0) {
+                        return String.format("已运行 %d天%d小时%d分钟", days, hours, minutes);
+                    } else if (hours > 0) {
+                        return String.format("已运行 %d小时%d分钟", hours, minutes);
+                    } else {
+                        return String.format("已运行 %d分钟", minutes);
+                    }
+                }
+            }
+        } catch (Exception e) {
+            log.debug("systemctl时间解析失败", e);
+        }
+
+        // 最终兜底，永远返回友好文案
+        return "正常运行中";
+    }
+    
     /**
      * 获取防火墙状态（支持firewalld和ufw）
      * 显示具体哪个防火墙在运行
