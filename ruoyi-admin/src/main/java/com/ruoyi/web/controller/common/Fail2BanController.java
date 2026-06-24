@@ -270,20 +270,33 @@ public class Fail2BanController extends BaseController {
             return "unknown";
         }
 
-        String ip = request.getHeader("X-Forwarded-For");
+        String ip = null;
+        // 标准代理头优先级调整
+        String xForwardedFor = request.getHeader("X-Forwarded-For");
+        if (xForwardedFor != null && !xForwardedFor.isEmpty() && !"unknown".equalsIgnoreCase(xForwardedFor)) {
+            ip = xForwardedFor.split(",")[0].trim();
+        }
+
+        if (ip == null || ip.isEmpty() || "unknown".equalsIgnoreCase(ip)) {
+            ip = request.getHeader("X-Real-IP");
+        }
         if (ip == null || ip.isEmpty() || "unknown".equalsIgnoreCase(ip)) {
             ip = request.getHeader("Proxy-Client-IP");
         }
         if (ip == null || ip.isEmpty() || "unknown".equalsIgnoreCase(ip)) {
             ip = request.getHeader("WL-Proxy-Client-IP");
         }
+        // 兜底原始地址
         if (ip == null || ip.isEmpty() || "unknown".equalsIgnoreCase(ip)) {
             ip = request.getRemoteAddr();
         }
 
-        // 处理多个代理的情况，取第一个真实客户端IP
-        if (ip != null && ip.contains(",")) {
-            ip = ip.split(",")[0].trim();
+        // 本地地址兼容处理：容器/本地访问时避免固定127.0.0.1
+        if ("127.0.0.1".equals(ip) || "0:0:0:0:0:0:0:1".equals(ip)) {
+            String realIp = request.getHeader("X-Real-IP");
+            if (realIp != null && !realIp.isEmpty() && IPV4_STRICT_PATTERN.matcher(realIp).matches()) {
+                ip = realIp.trim();
+            }
         }
 
         // 【安全加固】校验IP格式合法性，格式非法则回退为RemoteAddr，防止XFF头伪造攻击
@@ -1297,6 +1310,13 @@ public class Fail2BanController extends BaseController {
             log.warn("非法操作尝试：IP {} 试图封禁IP {}，监狱 {}",
                     sanitizeLog(clientIp), sanitizeLog(ip), sanitizeLog(jailName));
             return AjaxResult.error("权限不足，只有指定IP地址可以执行此操作");
+        }
+
+        // ==========新增：禁止封禁.env配置中的白名单IP==========
+        List<String> banWhiteList = fail2BanConfig.getAllowedIps();
+        if (banWhiteList.contains(ip)) {
+            log.warn("禁止封禁白名单IP：{}，操作IP：{}，监狱：{}", sanitizeLog(ip), sanitizeLog(clientIp), sanitizeLog(jailName));
+            return AjaxResult.error("禁止操作：该IP属于系统白名单，不允许封禁");
         }
 
         // 1. 安全校验：监狱名称
