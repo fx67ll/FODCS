@@ -4,7 +4,8 @@ fx67ll One Data Center Server
 欢迎访问 [fx67ll's 管理系统](https://vip.fx67ll.com)
 
 ## 0.9.5.20260625
-* `Fail2Ban`24小时攻击趋势接口返回当前时段攻击次数TOP5 IP
+* `Fail2Ban`24小时攻击趋势接口返回当前时段攻击次数TOP5 IP  
+* `Fail2Ban`新增批量解封和封禁接口  
 
 ## 0.9.4.20260624
 * `Fail2Ban`性能优化：正则预编译，配置文件缓存，缓存并发保护，线程池调优
