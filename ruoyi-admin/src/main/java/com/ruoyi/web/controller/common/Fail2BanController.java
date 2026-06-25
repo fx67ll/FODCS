@@ -840,15 +840,26 @@ public class Fail2BanController extends BaseController {
         Map<String, Integer> ipAttackCount = new HashMap<>();
         // 记录每个IP命中的监狱集合（自动去重）
         Map<String, Set<String>> ipJailMap = new HashMap<>();
-        // 最近24小时攻击趋势（按小时统计）
-        Map<String, Integer> hourlyTrend = new LinkedHashMap<>();
+        // 最近24小时攻击趋势（按小时统计，包含攻击总数与该小时Top5 IP）
+        Map<String, Map<String, Object>> hourlyTrend = new LinkedHashMap<>();
+        // 每个小时的IP攻击次数统计（用于计算小时级Top5）
+        Map<String, Map<String, Integer>> hourIpCount = new HashMap<>();
+        // 每个小时的IP命中监狱集合
+        Map<String, Map<String, Set<String>>> hourIpJailMap = new HashMap<>();
 
-        // 初始化24小时趋势数据
+        // 初始化24小时趋势数据与辅助统计容器
         LocalDateTime now = LocalDateTime.now();
         for (int i = 23; i >= 0; i--) {
             LocalDateTime hour = now.minusHours(i);
             String hourKey = hour.format(DateTimeFormatter.ofPattern("HH:00"));
-            hourlyTrend.put(hourKey, 0);
+            // 趋势主数据：包含总数与Top5列表
+            Map<String, Object> hourData = new HashMap<>();
+            hourData.put("count", 0);
+            hourData.put("topIps", new ArrayList<>());
+            hourlyTrend.put(hourKey, hourData);
+            // 辅助统计容器初始化
+            hourIpCount.put(hourKey, new HashMap<>());
+            hourIpJailMap.put(hourKey, new HashMap<>());
         }
 
         // 使用前端传入的行数读取日志
@@ -880,7 +891,21 @@ public class Fail2BanController extends BaseController {
                                     DATE_FORMATTER
                             );
                             if (logTime.isAfter(now.minusHours(24))) {
-                                hourlyTrend.put(hourKey, hourlyTrend.getOrDefault(hourKey, 0) + 1);
+                                // 更新小时攻击总数
+                                Map<String, Object> hourData = hourlyTrend.get(hourKey);
+                                if (hourData != null) {
+                                    hourData.put("count", (Integer) hourData.get("count") + 1);
+                                }
+                                // 更新小时内单IP攻击计数
+                                Map<String, Integer> ipCountMap = hourIpCount.get(hourKey);
+                                if (ipCountMap != null) {
+                                    ipCountMap.put(ip, ipCountMap.getOrDefault(ip, 0) + 1);
+                                }
+                                // 更新小时内单IP命中的监狱集合
+                                Map<String, Set<String>> ipJails = hourIpJailMap.get(hourKey);
+                                if (ipJails != null) {
+                                    ipJails.computeIfAbsent(ip, k -> new HashSet<>()).add(jail);
+                                }
                             }
                         } catch (Exception e) {
                             log.debug("日志时间解析失败：{}", line);
@@ -888,6 +913,38 @@ public class Fail2BanController extends BaseController {
                     }
                 }
             }
+        }
+
+        // 计算每个小时的Top5攻击IP，写入趋势数据
+        for (Map.Entry<String, Map<String, Object>> entry : hourlyTrend.entrySet()) {
+            String hourKey = entry.getKey();
+            Map<String, Object> hourData = entry.getValue();
+            Map<String, Integer> ipCountMap = hourIpCount.get(hourKey);
+            Map<String, Set<String>> ipJails = hourIpJailMap.get(hourKey);
+
+            if (ipCountMap == null || ipCountMap.isEmpty()) {
+                continue;
+            }
+
+            // 按攻击次数降序排序
+            List<Map.Entry<String, Integer>> ipList = new ArrayList<>(ipCountMap.entrySet());
+            ipList.sort((a, b) -> b.getValue().compareTo(a.getValue()));
+
+            // 取Top5组装结果
+            List<Map<String, Object>> topIps = new ArrayList<>();
+            for (int i = 0; i < Math.min(5, ipList.size()); i++) {
+                Map.Entry<String, Integer> ipEntry = ipList.get(i);
+                Map<String, Object> ipInfo = new HashMap<>();
+                String ip = ipEntry.getKey();
+                ipInfo.put("ip", ip);
+                ipInfo.put("count", ipEntry.getValue());
+                // 拼接来源监狱字符串
+                Set<String> jailSet = ipJails.getOrDefault(ip, new HashSet<>());
+                ipInfo.put("jails", String.join(", ", jailSet));
+                topIps.add(ipInfo);
+            }
+
+            hourData.put("topIps", topIps);
         }
 
         // 对IP攻击次数进行排序，取前端传入的topIpLimit条，上限100
@@ -1798,7 +1855,7 @@ public class Fail2BanController extends BaseController {
         // 最终兜底，永远返回友好文案
         return "正常运行中";
     }
-    
+
     /**
      * 获取防火墙状态（支持firewalld和ufw）
      * 显示具体哪个防火墙在运行
