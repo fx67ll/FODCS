@@ -1560,6 +1560,289 @@ public class Fail2BanController extends BaseController {
         return AjaxResult.success(String.format("批量解封完成：共%d个IP，成功%d个", bannedIps.size(), successCount));
     }
 
+    /**
+     * 一键解封所有监狱的所有封禁IP（全局批量解封）
+     * 【安全限制】：仅超级管理员可操作，仅白名单IP允许执行
+     * 【适用场景】：紧急故障恢复，一次性清空所有监狱的封禁列表
+     * 【异常兜底】新增请求上下文空指针防护、日志注入防护
+     *
+     * @return AjaxResult 操作结果（包含监狱总数、解封IP总数、各监狱解封详情）
+     */
+    @PreAuthorize("@ss.hasRole('fx67ll')")
+    @Log(title = "Fail2ban全局一键解封所有IP", businessType = BusinessType.DELETE)
+    @PostMapping("/unban-all")
+    public AjaxResult unbanAllJailsAllIps() {
+        ServletRequestAttributes attributes = (ServletRequestAttributes) RequestContextHolder.getRequestAttributes();
+        if (attributes == null) {
+            return AjaxResult.error("无法获取请求上下文");
+        }
+        HttpServletRequest request = attributes.getRequest();
+        String clientIp = getClientIp(request);
+        String operator = getUsername();
+
+        // 1. 白名单IP权限校验
+        if (!fail2BanConfig.isIpAllowed(clientIp)) {
+            log.warn("非法操作尝试：IP {} 试图全局一键解封所有IP", sanitizeLog(clientIp));
+            return AjaxResult.error("权限不足，只有指定IP地址可以执行此操作");
+        }
+
+        // 2. 获取当前运行中的所有监狱
+        String statusOutput = executeCommand(new String[]{SUDO_CMD, FAIL2BAN_CLIENT, "status"});
+        if (statusOutput == null || statusOutput.isEmpty()) {
+            return AjaxResult.success("Fail2ban服务未运行，无封禁IP需要解封");
+        }
+        List<String> jailNames = getJailNames(statusOutput);
+        if (jailNames.isEmpty()) {
+            return AjaxResult.success("当前无运行中的监狱，无封禁IP需要解封");
+        }
+
+        // 3. 遍历所有监狱，逐个解封全部IP，统计明细
+        int totalJails = jailNames.size();
+        int totalUnbanCount = 0;
+        Map<String, Integer> jailUnbanDetail = new LinkedHashMap<>();
+
+        for (String jailName : jailNames) {
+            // 获取当前监狱封禁IP列表
+            String bannedOutput = executeCommand(new String[]{SUDO_CMD, FAIL2BAN_CLIENT, "get", jailName, "banned"});
+            List<String> bannedIps = parseBannedIps(bannedOutput);
+            if (bannedIps.isEmpty()) {
+                jailUnbanDetail.put(jailName, 0);
+                continue;
+            }
+
+            // 逐个执行解封，统计成功数
+            int jailSuccessCount = 0;
+            for (String ip : bannedIps) {
+                String[] command = {SUDO_CMD, FAIL2BAN_CLIENT, "set", jailName, "unbanip", ip};
+                String output = executeCommand(command);
+                if (output != null && output.trim().equals("1")) {
+                    jailSuccessCount++;
+                }
+            }
+            jailUnbanDetail.put(jailName, jailSuccessCount);
+            totalUnbanCount += jailSuccessCount;
+        }
+
+        // 4. 审计日志与缓存清理
+        log.info("全局一键解封完成：共处理{}个监狱，解封IP总数{}，操作人：{}，操作IP：{}",
+                totalJails, totalUnbanCount, operator, sanitizeLog(clientIp));
+        clearAllCaches();
+
+        // 5. 组装返回结果
+        Map<String, Object> result = new HashMap<>();
+        result.put("totalJails", totalJails);
+        result.put("totalUnbanCount", totalUnbanCount);
+        result.put("jailDetail", jailUnbanDetail);
+
+        return AjaxResult.success(String.format("全局解封完成：共处理%d个监狱，解封%d个IP", totalJails, totalUnbanCount), result);
+    }
+
+    @PreAuthorize("@ss.hasRole('fx67ll')")
+    @Log(title = "Fail2ban批量封禁IP", businessType = BusinessType.INSERT)
+    @PostMapping("/jail/{jailName}/ban-batch")
+    public AjaxResult banBatchIps(
+            @PathVariable String jailName,
+            // 核心修改：从请求体JSON数组读取IP列表，彻底解决URL特殊字符报错
+            @RequestBody List<String> ips
+    ) {
+        ServletRequestAttributes attributes = (ServletRequestAttributes) RequestContextHolder.getRequestAttributes();
+        if (attributes == null) {
+            return AjaxResult.error("无法获取请求上下文");
+        }
+        HttpServletRequest request = attributes.getRequest();
+        String clientIp = getClientIp(request);
+        String operator = getUsername();
+
+        // 1. 白名单IP权限校验
+        if (!fail2BanConfig.isIpAllowed(clientIp)) {
+            log.warn("非法操作尝试：IP {} 试图批量封禁监狱 {}", sanitizeLog(clientIp), sanitizeLog(jailName));
+            return AjaxResult.error("权限不足，只有指定IP地址可以执行此操作");
+        }
+
+        // 2. 监狱名称安全校验
+        if (jailName.contains("/") || jailName.contains("..") || jailName.contains(" ") || jailName.contains(";")) {
+            log.warn("检测到无效的监狱名称请求：{}", sanitizeLog(jailName));
+            return AjaxResult.error("无效的监狱名称");
+        }
+        if (!isJailConfigured(jailName)) {
+            log.warn("批量封禁：配置中不存在监狱 {}", sanitizeLog(jailName));
+            return AjaxResult.error("监狱不存在");
+        }
+
+        // 3. 参数基础校验
+        if (ips == null || ips.isEmpty()) {
+            return AjaxResult.error("IP列表不能为空");
+        }
+        final int BATCH_MAX_LIMIT = 50;
+        if (ips.size() > BATCH_MAX_LIMIT) {
+            return AjaxResult.error("单次最多封禁" + BATCH_MAX_LIMIT + "个IP");
+        }
+
+        // 4. 逐IP格式强校验 + 白名单拦截
+        List<String> invalidIps = new ArrayList<>();
+        List<String> whiteListIps = new ArrayList<>();
+        List<String> banWhiteList = fail2BanConfig.getAllowedIps();
+
+        for (String ip : ips) {
+            String trimIp = ip.trim();
+            if (!IPV4_STRICT_PATTERN.matcher(trimIp).matches()) {
+                invalidIps.add(ip);
+                continue;
+            }
+            if (banWhiteList.contains(trimIp)) {
+                whiteListIps.add(trimIp);
+            }
+        }
+        if (!invalidIps.isEmpty()) {
+            log.warn("批量封禁包含非法格式IP：{}，操作IP：{}", String.join(",", invalidIps), sanitizeLog(clientIp));
+            return AjaxResult.error("存在非法格式IP：" + String.join(", ", invalidIps));
+        }
+        if (!whiteListIps.isEmpty()) {
+            log.warn("批量封禁拦截白名单IP：{}，操作IP：{}", String.join(",", whiteListIps), sanitizeLog(clientIp));
+            return AjaxResult.error("禁止封禁系统白名单IP：" + String.join(", ", whiteListIps));
+        }
+
+        // 5. 逐个执行封禁，统计结果
+        int total = ips.size();
+        int successCount = 0;
+        Map<String, String> failDetails = new LinkedHashMap<>();
+
+        for (String ip : ips) {
+            String trimIp = ip.trim();
+            String[] command = {SUDO_CMD, FAIL2BAN_CLIENT, "set", jailName, "banip", trimIp};
+            String output = executeCommand(command);
+
+            if (output != null) {
+                String trimmedOutput = output.trim();
+                if ("1".equals(trimmedOutput)) {
+                    successCount++;
+                } else {
+                    failDetails.put(trimIp, "执行失败，输出：" + trimmedOutput);
+                }
+            } else {
+                failDetails.put(trimIp, "命令执行异常（权限/超时）");
+            }
+        }
+
+        // 6. 审计日志与缓存清理
+        log.info("批量封禁IP完成：监狱{}，总数{}，成功{}，失败{}，操作人：{}，操作IP：{}",
+                sanitizeLog(jailName), total, successCount, failDetails.size(), operator, sanitizeLog(clientIp));
+        clearAllCaches();
+
+        // 7. 组装返回结果
+        Map<String, Object> result = new HashMap<>();
+        result.put("total", total);
+        result.put("successCount", successCount);
+        result.put("failCount", failDetails.size());
+        result.put("failDetails", failDetails);
+
+        if (successCount == total) {
+            return AjaxResult.success("全部封禁成功，共" + total + "个IP", result);
+        } else if (successCount > 0) {
+            return AjaxResult.success("部分封禁成功：成功" + successCount + "个，失败" + failDetails.size() + "个", result);
+        } else {
+            return AjaxResult.error("全部封禁失败，请查看失败详情", result);
+        }
+    }
+
+    @PreAuthorize("@ss.hasRole('fx67ll')")
+    @Log(title = "Fail2ban批量解封指定IP", businessType = BusinessType.DELETE)
+    @PostMapping("/jail/{jailName}/unban-batch")
+    public AjaxResult unbanBatchIps(
+            @PathVariable String jailName,
+            // 核心修改：从请求体JSON数组读取IP列表，彻底解决URL特殊字符报错
+            @RequestBody List<String> ips
+    ) {
+        ServletRequestAttributes attributes = (ServletRequestAttributes) RequestContextHolder.getRequestAttributes();
+        if (attributes == null) {
+            return AjaxResult.error("无法获取请求上下文");
+        }
+        HttpServletRequest request = attributes.getRequest();
+        String clientIp = getClientIp(request);
+        String operator = getUsername();
+
+        // 1. 白名单IP权限校验
+        if (!fail2BanConfig.isIpAllowed(clientIp)) {
+            log.warn("非法操作尝试：IP {} 试图批量解封监狱 {}", sanitizeLog(clientIp), sanitizeLog(jailName));
+            return AjaxResult.error("权限不足，只有指定IP地址可以执行此操作");
+        }
+
+        // 2. 监狱名称安全校验
+        if (jailName.contains("/") || jailName.contains("..") || jailName.contains(" ") || jailName.contains(";")) {
+            log.warn("检测到无效的监狱名称请求：{}", sanitizeLog(jailName));
+            return AjaxResult.error("无效的监狱名称");
+        }
+        if (!isJailConfigured(jailName)) {
+            log.warn("批量解封：配置中不存在监狱 {}", sanitizeLog(jailName));
+            return AjaxResult.error("监狱不存在");
+        }
+
+        // 3. 参数基础校验
+        if (ips == null || ips.isEmpty()) {
+            return AjaxResult.error("IP列表不能为空");
+        }
+        final int BATCH_MAX_LIMIT = 50;
+        if (ips.size() > BATCH_MAX_LIMIT) {
+            return AjaxResult.error("单次最多解封" + BATCH_MAX_LIMIT + "个IP");
+        }
+
+        // 4. 逐IP格式强校验，有一个非法则整体拒绝
+        List<String> invalidIps = new ArrayList<>();
+        for (String ip : ips) {
+            if (!IPV4_STRICT_PATTERN.matcher(ip.trim()).matches()) {
+                invalidIps.add(ip);
+            }
+        }
+        if (!invalidIps.isEmpty()) {
+            log.warn("批量解封包含非法格式IP：{}，操作IP：{}", String.join(",", invalidIps), sanitizeLog(clientIp));
+            return AjaxResult.error("存在非法格式IP：" + String.join(", ", invalidIps));
+        }
+
+        // 5. 逐个执行解封，统计结果
+        int total = ips.size();
+        int successCount = 0;
+        Map<String, String> failDetails = new LinkedHashMap<>();
+
+        for (String ip : ips) {
+            String trimIp = ip.trim();
+            String[] command = {SUDO_CMD, FAIL2BAN_CLIENT, "set", jailName, "unbanip", trimIp};
+            String output = executeCommand(command);
+
+            if (output != null) {
+                String trimmedOutput = output.trim();
+                if ("1".equals(trimmedOutput)) {
+                    successCount++;
+                } else if ("0".equals(trimmedOutput)) {
+                    failDetails.put(trimIp, "该IP未被封禁");
+                } else {
+                    failDetails.put(trimIp, "执行失败，输出：" + trimmedOutput);
+                }
+            } else {
+                failDetails.put(trimIp, "命令执行异常（权限/超时）");
+            }
+        }
+
+        // 6. 审计日志与缓存清理
+        log.info("批量解封指定IP完成：监狱{}，总数{}，成功{}，失败{}，操作人：{}，操作IP：{}",
+                sanitizeLog(jailName), total, successCount, failDetails.size(), operator, sanitizeLog(clientIp));
+        clearAllCaches();
+
+        // 7. 组装返回结果
+        Map<String, Object> result = new HashMap<>();
+        result.put("total", total);
+        result.put("successCount", successCount);
+        result.put("failCount", failDetails.size());
+        result.put("failDetails", failDetails);
+
+        if (successCount == total) {
+            return AjaxResult.success("全部解封成功，共" + total + "个IP", result);
+        } else if (successCount > 0) {
+            return AjaxResult.success("部分解封成功：成功" + successCount + "个，失败" + failDetails.size() + "个", result);
+        } else {
+            return AjaxResult.error("全部解封失败，请查看失败详情", result);
+        }
+    }
+
     // ==================== 内部业务方法 ====================
 
     /**
