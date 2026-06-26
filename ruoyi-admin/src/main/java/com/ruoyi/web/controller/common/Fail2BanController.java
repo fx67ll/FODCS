@@ -98,6 +98,32 @@ public class Fail2BanController extends BaseController {
             "mongodb"
     );
 
+    // ==================== 配置修改相关常量（安全白名单 + 取值范围约束） ====================
+    /**
+     * 允许运行时修改的配置项白名单（硬编码限制，防止任意配置篡改）
+     */
+    private static final Set<String> ALLOWED_CONFIG_KEYS = new HashSet<>(Arrays.asList(
+            "bantime", "findtime", "maxretry", "ignoreip"
+    ));
+
+    /**
+     * 封禁时长取值范围：最小1分钟，最大1年
+     */
+    private static final long BANTIME_MIN_SECONDS = 60L;
+    private static final long BANTIME_MAX_SECONDS = 31536000L;
+
+    /**
+     * 检测窗口取值范围：最小1分钟，最大1天
+     */
+    private static final long FINDTIME_MIN_SECONDS = 60L;
+    private static final long FINDTIME_MAX_SECONDS = 86400L;
+
+    /**
+     * 最大重试次数取值范围：最小1次，最大1000次
+     */
+    private static final int MAXRETRY_MIN = 1;
+    private static final int MAXRETRY_MAX = 1000;
+
     // ==================== 系统命令绝对路径（安全加固：避免PATH环境变量劫持风险） ====================
     /**
      * sudo命令绝对路径
@@ -1841,6 +1867,357 @@ public class Fail2BanController extends BaseController {
         } else {
             return AjaxResult.error("全部解封失败，请查看失败详情", result);
         }
+    }
+
+    /**
+     * 统一修改监狱运行时配置（单入口多配置项）
+     * 【安全等级】：高危操作，仅fx67ll角色 + 白名单IP可执行
+     * 【生效说明】：仅修改内存运行态配置，重启Fail2ban服务后自动恢复为配置文件原值
+     * 支持配置项：bantime(封禁时长，单位秒)、findtime(检测窗口，单位秒)、maxretry(最大重试次数)、ignoreip(监狱白名单增删)
+     *
+     * @param jailName 监狱名称
+     * @param params   请求体参数：
+     *                 - configKey: 配置项名称（必填）
+     *                 - value:     配置值（必填，数值/IP字符串）
+     *                 - action:    操作类型（仅ignoreip必填：add/delete）
+     * @return AjaxResult 包含旧值、新值、生效状态
+     */
+    @PreAuthorize("@ss.hasRole('fx67ll')")
+    @Log(title = "Fail2ban修改监狱运行配置", businessType = BusinessType.UPDATE)
+    @PostMapping("/jail/{jailName}/config/update")
+    public AjaxResult updateJailConfig(
+            @PathVariable String jailName,
+            @RequestBody Map<String, Object> params
+    ) {
+        // 1. 请求上下文兜底防护
+        ServletRequestAttributes attributes = (ServletRequestAttributes) RequestContextHolder.getRequestAttributes();
+        if (attributes == null) {
+            return AjaxResult.error("无法获取请求上下文");
+        }
+        HttpServletRequest request = attributes.getRequest();
+        String clientIp = getClientIp(request);
+        String operator = getUsername();
+
+        // 2. 双重权限校验：角色 + IP白名单
+        if (!fail2BanConfig.isIpAllowed(clientIp)) {
+            log.warn("非法配置修改尝试：IP {} 试图修改监狱 {} 配置，操作人：{}",
+                    sanitizeLog(clientIp), sanitizeLog(jailName), operator);
+            return AjaxResult.error("权限不足，仅指定白名单IP可执行该操作");
+        }
+
+        // 3. 监狱名称安全强校验
+        if (jailName == null || jailName.trim().isEmpty()) {
+            return AjaxResult.error("监狱名称不能为空");
+        }
+        jailName = jailName.trim();
+        if (jailName.contains("/") || jailName.contains("..") || jailName.contains(" ")
+                || jailName.contains(";") || jailName.contains("|") || jailName.contains("&")) {
+            log.warn("检测到非法监狱名称：{}，操作IP：{}", sanitizeLog(jailName), sanitizeLog(clientIp));
+            return AjaxResult.error("无效监狱名称，包含非法特殊字符");
+        }
+        if (!isJailConfigured(jailName)) {
+            log.warn("配置修改拦截：配置文件中不存在监狱 {}", sanitizeLog(jailName));
+            return AjaxResult.error("监狱不存在，请先创建对应配置文件");
+        }
+
+        // 4. 核心参数基础判空
+        String configKey = params.get("configKey") == null ? null : params.get("configKey").toString().trim();
+        Object valueObj = params.get("value");
+        if (configKey == null || configKey.isEmpty() || valueObj == null) {
+            return AjaxResult.error("参数错误：configKey 和 value 为必填项");
+        }
+
+        // 5. 配置项白名单强校验（核心安全边界）
+        if (!ALLOWED_CONFIG_KEYS.contains(configKey)) {
+            log.warn("非法配置项修改尝试：{}，监狱：{}，操作IP：{}",
+                    sanitizeLog(configKey), sanitizeLog(jailName), sanitizeLog(clientIp));
+            return AjaxResult.error("不支持修改该配置项");
+        }
+
+        // 6. 按配置项分发到独立校验与处理逻辑
+        Map<String, Object> result = new HashMap<>(8);
+        result.put("jailName", jailName);
+        result.put("configKey", configKey);
+        result.put("effectiveScope", "运行时临时生效，重启服务后自动恢复");
+
+        try {
+            switch (configKey) {
+                case "bantime":
+                    return handleBantimeUpdate(jailName, valueObj, result, operator, clientIp);
+                case "findtime":
+                    return handleFindtimeUpdate(jailName, valueObj, result, operator, clientIp);
+                case "maxretry":
+                    return handleMaxretryUpdate(jailName, valueObj, result, operator, clientIp);
+                case "ignoreip":
+                    String action = params.get("action") == null ? null : params.get("action").toString().trim().toLowerCase();
+                    if (!"add".equals(action) && !"delete".equals(action)) {
+                        return AjaxResult.error("ignoreip操作必须指定 action：add / delete");
+                    }
+                    return handleIgnoreIpUpdate(jailName, valueObj, action, result, operator, clientIp);
+                default:
+                    return AjaxResult.error("不支持的配置项");
+            }
+        } catch (ClassCastException | NumberFormatException e) {
+            log.warn("配置参数格式异常：{}={}，监狱：{}，操作IP：{}",
+                    configKey, sanitizeLog(String.valueOf(valueObj)), sanitizeLog(jailName), sanitizeLog(clientIp));
+            return AjaxResult.error("参数格式错误，请检查值的类型与范围");
+        } catch (Exception e) {
+            log.error("修改监狱配置发生未知异常，监狱：{}，配置项：{}",
+                    sanitizeLog(jailName), sanitizeLog(configKey), e);
+            return AjaxResult.error("修改配置失败，系统内部异常");
+        }
+    }
+
+    // ==================== 配置修改内部处理方法（各配置独立校验与执行） ====================
+
+    /**
+     * 修改封禁时长 bantime
+     */
+    private AjaxResult handleBantimeUpdate(String jailName, Object valueObj, Map<String, Object> result,
+                                           String operator, String clientIp) {
+        // 参数解析与范围校验
+        long targetValue = Long.parseLong(valueObj.toString().trim());
+        if (targetValue < BANTIME_MIN_SECONDS || targetValue > BANTIME_MAX_SECONDS) {
+            return AjaxResult.error(String.format("封禁时长取值范围：%d ~ %d 秒", BANTIME_MIN_SECONDS, BANTIME_MAX_SECONDS));
+        }
+
+        // 前置校验：监狱必须运行中才能修改运行时配置
+        Map<String, Object> jailStatus = getJailStatsInternal(jailName);
+        if (!"运行中".equals(jailStatus.get("status"))) {
+            return AjaxResult.error("监狱未运行，无法修改运行时配置，请先启动监狱");
+        }
+
+        // 读取修改前原值
+        Map<String, Object> oldConfig = getJailConfigInternal(jailName);
+        long oldValue = (long) oldConfig.getOrDefault("bantimeSeconds", 0L);
+
+        // 值未变化直接返回，不执行无效命令
+        if (oldValue == targetValue) {
+            result.put("oldValue", oldValue);
+            result.put("newValue", targetValue);
+            result.put("oldValueText", oldConfig.get("bantime"));
+            result.put("newValueText", oldConfig.get("bantime"));
+            return AjaxResult.success("配置未发生变化，无需修改", result);
+        }
+
+        // 执行修改命令（数组方式，零字符串拼接，杜绝命令注入）
+        String output = executeCommand(new String[]{
+                SUDO_CMD, FAIL2BAN_CLIENT, "set", jailName, "bantime", String.valueOf(targetValue)
+        });
+        if (output == null) {
+            log.error("修改封禁时长失败：监狱{}，目标值{}，操作人{}，操作IP{}",
+                    sanitizeLog(jailName), targetValue, operator, sanitizeLog(clientIp));
+            return AjaxResult.error("修改失败，请检查监狱运行状态与sudo权限");
+        }
+
+        // 二次校验：重新读取确认生效
+        Map<String, Object> newConfig = getJailConfigInternal(jailName);
+        long actualValue = (long) newConfig.getOrDefault("bantimeSeconds", 0L);
+        if (actualValue != targetValue) {
+            log.error("封禁时长修改未生效：监狱{}，期望值{}，实际值{}",
+                    sanitizeLog(jailName), targetValue, actualValue);
+            return AjaxResult.error("修改未生效，请重试或检查服务状态");
+        }
+
+        // 组装返回结果
+        result.put("oldValue", oldValue);
+        result.put("newValue", actualValue);
+        result.put("oldValueText", oldConfig.get("bantime"));
+        result.put("newValueText", newConfig.get("bantime"));
+
+        // 审计日志 + 缓存清理
+        log.info("【运行时修改】监狱{}封禁时长变更：{}秒 → {}秒，操作人：{}，操作IP：{}",
+                sanitizeLog(jailName), oldValue, actualValue, operator, sanitizeLog(clientIp));
+        clearAllCaches();
+
+        return AjaxResult.success("封禁时长修改成功", result);
+    }
+
+    /**
+     * 修改检测窗口 findtime
+     */
+    private AjaxResult handleFindtimeUpdate(String jailName, Object valueObj, Map<String, Object> result,
+                                            String operator, String clientIp) {
+        long targetValue = Long.parseLong(valueObj.toString().trim());
+        if (targetValue < FINDTIME_MIN_SECONDS || targetValue > FINDTIME_MAX_SECONDS) {
+            return AjaxResult.error(String.format("检测窗口取值范围：%d ~ %d 秒", FINDTIME_MIN_SECONDS, FINDTIME_MAX_SECONDS));
+        }
+
+        Map<String, Object> jailStatus = getJailStatsInternal(jailName);
+        if (!"运行中".equals(jailStatus.get("status"))) {
+            return AjaxResult.error("监狱未运行，无法修改运行时配置，请先启动监狱");
+        }
+
+        Map<String, Object> oldConfig = getJailConfigInternal(jailName);
+        long oldValue = (long) oldConfig.getOrDefault("findtimeSeconds", 0L);
+
+        if (oldValue == targetValue) {
+            result.put("oldValue", oldValue);
+            result.put("newValue", targetValue);
+            result.put("oldValueText", oldConfig.get("findtime"));
+            result.put("newValueText", oldConfig.get("findtime"));
+            return AjaxResult.success("配置未发生变化，无需修改", result);
+        }
+
+        String output = executeCommand(new String[]{
+                SUDO_CMD, FAIL2BAN_CLIENT, "set", jailName, "findtime", String.valueOf(targetValue)
+        });
+        if (output == null) {
+            log.error("修改检测窗口失败：监狱{}，目标值{}，操作人{}，操作IP{}",
+                    sanitizeLog(jailName), targetValue, operator, sanitizeLog(clientIp));
+            return AjaxResult.error("修改失败，请检查监狱运行状态与sudo权限");
+        }
+
+        Map<String, Object> newConfig = getJailConfigInternal(jailName);
+        long actualValue = (long) newConfig.getOrDefault("findtimeSeconds", 0L);
+        if (actualValue != targetValue) {
+            log.error("检测窗口修改未生效：监狱{}，期望值{}，实际值{}",
+                    sanitizeLog(jailName), targetValue, actualValue);
+            return AjaxResult.error("修改未生效，请重试或检查服务状态");
+        }
+
+        result.put("oldValue", oldValue);
+        result.put("newValue", actualValue);
+        result.put("oldValueText", oldConfig.get("findtime"));
+        result.put("newValueText", newConfig.get("findtime"));
+
+        log.info("【运行时修改】监狱{}检测窗口变更：{}秒 → {}秒，操作人：{}，操作IP：{}",
+                sanitizeLog(jailName), oldValue, actualValue, operator, sanitizeLog(clientIp));
+        clearAllCaches();
+
+        return AjaxResult.success("检测窗口修改成功", result);
+    }
+
+    /**
+     * 修改最大重试次数 maxretry
+     */
+    private AjaxResult handleMaxretryUpdate(String jailName, Object valueObj, Map<String, Object> result,
+                                            String operator, String clientIp) {
+        int targetValue = Integer.parseInt(valueObj.toString().trim());
+        if (targetValue < MAXRETRY_MIN || targetValue > MAXRETRY_MAX) {
+            return AjaxResult.error(String.format("最大重试次数取值范围：%d ~ %d", MAXRETRY_MIN, MAXRETRY_MAX));
+        }
+
+        Map<String, Object> jailStatus = getJailStatsInternal(jailName);
+        if (!"运行中".equals(jailStatus.get("status"))) {
+            return AjaxResult.error("监狱未运行，无法修改运行时配置，请先启动监狱");
+        }
+
+        Map<String, Object> oldConfig = getJailConfigInternal(jailName);
+        int oldValue = (int) oldConfig.getOrDefault("maxretry", 5);
+
+        if (oldValue == targetValue) {
+            result.put("oldValue", oldValue);
+            result.put("newValue", targetValue);
+            return AjaxResult.success("配置未发生变化，无需修改", result);
+        }
+
+        String output = executeCommand(new String[]{
+                SUDO_CMD, FAIL2BAN_CLIENT, "set", jailName, "maxretry", String.valueOf(targetValue)
+        });
+        if (output == null) {
+            log.error("修改最大重试次数失败：监狱{}，目标值{}，操作人{}，操作IP{}",
+                    sanitizeLog(jailName), targetValue, operator, sanitizeLog(clientIp));
+            return AjaxResult.error("修改失败，请检查监狱运行状态与sudo权限");
+        }
+
+        Map<String, Object> newConfig = getJailConfigInternal(jailName);
+        int actualValue = (int) newConfig.getOrDefault("maxretry", 5);
+        if (actualValue != targetValue) {
+            log.error("最大重试次数修改未生效：监狱{}，期望值{}，实际值{}",
+                    sanitizeLog(jailName), targetValue, actualValue);
+            return AjaxResult.error("修改未生效，请重试或检查服务状态");
+        }
+
+        result.put("oldValue", oldValue);
+        result.put("newValue", actualValue);
+
+        log.info("【运行时修改】监狱{}最大重试次数变更：{} → {}，操作人：{}，操作IP：{}",
+                sanitizeLog(jailName), oldValue, actualValue, operator, sanitizeLog(clientIp));
+        clearAllCaches();
+
+        return AjaxResult.success("最大重试次数修改成功", result);
+    }
+
+    /**
+     * 增删监狱白名单IP ignoreip
+     */
+    private AjaxResult handleIgnoreIpUpdate(String jailName, Object valueObj, String action, Map<String, Object> result,
+                                            String operator, String clientIp) {
+        String targetIp = valueObj.toString().trim();
+        // 严格IPv4格式校验
+        if (!IPV4_STRICT_PATTERN.matcher(targetIp).matches()) {
+            return AjaxResult.error("无效的IP地址格式");
+        }
+
+        Map<String, Object> jailStatus = getJailStatsInternal(jailName);
+        if (!"运行中".equals(jailStatus.get("status"))) {
+            return AjaxResult.error("监狱未运行，无法修改运行时配置，请先启动监狱");
+        }
+
+        // 安全加固：禁止删除系统级白名单IP
+        List<String> systemWhiteList = fail2BanConfig.getAllowedIps();
+        if ("delete".equals(action) && systemWhiteList.contains(targetIp)) {
+            log.warn("禁止删除系统白名单IP：{}，监狱：{}，操作IP：{}",
+                    sanitizeLog(targetIp), sanitizeLog(jailName), sanitizeLog(clientIp));
+            return AjaxResult.error("禁止删除系统级白名单IP");
+        }
+
+        // 读取修改前白名单列表
+        Map<String, Object> oldConfig = getJailConfigInternal(jailName);
+        @SuppressWarnings("unchecked")
+        List<String> oldList = (List<String>) oldConfig.getOrDefault("ignoreIpList", new ArrayList<>());
+        boolean alreadyExists = oldList.contains(targetIp);
+
+        // 前置状态判断：重复添加/删除不存在的IP，直接返回不执行命令
+        if ("add".equals(action) && alreadyExists) {
+            result.put("action", action);
+            result.put("targetIp", targetIp);
+            result.put("currentIgnoreIpList", oldList);
+            return AjaxResult.success("该IP已在白名单中，无需重复添加", result);
+        }
+        if ("delete".equals(action) && !alreadyExists) {
+            result.put("action", action);
+            result.put("targetIp", targetIp);
+            result.put("currentIgnoreIpList", oldList);
+            return AjaxResult.success("该IP不在白名单中，无需删除", result);
+        }
+
+        // 执行对应命令
+        String commandAction = "add".equals(action) ? "addignoreip" : "delignoreip";
+        String actionText = "add".equals(action) ? "添加" : "删除";
+        String output = executeCommand(new String[]{
+                SUDO_CMD, FAIL2BAN_CLIENT, "set", jailName, commandAction, targetIp
+        });
+        if (output == null) {
+            log.error("{}白名单IP失败：监狱{}，IP{}，操作人{}，操作IP{}",
+                    actionText, sanitizeLog(jailName), sanitizeLog(targetIp), operator, sanitizeLog(clientIp));
+            return AjaxResult.error(actionText + "白名单失败，请检查监狱运行状态");
+        }
+
+        // 二次校验：读取最新列表确认生效
+        Map<String, Object> newConfig = getJailConfigInternal(jailName);
+        @SuppressWarnings("unchecked")
+        List<String> newList = (List<String>) newConfig.getOrDefault("ignoreIpList", new ArrayList<>());
+        boolean actualExists = newList.contains(targetIp);
+
+        // 校验结果是否符合预期
+        boolean expectExists = "add".equals(action);
+        if (actualExists != expectExists) {
+            log.error("白名单{}操作未生效：监狱{}，IP{}，预期存在={}，实际存在={}",
+                    actionText, sanitizeLog(jailName), sanitizeLog(targetIp), expectExists, actualExists);
+            return AjaxResult.error("操作未生效，请重试或检查服务状态");
+        }
+
+        result.put("action", action);
+        result.put("targetIp", targetIp);
+        result.put("currentIgnoreIpList", newList);
+
+        log.info("【运行时修改】监狱{}白名单{}IP：{}，操作人：{}，操作IP：{}",
+                sanitizeLog(jailName), actionText, sanitizeLog(targetIp), operator, sanitizeLog(clientIp));
+        clearAllCaches();
+
+        return AjaxResult.success("白名单IP" + actionText + "成功", result);
     }
 
     // ==================== 内部业务方法 ====================
