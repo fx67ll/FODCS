@@ -3,6 +3,9 @@ fx67ll One Data Center Server
 
 欢迎访问 [fx67ll's 管理系统](https://vip.fx67ll.com)
 
+## 0.9.6.20260626
+* `Fail2Ban`新增配置修改相关接口，只允许修改封禁时长、检测窗口、最大重试次数、监狱白名单增删
+
 ## 0.9.5.20260625
 * `Fail2Ban`24小时攻击趋势接口返回当前时段攻击次数TOP5 IP  
 * `Fail2Ban`新增批量解封和封禁接口  
