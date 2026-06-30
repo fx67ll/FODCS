@@ -51,6 +51,11 @@ import java.util.stream.Collectors;
 public class Fail2BanController extends BaseController {
     private static final Logger log = LoggerFactory.getLogger(Fail2BanController.class);
 
+    /**
+     * 日志统一前缀，便于在日志文件中快速识别Fail2Ban功能相关日志
+     */
+    private static final String LOG_PREFIX = "[Fail2Ban] ";
+
     // 注入IP白名单配置类
     private final Fail2BanConfig fail2BanConfig;
 
@@ -95,7 +100,8 @@ public class Fail2BanController extends BaseController {
             "ssl-protect",
             "mysql",
             "redis",
-            "mongodb"
+            "mongodb",
+            "recidive"
     );
 
     // ==================== 配置修改相关常量（安全白名单 + 取值范围约束） ====================
@@ -270,7 +276,7 @@ public class Fail2BanController extends BaseController {
      */
     @PreDestroy
     public void destroyExecutor() {
-        log.info("Fail2ban控制器销毁，优雅关闭流读取线程池");
+        log.info(LOG_PREFIX + "控制器销毁，优雅关闭流读取线程池");
         STREAM_EXECUTOR.shutdown();
         try {
             if (!STREAM_EXECUTOR.awaitTermination(5, TimeUnit.SECONDS)) {
@@ -327,7 +333,7 @@ public class Fail2BanController extends BaseController {
 
         // 【安全加固】校验IP格式合法性，格式非法则回退为RemoteAddr，防止XFF头伪造攻击
         if (ip != null && !IPV4_STRICT_PATTERN.matcher(ip).matches()) {
-            log.warn("检测到格式非法的客户端IP：{}，已自动回退为RemoteAddr", sanitizeLog(ip));
+            log.warn(LOG_PREFIX + "检测到格式非法的客户端IP：{}，已自动回退为RemoteAddr", sanitizeLog(ip));
             ip = request.getRemoteAddr();
         }
 
@@ -375,7 +381,7 @@ public class Fail2BanController extends BaseController {
     private boolean isUbuntuSystem() {
         File osReleaseFile = new File(OS_RELEASE_PATH);
         if (!osReleaseFile.exists() || !osReleaseFile.canRead()) {
-            log.warn("无法读取操作系统信息文件：{}", OS_RELEASE_PATH);
+            log.warn(LOG_PREFIX + "无法读取操作系统信息文件：{}", OS_RELEASE_PATH);
             return false;
         }
 
@@ -397,7 +403,7 @@ public class Fail2BanController extends BaseController {
                 }
             }
         } catch (Exception e) {
-            log.error("读取操作系统信息失败", e);
+            log.error(LOG_PREFIX + "读取操作系统信息失败", e);
             return false;
         }
 
@@ -414,7 +420,7 @@ public class Fail2BanController extends BaseController {
     private void readSingleConfFile(String filePath, Pattern jailSectionPattern, Set<String> jailContainer) {
         File confFile = new File(filePath);
         if (!confFile.exists() || !confFile.canRead()) {
-            log.debug("配置文件不存在或无读取权限：{}", filePath);
+            log.debug(LOG_PREFIX + "配置文件不存在或无读取权限：{}", filePath);
             return;
         }
         try (BufferedReader br = new BufferedReader(new FileReader(confFile))) {
@@ -435,7 +441,7 @@ public class Fail2BanController extends BaseController {
                 }
             }
         } catch (Exception e) {
-            log.warn("读取fail2ban配置文件{}异常", filePath, e);
+            log.warn(LOG_PREFIX + "读取fail2ban配置文件{}异常", filePath, e);
         }
     }
 
@@ -522,7 +528,7 @@ public class Fail2BanController extends BaseController {
             // ==================== 前置条件检查开始 ====================
             // 1. 检查操作系统是否为Ubuntu
             if (!isUbuntuSystem()) {
-                log.warn("当前操作系统不是Ubuntu，Fail2ban功能不可用");
+                log.warn(LOG_PREFIX + "当前操作系统不是Ubuntu，Fail2ban功能不可用");
                 result.put("status", "系统不匹配");
                 result.put("error", "当前功能仅支持Ubuntu系统");
                 // 不缓存错误状态，方便用户安装后刷新页面
@@ -531,7 +537,7 @@ public class Fail2BanController extends BaseController {
 
             // 2. 检查fail2ban是否已安装
             if (!isCommandAvailable(FAIL2BAN_CLIENT)) {
-                log.error("Fail2ban客户端命令不可用，请确认已安装fail2ban");
+                log.error(LOG_PREFIX + "客户端命令不可用，请确认已安装fail2ban");
                 result.put("status", "未安装");
                 result.put("error", "Fail2ban服务未安装，请执行：sudo apt install fail2ban");
                 // 不缓存错误状态，方便用户安装后刷新页面
@@ -673,12 +679,12 @@ public class Fail2BanController extends BaseController {
     public AjaxResult getJailDetail(@PathVariable String jailName) {
         // 安全检查：防止路径遍历攻击和命令注入
         if (jailName.contains("/") || jailName.contains("..") || jailName.contains(" ") || jailName.contains(";")) {
-            log.warn("检测到无效的监狱名称请求：{}", sanitizeLog(jailName));
+            log.warn(LOG_PREFIX + "检测到无效的监狱名称请求：{}", sanitizeLog(jailName));
             return AjaxResult.error("无效的监狱名称");
         }
         // 使用配置文件校验监狱是否存在，不再依赖运行列表
         if (!isJailConfigured(jailName)) {
-            log.warn("查询详情：配置中不存在该监狱 {}", sanitizeLog(jailName));
+            log.warn(LOG_PREFIX + "查询详情：配置中不存在该监狱 {}", sanitizeLog(jailName));
             return AjaxResult.error("监狱不存在");
         }
 
@@ -766,11 +772,11 @@ public class Fail2BanController extends BaseController {
         // 检查日志文件是否存在且可读
         File logFile = new File(FAIL2BAN_LOG_PATH);
         if (!logFile.exists()) {
-            log.error("Fail2ban日志文件不存在：{}", FAIL2BAN_LOG_PATH);
+            log.error(LOG_PREFIX + "日志文件不存在：{}", FAIL2BAN_LOG_PATH);
             return AjaxResult.error("日志文件不存在，请检查路径配置：" + FAIL2BAN_LOG_PATH);
         }
         if (!logFile.canRead()) {
-            log.error("没有权限读取Fail2ban日志文件：{}，当前运行用户：{}",
+            log.error(LOG_PREFIX + "没有权限读取Fail2ban日志文件：{}，当前运行用户：{}",
                     FAIL2BAN_LOG_PATH, System.getProperty("user.name"));
             return AjaxResult.error("权限不足，请将运行用户添加到adm组：sudo usermod -aG adm " + System.getProperty("user.name"));
         }
@@ -934,7 +940,7 @@ public class Fail2BanController extends BaseController {
                                 }
                             }
                         } catch (Exception e) {
-                            log.debug("日志时间解析失败：{}", line);
+                            log.debug(LOG_PREFIX + "日志时间解析失败：{}", line);
                         }
                     }
                 }
@@ -1051,18 +1057,18 @@ public class Fail2BanController extends BaseController {
         String clientIp = getClientIp(request);
 
         if (!fail2BanConfig.isIpAllowed(clientIp)) {
-            log.warn("非法操作尝试：IP {} 试图启动Fail2ban服务", sanitizeLog(clientIp));
+            log.warn(LOG_PREFIX + "非法操作尝试：IP {} 试图启动Fail2ban服务", sanitizeLog(clientIp));
             return AjaxResult.error("权限不足，只有指定IP地址可以执行此操作");
         }
 
         String[] command = {SUDO_CMD, SYSTEMCTL_CMD, "start", "fail2ban"};
         String output = executeCommand(command);
         if (output != null) {
-            log.info("成功启动Fail2ban服务，操作人：{}，操作IP：{}", getUsername(), sanitizeLog(clientIp));
+            log.info(LOG_PREFIX + "成功启动Fail2ban服务，操作人：{}，操作IP：{}", getUsername(), sanitizeLog(clientIp));
             clearAllCaches();
             return AjaxResult.success("启动Fail2ban服务成功");
         } else {
-            log.error("启动Fail2ban服务失败，操作IP：{}", sanitizeLog(clientIp));
+            log.error(LOG_PREFIX + "启动Fail2ban服务失败，操作IP：{}", sanitizeLog(clientIp));
             return AjaxResult.error("启动服务失败，请检查系统sudo权限");
         }
     }
@@ -1087,18 +1093,18 @@ public class Fail2BanController extends BaseController {
         String clientIp = getClientIp(request);
 
         if (!fail2BanConfig.isIpAllowed(clientIp)) {
-            log.warn("非法操作尝试：IP {} 试图停止Fail2ban服务", sanitizeLog(clientIp));
+            log.warn(LOG_PREFIX + "非法操作尝试：IP {} 试图停止Fail2ban服务", sanitizeLog(clientIp));
             return AjaxResult.error("权限不足，只有指定IP地址可以执行此操作");
         }
 
         String[] command = {SUDO_CMD, SYSTEMCTL_CMD, "stop", "fail2ban"};
         String output = executeCommand(command);
         if (output != null) {
-            log.info("成功停止Fail2ban服务，操作人：{}，操作IP：{}", getUsername(), sanitizeLog(clientIp));
+            log.info(LOG_PREFIX + "成功停止Fail2ban服务，操作人：{}，操作IP：{}", getUsername(), sanitizeLog(clientIp));
             clearAllCaches();
             return AjaxResult.success("停止Fail2ban服务成功");
         } else {
-            log.error("停止Fail2ban服务失败，操作IP：{}", sanitizeLog(clientIp));
+            log.error(LOG_PREFIX + "停止Fail2ban服务失败，操作IP：{}", sanitizeLog(clientIp));
             return AjaxResult.error("停止服务失败，请检查系统sudo权限");
         }
     }
@@ -1128,7 +1134,7 @@ public class Fail2BanController extends BaseController {
 
         // 1. 白名单IP权限校验
         if (!fail2BanConfig.isIpAllowed(clientIp)) {
-            log.warn("非法操作尝试：IP {} 试图启动监狱 {}，操作人：{}",
+            log.warn(LOG_PREFIX + "非法操作尝试：IP {} 试图启动监狱 {}，操作人：{}",
                     sanitizeLog(clientIp), sanitizeLog(jailName), operator);
             return AjaxResult.error("权限不足，仅指定白名单IP可执行该操作");
         }
@@ -1136,14 +1142,14 @@ public class Fail2BanController extends BaseController {
         // 2. 防命令注入：监狱名称非法字符强过滤
         if (jailName.contains("/") || jailName.contains("..") || jailName.contains(" ")
                 || jailName.contains(";") || jailName.contains("|") || jailName.contains("&")) {
-            log.warn("检测到非法监狱名称请求：{}，操作IP：{}，操作人：{}",
+            log.warn(LOG_PREFIX + "检测到非法监狱名称请求：{}，操作IP：{}，操作人：{}",
                     sanitizeLog(jailName), sanitizeLog(clientIp), operator);
             return AjaxResult.error("无效监狱名称，包含非法特殊字符");
         }
 
         // 3. 校验配置中存在该监狱，无配置直接拦截
         if (!isJailConfigured(jailName)) {
-            log.warn("启动监狱拦截：配置文件中不存在 {}，操作IP：{}，操作人：{}",
+            log.warn(LOG_PREFIX + "启动监狱拦截：配置文件中不存在 {}，操作IP：{}，操作人：{}",
                     sanitizeLog(jailName), sanitizeLog(clientIp), operator);
             return AjaxResult.error("监狱不存在，请先创建对应jail配置文件");
         }
@@ -1153,13 +1159,13 @@ public class Fail2BanController extends BaseController {
         try {
             currentStatus = getJailStatsInternal(jailName);
         } catch (Exception e) {
-            log.error("查询监狱{}运行状态异常，继续执行启动流程", sanitizeLog(jailName), e);
+            log.error(LOG_PREFIX + "查询监狱{}运行状态异常，继续执行启动流程", sanitizeLog(jailName), e);
             Map<String, Object> tempMap = new HashMap<>();
             tempMap.put("status", "未知");
             currentStatus = tempMap;
         }
         if ("运行中".equals(currentStatus.get("status"))) {
-            log.info("监狱{}已处于运行状态，无需重复启动，操作人：{}，操作IP：{}",
+            log.info(LOG_PREFIX + "监狱{}已处于运行状态，无需重复启动，操作人：{}，操作IP：{}",
                     sanitizeLog(jailName), operator, sanitizeLog(clientIp));
             clearAllCaches();
             return AjaxResult.success("监狱[" + jailName + "]当前已在运行，无需操作");
@@ -1170,7 +1176,7 @@ public class Fail2BanController extends BaseController {
         String launchWay = "";
 
         // ====================== 方案1：直接 fail2ban-client start ======================
-        log.info("【启动方案1】尝试直接启动监狱：{}", sanitizeLog(jailName));
+        log.info(LOG_PREFIX + "【启动方案1】尝试直接启动监狱：{}", sanitizeLog(jailName));
         cmdOutput = executeCommand(new String[]{SUDO_CMD, FAIL2BAN_CLIENT, "start", jailName});
         if (cmdOutput != null) {
             String trimOut = cmdOutput.trim();
@@ -1182,29 +1188,29 @@ public class Fail2BanController extends BaseController {
                         launchSuccess = true;
                         launchWay = "直接启动";
                     } else {
-                        log.warn("【方案1】命令返回成功标识，但监狱{}实际未运行，继续走兜底", sanitizeLog(jailName));
+                        log.warn(LOG_PREFIX + "【方案1】命令返回成功标识，但监狱{}实际未运行，继续走兜底", sanitizeLog(jailName));
                     }
                 } catch (Exception e) {
-                    log.warn("【方案1】启动后二次状态校验异常", e);
+                    log.warn(LOG_PREFIX + "【方案1】启动后二次状态校验异常", e);
                 }
             }
         }
         if (launchSuccess) {
             long cost = System.currentTimeMillis() - startTime;
-            log.info("【方案1成功】{}监狱{}完成，总耗时{}ms，操作人：{}，IP：{}",
+            log.info(LOG_PREFIX + "【方案1成功】{}监狱{}完成，总耗时{}ms，操作人：{}，IP：{}",
                     launchWay, sanitizeLog(jailName), cost, operator, sanitizeLog(clientIp));
             clearAllCaches();
             return AjaxResult.success("操作成功，" + launchWay + "监狱： " + jailName);
         }
-        log.warn("【方案1失败】直接启动{}未生效，进入重载配置兜底", sanitizeLog(jailName));
+        log.warn(LOG_PREFIX + "【方案1失败】直接启动{}未生效，进入重载配置兜底", sanitizeLog(jailName));
 
         // ====================== 方案2：systemctl reload fail2ban 重载后重试 ======================
-        log.warn("【启动方案2】执行systemctl reload fail2ban重载服务配置");
+        log.warn(LOG_PREFIX + "【启动方案2】执行systemctl reload fail2ban重载服务配置");
         String reloadOut = executeCommand(new String[]{SUDO_CMD, SYSTEMCTL_CMD, "reload", "fail2ban"});
         if (reloadOut == null) {
-            log.error("【方案2】重载fail2ban配置命令执行失败（退出码非0/超时）");
+            log.error(LOG_PREFIX + "【方案2】重载fail2ban配置命令执行失败（退出码非0/超时）");
         } else {
-            log.info("【方案2】重载配置执行输出：{}", reloadOut.trim());
+            log.info(LOG_PREFIX + "【方案2】重载配置执行输出：{}", reloadOut.trim());
         }
 
         // 等待配置加载完成
@@ -1212,11 +1218,11 @@ public class Fail2BanController extends BaseController {
             Thread.sleep(1000);
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
-            log.warn("【方案2】重载后等待线程被中断");
+            log.warn(LOG_PREFIX + "【方案2】重载后等待线程被中断");
         }
 
         // 重载后重试启动
-        log.info("【方案2】重载配置完成，重试启动监狱{}", sanitizeLog(jailName));
+        log.info(LOG_PREFIX + "【方案2】重载配置完成，重试启动监狱{}", sanitizeLog(jailName));
         cmdOutput = executeCommand(new String[]{SUDO_CMD, FAIL2BAN_CLIENT, "start", jailName});
         if (cmdOutput != null) {
             String trimOut = cmdOutput.trim();
@@ -1227,29 +1233,29 @@ public class Fail2BanController extends BaseController {
                         launchSuccess = true;
                         launchWay = "重载配置后启动";
                     } else {
-                        log.warn("【方案2】命令返回成功标识，但监狱{}实际未运行，进入重启兜底", sanitizeLog(jailName));
+                        log.warn(LOG_PREFIX + "【方案2】命令返回成功标识，但监狱{}实际未运行，进入重启兜底", sanitizeLog(jailName));
                     }
                 } catch (Exception e) {
-                    log.warn("【方案2】启动后二次状态校验异常", e);
+                    log.warn(LOG_PREFIX + "【方案2】启动后二次状态校验异常", e);
                 }
             }
         }
         if (launchSuccess) {
             long cost = System.currentTimeMillis() - startTime;
-            log.info("【方案2成功】{}监狱{}完成，总耗时{}ms，操作人：{}，IP：{}",
+            log.info(LOG_PREFIX + "【方案2成功】{}监狱{}完成，总耗时{}ms，操作人：{}，IP：{}",
                     launchWay, sanitizeLog(jailName), cost, operator, sanitizeLog(clientIp));
             clearAllCaches();
             return AjaxResult.success("操作成功，" + launchWay + "监狱： " + jailName);
         }
-        log.error("【方案2失败】重载配置后启动{}仍未生效，进入服务重启兜底", sanitizeLog(jailName));
+        log.error(LOG_PREFIX + "【方案2失败】重载配置后启动{}仍未生效，进入服务重启兜底", sanitizeLog(jailName));
 
         // ====================== 方案3：systemctl restart fail2ban 完整重启兜底 ======================
-        log.error("【启动方案3】前两步全部失败，执行systemctl restart fail2ban重启服务");
+        log.error(LOG_PREFIX + "【启动方案3】前两步全部失败，执行systemctl restart fail2ban重启服务");
         String restartOut = executeCommand(new String[]{SUDO_CMD, SYSTEMCTL_CMD, "restart", "fail2ban"});
         if (restartOut == null) {
-            log.error("【方案3】重启fail2ban服务命令执行失败（退出码非0/超时）");
+            log.error(LOG_PREFIX + "【方案3】重启fail2ban服务命令执行失败（退出码非0/超时）");
         } else {
-            log.info("【方案3】重启服务执行输出：{}", restartOut.trim());
+            log.info(LOG_PREFIX + "【方案3】重启服务执行输出：{}", restartOut.trim());
         }
 
         // 服务重启等待更长时间
@@ -1257,11 +1263,11 @@ public class Fail2BanController extends BaseController {
             Thread.sleep(3000);
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
-            log.warn("【方案3】重启后等待线程被中断");
+            log.warn(LOG_PREFIX + "【方案3】重启后等待线程被中断");
         }
 
         // 最终一次启动尝试
-        log.info("【方案3】服务重启完成，最终重试启动监狱{}", sanitizeLog(jailName));
+        log.info(LOG_PREFIX + "【方案3】服务重启完成，最终重试启动监狱{}", sanitizeLog(jailName));
         cmdOutput = executeCommand(new String[]{SUDO_CMD, FAIL2BAN_CLIENT, "start", jailName});
         if (cmdOutput != null) {
             String trimOut = cmdOutput.trim();
@@ -1273,13 +1279,13 @@ public class Fail2BanController extends BaseController {
                         launchWay = "重启服务后启动";
                     }
                 } catch (Exception e) {
-                    log.warn("【方案3】启动后二次状态校验异常", e);
+                    log.warn(LOG_PREFIX + "【方案3】启动后二次状态校验异常", e);
                 }
             }
         }
         if (launchSuccess) {
             long cost = System.currentTimeMillis() - startTime;
-            log.info("【方案3成功】{}监狱{}完成，总耗时{}ms，操作人：{}，IP：{}",
+            log.info(LOG_PREFIX + "【方案3成功】{}监狱{}完成，总耗时{}ms，操作人：{}，IP：{}",
                     launchWay, sanitizeLog(jailName), cost, operator, sanitizeLog(clientIp));
             clearAllCaches();
             return AjaxResult.success("操作成功，" + launchWay + "监狱： " + jailName);
@@ -1287,7 +1293,7 @@ public class Fail2BanController extends BaseController {
 
         // ====================== 三层兜底全部失败 ======================
         long totalCost = System.currentTimeMillis() - startTime;
-        log.error("【全部方案失败】启动监狱{}所有兜底流程执行完毕仍失败，总耗时{}ms，操作人：{}，IP：{}",
+        log.error(LOG_PREFIX + "【全部方案失败】启动监狱{}所有兜底流程执行完毕仍失败，总耗时{}ms，操作人：{}，IP：{}",
                 sanitizeLog(jailName), totalCost, operator, sanitizeLog(clientIp));
         return AjaxResult.error("启动监狱[" + jailName + "]失败，已依次尝试：直接启动→重载配置→完整重启Fail2ban服务，请排查：\n" +
                 "1.jail配置文件语法是否正确（fail2ban-client reload 校验）\n" +
@@ -1317,25 +1323,25 @@ public class Fail2BanController extends BaseController {
         String clientIp = getClientIp(request);
 
         if (!fail2BanConfig.isIpAllowed(clientIp)) {
-            log.warn("非法操作尝试：IP {} 试图停止监狱 {}", sanitizeLog(clientIp), sanitizeLog(jailName));
+            log.warn(LOG_PREFIX + "非法操作尝试：IP {} 试图停止监狱 {}", sanitizeLog(clientIp), sanitizeLog(jailName));
             return AjaxResult.error("权限不足，只有指定IP地址可以执行此操作");
         }
 
         // 安全校验：监狱名称
         if (jailName.contains("/") || jailName.contains("..") || jailName.contains(" ") || jailName.contains(";")) {
-            log.warn("检测到无效的监狱名称请求：{}", sanitizeLog(jailName));
+            log.warn(LOG_PREFIX + "检测到无效的监狱名称请求：{}", sanitizeLog(jailName));
             return AjaxResult.error("无效的监狱名称");
         }
         // 仅校验配置文件存在
         if (!isJailConfigured(jailName)) {
-            log.warn("停止监狱：配置中不存在 {} ", sanitizeLog(jailName));
+            log.warn(LOG_PREFIX + "停止监狱：配置中不存在 {} ", sanitizeLog(jailName));
             return AjaxResult.error("监狱不存在");
         }
 
         // 先检查监狱是否已经停止
         Map<String, Object> currentStatus = getJailStatsInternal(jailName);
         if ("已停止".equals(currentStatus.get("status"))) {
-            log.info("监狱{}已经处于停止状态，无需重复操作，操作人：{}，操作IP：{}",
+            log.info(LOG_PREFIX + "监狱{}已经处于停止状态，无需重复操作，操作人：{}，操作IP：{}",
                     sanitizeLog(jailName), getUsername(), sanitizeLog(clientIp));
             clearAllCaches();
             return AjaxResult.success("监狱" + jailName + "已经处于停止状态");
@@ -1349,16 +1355,16 @@ public class Fail2BanController extends BaseController {
             String trimmedOutput = output.trim();
             // 停止命令成功输出为固定字符串"Jail stopped"
             if (trimmedOutput.equals("Jail stopped")) {
-                log.info("成功停止监狱：{}，操作人：{}，操作IP：{}",
+                log.info(LOG_PREFIX + "成功停止监狱：{}，操作人：{}，操作IP：{}",
                         sanitizeLog(jailName), getUsername(), sanitizeLog(clientIp));
                 clearAllCaches();
                 return AjaxResult.success("操作成功，成功停止监狱： " + jailName);
             } else {
-                log.error("停止监狱失败：{}，输出：{}", sanitizeLog(jailName), trimmedOutput);
+                log.error(LOG_PREFIX + "停止监狱失败：{}，输出：{}", sanitizeLog(jailName), trimmedOutput);
                 return AjaxResult.error("停止监狱失败，请检查日志");
             }
         } else {
-            log.error("停止监狱命令执行无响应：{}，操作IP：{}", sanitizeLog(jailName), sanitizeLog(clientIp));
+            log.error(LOG_PREFIX + "停止监狱命令执行无响应：{}，操作IP：{}", sanitizeLog(jailName), sanitizeLog(clientIp));
             return AjaxResult.error("停止监狱失败，请检查系统sudo权限配置");
         }
     }
@@ -1390,7 +1396,7 @@ public class Fail2BanController extends BaseController {
         String clientIp = getClientIp(request);
 
         if (!fail2BanConfig.isIpAllowed(clientIp)) {
-            log.warn("非法操作尝试：IP {} 试图封禁IP {}，监狱 {}",
+            log.warn(LOG_PREFIX + "非法操作尝试：IP {} 试图封禁IP {}，监狱 {}",
                     sanitizeLog(clientIp), sanitizeLog(ip), sanitizeLog(jailName));
             return AjaxResult.error("权限不足，只有指定IP地址可以执行此操作");
         }
@@ -1398,24 +1404,24 @@ public class Fail2BanController extends BaseController {
         // ==========新增：禁止封禁.env配置中的白名单IP==========
         List<String> banWhiteList = fail2BanConfig.getAllowedIps();
         if (banWhiteList.contains(ip)) {
-            log.warn("禁止封禁白名单IP：{}，操作IP：{}，监狱：{}", sanitizeLog(ip), sanitizeLog(clientIp), sanitizeLog(jailName));
+            log.warn(LOG_PREFIX + "禁止封禁白名单IP：{}，操作IP：{}，监狱：{}", sanitizeLog(ip), sanitizeLog(clientIp), sanitizeLog(jailName));
             return AjaxResult.error("禁止操作：该IP属于系统白名单，不允许封禁");
         }
 
         // 1. 安全校验：监狱名称
         if (jailName.contains("/") || jailName.contains("..") || jailName.contains(" ") || jailName.contains(";")) {
-            log.warn("检测到无效的监狱名称请求：{}", sanitizeLog(jailName));
+            log.warn(LOG_PREFIX + "检测到无效的监狱名称请求：{}", sanitizeLog(jailName));
             return AjaxResult.error("无效的监狱名称");
         }
         // 校验配置文件存在，不再依赖运行列表
         if (!isJailConfigured(jailName)) {
-            log.warn("封禁IP：配置中不存在监狱 {}", sanitizeLog(jailName));
+            log.warn(LOG_PREFIX + "封禁IP：配置中不存在监狱 {}", sanitizeLog(jailName));
             return AjaxResult.error("监狱不存在");
         }
 
         // 2. 安全校验：IP地址格式（只允许合法IPv4）
         if (!IPV4_STRICT_PATTERN.matcher(ip).matches()) {
-            log.warn("检测到无效的IP地址请求：{}", sanitizeLog(ip));
+            log.warn(LOG_PREFIX + "检测到无效的IP地址请求：{}", sanitizeLog(ip));
             return AjaxResult.error("无效的IP地址格式");
         }
 
@@ -1427,17 +1433,17 @@ public class Fail2BanController extends BaseController {
         if (output != null) {
             String trimmedOutput = output.trim();
             if (trimmedOutput.equals("1")) {
-                log.info("成功封禁IP：{}，监狱：{}，操作人：{}，操作IP：{}",
+                log.info(LOG_PREFIX + "成功封禁IP：{}，监狱：{}，操作人：{}，操作IP：{}",
                         sanitizeLog(ip), sanitizeLog(jailName), getUsername(), sanitizeLog(clientIp));
                 clearAllCaches();
                 return AjaxResult.success("成功封禁IP：" + ip);
             } else {
-                log.error("封禁IP失败：{}，监狱：{}，命令输出：{}，操作IP：{}",
+                log.error(LOG_PREFIX + "封禁IP失败：{}，监狱：{}，命令输出：{}，操作IP：{}",
                         sanitizeLog(ip), sanitizeLog(jailName), trimmedOutput, sanitizeLog(clientIp));
                 return AjaxResult.error("封禁IP失败，请检查监狱状态和日志");
             }
         } else {
-            log.error("封禁IP命令执行无响应：{}，监狱：{}，操作IP：{}",
+            log.error(LOG_PREFIX + "封禁IP命令执行无响应：{}，监狱：{}，操作IP：{}",
                     sanitizeLog(ip), sanitizeLog(jailName), sanitizeLog(clientIp));
             return AjaxResult.error("封禁IP失败，请检查系统sudo权限配置");
         }
@@ -1471,25 +1477,25 @@ public class Fail2BanController extends BaseController {
         String clientIp = getClientIp(request);
 
         if (!fail2BanConfig.isIpAllowed(clientIp)) {
-            log.warn("非法操作尝试：IP {} 试图解封IP {}，监狱 {}",
+            log.warn(LOG_PREFIX + "非法操作尝试：IP {} 试图解封IP {}，监狱 {}",
                     sanitizeLog(clientIp), sanitizeLog(ip), sanitizeLog(jailName));
             return AjaxResult.error("权限不足，只有指定IP地址可以执行此操作");
         }
 
         // 1. 安全校验：监狱名称
         if (jailName.contains("/") || jailName.contains("..") || jailName.contains(" ") || jailName.contains(";")) {
-            log.warn("检测到无效的监狱名称请求：{}", sanitizeLog(jailName));
+            log.warn(LOG_PREFIX + "检测到无效的监狱名称请求：{}", sanitizeLog(jailName));
             return AjaxResult.error("无效的监狱名称");
         }
         // 校验配置文件存在，不再依赖运行列表
         if (!isJailConfigured(jailName)) {
-            log.warn("解封IP：配置中不存在监狱 {}", sanitizeLog(jailName));
+            log.warn(LOG_PREFIX + "解封IP：配置中不存在监狱 {}", sanitizeLog(jailName));
             return AjaxResult.error("监狱不存在");
         }
 
         // 2. 安全校验：IP地址格式（只允许合法IPv4）
         if (!IPV4_STRICT_PATTERN.matcher(ip).matches()) {
-            log.warn("检测到无效的IP地址请求：{}", sanitizeLog(ip));
+            log.warn(LOG_PREFIX + "检测到无效的IP地址请求：{}", sanitizeLog(ip));
             return AjaxResult.error("无效的IP地址格式");
         }
 
@@ -1501,21 +1507,21 @@ public class Fail2BanController extends BaseController {
         if (output != null) {
             String trimmedOutput = output.trim();
             if (trimmedOutput.equals("1")) {
-                log.info("成功解封IP：{}，监狱：{}，操作人：{}，操作IP：{}",
+                log.info(LOG_PREFIX + "成功解封IP：{}，监狱：{}，操作人：{}，操作IP：{}",
                         sanitizeLog(ip), sanitizeLog(jailName), getUsername(), sanitizeLog(clientIp));
                 clearAllCaches();
                 return AjaxResult.success("成功解封IP：" + ip);
             } else if (trimmedOutput.equals("0")) {
-                log.warn("解封IP失败：{}，监狱：{}，该IP未被封禁，操作IP：{}",
+                log.warn(LOG_PREFIX + "解封IP失败：{}，监狱：{}，该IP未被封禁，操作IP：{}",
                         sanitizeLog(ip), sanitizeLog(jailName), sanitizeLog(clientIp));
                 return AjaxResult.error("解封失败：该IP地址未在当前监狱中被封禁");
             } else {
-                log.error("解封IP失败：{}，监狱：{}，命令输出：{}，操作IP：{}",
+                log.error(LOG_PREFIX + "解封IP失败：{}，监狱：{}，命令输出：{}，操作IP：{}",
                         sanitizeLog(ip), sanitizeLog(jailName), trimmedOutput, sanitizeLog(clientIp));
                 return AjaxResult.error("解封IP失败，请检查监狱状态和日志");
             }
         } else {
-            log.error("解封IP命令执行无响应：{}，监狱：{}，操作IP：{}",
+            log.error(LOG_PREFIX + "解封IP命令执行无响应：{}，监狱：{}，操作IP：{}",
                     sanitizeLog(ip), sanitizeLog(jailName), sanitizeLog(clientIp));
             return AjaxResult.error("解封IP失败，请检查系统sudo权限配置");
         }
@@ -1542,18 +1548,18 @@ public class Fail2BanController extends BaseController {
         String clientIp = getClientIp(request);
 
         if (!fail2BanConfig.isIpAllowed(clientIp)) {
-            log.warn("非法操作尝试：IP {} 试图批量解封监狱 {}", sanitizeLog(clientIp), sanitizeLog(jailName));
+            log.warn(LOG_PREFIX + "非法操作尝试：IP {} 试图批量解封监狱 {}", sanitizeLog(clientIp), sanitizeLog(jailName));
             return AjaxResult.error("权限不足，只有指定IP地址可以执行此操作");
         }
 
         // 安全校验：监狱名称
         if (jailName.contains("/") || jailName.contains("..") || jailName.contains(" ") || jailName.contains(";")) {
-            log.warn("检测到无效的监狱名称请求：{}", sanitizeLog(jailName));
+            log.warn(LOG_PREFIX + "检测到无效的监狱名称请求：{}", sanitizeLog(jailName));
             return AjaxResult.error("无效的监狱名称");
         }
         // 校验配置文件存在
         if (!isJailConfigured(jailName)) {
-            log.warn("批量解封：配置中不存在监狱 {}", sanitizeLog(jailName));
+            log.warn(LOG_PREFIX + "批量解封：配置中不存在监狱 {}", sanitizeLog(jailName));
             return AjaxResult.error("监狱不存在");
         }
 
@@ -1579,7 +1585,7 @@ public class Fail2BanController extends BaseController {
             }
         }
 
-        log.info("批量解封完成：监狱{}，共{}个IP，成功{}个，操作人：{}，操作IP：{}",
+        log.info(LOG_PREFIX + "批量解封完成：监狱{}，共{}个IP，成功{}个，操作人：{}，操作IP：{}",
                 sanitizeLog(jailName), bannedIps.size(), successCount, getUsername(), sanitizeLog(clientIp));
         clearAllCaches();
 
@@ -1608,7 +1614,7 @@ public class Fail2BanController extends BaseController {
 
         // 1. 白名单IP权限校验
         if (!fail2BanConfig.isIpAllowed(clientIp)) {
-            log.warn("非法操作尝试：IP {} 试图全局一键解封所有IP", sanitizeLog(clientIp));
+            log.warn(LOG_PREFIX + "非法操作尝试：IP {} 试图全局一键解封所有IP", sanitizeLog(clientIp));
             return AjaxResult.error("权限不足，只有指定IP地址可以执行此操作");
         }
 
@@ -1650,7 +1656,7 @@ public class Fail2BanController extends BaseController {
         }
 
         // 4. 审计日志与缓存清理
-        log.info("全局一键解封完成：共处理{}个监狱，解封IP总数{}，操作人：{}，操作IP：{}",
+        log.info(LOG_PREFIX + "全局一键解封完成：共处理{}个监狱，解封IP总数{}，操作人：{}，操作IP：{}",
                 totalJails, totalUnbanCount, operator, sanitizeLog(clientIp));
         clearAllCaches();
 
@@ -1681,17 +1687,17 @@ public class Fail2BanController extends BaseController {
 
         // 1. 白名单IP权限校验
         if (!fail2BanConfig.isIpAllowed(clientIp)) {
-            log.warn("非法操作尝试：IP {} 试图批量封禁监狱 {}", sanitizeLog(clientIp), sanitizeLog(jailName));
+            log.warn(LOG_PREFIX + "非法操作尝试：IP {} 试图批量封禁监狱 {}", sanitizeLog(clientIp), sanitizeLog(jailName));
             return AjaxResult.error("权限不足，只有指定IP地址可以执行此操作");
         }
 
         // 2. 监狱名称安全校验
         if (jailName.contains("/") || jailName.contains("..") || jailName.contains(" ") || jailName.contains(";")) {
-            log.warn("检测到无效的监狱名称请求：{}", sanitizeLog(jailName));
+            log.warn(LOG_PREFIX + "检测到无效的监狱名称请求：{}", sanitizeLog(jailName));
             return AjaxResult.error("无效的监狱名称");
         }
         if (!isJailConfigured(jailName)) {
-            log.warn("批量封禁：配置中不存在监狱 {}", sanitizeLog(jailName));
+            log.warn(LOG_PREFIX + "批量封禁：配置中不存在监狱 {}", sanitizeLog(jailName));
             return AjaxResult.error("监狱不存在");
         }
 
@@ -1720,11 +1726,11 @@ public class Fail2BanController extends BaseController {
             }
         }
         if (!invalidIps.isEmpty()) {
-            log.warn("批量封禁包含非法格式IP：{}，操作IP：{}", String.join(",", invalidIps), sanitizeLog(clientIp));
+            log.warn(LOG_PREFIX + "批量封禁包含非法格式IP：{}，操作IP：{}", String.join(",", invalidIps), sanitizeLog(clientIp));
             return AjaxResult.error("存在非法格式IP：" + String.join(", ", invalidIps));
         }
         if (!whiteListIps.isEmpty()) {
-            log.warn("批量封禁拦截白名单IP：{}，操作IP：{}", String.join(",", whiteListIps), sanitizeLog(clientIp));
+            log.warn(LOG_PREFIX + "批量封禁拦截白名单IP：{}，操作IP：{}", String.join(",", whiteListIps), sanitizeLog(clientIp));
             return AjaxResult.error("禁止封禁系统白名单IP：" + String.join(", ", whiteListIps));
         }
 
@@ -1751,7 +1757,7 @@ public class Fail2BanController extends BaseController {
         }
 
         // 6. 审计日志与缓存清理
-        log.info("批量封禁IP完成：监狱{}，总数{}，成功{}，失败{}，操作人：{}，操作IP：{}",
+        log.info(LOG_PREFIX + "批量封禁IP完成：监狱{}，总数{}，成功{}，失败{}，操作人：{}，操作IP：{}",
                 sanitizeLog(jailName), total, successCount, failDetails.size(), operator, sanitizeLog(clientIp));
         clearAllCaches();
 
@@ -1789,17 +1795,17 @@ public class Fail2BanController extends BaseController {
 
         // 1. 白名单IP权限校验
         if (!fail2BanConfig.isIpAllowed(clientIp)) {
-            log.warn("非法操作尝试：IP {} 试图批量解封监狱 {}", sanitizeLog(clientIp), sanitizeLog(jailName));
+            log.warn(LOG_PREFIX + "非法操作尝试：IP {} 试图批量解封监狱 {}", sanitizeLog(clientIp), sanitizeLog(jailName));
             return AjaxResult.error("权限不足，只有指定IP地址可以执行此操作");
         }
 
         // 2. 监狱名称安全校验
         if (jailName.contains("/") || jailName.contains("..") || jailName.contains(" ") || jailName.contains(";")) {
-            log.warn("检测到无效的监狱名称请求：{}", sanitizeLog(jailName));
+            log.warn(LOG_PREFIX + "检测到无效的监狱名称请求：{}", sanitizeLog(jailName));
             return AjaxResult.error("无效的监狱名称");
         }
         if (!isJailConfigured(jailName)) {
-            log.warn("批量解封：配置中不存在监狱 {}", sanitizeLog(jailName));
+            log.warn(LOG_PREFIX + "批量解封：配置中不存在监狱 {}", sanitizeLog(jailName));
             return AjaxResult.error("监狱不存在");
         }
 
@@ -1820,7 +1826,7 @@ public class Fail2BanController extends BaseController {
             }
         }
         if (!invalidIps.isEmpty()) {
-            log.warn("批量解封包含非法格式IP：{}，操作IP：{}", String.join(",", invalidIps), sanitizeLog(clientIp));
+            log.warn(LOG_PREFIX + "批量解封包含非法格式IP：{}，操作IP：{}", String.join(",", invalidIps), sanitizeLog(clientIp));
             return AjaxResult.error("存在非法格式IP：" + String.join(", ", invalidIps));
         }
 
@@ -1849,7 +1855,7 @@ public class Fail2BanController extends BaseController {
         }
 
         // 6. 审计日志与缓存清理
-        log.info("批量解封指定IP完成：监狱{}，总数{}，成功{}，失败{}，操作人：{}，操作IP：{}",
+        log.info(LOG_PREFIX + "批量解封指定IP完成：监狱{}，总数{}，成功{}，失败{}，操作人：{}，操作IP：{}",
                 sanitizeLog(jailName), total, successCount, failDetails.size(), operator, sanitizeLog(clientIp));
         clearAllCaches();
 
@@ -1900,7 +1906,7 @@ public class Fail2BanController extends BaseController {
 
         // 2. 双重权限校验：角色 + IP白名单
         if (!fail2BanConfig.isIpAllowed(clientIp)) {
-            log.warn("非法配置修改尝试：IP {} 试图修改监狱 {} 配置，操作人：{}",
+            log.warn(LOG_PREFIX + "非法配置修改尝试：IP {} 试图修改监狱 {} 配置，操作人：{}",
                     sanitizeLog(clientIp), sanitizeLog(jailName), operator);
             return AjaxResult.error("权限不足，仅指定白名单IP可执行该操作");
         }
@@ -1912,11 +1918,11 @@ public class Fail2BanController extends BaseController {
         jailName = jailName.trim();
         if (jailName.contains("/") || jailName.contains("..") || jailName.contains(" ")
                 || jailName.contains(";") || jailName.contains("|") || jailName.contains("&")) {
-            log.warn("检测到非法监狱名称：{}，操作IP：{}", sanitizeLog(jailName), sanitizeLog(clientIp));
+            log.warn(LOG_PREFIX + "检测到非法监狱名称：{}，操作IP：{}", sanitizeLog(jailName), sanitizeLog(clientIp));
             return AjaxResult.error("无效监狱名称，包含非法特殊字符");
         }
         if (!isJailConfigured(jailName)) {
-            log.warn("配置修改拦截：配置文件中不存在监狱 {}", sanitizeLog(jailName));
+            log.warn(LOG_PREFIX + "配置修改拦截：配置文件中不存在监狱 {}", sanitizeLog(jailName));
             return AjaxResult.error("监狱不存在，请先创建对应配置文件");
         }
 
@@ -1929,7 +1935,7 @@ public class Fail2BanController extends BaseController {
 
         // 5. 配置项白名单强校验（核心安全边界）
         if (!ALLOWED_CONFIG_KEYS.contains(configKey)) {
-            log.warn("非法配置项修改尝试：{}，监狱：{}，操作IP：{}",
+            log.warn(LOG_PREFIX + "非法配置项修改尝试：{}，监狱：{}，操作IP：{}",
                     sanitizeLog(configKey), sanitizeLog(jailName), sanitizeLog(clientIp));
             return AjaxResult.error("不支持修改该配置项");
         }
@@ -1958,11 +1964,11 @@ public class Fail2BanController extends BaseController {
                     return AjaxResult.error("不支持的配置项");
             }
         } catch (ClassCastException | NumberFormatException e) {
-            log.warn("配置参数格式异常：{}={}，监狱：{}，操作IP：{}",
+            log.warn(LOG_PREFIX + "配置参数格式异常：{}={}，监狱：{}，操作IP：{}",
                     configKey, sanitizeLog(String.valueOf(valueObj)), sanitizeLog(jailName), sanitizeLog(clientIp));
             return AjaxResult.error("参数格式错误，请检查值的类型与范围");
         } catch (Exception e) {
-            log.error("修改监狱配置发生未知异常，监狱：{}，配置项：{}",
+            log.error(LOG_PREFIX + "修改监狱配置发生未知异常，监狱：{}，配置项：{}",
                     sanitizeLog(jailName), sanitizeLog(configKey), e);
             return AjaxResult.error("修改配置失败，系统内部异常");
         }
@@ -2005,7 +2011,7 @@ public class Fail2BanController extends BaseController {
                 SUDO_CMD, FAIL2BAN_CLIENT, "set", jailName, "bantime", String.valueOf(targetValue)
         });
         if (output == null) {
-            log.error("修改封禁时长失败：监狱{}，目标值{}，操作人{}，操作IP{}",
+            log.error(LOG_PREFIX + "修改封禁时长失败：监狱{}，目标值{}，操作人{}，操作IP{}",
                     sanitizeLog(jailName), targetValue, operator, sanitizeLog(clientIp));
             return AjaxResult.error("修改失败，请检查监狱运行状态与sudo权限");
         }
@@ -2014,7 +2020,7 @@ public class Fail2BanController extends BaseController {
         Map<String, Object> newConfig = getJailConfigInternal(jailName);
         long actualValue = (long) newConfig.getOrDefault("bantimeSeconds", 0L);
         if (actualValue != targetValue) {
-            log.error("封禁时长修改未生效：监狱{}，期望值{}，实际值{}",
+            log.error(LOG_PREFIX + "封禁时长修改未生效：监狱{}，期望值{}，实际值{}",
                     sanitizeLog(jailName), targetValue, actualValue);
             return AjaxResult.error("修改未生效，请重试或检查服务状态");
         }
@@ -2026,7 +2032,7 @@ public class Fail2BanController extends BaseController {
         result.put("newValueText", newConfig.get("bantime"));
 
         // 审计日志 + 缓存清理
-        log.info("【运行时修改】监狱{}封禁时长变更：{}秒 → {}秒，操作人：{}，操作IP：{}",
+        log.info(LOG_PREFIX + "【运行时修改】监狱{}封禁时长变更：{}秒 → {}秒，操作人：{}，操作IP：{}",
                 sanitizeLog(jailName), oldValue, actualValue, operator, sanitizeLog(clientIp));
         clearAllCaches();
 
@@ -2063,7 +2069,7 @@ public class Fail2BanController extends BaseController {
                 SUDO_CMD, FAIL2BAN_CLIENT, "set", jailName, "findtime", String.valueOf(targetValue)
         });
         if (output == null) {
-            log.error("修改检测窗口失败：监狱{}，目标值{}，操作人{}，操作IP{}",
+            log.error(LOG_PREFIX + "修改检测窗口失败：监狱{}，目标值{}，操作人{}，操作IP{}",
                     sanitizeLog(jailName), targetValue, operator, sanitizeLog(clientIp));
             return AjaxResult.error("修改失败，请检查监狱运行状态与sudo权限");
         }
@@ -2071,7 +2077,7 @@ public class Fail2BanController extends BaseController {
         Map<String, Object> newConfig = getJailConfigInternal(jailName);
         long actualValue = (long) newConfig.getOrDefault("findtimeSeconds", 0L);
         if (actualValue != targetValue) {
-            log.error("检测窗口修改未生效：监狱{}，期望值{}，实际值{}",
+            log.error(LOG_PREFIX + "检测窗口修改未生效：监狱{}，期望值{}，实际值{}",
                     sanitizeLog(jailName), targetValue, actualValue);
             return AjaxResult.error("修改未生效，请重试或检查服务状态");
         }
@@ -2081,7 +2087,7 @@ public class Fail2BanController extends BaseController {
         result.put("oldValueText", oldConfig.get("findtime"));
         result.put("newValueText", newConfig.get("findtime"));
 
-        log.info("【运行时修改】监狱{}检测窗口变更：{}秒 → {}秒，操作人：{}，操作IP：{}",
+        log.info(LOG_PREFIX + "【运行时修改】监狱{}检测窗口变更：{}秒 → {}秒，操作人：{}，操作IP：{}",
                 sanitizeLog(jailName), oldValue, actualValue, operator, sanitizeLog(clientIp));
         clearAllCaches();
 
@@ -2116,7 +2122,7 @@ public class Fail2BanController extends BaseController {
                 SUDO_CMD, FAIL2BAN_CLIENT, "set", jailName, "maxretry", String.valueOf(targetValue)
         });
         if (output == null) {
-            log.error("修改最大重试次数失败：监狱{}，目标值{}，操作人{}，操作IP{}",
+            log.error(LOG_PREFIX + "修改最大重试次数失败：监狱{}，目标值{}，操作人{}，操作IP{}",
                     sanitizeLog(jailName), targetValue, operator, sanitizeLog(clientIp));
             return AjaxResult.error("修改失败，请检查监狱运行状态与sudo权限");
         }
@@ -2124,7 +2130,7 @@ public class Fail2BanController extends BaseController {
         Map<String, Object> newConfig = getJailConfigInternal(jailName);
         int actualValue = (int) newConfig.getOrDefault("maxretry", 5);
         if (actualValue != targetValue) {
-            log.error("最大重试次数修改未生效：监狱{}，期望值{}，实际值{}",
+            log.error(LOG_PREFIX + "最大重试次数修改未生效：监狱{}，期望值{}，实际值{}",
                     sanitizeLog(jailName), targetValue, actualValue);
             return AjaxResult.error("修改未生效，请重试或检查服务状态");
         }
@@ -2132,7 +2138,7 @@ public class Fail2BanController extends BaseController {
         result.put("oldValue", oldValue);
         result.put("newValue", actualValue);
 
-        log.info("【运行时修改】监狱{}最大重试次数变更：{} → {}，操作人：{}，操作IP：{}",
+        log.info(LOG_PREFIX + "【运行时修改】监狱{}最大重试次数变更：{} → {}，操作人：{}，操作IP：{}",
                 sanitizeLog(jailName), oldValue, actualValue, operator, sanitizeLog(clientIp));
         clearAllCaches();
 
@@ -2158,7 +2164,7 @@ public class Fail2BanController extends BaseController {
         // 安全加固：禁止删除系统级白名单IP
         List<String> systemWhiteList = fail2BanConfig.getAllowedIps();
         if ("delete".equals(action) && systemWhiteList.contains(targetIp)) {
-            log.warn("禁止删除系统白名单IP：{}，监狱：{}，操作IP：{}",
+            log.warn(LOG_PREFIX + "禁止删除系统白名单IP：{}，监狱：{}，操作IP：{}",
                     sanitizeLog(targetIp), sanitizeLog(jailName), sanitizeLog(clientIp));
             return AjaxResult.error("禁止删除系统级白名单IP");
         }
@@ -2190,7 +2196,7 @@ public class Fail2BanController extends BaseController {
                 SUDO_CMD, FAIL2BAN_CLIENT, "set", jailName, commandAction, targetIp
         });
         if (output == null) {
-            log.error("{}白名单IP失败：监狱{}，IP{}，操作人{}，操作IP{}",
+            log.error(LOG_PREFIX + "{}白名单IP失败：监狱{}，IP{}，操作人{}，操作IP{}",
                     actionText, sanitizeLog(jailName), sanitizeLog(targetIp), operator, sanitizeLog(clientIp));
             return AjaxResult.error(actionText + "白名单失败，请检查监狱运行状态");
         }
@@ -2204,7 +2210,7 @@ public class Fail2BanController extends BaseController {
         // 校验结果是否符合预期
         boolean expectExists = "add".equals(action);
         if (actualExists != expectExists) {
-            log.error("白名单{}操作未生效：监狱{}，IP{}，预期存在={}，实际存在={}",
+            log.error(LOG_PREFIX + "白名单{}操作未生效：监狱{}，IP{}，预期存在={}，实际存在={}",
                     actionText, sanitizeLog(jailName), sanitizeLog(targetIp), expectExists, actualExists);
             return AjaxResult.error("操作未生效，请重试或检查服务状态");
         }
@@ -2213,7 +2219,7 @@ public class Fail2BanController extends BaseController {
         result.put("targetIp", targetIp);
         result.put("currentIgnoreIpList", newList);
 
-        log.info("【运行时修改】监狱{}白名单{}IP：{}，操作人：{}，操作IP：{}",
+        log.info(LOG_PREFIX + "【运行时修改】监狱{}白名单{}IP：{}，操作人：{}，操作IP：{}",
                 sanitizeLog(jailName), actionText, sanitizeLog(targetIp), operator, sanitizeLog(clientIp));
         clearAllCaches();
 
@@ -2260,9 +2266,9 @@ public class Fail2BanController extends BaseController {
         if (output == null || output.isEmpty()) {
             // 对于强制查询的监狱，未运行或未配置时返回正常状态，不打印错误日志
             if (MUST_QUERY_JAILS.contains(jailName)) {
-                log.info("强制监狱{}未运行或未配置", sanitizeLog(jailName));
+                log.info(LOG_PREFIX + "强制监狱{}未运行或未配置", sanitizeLog(jailName));
             } else {
-                log.debug("监狱{}未运行或查询失败", sanitizeLog(jailName));
+                log.debug(LOG_PREFIX + "监狱{}未运行或查询失败", sanitizeLog(jailName));
             }
             stats.put("status", "已停止");
             stats.put("currentlyBanned", 0);
@@ -2481,7 +2487,7 @@ public class Fail2BanController extends BaseController {
                 }
             }
         } catch (Exception e) {
-            log.debug("读取进程启动时间失败，降级使用systemctl方式", e);
+            log.debug(LOG_PREFIX + "读取进程启动时间失败，降级使用systemctl方式", e);
         }
 
         // ========== 方案2：降级使用systemctl时间戳（兜底，保证不显示未知） ==========
@@ -2509,7 +2515,7 @@ public class Fail2BanController extends BaseController {
                 }
             }
         } catch (Exception e) {
-            log.debug("systemctl时间解析失败", e);
+            log.debug(LOG_PREFIX + "systemctl时间解析失败", e);
         }
 
         // 最终兜底，永远返回友好文案
@@ -2561,7 +2567,7 @@ public class Fail2BanController extends BaseController {
             boolean isFinished = process.waitFor(COMMAND_TIMEOUT, TimeUnit.SECONDS);
             if (!isFinished) {
                 process.destroyForcibly();
-                log.error("命令执行超时：{}", String.join(" ", command));
+                log.error(LOG_PREFIX + "命令执行超时：{}", String.join(" ", command));
                 return null;
             }
 
@@ -2573,13 +2579,13 @@ public class Fail2BanController extends BaseController {
                 return output;
             } else {
                 // 降低日志级别，避免大量错误日志
-                log.debug("命令执行失败，退出码：{}，命令：{}，输出：{}",
+                log.debug(LOG_PREFIX + "命令执行失败，退出码：{}，命令：{}，输出：{}",
                         exitCode, String.join(" ", command), output);
                 return null;
             }
 
         } catch (Exception e) {
-            log.error("执行命令异常：{}", String.join(" ", command), e);
+            log.error(LOG_PREFIX + "执行命令异常：{}", String.join(" ", command), e);
             return null;
         } finally {
             destroyProcess(process);
@@ -2612,7 +2618,7 @@ public class Fail2BanController extends BaseController {
     private void destroyProcess(Process process) {
         if (process != null && process.isAlive()) {
             process.destroyForcibly();
-            log.debug("进程已强制销毁");
+            log.debug(LOG_PREFIX + "进程已强制销毁");
         }
     }
 
@@ -2629,7 +2635,7 @@ public class Fail2BanController extends BaseController {
             process = new ProcessBuilder(WHICH_CMD, command).start();
             return process.waitFor(2, TimeUnit.SECONDS) && process.exitValue() == 0;
         } catch (Exception e) {
-            log.error("检查命令可用性失败：{}", command, e);
+            log.error(LOG_PREFIX + "检查命令可用性失败：{}", command, e);
             return false;
         } finally {
             destroyProcess(process);
