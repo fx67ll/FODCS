@@ -1,18 +1,18 @@
 package com.ruoyi.system.service;
 
 import java.util.List;
+
 import com.ruoyi.system.domain.SysNotice;
 
 /**
  * 公告 服务层
- * 
+ *
  * @author ruoyi
  */
-public interface ISysNoticeService
-{
+public interface ISysNoticeService {
     /**
      * 查询公告信息
-     * 
+     *
      * @param noticeId 公告ID
      * @return 公告信息
      */
@@ -20,15 +20,30 @@ public interface ISysNoticeService
 
     /**
      * 查询公告列表
-     * 
+     *
      * @param notice 公告信息
      * @return 公告集合
      */
     public List<SysNotice> selectNoticeList(SysNotice notice);
 
     /**
+     * 查询已上架公告列表
+     *
+     * @param notice 公告信息
+     * @return 公告集合
+     */
+    public List<SysNotice> selectPublicNoticeList(SysNotice notice);
+
+    /**
+     * 查询最新一条已上架公告
+     *
+     * @return 公告信息
+     */
+    public SysNotice selectLatestNotice();
+
+    /**
      * 新增公告
-     * 
+     *
      * @param notice 公告信息
      * @return 结果
      */
@@ -36,7 +51,7 @@ public interface ISysNoticeService
 
     /**
      * 修改公告
-     * 
+     *
      * @param notice 公告信息
      * @return 结果
      */
@@ -44,15 +59,15 @@ public interface ISysNoticeService
 
     /**
      * 删除公告信息
-     * 
+     *
      * @param noticeId 公告ID
      * @return 结果
      */
     public int deleteNoticeById(Long noticeId);
-    
+
     /**
      * 批量删除公告信息
-     * 
+     *
      * @param noticeIds 需要删除的公告ID
      * @return 结果
      */
