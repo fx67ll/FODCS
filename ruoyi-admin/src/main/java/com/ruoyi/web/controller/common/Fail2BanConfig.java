@@ -24,7 +24,9 @@ import java.util.List;
 public class Fail2BanConfig {
     private static final Logger log = LoggerFactory.getLogger(Fail2BanConfig.class);
 
-    /** 日志统一前缀，便于在日志文件中快速识别Fail2Ban功能相关日志 */
+    /**
+     * 日志统一前缀，便于在日志文件中快速识别Fail2Ban功能相关日志
+     */
     private static final String LOG_PREFIX = "[Fail2Ban] ";
 
     // 配置文件路径
