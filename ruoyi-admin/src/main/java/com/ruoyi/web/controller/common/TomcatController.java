@@ -11,7 +11,10 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.context.request.RequestContextHolder;
+import org.springframework.web.context.request.ServletRequestAttributes;
 
+import javax.servlet.http.HttpServletRequest;
 import java.io.*;
 import java.lang.management.ManagementFactory;
 import java.net.InetSocketAddress;
@@ -22,16 +25,29 @@ import java.nio.file.Paths;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.*;
+import java.util.regex.Pattern;
 
 /**
  * Tomcat操作控制器（适配若依框架）
  *
- * @author ruoyi
+ * 操作类接口（start/stop/clearCache）预留 fx67ll 角色 + IP 白名单双重校验开关，
+ * 默认关闭，保证移动端可随时操作；开启时与 Fail2Ban 操作接口对齐
  */
 @RestController
 @RequestMapping("/server/tomcat")
 public class TomcatController extends BaseController {
     private static final Logger log = LoggerFactory.getLogger(TomcatController.class);
+
+    // IPv4 严格校验正则，防止 XFF 头伪造注入（与 Fail2BanController 一致）
+    private static final Pattern IPV4_STRICT_PATTERN = Pattern.compile(
+            "^((25[0-5]|2[0-4]\\d|[01]?\\d\\d?)\\.){3}(25[0-5]|2[0-4]\\d|[01]?\\d\\d?)$");
+
+    // IP 白名单配置（与 Fail2BanController 共用同一套配置）
+    private final Fail2BanConfig fail2BanConfig;
+
+    public TomcatController(Fail2BanConfig fail2BanConfig) {
+        this.fail2BanConfig = fail2BanConfig;
+    }
 
     // Tomcat安装目录（建议配置在application.yml中，通过@Value注入）
     private static final String TOMCAT_BIN_PATH = "/usr/soft/install/apache-tomcat-9.0.7/bin";
@@ -48,6 +64,9 @@ public class TomcatController extends BaseController {
     private static final int CONNECT_TIMEOUT = 5; // 连接超时时间（秒）
     private static final int CURL_TIMEOUT = 10; // curl命令超时时间（秒）
 
+    // 操作接口双重校验开关：默认关闭仅校验权限，开启时叠加 fx67ll 角色 + IP 白名单
+    private static final boolean SECURITY_ENHANCE_ENABLED = false;
+
     /**
      * 启动Tomcat
      */
@@ -55,6 +74,11 @@ public class TomcatController extends BaseController {
     @Log(title = "Tomcat操作", businessType = BusinessType.OTHER)
     @PostMapping("/start")
     public AjaxResult startTomcat() {
+        // IP 白名单校验（受开关控制，默认关闭）
+        AjaxResult guard = checkIpAllowed();
+        if (guard != null) {
+            return guard;
+        }
         // 启动前检查状态
         AjaxResult statusResult = getTomcatStatus();
         if (statusResult.get("data").equals("运行中")) {
@@ -70,6 +94,11 @@ public class TomcatController extends BaseController {
     @Log(title = "Tomcat操作", businessType = BusinessType.OTHER)
     @PostMapping("/stop")
     public AjaxResult stopTomcat() {
+        // IP 白名单校验（受开关控制，默认关闭）
+        AjaxResult guard = checkIpAllowed();
+        if (guard != null) {
+            return guard;
+        }
         return executeCommand("shutdown.sh", "Tomcat停止");
     }
 
@@ -420,6 +449,11 @@ public class TomcatController extends BaseController {
     @Log(title = "系统缓存清理", businessType = BusinessType.OTHER)
     @PostMapping("/clearCache")
     public AjaxResult clearSystemCache() {
+        // IP 白名单校验（受开关控制，默认关闭）
+        AjaxResult guard = checkIpAllowed();
+        if (guard != null) {
+            return guard;
+        }
         String operationDesc = "清理系统缓存";
         log.info("开始{}", operationDesc);
 
@@ -473,6 +507,77 @@ public class TomcatController extends BaseController {
         } finally {
             destroyProcess(process);
         }
+    }
+
+    /**
+     * 操作接口 IP 白名单前置校验
+     * 受 SECURITY_ENHANCE_ENABLED 开关控制：默认关闭直接放行，开启时叠加白名单校验
+     */
+    private AjaxResult checkIpAllowed() {
+        // 开关关闭直接放行
+        if (!SECURITY_ENHANCE_ENABLED) {
+            return null;
+        }
+        ServletRequestAttributes attributes = (ServletRequestAttributes) RequestContextHolder.getRequestAttributes();
+        if (attributes == null) {
+            return AjaxResult.error("无法获取请求上下文");
+        }
+        HttpServletRequest request = attributes.getRequest();
+        String clientIp = getClientIp(request);
+        if (!fail2BanConfig.isIpAllowed(clientIp)) {
+            log.warn("非法操作尝试：IP {} 试图执行Tomcat操作", sanitizeLog(clientIp));
+            return AjaxResult.error("权限不足，只有指定IP地址可以执行此操作");
+        }
+        return null;
+    }
+
+    /**
+     * 获取客户端真实IP地址（支持反向代理），校验格式合法性防 XFF 伪造
+     */
+    private static String getClientIp(HttpServletRequest request) {
+        if (request == null) {
+            return "unknown";
+        }
+        String ip = null;
+        String xForwardedFor = request.getHeader("X-Forwarded-For");
+        if (xForwardedFor != null && !xForwardedFor.isEmpty() && !"unknown".equalsIgnoreCase(xForwardedFor)) {
+            ip = xForwardedFor.split(",")[0].trim();
+        }
+        if (ip == null || ip.isEmpty() || "unknown".equalsIgnoreCase(ip)) {
+            ip = request.getHeader("X-Real-IP");
+        }
+        if (ip == null || ip.isEmpty() || "unknown".equalsIgnoreCase(ip)) {
+            ip = request.getHeader("Proxy-Client-IP");
+        }
+        if (ip == null || ip.isEmpty() || "unknown".equalsIgnoreCase(ip)) {
+            ip = request.getHeader("WL-Proxy-Client-IP");
+        }
+        if (ip == null || ip.isEmpty() || "unknown".equalsIgnoreCase(ip)) {
+            ip = request.getRemoteAddr();
+        }
+        // 本地地址兼容：容器/本地访问时回退 X-Real-IP
+        if ("127.0.0.1".equals(ip) || "0:0:0:0:0:0:0:1".equals(ip)) {
+            String realIp = request.getHeader("X-Real-IP");
+            if (realIp != null && !realIp.isEmpty() && IPV4_STRICT_PATTERN.matcher(realIp).matches()) {
+                ip = realIp.trim();
+            }
+        }
+        // 格式非法回退 RemoteAddr，防伪造
+        if (ip != null && !IPV4_STRICT_PATTERN.matcher(ip).matches()) {
+            log.warn("检测到格式非法的客户端IP：{}，已自动回退为RemoteAddr", sanitizeLog(ip));
+            ip = request.getRemoteAddr();
+        }
+        return ip;
+    }
+
+    /**
+     * 日志内容净化，移除换行符防日志注入
+     */
+    private static String sanitizeLog(String content) {
+        if (content == null) {
+            return "";
+        }
+        return content.replaceAll("[\r\n]", "");
     }
 
     /**
