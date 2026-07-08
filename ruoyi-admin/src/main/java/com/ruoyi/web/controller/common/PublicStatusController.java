@@ -316,7 +316,9 @@ public class PublicStatusController extends BaseController {
 
     /**
      * 采集系统平均负载（/proc/loadavg 1/5/15 分钟）
-     * 数值含义为相对 CPU 核数的负载比，但此处不暴露核数，仅展示原始小数
+     * 数值含义为相对 CPU 核数的负载比，但此处不暴露核数，仅展示原始小数。
+     * 保留 2 位小数：/proc/loadavg 原生即 2 位小数，空闲时常见 0.01/0.02，
+     * 若只保留 1 位会被四舍五入成 0.0，让用户误以为采集异常。
      */
     private double[] collectLoadAverage() {
         double[] load = new double[]{0, 0, 0};
@@ -326,9 +328,9 @@ public class PublicStatusController extends BaseController {
                 return load;
             }
             String[] parts = content.trim().split("\\s+");
-            load[0] = round1(Double.parseDouble(parts[0]));
-            load[1] = round1(Double.parseDouble(parts[1]));
-            load[2] = round1(Double.parseDouble(parts[2]));
+            load[0] = round2(Double.parseDouble(parts[0]));
+            load[1] = round2(Double.parseDouble(parts[1]));
+            load[2] = round2(Double.parseDouble(parts[2]));
         } catch (Exception e) {
             log.debug(LOG_PREFIX + "采集系统负载失败：{}", e.getMessage());
         }
@@ -351,6 +353,13 @@ public class PublicStatusController extends BaseController {
      */
     private double round1(double value) {
         return Math.round(value * 10) / 10.0;
+    }
+
+    /**
+     * 保留 2 位小数（用于系统负载等需要精细刻度的指标）
+     */
+    private double round2(double value) {
+        return Math.round(value * 100) / 100.0;
     }
 
     /**
