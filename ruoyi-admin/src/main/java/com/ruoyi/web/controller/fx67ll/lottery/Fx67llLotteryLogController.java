@@ -197,6 +197,42 @@ public class Fx67llLotteryLogController extends BaseController {
     }
 
     /**
+     * 合并同期号、同类型的每日号码记录
+     * <p>
+     * 将一组同期号、同类型的记录在后台事务内合并为一条全新记录，并删除合并前的旧数据。
+     * 所有合并逻辑（去重、求和、新增、删除）均在后台一个事务中完成，前端只需传入待合并的主键集合，
+     * 避免前端多次异步调用造成的脏数据错乱问题。
+     * <p>
+     * 入参：待合并记录主键数组（至少 2 条）
+     * 返回：合并后新生成记录的主键
+     */
+    @PreAuthorize("@ss.hasPermi('lottery:log:merge')")
+    @Log(title = "合并同期号同类型每日号码记录", businessType = BusinessType.UPDATE)
+    @PostMapping("/merge")
+    public AjaxResult merge(@RequestBody Long[] lotteryIds) {
+        if (!isFx67llSelf()) {
+            return getForbiddenAjaxResult();
+        }
+        Long mergedLotteryId = fx67llLotteryLogService.mergeFx67llLotteryLogs(lotteryIds);
+        return AjaxResult.success("合并成功", mergedLotteryId);
+    }
+
+    /**
+     * 提供给 APP 合并同期号、同类型的每日号码记录
+     * <p>
+     * 与 Web 端 /merge 接口逻辑一致，区别在于不做 fx67ll 本人限制，
+     * 而是在 Service 层校验所有待合并记录均为当前登录用户本人创建。
+     */
+    // 如果只放开SecurityConfig中允许匿名请求的配置，不放开这里的权限配置，会返回获取用户信息异常的错误
+    // @PreAuthorize("@ss.hasPermi('lottery:log:merge')")
+    @Log(title = "提供给 APP 合并同期号同类型每日号码记录", businessType = BusinessType.UPDATE)
+    @PostMapping("/mergeLotteryLogForApp")
+    public AjaxResult mergeLotteryLogForApp(@RequestBody Long[] lotteryIds) {
+        Long mergedLotteryId = fx67llLotteryLogService.mergeFx67llLotteryLogs(lotteryIds);
+        return AjaxResult.success("合并成功", mergedLotteryId);
+    }
+
+    /**
      * 提供给 APP 删除每日号码记录
      */
     // 如果只放开SecurityConfig中允许匿名请求的配置，不放开这里的权限配置，会返回获取用户信息异常的错误
