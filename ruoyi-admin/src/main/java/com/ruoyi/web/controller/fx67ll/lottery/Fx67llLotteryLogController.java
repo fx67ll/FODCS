@@ -233,6 +233,26 @@ public class Fx67llLotteryLogController extends BaseController {
     }
 
     /**
+     * 提供给 APP 批量新增每日号码记录
+     * <p>
+     * 用于"周五一键三连"等需要一次性生成多条不同类型记录的场景。
+     * 前端串行准备好各条记录数据后，一次请求调用本接口，后台一个事务内按入参顺序依次写入，
+     * 每条记录 createTime 递增 1 秒以保证保存顺序稳定，任一失败全部回滚，
+     * 替代前端多次异步调用 addLog 造成的顺序不可控与原子性缺失问题。
+     * <p>
+     * 入参：待新增记录集合（顺序即保存顺序，如排列三→排列五→七星彩）
+     * 返回：新增记录的主键集合
+     */
+    // 如果只放开SecurityConfig中允许匿名请求的配置，不放开这里的权限配置，会返回获取用户信息异常的错误
+    // @PreAuthorize("@ss.hasPermi('lottery:log:add')")
+    @Log(title = "提供给 APP 批量新增每日号码记录", businessType = BusinessType.INSERT)
+    @PostMapping("/batchAddLotteryLogForApp")
+    public AjaxResult batchAddLotteryLogForApp(@RequestBody List<Fx67llLotteryLog> logList) {
+        List<Long> lotteryIds = fx67llLotteryLogService.batchInsertFx67llLotteryLogs(logList);
+        return AjaxResult.success("保存成功", lotteryIds);
+    }
+
+    /**
      * 提供给 APP 删除每日号码记录
      */
     // 如果只放开SecurityConfig中允许匿名请求的配置，不放开这里的权限配置，会返回获取用户信息异常的错误

@@ -3,6 +3,7 @@ package com.ruoyi.fx67ll.lottery.service.impl;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Comparator;
+import java.util.Date;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
@@ -286,6 +287,72 @@ public class Fx67llLotteryLogServiceImpl implements IFx67llLotteryLogService {
 
         // 返回合并后新记录的主键
         return mergedLog.getLotteryId();
+    }
+
+    /**
+     * 批量新增每日号码记录（一个事务内按入参顺序依次写入）
+     * <p>
+     * 详见接口注释。用于"周五一键三连"等一次性生成多条记录的场景，
+     * 替代前端多次异步调用造成的顺序不可控与原子性缺失问题。
+     *
+     * @param logList 待新增的每日号码记录集合（顺序即保存顺序）
+     * @return 新增记录的主键集合（与入参顺序一致）
+     */
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public List<Long> batchInsertFx67llLotteryLogs(List<Fx67llLotteryLog> logList) {
+        // ---------- 1. 入参基础校验 ----------
+        if (logList == null || logList.isEmpty()) {
+            throw new ServiceException("待保存的号码记录不能为空！");
+        }
+        // 限制单次批量保存数量上限，防止恶意传入超大数组
+        if (logList.size() > MERGE_MAX_INPUT_COUNT) {
+            throw new ServiceException("单次最多保存" + MERGE_MAX_INPUT_COUNT + "条记录！");
+        }
+
+        Long currentUserId = SecurityUtils.getUserId();
+        String currentUsername = SecurityUtils.getUsername();
+        // 基准时间取当前时刻，后续每条记录在此基础上递增 1 秒，保证保存顺序稳定
+        Date baseCreateTime = DateUtils.getNowDate();
+        List<Long> lotteryIds = new ArrayList<>(logList.size());
+
+        // ---------- 2. 按入参顺序依次写入 ----------
+        for (int i = 0; i < logList.size(); i++) {
+            Fx67llLotteryLog log = logList.get(i);
+            if (log == null) {
+                throw new ServiceException("第" + (i + 1) + "条记录数据为空！");
+            }
+            // 号码内容必填校验（至少要有购买号码或固定追号）
+            boolean hasRecord = log.getRecordNumber() != null && !log.getRecordNumber().trim().isEmpty();
+            boolean hasChase = log.getChaseNumber() != null && !log.getChaseNumber().trim().isEmpty();
+            if (!hasRecord && !hasChase) {
+                throw new ServiceException("第" + (i + 1) + "条记录的号码内容不能为空！");
+            }
+            // 彩票类型有效性校验（1=大乐透 2=双色球 3=排列三 4=排列五 5=七星彩）
+            Integer numberType = log.getNumberType();
+            if (numberType == null || numberType < 1 || numberType > 5) {
+                throw new ServiceException("第" + (i + 1) + "条记录的彩票类型不合法！");
+            }
+            // 星期有效性校验（1-7），为空时不强校验（部分场景可能不传）
+            Integer weekType = log.getWeekType();
+            if (weekType != null && (weekType < 1 || weekType > 7)) {
+                throw new ServiceException("第" + (i + 1) + "条记录的星期不合法！");
+            }
+            // 归属用户为当前操作人，创建人/更新人取当前操作人
+            log.setUserId(currentUserId);
+            log.setCreateBy(currentUsername);
+            log.setUpdateBy(currentUsername);
+            // createTime 按序号递增 1 秒，确保列表按 create_time 倒序时顺序与传入顺序一致
+            // 列表查询为 create_time DESC（最新在最上），因此入参顺序靠前的记录（如排列三）
+            // 需拿到最新的时间，靠后的（如七星彩）拿最早的时间，反转为 size-1-i
+            log.setCreateTime(new Date(baseCreateTime.getTime() + (long) (logList.size() - 1 - i) * 1000L));
+            log.setUpdateTime(log.getCreateTime());
+            // 直接走 Mapper 新增（不调用 ServiceImpl.insertFx67llLotteryLog，因为它会用当前时间覆盖 createTime）
+            fx67llLotteryLogMapper.insertFx67llLotteryLog(log);
+            // useGeneratedKeys 已将自增主键回填到 log.lotteryId
+            lotteryIds.add(log.getLotteryId());
+        }
+        return lotteryIds;
     }
 
     /**

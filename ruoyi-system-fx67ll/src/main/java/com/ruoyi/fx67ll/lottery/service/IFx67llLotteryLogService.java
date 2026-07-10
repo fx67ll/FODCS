@@ -92,31 +92,23 @@ public interface IFx67llLotteryLogService {
      */
     public List<Fx67llLotteryHistory> selectFx67llLotteryLogHistoryStatistics();
 
+    public Long mergeFx67llLotteryLogs(Long[] lotteryIds);
+
     /**
-     * 合并同期号、同类型的每日号码记录
+     * 批量新增每日号码记录（一个事务内按入参顺序依次写入）
      * <p>
-     * 业务目标：处理同一天内多次生成的同类型、同期号数据，将多条记录合并为一条。
-     * <p>
-     * 合并规则：
-     * 1. 固定追号（chaseNumber）跨记录去重，重复的追号不重复添加；
-     * 2. 每日号码（recordNumber）跨记录去重，重复的号码只保留一注；
-     * 3. 开奖号码（winningNumber）取第一个非空值（同期号开奖号应一致，不一致视为异常拒绝合并）；
-     * 4. 是否中奖（isWin）任一为 Y 则为 Y，否则为 N；
-     * 5. 中奖金额（winningPrice）对所有中奖记录金额求和；
-     * 6. 合并后总注数（固定追号注数 + 每日号码注数）不超过 5 注；
-     * 7. 合并后单字段长度不超过数据库限制（varchar(1023)）。
+     * 业务目标：用于"周五一键三连"等需要一次性生成多条不同类型记录的场景，
+     * 替代前端多次异步调用 addLog 造成的顺序不可控与原子性缺失问题。
      * <p>
      * 写库规则：
-     * 1. 新建一条全新记录（lotteryId 由数据库自增生成，不沿用任何旧 ID）；
-     * 2. 创建时间（createTime）取所有被合并记录中最早的一条，创建人（createBy）取该条原值；
-     * 3. 更新时间（updateTime）取合并操作的当前时间，更新人（updateBy）取当前操作人；
-     * 4. 删除全部被合并的旧记录。
-     * <p>
-     * 整个过程在同一个事务中完成（读取-校验-合并-新增-删除），任一步失败全部回滚，
-     * 避免前端多次异步调用造成的脏数据错乱问题。
+     * 1. 按入参 List 顺序依次 insert，保证保存顺序与传入顺序一致（如排列三→排列五→七星彩）；
+     * 2. 每条记录的 createTime 在基准时间上按序号递增 1 秒，入参靠前的记录时间最新，
+     * 确保列表按 create_time 倒序时排列三在最上、七星彩在最下，顺序稳定可读；
+     * 3. createBy / updateBy 取当前操作人，userId 取当前登录用户；
+     * 4. 整个过程在同一个事务中完成，任一条插入失败全部回滚，避免出现"三连只成功两条"的脏数据。
      *
-     * @param lotteryIds 需要合并的每日号码记录主键集合
-     * @return 合并后新生成记录的主键
+     * @param logList 待新增的每日号码记录集合（顺序即保存顺序）
+     * @return 新增记录的主键集合（与入参顺序一致）
      */
-    public Long mergeFx67llLotteryLogs(Long[] lotteryIds);
+    public List<Long> batchInsertFx67llLotteryLogs(List<Fx67llLotteryLog> logList);
 }
