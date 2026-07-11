@@ -92,6 +92,51 @@ public class Fx67llLotteryLogController extends BaseController {
         return getDataTable(list);
     }
 
+    /**
+     * 提供给 APP 查询指定彩种最近一条"有期号"的记录
+     * <p>
+     * 用于期号计算时向前回溯基准记录：当最近一条记录的 dateCode 为空（历史脏数据）时，
+     * 自动跳过空期号记录，取按 create_time 倒序的第一条 dateCode 非空记录作为期号计算基准。
+     * 适配大乐透、双色球、排列三、排列五、七星彩等全部彩种，统一由前端传入 numberType 区分。
+     * 仅返回当前登录用户自己的记录（Service 层按 userId 过滤）。
+     *
+     * @param fx67llLotteryLog 查询条件（至少需传 numberType）
+     * @return 最近一条有期号的记录，没有则 data 为 null
+     */
+    // 如果只放开SecurityConfig中允许匿名请求的配置，不放开这里的权限配置，会返回获取用户信息异常的错误
+    // @PreAuthorize("@ss.hasPermi('lottery:log:list')")
+    @GetMapping("/getLatestLogWithDateCodeForApp")
+    public AjaxResult getLatestLogWithDateCodeForApp(Fx67llLotteryLog fx67llLotteryLog) {
+        // 强制只查有期号的记录，并按 create_time 倒序取第一条
+        fx67llLotteryLog.setHasDateCode("Y");
+        List<Fx67llLotteryLog> list = fx67llLotteryLogService.selectFx67llLotteryLogListByUserId(fx67llLotteryLog);
+        if (list != null && !list.isEmpty()) {
+            return success(list.get(0));
+        }
+        return success();
+    }
+
+    /**
+     * 提供给管理端（FODCF）查询指定彩种最近一条"有期号"的记录
+     * <p>
+     * 与 ForApp 接口逻辑一致，区别在于不按当前登录用户 userId 过滤，取全局最近一条有期号记录，
+     * 供管理员视角的期号计算使用（近期号码期号弹窗）。适配全部彩种，由前端传入 numberType 区分。
+     *
+     * @param fx67llLotteryLog 查询条件（至少需传 numberType）
+     * @return 最近一条有期号的记录，没有则 data 为 null
+     */
+    @PreAuthorize("@ss.hasPermi('lottery:log:list')")
+    @GetMapping("/getLatestLogWithDateCodeForAdmin")
+    public AjaxResult getLatestLogWithDateCodeForAdmin(Fx67llLotteryLog fx67llLotteryLog) {
+        // 强制只查有期号的记录，并按 create_time 倒序取第一条（不按 userId 过滤，取全局）
+        fx67llLotteryLog.setHasDateCode("Y");
+        List<Fx67llLotteryLog> list = fx67llLotteryLogService.selectFx67llLotteryLogList(fx67llLotteryLog);
+        if (list != null && !list.isEmpty()) {
+            return success(list.get(0));
+        }
+        return success();
+    }
+
 
     /**
      * 导出每日号码记录列表
