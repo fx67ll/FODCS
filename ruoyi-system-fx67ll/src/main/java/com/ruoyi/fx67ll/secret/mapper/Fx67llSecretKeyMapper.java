@@ -35,6 +35,14 @@ public interface Fx67llSecretKeyMapper {
     public List<Fx67llSecretKey> selectFx67llSecretKeyListForNull();
 
     /**
+     * 按 secret_key 精确匹配查询（APP 接口专用，避免 LIKE 模糊匹配泄露）
+     *
+     * @param secretKey 秘钥键
+     * @return 秘钥配置
+     */
+    public Fx67llSecretKey selectFx67llSecretKeyBySecretKey(String secretKey);
+
+    /**
      * 新增秘钥配置
      *
      * @param fx67llSecretKey 秘钥配置
