@@ -4,6 +4,12 @@ import java.util.List;
 import javax.servlet.http.HttpServletResponse;
 
 import com.ruoyi.common.utils.SecurityUtils;
+import com.ruoyi.common.utils.http.HttpUtils;
+import com.ruoyi.common.utils.StringUtils;
+import com.ruoyi.fx67ll.secret.domain.Fx67llSecretKey;
+import com.ruoyi.fx67ll.secret.service.IFx67llSecretKeyService;
+import com.alibaba.fastjson2.JSON;
+import com.alibaba.fastjson2.JSONObject;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -13,6 +19,7 @@ import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import com.ruoyi.common.annotation.Log;
 import com.ruoyi.common.core.controller.BaseController;
@@ -37,6 +44,108 @@ import com.ruoyi.common.core.page.TableDataInfo;
 public class Fx67llLotteryLogController extends BaseController {
     @Autowired
     private IFx67llLotteryLogService fx67llLotteryLogService;
+
+    @Autowired
+    private IFx67llSecretKeyService fx67llSecretKeyService;
+
+    /**
+     * 彩种代码映射：numberType → mxnzp code
+     */
+    private static final String[] LOTTERY_CODE_MAP = {null, "cjdlt", "ssq", "pl3", "pl5", "qxc"};
+
+    /**
+     * mxnzp 中奖查询 API
+     */
+    private static final String MXNZP_LOTTERY_URL = "https://www.mxnzp.com/api/lottery/common/aim_lottery";
+
+    /**
+     * 百度 OCR 鉴权 API
+     */
+    private static final String BAIDU_OCR_AUTH_URL = "https://aip.baidubce.com/oauth/2.0/token";
+
+    /**
+     * 百度 OCR 识别 API
+     */
+    private static final String BAIDU_OCR_URL = "https://aip.baidubce.com/rest/2.0/ocr/v1/accurate_basic";
+
+    /**
+     * 中奖信息查询代理接口（后端代理 mxnzp，凭据不下发前端）
+     *
+     * @param expect     期号
+     * @param numberType 彩种类型 1大乐透 2双色球 3排列三 4排列五 5七星彩
+     * @return mxnzp 返回的开奖结果
+     */
+    @GetMapping("/queryRewardForApp")
+    public AjaxResult queryRewardForApp(@RequestParam String expect, @RequestParam Integer numberType) {
+        if (StringUtils.isEmpty(expect) || numberType == null || numberType < 1 || numberType > 5) {
+            return AjaxResult.error("期号或彩种类型不合法");
+        }
+        // 从 secret 表解密读取凭据（后端持有，不下发前端）
+        Fx67llSecretKey appIdKey = fx67llSecretKeyService.selectFx67llSecretKeyBySecretKeyForApp("qryLotteryRewardAppId");
+        Fx67llSecretKey appSecretKey = fx67llSecretKeyService.selectFx67llSecretKeyBySecretKeyForApp("qryLotteryRewardAppSecret");
+        if (appIdKey == null || appSecretKey == null) {
+            return AjaxResult.error("中奖查询凭据未配置");
+        }
+        // 调 mxnzp 第三方 API
+        String code = LOTTERY_CODE_MAP[numberType];
+        String param = "app_id=" + appIdKey.getSecretValue()
+                + "&app_secret=" + appSecretKey.getSecretValue()
+                + "&expect=" + expect
+                + "&code=" + code;
+        String result = HttpUtils.sendGet(MXNZP_LOTTERY_URL, param);
+        if (StringUtils.isEmpty(result)) {
+            return AjaxResult.error("查询中奖信息失败，第三方接口无响应");
+        }
+        JSONObject json = JSON.parseObject(result);
+        AjaxResult ajax = AjaxResult.success();
+        ajax.put("mxnzp", json);
+        return ajax;
+    }
+
+    /**
+     * 百度 OCR 识别代理接口（后端代理百度 OCR，凭据不下发前端）
+     *
+     * 后端解密 ocrPubKey/ocrSecKey → 调百度鉴权拿 access_token → 调百度 OCR 识别 → 返回结果。
+     * 前端只传图片 URL，不接触凭据。
+     *
+     * @param imageUrl 图片 URL（已上传到云端的图片地址）
+     * @return 百度 OCR 识别结果
+     */
+    @PostMapping("/queryOcrForApp")
+    public AjaxResult queryOcrForApp(@RequestParam String imageUrl) {
+        if (StringUtils.isEmpty(imageUrl)) {
+            return AjaxResult.error("图片地址不能为空");
+        }
+        // 从 secret 表解密读取百度 OCR 凭据
+        Fx67llSecretKey pubKey = fx67llSecretKeyService.selectFx67llSecretKeyBySecretKeyForApp("ocrPubKey");
+        Fx67llSecretKey secKey = fx67llSecretKeyService.selectFx67llSecretKeyBySecretKeyForApp("ocrSecKey");
+        if (pubKey == null || secKey == null) {
+            return AjaxResult.error("百度 OCR 凭据未配置");
+        }
+        // 第一步：调百度鉴权拿 access_token
+        String authParam = "grant_type=client_credentials"
+                + "&client_id=" + pubKey.getSecretValue()
+                + "&client_secret=" + secKey.getSecretValue();
+        String authResult = HttpUtils.sendSSLPost(BAIDU_OCR_AUTH_URL, authParam);
+        if (StringUtils.isEmpty(authResult)) {
+            return AjaxResult.error("百度 OCR 鉴权失败，第三方接口无响应");
+        }
+        JSONObject authJson = JSON.parseObject(authResult);
+        String accessToken = authJson.getString("access_token");
+        if (StringUtils.isEmpty(accessToken)) {
+            return AjaxResult.error("百度 OCR 鉴权失败，未获取到 access_token");
+        }
+        // 第二步：调百度 OCR 识别
+        String ocrParam = "url=" + imageUrl;
+        String ocrResult = HttpUtils.sendSSLPost(BAIDU_OCR_URL + "?access_token=" + accessToken, ocrParam);
+        if (StringUtils.isEmpty(ocrResult)) {
+            return AjaxResult.error("百度 OCR 识别失败，第三方接口无响应");
+        }
+        JSONObject ocrJson = JSON.parseObject(ocrResult);
+        AjaxResult ajax = AjaxResult.success();
+        ajax.put("ocr", ocrJson);
+        return ajax;
+    }
 
     // ==================== 公共处理方法开始 ====================
 
