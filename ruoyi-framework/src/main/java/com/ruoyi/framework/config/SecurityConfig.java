@@ -109,8 +109,8 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
                 .authorizeRequests()
                 // 对于登录login 注册register 验证码captchaImage 允许匿名访问
                 .antMatchers("/login", "/register", "/captchaImage", "/registerChaoshen").permitAll()
-                // 随机生成马赛克头像，可匿名访问
-                .antMatchers("/getRandomAvatar").permitAll()
+                // 随机生成马赛克头像，可匿名访问（随机图无敏感信息，登录页装饰用）
+                .antMatchers("/getRandomAvatar", "/getRandomAvatarByBase64").permitAll()
                 // 随机返回图片，可匿名访问
 //                .antMatchers("/getRandomImage").hasIpAddress("0:0:0:0:0:0:0:1")
 //                .antMatchers("/getRandomImage").hasIpAddress("124.71.201.142")
@@ -118,6 +118,10 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
                 .antMatchers("/getRandomImage", "/getRandomImageBetter").permitAll()
                 // 获取配置密钥，可匿名访问
                 .antMatchers("/secret/key/getSecretKeyConfigForApp").permitAll()
+                // APP 一键登录接口，匿名访问（令牌安全靠频率限制+一次性+短时效+失败锁定）
+                .antMatchers("/auth/app/loginToken", "/auth/app/oneClickLogin").permitAll()
+                // 小程序端检查登录资格（查白名单，只返回布尔，不暴露 openid）
+                .antMatchers("/auth/app/checkLoginEligibility").permitAll()
                 // 静态资源，可匿名访问
                 .antMatchers(HttpMethod.GET, "/", "/*.html", "/**/*.html", "/**/*.css", "/**/*.js", "/profile/**").permitAll()
                 .antMatchers("/swagger-ui.html", "/swagger-resources/**", "/webjars/**", "/*/api-docs", "/druid/**").permitAll()
