@@ -7,7 +7,8 @@ fx67ll One Data Center Server
 * `第三方调用改后端代理（附录A落地）`，凭据泄露面归零
 * 新增`中奖信息查询代理接口`（后端调 mxnzp，凭据不下发前端）
 * 新增`百度OCR识别代理接口`（后端调百度OCR，凭据不下发前端）
-* 删除废弃的`第三方凭据下发接口`（credentialForApp/decryptForApp）
+* 删除废弃的`第三方凭据下发接口`（credentialForApp/decryptForApp）  
+* `稳定运行时长`采集改为总小时数（JVM uptime，至少1小时）  
 
 ## 0.10.10.20260714
 * `秘钥加解密安全整改`阶段五·收尾加固
