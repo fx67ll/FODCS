@@ -133,9 +133,6 @@ public class PublicStatusController extends BaseController {
         data.put("onlineServiceCount", onlineCount);
         data.put("totalServiceCount", (long) serviceStatus.size());
 
-        // 稳定运行天数（只到天，不暴露精确启动时间）
-        data.put("uptimeDays", collectUptimeDays());
-
         // 累计拦截攻击次数（仅计数，不给任何 IP）
         data.put("totalBlockedAttempts", collectTotalBlockedAttempts());
 
@@ -160,8 +157,10 @@ public class PublicStatusController extends BaseController {
         data.put("load5", loadAvg[1]);
         data.put("load15", loadAvg[2]);
 
-        // ==================== JVM 运行时长（应用进程运行天数，与 osUptimeDays 区分） ====================
-        data.put("uptimeDays", collectUptimeDays());
+        // ==================== JVM 运行时长（应用进程运行总小时数，与 osUptimeDays 整机开机天数区分） ====================
+        // 用最小单位"小时"而非"天"：刚部署完也能如实反映"本次启动运行了多久"，不会因不足1天被兜底成1天。
+        // 前端按 ≥24 小时换算为天展示，<24 小时直接显示小时。
+        data.put("uptimeHours", collectUptimeHours());
 
         // 缓存刷新时间（前端"更新于 Xmin 前"展示用）
         data.put("lastUpdateTime", System.currentTimeMillis());
@@ -242,14 +241,16 @@ public class PublicStatusController extends BaseController {
     }
 
     /**
-     * 采集稳定运行天数（JVM 运行时长换算，至少 1 天）
+     * 采集应用进程运行总小时数（JVM uptime 换算，至少 1 小时）
+     * 用小时而非天：刚部署完也能如实反映"本次启动运行了多久"，不足1天不会被兜底成1天。
+     * 前端按 ≥24 小时换算为天展示，<24 小时直接显示小时。
      */
-    private long collectUptimeDays() {
+    private long collectUptimeHours() {
         try {
             long uptimeMs = ManagementFactory.getRuntimeMXBean().getUptime();
-            return Math.max(1L, (uptimeMs / (24L * 60 * 60 * 1000)));
+            return Math.max(1L, (uptimeMs / (60L * 60 * 1000)));
         } catch (Exception e) {
-            log.debug(LOG_PREFIX + "采集运行天数失败：{}", e.getMessage());
+            log.debug(LOG_PREFIX + "采集运行小时数失败：{}", e.getMessage());
             return 1L;
         }
     }
