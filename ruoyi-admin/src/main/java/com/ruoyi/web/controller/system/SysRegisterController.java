@@ -8,6 +8,8 @@ import com.ruoyi.common.core.controller.BaseController;
 import com.ruoyi.common.core.domain.AjaxResult;
 import com.ruoyi.common.core.domain.model.RegisterBody;
 import com.ruoyi.common.utils.StringUtils;
+import com.ruoyi.common.annotation.RateLimiter;
+import com.ruoyi.common.enums.LimitType;
 import com.ruoyi.framework.web.service.SysRegisterService;
 import com.ruoyi.system.service.ISysConfigService;
 
@@ -27,6 +29,7 @@ public class SysRegisterController extends BaseController {
     /**
      * 用户注册
      */
+    @RateLimiter(time = 60, count = 5, limitType = LimitType.IP)
     @PostMapping("/register")
     public AjaxResult register(@RequestBody RegisterBody user) {
         if (!("true".equals(configService.selectConfigByKey("sys.account.registerUser")))) {
@@ -39,6 +42,7 @@ public class SysRegisterController extends BaseController {
     /**
      * 超神用户专属注册接口
      */
+    @RateLimiter(time = 60, count = 5, limitType = LimitType.IP)
     @PostMapping("/registerChaoshen")
     public AjaxResult registerChaoshen(@RequestBody RegisterBody user) {
         // 校验超神用户注册开关是否开启

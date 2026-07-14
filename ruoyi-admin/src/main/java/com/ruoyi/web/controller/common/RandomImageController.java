@@ -13,11 +13,15 @@ import java.io.FileInputStream;
 import java.io.IOException;
 import java.util.Random;
 
+import com.ruoyi.common.annotation.RateLimiter;
+import com.ruoyi.common.enums.LimitType;
+
 @RestController
 public class RandomImageController {
 
     private static final String IMAGE_DIRECTORY_PATH = "/home/ruoyi/randomImages";
 
+    @RateLimiter(time = 60, count = 20, limitType = LimitType.IP)
     @GetMapping(value = "/getRandomImage", produces = MediaType.IMAGE_JPEG_VALUE)
     public ResponseEntity<byte[]> getRandomImage(HttpServletRequest request) {
 

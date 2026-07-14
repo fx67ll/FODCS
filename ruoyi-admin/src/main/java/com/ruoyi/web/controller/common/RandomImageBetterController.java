@@ -13,6 +13,9 @@ import java.io.File;
 import java.util.Random;
 import java.util.concurrent.ConcurrentHashMap;
 
+import com.ruoyi.common.annotation.RateLimiter;
+import com.ruoyi.common.enums.LimitType;
+
 // 主要改进点：
 // 使用ConcurrentHashMap进行缓存：缓存文件数组，减少对文件系统的访问。
 // 使用Resource：改用更加抽象的Resource来处理文件，这样可以更方便地处理文件和其他类型的资源。
@@ -27,6 +30,7 @@ public class RandomImageBetterController {
     private static final String IMAGE_DIRECTORY_PATH = "/home/ruoyi/randomImages";
     private static final ConcurrentHashMap<String, File[]> imageCache = new ConcurrentHashMap<>();
 
+    @RateLimiter(time = 60, count = 20, limitType = LimitType.IP)
     @GetMapping(value = "/getRandomImageBetter", produces = MediaType.IMAGE_JPEG_VALUE)
     public ResponseEntity<Resource> getRandomImageBetter(HttpServletRequest request) {
         String imgUrlSuffix = request.getParameter("imgUrlSuffix");

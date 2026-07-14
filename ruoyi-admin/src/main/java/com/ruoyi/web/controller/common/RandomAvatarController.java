@@ -1,6 +1,8 @@
 package com.ruoyi.web.controller.common;
 
 import com.ruoyi.common.core.domain.AjaxResult;
+import com.ruoyi.common.annotation.RateLimiter;
+import com.ruoyi.common.enums.LimitType;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -79,6 +81,7 @@ public class RandomAvatarController {
     /**
      * 直接返回随机马赛克图片流
      */
+    @RateLimiter(time = 60, count = 20, limitType = LimitType.IP)
     @GetMapping("/getRandomAvatar")
     public void getAvatar(HttpServletRequest request, HttpServletResponse response) throws IOException {
 
@@ -98,8 +101,7 @@ public class RandomAvatarController {
         response.setContentType("image/png");
 
         // 得到图片缓冲区
-        BufferedImage bi = new BufferedImage
-                (avatarWidth, avatarHeight, BufferedImage.TYPE_INT_RGB);
+        BufferedImage bi = new BufferedImage(avatarWidth, avatarHeight, BufferedImage.TYPE_INT_RGB);
 
         // 得到它的绘制环境(这张图片的笔)
         Graphics2D g2 = (Graphics2D) bi.getGraphics();
@@ -158,6 +160,7 @@ public class RandomAvatarController {
     /**
      * 返回随机马赛克图片的Base64
      */
+    @RateLimiter(time = 60, count = 20, limitType = LimitType.IP)
     @GetMapping("/getRandomAvatarByBase64")
     public AjaxResult getAvatarBase64(HttpServletRequest request, HttpServletResponse response) throws Exception {
 
@@ -186,8 +189,7 @@ public class RandomAvatarController {
         response.setContentType("image/png");
 
         // 得到图片缓冲区
-        BufferedImage bi = new BufferedImage
-                (avatarWidth, avatarHeight, BufferedImage.TYPE_INT_RGB);
+        BufferedImage bi = new BufferedImage(avatarWidth, avatarHeight, BufferedImage.TYPE_INT_RGB);
 
         // 得到它的绘制环境(这张图片的笔)
         Graphics2D g2 = (Graphics2D) bi.getGraphics();
@@ -228,6 +230,7 @@ public class RandomAvatarController {
     /**
      * 生成随机马赛克图片，保存后返回图片地址信息（暂时不做）
      */
+    @RateLimiter(time = 60, count = 20, limitType = LimitType.IP)
     @GetMapping("/getRandomAvatarUrl")
     public AjaxResult getAvatarUrl(HttpServletRequest request) throws Exception {
 
@@ -253,8 +256,7 @@ public class RandomAvatarController {
         }
 
         // 得到图片缓冲区
-        BufferedImage bi = new BufferedImage
-                (avatarWidth, avatarHeight, BufferedImage.TYPE_INT_RGB);
+        BufferedImage bi = new BufferedImage(avatarWidth, avatarHeight, BufferedImage.TYPE_INT_RGB);
 
         Graphics2D g2 = (Graphics2D) bi.getGraphics();
 
@@ -423,9 +425,7 @@ public class RandomAvatarController {
 
         // 遍历points
         for (Point point : pointList) {
-            g2.fillRect(imgPadding + point.x * rowBlockLength,
-                    imgPadding + point.y * colBlockLength,
-                    rowBlockLength, colBlockLength);
+            g2.fillRect(imgPadding + point.x * rowBlockLength, imgPadding + point.y * colBlockLength, rowBlockLength, colBlockLength);
         }
     }
 

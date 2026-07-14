@@ -19,6 +19,8 @@ import com.ruoyi.common.core.domain.AjaxResult;
 import com.ruoyi.common.core.redis.RedisCache;
 import com.ruoyi.common.utils.sign.Base64;
 import com.ruoyi.common.utils.uuid.IdUtils;
+import com.ruoyi.common.annotation.RateLimiter;
+import com.ruoyi.common.enums.LimitType;
 import com.ruoyi.system.service.ISysConfigService;
 
 /**
@@ -43,6 +45,7 @@ public class CaptchaController {
     /**
      * 生成验证码
      */
+    @RateLimiter(time = 60, count = 30, limitType = LimitType.IP)
     @GetMapping("/captchaImage")
     public AjaxResult getCode(HttpServletResponse response) throws IOException {
         AjaxResult ajax = AjaxResult.success();
