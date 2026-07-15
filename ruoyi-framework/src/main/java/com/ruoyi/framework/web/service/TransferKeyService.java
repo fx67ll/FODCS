@@ -25,7 +25,7 @@ public class TransferKeyService
     /** Redis key 前缀：传输密钥（按用户 ID 关联） */
     private static final String TRANSFER_KEY_PREFIX = "transfer:key:user:";
 
-    /** transferKey 有效期（分钟），短时效 */
+    /** transferKey 有效期（分钟），5 分钟 */
     private static final long EXPIRE_MINUTES = 5;
 
     @Autowired

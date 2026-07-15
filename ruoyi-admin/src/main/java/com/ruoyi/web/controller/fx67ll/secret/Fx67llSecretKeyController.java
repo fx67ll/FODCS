@@ -17,6 +17,7 @@ import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import com.ruoyi.common.annotation.Log;
 import com.ruoyi.common.core.controller.BaseController;
@@ -42,7 +43,7 @@ public class Fx67llSecretKeyController extends BaseController {
     /**
      * 非敏感键白名单：功能开关等，匿名可返回明文
      */
-    private static final Set<String> NON_SENSITIVE_KEYS = new HashSet<>(Arrays.asList("isNeedWaiKuai"));
+    private static final Set<String> NON_SENSITIVE_KEYS = new HashSet<>(Arrays.asList("isNeedWaiKuai", "isNeedPunchIn"));
 
     @Autowired
     private IFx67llSecretKeyService fx67llSecretKeyService;
@@ -52,7 +53,7 @@ public class Fx67llSecretKeyController extends BaseController {
 
     /**
      * 查询秘钥配置列表
-     *
+     * <p>
      * secret_value 直接返回数据库密文（不下发明文），防抓包批量泄露。
      * 明文仅在点击修改/查看时通过 transferKey 解密流程获取。
      * cryptoSaltKey 保留明文（吉祥物密钥，迁移期间可见）。
@@ -66,35 +67,54 @@ public class Fx67llSecretKeyController extends BaseController {
     }
 
     /**
-     * 提供给 APP 查询秘钥配置（鉴权分级，v2.7 + v3.4 收紧）
+     * 提供给 APP 查询秘钥配置（支持批量查询，当前收紧：仅白名单非敏感键返回明文）
      *
-     * 按 secretKey 粒度分级，精确匹配（不再 LIKE 模糊匹配）：
-     * - 非敏感键（isNeedWaiKuai 等功能开关）：匿名返回明文
-     * - 其余敏感键（含 loginName/loginPassword、OCR AK/SK、第三方 AppId/AppSecret 等）：要求登录态才返回，匿名返回空
+     * 支持两种调用方式：
+     * - 单个：GET /getSecretKeyConfigForApp?secretKey=isNeedWaiKuai
+     * - 批量：GET /getSecretKeyConfigForApp?secretKeys=isNeedWaiKuai&secretKeys=isNeedPunchIn
      *
+     * 当前收紧策略（v4.0）：只有白名单内的键（isNeedWaiKuai 等功能开关）返回明文，
+     * 其他键一律不返回（不管是否登录）。后续如需放开敏感键给登录态，恢复原有分级逻辑即可。
      * cryptoSaltKey 一律不返回（吉祥物密钥不下发）。
-     *
-     * v3.4 收紧：loginName/loginPassword 从"登录前置键匿名返回"降为"敏感键要求登录态"。
-     * 阶段三 FODCA 登录页改一键登录后，loginName/loginPassword 匿名通道已无调用方，收紧不影响功能。
      */
     @GetMapping("/getSecretKeyConfigForApp")
-    public TableDataInfo getSecretKeyConfigForApp(Fx67llSecretKey fx67llSecretKey) {
-        String secretKey = fx67llSecretKey.getSecretKey();
-        // 无 secretKey 或为 cryptoSaltKey：返回空
-        if (secretKey == null || secretKey.isEmpty() || "cryptoSaltKey".equals(secretKey)) {
+    public TableDataInfo getSecretKeyConfigForApp(
+            @RequestParam(value = "secretKey", required = false) String secretKey,
+            @RequestParam(value = "secretKeys", required = false) String[] secretKeys) {
+        // 合并单个和批量参数
+        List<String> keys = new ArrayList<>();
+        if (secretKeys != null && secretKeys.length > 0) {
+            keys.addAll(Arrays.asList(secretKeys));
+        }
+        if (secretKey != null && !secretKey.isEmpty()) {
+            keys.add(secretKey);
+        }
+        if (keys.isEmpty()) {
             return getDataTable(new ArrayList<>());
         }
-        // 非敏感键：匿名可取
-        if (NON_SENSITIVE_KEYS.contains(secretKey)) {
-            Fx67llSecretKey record = fx67llSecretKeyService.selectFx67llSecretKeyBySecretKeyForApp(secretKey);
-            return getDataTable(record == null ? new ArrayList<>() : Collections.singletonList(record));
+        // 遍历查询，按分级逻辑处理
+        List<Fx67llSecretKey> result = new ArrayList<>();
+        for (String key : keys) {
+            if (key == null || key.isEmpty() || "cryptoSaltKey".equals(key)) {
+                continue;
+            }
+            // 非敏感键（白名单内）：返回明文
+            if (NON_SENSITIVE_KEYS.contains(key)) {
+                Fx67llSecretKey record = fx67llSecretKeyService.selectFx67llSecretKeyBySecretKeyForApp(key);
+                if (record != null) {
+                    result.add(record);
+                }
+                continue;
+            }
+            // 敏感键：当前收紧为不返回（后续如需放开，恢复下面注释的逻辑即可）
+            // if (isLoggedIn()) {
+            //     Fx67llSecretKey record = fx67llSecretKeyService.selectFx67llSecretKeyBySecretKeyForApp(key);
+            //     if (record != null) {
+            //         result.add(record);
+            //     }
+            // }
         }
-        // 其余敏感键：要求登录态，匿名返回空
-        if (!isLoggedIn()) {
-            return getDataTable(new ArrayList<>());
-        }
-        Fx67llSecretKey record = fx67llSecretKeyService.selectFx67llSecretKeyBySecretKeyForApp(secretKey);
-        return getDataTable(record == null ? new ArrayList<>() : Collections.singletonList(record));
+        return getDataTable(result);
     }
 
     /**
@@ -128,7 +148,7 @@ public class Fx67llSecretKeyController extends BaseController {
 
     /**
      * 签发传输密钥 transferKey（阶段四·4.17，按需签发短时效 5 分钟）
-     *
+     * <p>
      * 管理端秘钥查看/修改前调用，拿到 transferKey 后用于传输加解密。
      * transferKey 仅用于传输（AES-CBC），与数据库加密密钥 dbEncKey（AES-GCM）算法隔离。
      */
@@ -143,7 +163,7 @@ public class Fx67llSecretKeyController extends BaseController {
 
     /**
      * 获取秘钥配置详细信息（管理端，secret_value 用 transferKey 加密返回，不返回明文）
-     *
+     * <p>
      * 前端需先调 /transferKey 拿到 transferKey，再用其解密返回的 cipherValue。
      * cryptoSaltKey 不加密（盐值明文可见）。
      */
@@ -168,7 +188,7 @@ public class Fx67llSecretKeyController extends BaseController {
 
     /**
      * 新增秘钥配置（管理端，secret_value 为 transferKey 加密密文，后端解密后用 dbEncKey 加密入库）
-     *
+     * <p>
      * cryptoSaltKey 不加密（明文入库）。
      */
     @PreAuthorize("@ss.hasPermi('secret:key:add')")
@@ -185,7 +205,7 @@ public class Fx67llSecretKeyController extends BaseController {
 
     /**
      * 修改秘钥配置（管理端，secret_value 为 transferKey 加密密文，后端解密后用 dbEncKey 加密入库）
-     *
+     * <p>
      * cryptoSaltKey 不加密（明文入库）。
      */
     @PreAuthorize("@ss.hasPermi('secret:key:edit')")
