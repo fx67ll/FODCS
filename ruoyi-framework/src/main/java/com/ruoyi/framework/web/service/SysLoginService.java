@@ -20,6 +20,7 @@ import com.ruoyi.common.exception.user.CaptchaException;
 import com.ruoyi.common.exception.user.CaptchaExpireException;
 import com.ruoyi.common.exception.user.UserNotExistsException;
 import com.ruoyi.common.exception.user.UserPasswordNotMatchException;
+import com.ruoyi.common.enums.UserStatus;
 import com.ruoyi.common.utils.DateUtils;
 import com.ruoyi.common.utils.MessageUtils;
 import com.ruoyi.common.utils.StringUtils;
@@ -51,6 +52,9 @@ public class SysLoginService {
 
     @Autowired
     private ISysConfigService configService;
+
+    @Autowired
+    private SysPermissionService permissionService;
 
     /**
      * 登录验证
@@ -123,6 +127,45 @@ public class SysLoginService {
         }
         AsyncManager.me().execute(AsyncFactory.recordLogininfor(username, Constants.LOGIN_SUCCESS, MessageUtils.message("user.login.success")));
         LoginUser loginUser = (LoginUser) authentication.getPrincipal();
+        recordLoginInfo(loginUser.getUserId());
+        return tokenService.createToken(loginUser);
+    }
+
+    /**
+     * 免密登录（一键登录专用，阶段二·4.4 改造）
+     *
+     * 小程序一键登录在 loginToken 阶段已通过 openid 白名单校验，身份由微信背书、不可伪造，
+     * 故 oneClickLogin 阶段不再持有也不校验密码——直接按用户名查出用户、签发 token。
+     *
+     * 这样 yml 不再存储账号密码，管理员改密码无需同步配置；同时避开了 authenticationManager
+     * 与 passwordService.validate 的密码校验及失败计数（避免一键登录被误记为密码错误）。
+     *
+     * 仅校验账号存在性 / 删除 / 停用状态，复用 SysPermissionService 取权限。
+     * 登录审计照常记录（成功记 LOGIN_SUCCESS）。
+     *
+     * @param username 目标登录用户名（由服务端配置决定，非前端传入）
+     * @return JWT
+     */
+    public String loginWithoutPassword(String username) {
+        if (StringUtils.isEmpty(username)) {
+            AsyncManager.me().execute(AsyncFactory.recordLogininfor(username, Constants.LOGIN_FAIL, MessageUtils.message("not.null")));
+            throw new UserNotExistsException();
+        }
+        SysUser user = userService.selectUserByUserName(username);
+        if (StringUtils.isNull(user)) {
+            AsyncManager.me().execute(AsyncFactory.recordLogininfor(username, Constants.LOGIN_FAIL, MessageUtils.message("user.not.exists")));
+            throw new ServiceException("登录用户：" + username + " 不存在");
+        }
+        else if (UserStatus.DELETED.getCode().equals(user.getDelFlag())) {
+            AsyncManager.me().execute(AsyncFactory.recordLogininfor(username, Constants.LOGIN_FAIL, "账号已删除"));
+            throw new ServiceException("对不起，您的账号：" + username + " 已被删除");
+        }
+        else if (UserStatus.DISABLE.getCode().equals(user.getStatus())) {
+            AsyncManager.me().execute(AsyncFactory.recordLogininfor(username, Constants.LOGIN_FAIL, "账号已停用"));
+            throw new ServiceException("对不起，您的账号：" + username + " 已停用");
+        }
+        AsyncManager.me().execute(AsyncFactory.recordLogininfor(username, Constants.LOGIN_SUCCESS, MessageUtils.message("user.login.success")));
+        LoginUser loginUser = new LoginUser(user.getUserId(), user.getDeptId(), user, permissionService.getMenuPermission(user));
         recordLoginInfo(loginUser.getUserId());
         return tokenService.createToken(loginUser);
     }

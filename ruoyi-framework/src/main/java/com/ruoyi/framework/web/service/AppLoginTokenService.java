@@ -15,8 +15,9 @@ import com.ruoyi.common.utils.uuid.IdUtils;
  * - 绑定设备指纹：签发时记录指纹，使用时校验匹配，防令牌被拿到别处用
  * - 强随机：32 字节（IdUtils.fastSimpleUUID），防爆破
  *
- * 令牌对应的账密信息（loginType + username + password）也存 Redis，使用时取出走登录，
- * 明文账密不经过前端。
+ * 令牌对应的登录信息（loginType + username）也存 Redis，使用时取出走免密登录。
+ * 一键登录在 loginToken 阶段已校验 openid 白名单，oneClickLogin 阶段不再持密码，
+ * 故令牌负载只存用户名、不存密码。
  *
  * @author fx67ll
  */
@@ -33,18 +34,17 @@ public class AppLoginTokenService
     private RedisCache redisCache;
 
     /**
-     * 签发一次性登录令牌，绑定设备指纹与账密信息
+     * 签发一次性登录令牌，绑定设备指纹与登录用户名
      *
      * @param loginType  登录类型（main / guest）
-     * @param username   账密-用户名（服务端持有，不下发前端）
-     * @param password   账密-密码（服务端持有，不下发前端）
+     * @param username   目标登录用户名（服务端持有，不下发前端）
      * @param fingerprint 设备指纹
      * @return 一次性登录令牌
      */
-    public String issueToken(String loginType, String username, String password, String fingerprint)
+    public String issueToken(String loginType, String username, String fingerprint)
     {
         String token = IdUtils.fastSimpleUUID();
-        TokenPayload payload = new TokenPayload(loginType, username, password, fingerprint);
+        TokenPayload payload = new TokenPayload(loginType, username, fingerprint);
         redisCache.setCacheObject(TOKEN_KEY_PREFIX + token, payload,
                 (int) TOKEN_EXPIRE_SECONDS, TimeUnit.SECONDS);
         return token;
@@ -55,7 +55,7 @@ public class AppLoginTokenService
      *
      * @param token       登录令牌
      * @param fingerprint 设备指纹（须与签发时一致）
-     * @return 令牌负载（含账密），令牌不存在或指纹不匹配返回 null
+     * @return 令牌负载（含登录用户名），令牌不存在或指纹不匹配返回 null
      */
     public TokenPayload consumeToken(String token, String fingerprint)
     {
@@ -80,7 +80,7 @@ public class AppLoginTokenService
     }
 
     /**
-     * 令牌负载：登录类型 + 账密 + 设备指纹
+     * 令牌负载：登录类型 + 用户名 + 设备指纹
      *
      * 注意：需无参构造 + setter，供 fastjson2 反序列化（Redis 存取）。
      */
@@ -90,8 +90,6 @@ public class AppLoginTokenService
         private String loginType;
         /** 用户名（服务端持有） */
         private String username;
-        /** 密码（服务端持有） */
-        private String password;
         /** 设备指纹 */
         private String fingerprint;
 
@@ -99,11 +97,10 @@ public class AppLoginTokenService
         {
         }
 
-        public TokenPayload(String loginType, String username, String password, String fingerprint)
+        public TokenPayload(String loginType, String username, String fingerprint)
         {
             this.loginType = loginType;
             this.username = username;
-            this.password = password;
             this.fingerprint = fingerprint;
         }
 
@@ -125,16 +122,6 @@ public class AppLoginTokenService
         public void setUsername(String username)
         {
             this.username = username;
-        }
-
-        public String getPassword()
-        {
-            return password;
-        }
-
-        public void setPassword(String password)
-        {
-            this.password = password;
         }
 
         public String getFingerprint()

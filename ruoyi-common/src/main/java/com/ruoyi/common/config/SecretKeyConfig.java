@@ -164,11 +164,8 @@ public class SecretKeyConfig
             /** 主账号微信 openid 白名单（数组，换微信号时可临时并存） */
             private List<String> openids = new ArrayList<>();
 
-            /** 主账号登录用户名（服务端持有，不下发前端） */
+            /** 主账号登录用户名（服务端持有，不下发前端；一键登录免密签发，不存密码） */
             private String username;
-
-            /** 主账号登录密码（服务端持有，不下发前端） */
-            private String password;
 
             public List<String> getOpenids()
             {
@@ -189,26 +186,13 @@ public class SecretKeyConfig
             {
                 this.username = username;
             }
-
-            public String getPassword()
-            {
-                return password;
-            }
-
-            public void setPassword(String password)
-            {
-                this.password = password;
-            }
         }
 
-        /** 游客账号配置（服务端持有，不下发前端） */
+        /** 游客账号配置（服务端持有，免密签发不存密码） */
         public static class Guest
         {
             /** 游客登录用户名 */
             private String username = "user";
-
-            /** 游客登录密码 */
-            private String password = "123456";
 
             public String getUsername()
             {
@@ -218,16 +202,6 @@ public class SecretKeyConfig
             public void setUsername(String username)
             {
                 this.username = username;
-            }
-
-            public String getPassword()
-            {
-                return password;
-            }
-
-            public void setPassword(String password)
-            {
-                this.password = password;
             }
         }
     }

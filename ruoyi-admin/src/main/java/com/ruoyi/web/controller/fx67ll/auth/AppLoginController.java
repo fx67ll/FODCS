@@ -22,13 +22,15 @@ import com.ruoyi.framework.web.service.AppLoginTokenService.TokenPayload;
 /**
  * APP 一键登录接口（阶段二·4.4）
  *
- * 账密服务端派发，明文账密不离开服务端，前端不接触任何密文：
+ * 免密签发，服务端不持有也不校验密码，前端不接触任何账密：
  * - POST /auth/app/loginToken：派发一次性登录令牌
  *   - loginType=main（仅小程序）：传 wxCode，后端换 openid 校验白名单通过才派发
  *   - loginType=guest：传设备指纹，不绑 openid
  * - POST /auth/app/oneClickLogin：令牌 + 指纹换 JWT，令牌一次性用后即删
  *
  * 安全：匿名 + 频率限制 + 失败锁定（Redis 计数 + TTL），无验证码。
+ * 身份由 openid 白名单背书（微信不可伪造），oneClickLogin 按用户名免密签发，
+ * 管理员改密码无需同步任何配置。
  *
  * @author fx67ll
  */
@@ -73,7 +75,7 @@ public class AppLoginController
      * 派发一次性登录令牌（匿名 + 频率限制 + 失败锁定）
      *
      * @param body 登录令牌请求（loginType + wxCode/fingerprint）
-     * @return 令牌（不含账密明文/密文）
+     * @return 令牌（不含账密明文）
      */
     @PostMapping("/loginToken")
     @Log(title = "APP一键登录令牌签发", businessType = BusinessType.OTHER)
@@ -104,7 +106,6 @@ public class AppLoginController
         }
 
         String username;
-        String password;
         if (LOGIN_TYPE_MAIN.equals(loginType))
         {
             // 主账号：用 wxCode 换 openid，校验白名单
@@ -119,9 +120,9 @@ public class AppLoginController
                 recordFail(failLockKey);
                 return AjaxResult.error("该微信账号未授权登录主账号");
             }
-            // 主账号账密从 yml 读取（member.main.username/password，服务端持有，前端不接触）
+            // 主账号登录用户名从 yml 读取（member.main.username，服务端持有，前端不接触）
+            // 一键登录免密签发：openid 白名单已校验，oneClickLogin 阶段不校验密码，故不取密码
             username = wechatLoginUtils.getMainUsername();
-            password = wechatLoginUtils.getMainPassword();
             if (StringUtils.isEmpty(username) || username.startsWith("待填写"))
             {
                 return AjaxResult.error("主账号未配置，请联系管理员");
@@ -130,15 +131,14 @@ public class AppLoginController
         else if (LOGIN_TYPE_GUEST.equals(loginType))
         {
             username = wechatLoginUtils.getGuestUsername();
-            password = wechatLoginUtils.getGuestPassword();
         }
         else
         {
             return AjaxResult.error("不支持的登录类型");
         }
 
-        // 签发一次性令牌，绑定设备指纹与账密
-        String token = appLoginTokenService.issueToken(loginType, username, password, fingerprint);
+        // 签发一次性令牌，绑定设备指纹与登录用户名（不含密码）
+        String token = appLoginTokenService.issueToken(loginType, username, fingerprint);
         AjaxResult ajax = AjaxResult.success();
         ajax.put("loginToken", token);
         return ajax;
@@ -180,8 +180,8 @@ public class AppLoginController
 
         try
         {
-            // 走若依登录逻辑（无验证码），返回 JWT
-            String jwt = sysLoginService.loginWithoutCaptcha(payload.getUsername(), payload.getPassword());
+            // 免密登录：loginToken 阶段已校验 openid 白名单，这里按用户名直接签发 JWT，不校验密码
+            String jwt = sysLoginService.loginWithoutPassword(payload.getUsername());
             // 登录成功，清除失败计数
             redisCache.deleteObject(failLockKey);
             AjaxResult ajax = AjaxResult.success();

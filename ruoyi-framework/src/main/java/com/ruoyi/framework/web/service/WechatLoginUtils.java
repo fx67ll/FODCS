@@ -17,8 +17,10 @@ import com.ruoyi.common.config.SecretKeyConfig;
  *
  * openid 由微信服务器背书、不可伪造，用于主账号一键登录的身份校验。
  *
- * 主账号账密从 yml 读取（member.main.username/password，服务端持有，前端不接触），
- * 游客账密也从 yml 读取（member.guest.username/password）。
+ * 一键登录免密签发：loginToken 阶段校验 openid 白名单通过即派发令牌，
+ * oneClickLogin 阶段按用户名查用户直接签发 JWT，不再校验密码。
+ * 故 yml 仅存登录用户名（member.main.username / member.guest.username），
+ * 不再存储任何密码，管理员改密码无需同步配置。
  *
  * @author fx67ll
  */
@@ -104,26 +106,10 @@ public class WechatLoginUtils
     }
 
     /**
-     * 获取主账号登录密码（从 yml member.main.password 读取，服务端持有）
-     */
-    public String getMainPassword()
-    {
-        return secretKeyConfig.getMember().getMain().getPassword();
-    }
-
-    /**
      * 获取游客登录用户名（服务端持有，不下发前端）
      */
     public String getGuestUsername()
     {
         return secretKeyConfig.getMember().getGuest().getUsername();
-    }
-
-    /**
-     * 获取游客登录密码（服务端持有，不下发前端）
-     */
-    public String getGuestPassword()
-    {
-        return secretKeyConfig.getMember().getGuest().getPassword();
     }
 }
