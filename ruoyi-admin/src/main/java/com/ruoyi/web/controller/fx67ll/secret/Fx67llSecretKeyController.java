@@ -5,6 +5,7 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import javax.servlet.http.HttpServletResponse;
 
@@ -67,27 +68,29 @@ public class Fx67llSecretKeyController extends BaseController {
     }
 
     /**
-     * 提供给 APP 查询秘钥配置（支持批量查询，当前收紧：仅白名单非敏感键返回明文）
+     * 提供给 APP 查询秘钥配置（POST 批量查询，当前收紧：仅白名单非敏感键返回明文）
      *
-     * 支持两种调用方式：
-     * - 单个：GET /getSecretKeyConfigForApp?secretKey=isNeedWaiKuai
-     * - 批量：GET /getSecretKeyConfigForApp?secretKeys=isNeedWaiKuai&secretKeys=isNeedPunchIn
+     * 请求体：{ "secretKeys": ["isNeedWaiKuai", "isNeedPunchIn"] }
      *
      * 当前收紧策略（v4.0）：只有白名单内的键（isNeedWaiKuai 等功能开关）返回明文，
      * 其他键一律不返回（不管是否登录）。后续如需放开敏感键给登录态，恢复原有分级逻辑即可。
      * cryptoSaltKey 一律不返回（吉祥物密钥不下发）。
      */
-    @GetMapping("/getSecretKeyConfigForApp")
-    public TableDataInfo getSecretKeyConfigForApp(
-            @RequestParam(value = "secretKey", required = false) String secretKey,
-            @RequestParam(value = "secretKeys", required = false) String[] secretKeys) {
-        // 合并单个和批量参数
+    @PostMapping("/getSecretKeyConfigForApp")
+    public TableDataInfo getSecretKeyConfigForApp(@RequestBody Map<String, Object> body) {
         List<String> keys = new ArrayList<>();
-        if (secretKeys != null && secretKeys.length > 0) {
-            keys.addAll(Arrays.asList(secretKeys));
+        Object secretKeys = body.get("secretKeys");
+        if (secretKeys instanceof List) {
+            for (Object item : (List<?>) secretKeys) {
+                if (item != null && !item.toString().isEmpty()) {
+                    keys.add(item.toString());
+                }
+            }
         }
-        if (secretKey != null && !secretKey.isEmpty()) {
-            keys.add(secretKey);
+        // 兼容单个 secretKey 参数
+        Object secretKey = body.get("secretKey");
+        if (secretKey != null && !secretKey.toString().isEmpty()) {
+            keys.add(secretKey.toString());
         }
         if (keys.isEmpty()) {
             return getDataTable(new ArrayList<>());
