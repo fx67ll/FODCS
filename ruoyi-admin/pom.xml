@@ -70,6 +70,15 @@
     </dependencies>
 
     <build>
+        <!-- 安全兜底：禁止任何 chaoshen-* 配置文件进入默认构建的产物，避免第二套环境的密钥泄露 -->
+        <resources>
+            <resource>
+                <directory>src/main/resources</directory>
+                <excludes>
+                    <exclude>chaoshen-*.yml</exclude>
+                </excludes>
+            </resource>
+        </resources>
         <plugins>
             <plugin>
                 <groupId>org.springframework.boot</groupId>
@@ -98,5 +107,42 @@
         </plugins>
         <finalName>${project.artifactId}</finalName>
     </build>
+
+    <profiles>
+        <!-- 潮生环境打包：mvn clean package -P chaoshen -> ruoyi-admin-chaoshen.jar -->
+        <profile>
+            <id>chaoshen</id>
+            <build>
+                <finalName>${project.artifactId}-chaoshen</finalName>
+                <plugins>
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-resources-plugin</artifactId>
+                        <version>3.1.0</version>
+                        <executions>
+                            <execution>
+                                <id>overlay-chaoshen-config</id>
+                                <!-- prepare-package：在默认资源拷贝之后、打jar之前，确保潮生配置覆盖默认配置 -->
+                                <phase>prepare-package</phase>
+                                <goals>
+                                    <goal>copy-resources</goal>
+                                </goals>
+                                <configuration>
+                                    <outputDirectory>${project.build.outputDirectory}</outputDirectory>
+                                    <overwrite>true</overwrite>
+                                    <resources>
+                                        <resource>
+                                            <directory>src/main/resources-chaoshen</directory>
+                                            <filtering>false</filtering>
+                                        </resource>
+                                    </resources>
+                                </configuration>
+                            </execution>
+                        </executions>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+    </profiles>
 
 </project>
