@@ -1,0 +1,120 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.ruoyi.fx67ll.dortmund.mapper.Fx67llDortmundExtraSimulateMapper">
+
+    <resultMap type="Fx67llDortmundExtraSimulate" id="Fx67llDortmundExtraSimulateResult">
+        <result property="simId" column="sim_id"/>
+        <result property="simMode" column="sim_mode"/>
+        <result property="roundNo" column="round_no"/>
+        <result property="startValue" column="start_value"/>
+        <result property="joinValue" column="join_value"/>
+        <result property="isHit" column="is_hit"/>
+        <result property="returnValue" column="return_value"/>
+        <result property="endValue" column="end_value"/>
+        <result property="roundChange" column="round_change"/>
+        <result property="coefficient" column="coefficient"/>
+        <result property="delFlag" column="del_flag"/>
+        <result property="userId" column="user_id"/>
+        <result property="createBy" column="create_by"/>
+        <result property="createTime" column="create_time"/>
+        <result property="updateBy" column="update_by"/>
+        <result property="updateTime" column="update_time"/>
+    </resultMap>
+
+    <sql id="selectFx67llDortmundExtraSimulateVo">
+        select sim_id,
+               sim_mode,
+               round_no,
+               start_value,
+               join_value,
+               is_hit,
+               return_value,
+               end_value,
+               round_change,
+               coefficient,
+               del_flag,
+               user_id,
+               create_by,
+               create_time,
+               update_by,
+               update_time
+        from fx67ll_dortmund_extra_simulate
+    </sql>
+
+    <select id="selectFx67llDortmundExtraSimulateList" parameterType="Fx67llDortmundExtraSimulate"
+            resultMap="Fx67llDortmundExtraSimulateResult">
+        <include refid="selectFx67llDortmundExtraSimulateVo"/>
+        <where>
+            <if test="simMode != null  and simMode != ''">and sim_mode = #{simMode}</if>
+            <if test="roundNo != null ">and round_no = #{roundNo}</if>
+            <if test="startValue != null  and startValue != ''">and start_value = #{startValue}</if>
+            <if test="joinValue != null  and joinValue != ''">and join_value = #{joinValue}</if>
+            <if test="isHit != null  and isHit != ''">and is_hit = #{isHit}</if>
+            <if test="returnValue != null  and returnValue != ''">and return_value = #{returnValue}</if>
+            <if test="endValue != null  and endValue != ''">and end_value = #{endValue}</if>
+            <if test="roundChange != null  and roundChange != ''">and round_change = #{roundChange}</if>
+            <if test="coefficient != null  and coefficient != ''">and coefficient = #{coefficient}</if>
+            <if test="delFlag != null  and delFlag != ''">and del_flag = #{delFlag}</if>
+            <if test="userId != null ">and user_id = #{userId}</if>
+            <if test="createBy != null  and createBy != ''">and create_by like concat('%',
+                #{createBy}, '%')
+            </if>
+            <if test="beginCreateTime != null and endCreateTime != ''">and create_time between #{beginCreateTime} and
+                #{endCreateTime}
+            </if>
+        </where>
+        order by sim_id desc
+    </select>
+
+    <select id="selectFx67llDortmundExtraSimulateBySimId" parameterType="Long" resultMap="Fx67llDortmundExtraSimulateResult">
+        <include refid="selectFx67llDortmundExtraSimulateVo"/>
+        where sim_id = #{simId}
+    </select>
+
+    <insert id="insertFx67llDortmundExtraSimulate" parameterType="Fx67llDortmundExtraSimulate" useGeneratedKeys="true"
+            keyProperty="simId">
+        insert into fx67ll_dortmund_extra_simulate
+        <trim prefix="(" suffix=")" suffixOverrides=",">
+            <if test="simMode != null and simMode != ''">sim_mode,</if>
+            <if test="roundNo != null">round_no,</if>
+            <if test="startValue != null and startValue != ''">start_value,</if>
+            <if test="joinValue != null and joinValue != ''">join_value,</if>
+            <if test="isHit != null and isHit != ''">is_hit,</if>
+            <if test="returnValue != null and returnValue != ''">return_value,</if>
+            <if test="endValue != null and endValue != ''">end_value,</if>
+            <if test="roundChange != null and roundChange != ''">round_change,</if>
+            <if test="coefficient != null and coefficient != ''">coefficient,</if>
+            <if test="delFlag != null">del_flag,</if>
+            <if test="userId != null">user_id,</if>
+            <if test="createBy != null">create_by,</if>
+            <if test="createTime != null">create_time,</if>
+            <if test="updateBy != null">update_by,</if>
+            <if test="updateTime != null">update_time,</if>
+        </trim>
+        <trim prefix="values (" suffix=")" suffixOverrides=",">
+            <if test="simMode != null and simMode != ''">#{simMode},</if>
+            <if test="roundNo != null">#{roundNo},</if>
+            <if test="startValue != null and startValue != ''">#{startValue},</if>
+            <if test="joinValue != null and joinValue != ''">#{joinValue},</if>
+            <if test="isHit != null and isHit != ''">#{isHit},</if>
+            <if test="returnValue != null and returnValue != ''">#{returnValue},</if>
+            <if test="endValue != null and endValue != ''">#{endValue},</if>
+            <if test="roundChange != null and roundChange != ''">#{roundChange},</if>
+            <if test="coefficient != null and coefficient != ''">#{coefficient},</if>
+            <if test="delFlag != null">#{delFlag},</if>
+            <if test="userId != null">#{userId},</if>
+            <if test="createBy != null">#{createBy},</if>
+            <if test="createTime != null">#{createTime},</if>
+            <if test="updateBy != null">#{updateBy},</if>
+            <if test="updateTime != null">#{updateTime},</if>
+        </trim>
+    </insert>
+
+    <delete id="deleteFx67llDortmundExtraSimulateBySimId" parameterType="Long">
+        delete
+        from fx67ll_dortmund_extra_simulate
+        where sim_id = #{simId}
+    </delete>
+</mapper>
