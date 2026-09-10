@@ -1084,6 +1084,30 @@ CREATE TABLE `fx67ll_dortmund_match_score` (
   FOREIGN KEY (`match_id`) REFERENCES `fx67ll_dortmund_match`(`match_id`) ON DELETE RESTRICT
 ) ENGINE=innodb DEFAULT CHARSET=utf8mb4 COMMENT='比赛标准化评分表';
 
+-- ----------------------------
+-- 20、外快盈亏数值模拟轮次记录表
+-- ----------------------------
+drop table if exists fx67ll_dortmund_extra_simulate;
+create table fx67ll_dortmund_extra_simulate (
+  sim_id            bigint(20)        not null auto_increment    comment '数值模拟轮次记录主键',
+  sim_mode          varchar(8)        default 'full'             comment '模拟模式（full全量滚动 half半量滚动）',
+  round_no          int(11)           default 1                  comment '轮次序号（连续序列内序号，新序列从1开始）',
+  start_value       varchar(23)       default '0'                comment '本轮开始数值',
+  join_value        varchar(23)       default '0'                comment '本轮参与滚动数值',
+  is_hit            char(1)           default 'N'                comment '本轮是否达成（Y是 N否）',
+  return_value      varchar(23)       default '0'                comment '本轮实际回收数值（不必然等于参与数值乘系数，支持部分回本）',
+  end_value         varchar(23)       default '0'                comment '本轮结束数值',
+  round_change      varchar(23)       default '0'                comment '本轮数值变动倍数',
+  coefficient       varchar(23)       default '0'                comment '本轮使用系数',
+  del_flag          char(1)           default '0'                comment '删除标志（0代表存在 2代表删除）',
+  user_id           bigint(20)                                   comment '用户ID',
+  create_by         varchar(64)       default ''                 comment '记录创建者用户名',
+  create_time 	    datetime                                     comment '记录创建时间',
+  update_by         varchar(64)       default ''                 comment '记录更新者',
+  update_time       datetime                                     comment '记录更新时间',
+  primary key (sim_id)
+) engine=innodb auto_increment=1 comment = '外快盈亏数值模拟轮次记录表';
+
 
 
 
