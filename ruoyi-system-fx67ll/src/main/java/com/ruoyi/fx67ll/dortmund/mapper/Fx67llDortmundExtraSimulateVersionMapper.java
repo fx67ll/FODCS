@@ -28,6 +28,14 @@ public interface Fx67llDortmundExtraSimulateVersionMapper {
     public Long selectMaxVersionNoByUserId(Long userId);
 
     /**
+     * 根据版本ID查询外快盈亏数值模拟版本记录
+     *
+     * @param versionId 版本ID
+     * @return 外快盈亏数值模拟版本记录
+     */
+    public Fx67llDortmundExtraSimulateVersion selectFx67llDortmundExtraSimulateVersionById(Long versionId);
+
+    /**
      * 新增外快盈亏数值模拟版本记录
      *
      * @param fx67llDortmundExtraSimulateVersion 外快盈亏数值模拟版本记录

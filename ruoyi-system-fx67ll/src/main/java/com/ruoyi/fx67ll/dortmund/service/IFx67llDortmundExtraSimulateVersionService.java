@@ -42,4 +42,12 @@ public interface IFx67llDortmundExtraSimulateVersionService {
      * @return 结果
      */
     public int updateFx67llDortmundExtraSimulateVersion(Fx67llDortmundExtraSimulateVersion fx67llDortmundExtraSimulateVersion);
+
+    /**
+     * 根据版本ID查询外快盈亏数值模拟版本记录
+     *
+     * @param versionId 版本ID
+     * @return 外快盈亏数值模拟版本记录
+     */
+    public Fx67llDortmundExtraSimulateVersion selectFx67llDortmundExtraSimulateVersionById(Long versionId);
 }

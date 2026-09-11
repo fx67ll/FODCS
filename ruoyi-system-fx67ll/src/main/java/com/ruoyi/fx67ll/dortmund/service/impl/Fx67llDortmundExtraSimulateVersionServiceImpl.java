@@ -72,4 +72,15 @@ public class Fx67llDortmundExtraSimulateVersionServiceImpl implements IFx67llDor
         fx67llDortmundExtraSimulateVersion.setUpdateTime(DateUtils.getNowDate());
         return fx67llDortmundExtraSimulateVersionMapper.updateFx67llDortmundExtraSimulateVersion(fx67llDortmundExtraSimulateVersion);
     }
+
+    /**
+     * 根据版本ID查询外快盈亏数值模拟版本记录
+     *
+     * @param versionId 版本ID
+     * @return 外快盈亏数值模拟版本记录
+     */
+    @Override
+    public Fx67llDortmundExtraSimulateVersion selectFx67llDortmundExtraSimulateVersionById(Long versionId) {
+        return fx67llDortmundExtraSimulateVersionMapper.selectFx67llDortmundExtraSimulateVersionById(versionId);
+    }
 }

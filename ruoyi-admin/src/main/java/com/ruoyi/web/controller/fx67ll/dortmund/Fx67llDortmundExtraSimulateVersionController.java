@@ -16,6 +16,7 @@ import com.ruoyi.common.core.domain.AjaxResult;
 import com.ruoyi.common.enums.BusinessType;
 import com.ruoyi.fx67ll.dortmund.domain.Fx67llDortmundExtraSimulateVersion;
 import com.ruoyi.fx67ll.dortmund.service.IFx67llDortmundExtraSimulateVersionService;
+import com.ruoyi.common.utils.SecurityUtils;
 import com.ruoyi.common.core.page.TableDataInfo;
 
 /**
@@ -82,5 +83,20 @@ public class Fx67llDortmundExtraSimulateVersionController extends BaseController
     @PostMapping("/addSimulateVersionForApp")
     public AjaxResult addSimulateVersionForApp(@RequestBody Fx67llDortmundExtraSimulateVersion fx67llDortmundExtraSimulateVersion) {
         return toAjax(fx67llDortmundExtraSimulateVersionService.insertFx67llDortmundExtraSimulateVersion(fx67llDortmundExtraSimulateVersion));
+    }
+
+    /**
+     * 提供给 APP 修改外快盈亏数值模拟版本记录（用于版本启用停用）
+     */
+//    如果只放开SecurityConfig中允许匿名请求的配置，不放开这里的权限配置，会返回获取用户信息异常的错误
+//    @PreAuthorize("@ss.hasPermi('dortmund:extra:edit')")
+    @Log(title = "提供给 APP 修改外快盈亏数值模拟版本记录", businessType = BusinessType.UPDATE)
+    @PostMapping("/updateSimulateVersionForApp")
+    public AjaxResult updateSimulateVersionForApp(@RequestBody Fx67llDortmundExtraSimulateVersion fx67llDortmundExtraSimulateVersion) {
+        if (fx67llDortmundExtraSimulateVersionService.selectFx67llDortmundExtraSimulateVersionById(fx67llDortmundExtraSimulateVersion.getVersionId()).getUserId() != SecurityUtils.getUserId()) {
+            return warn("此版本非本人创建，禁止修改！");
+        } else {
+            return toAjax(fx67llDortmundExtraSimulateVersionService.updateFx67llDortmundExtraSimulateVersion(fx67llDortmundExtraSimulateVersion));
+        }
     }
 }
