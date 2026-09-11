@@ -3,6 +3,12 @@ fx67ll One Data Center Server
 
 欢迎访问 [fx67ll's 管理系统](https://vip.fx67ll.com)
 
+## 0.11.3.20260911
+* 新增数值模拟轮次记录`提供给APP`专用接口（列表/新增/删除），按登录用户过滤数据，删除校验记录归属
+* 新增`外快盈亏数值模拟版本记录`表`fx67ll_dortmund_extra_simulate_version`，版本保存各自的初始数值、每轮系数、目标数值与模拟模式，版本序号按用户自动递增
+* 轮次记录表新增`version_id`归属版本，列表查询支持按版本过滤；新增版本记录`列表查询/新增`接口（Web端与提供给APP专用），权限同样复用`dortmund:extra`系列
+* 新增版本记录`修改`接口（`/dortmund/extra/simulate/version` PUT），用于版本`启用/停用`软删除（`del_flag`标记），权限复用`dortmund:extra:edit`
+
 ## 0.11.2.20260910
 * 新增`外快盈亏数值模拟轮次记录`表`fx67ll_dortmund_extra_simulate`，轮次结果确认后落库保存
 * 新增数值模拟轮次记录`列表查询/新增/删除`接口（`/dortmund/extra/simulate`），权限复用`dortmund:extra`系列，无需新增菜单配置
