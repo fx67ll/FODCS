@@ -28,6 +28,14 @@ public interface IFx67llDortmundExtraSimulateService {
     public List<Fx67llDortmundExtraSimulate> selectFx67llDortmundExtraSimulateList(Fx67llDortmundExtraSimulate fx67llDortmundExtraSimulate);
 
     /**
+     * 查询外快盈亏数值模拟轮次记录列表（仅本人）
+     *
+     * @param fx67llDortmundExtraSimulate 外快盈亏数值模拟轮次记录
+     * @return 外快盈亏数值模拟轮次记录集合
+     */
+    public List<Fx67llDortmundExtraSimulate> selectFx67llDortmundExtraSimulateListByUserId(Fx67llDortmundExtraSimulate fx67llDortmundExtraSimulate);
+
+    /**
      * 新增外快盈亏数值模拟轮次记录
      *
      * @param fx67llDortmundExtraSimulate 外快盈亏数值模拟轮次记录

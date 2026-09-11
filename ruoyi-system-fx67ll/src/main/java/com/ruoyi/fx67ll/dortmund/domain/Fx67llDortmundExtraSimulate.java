@@ -19,6 +19,11 @@ public class Fx67llDortmundExtraSimulate extends BaseEntity {
     private Long simId;
 
     /**
+     * 所属模拟版本主键
+     */
+    private Long versionId;
+
+    /**
      * 模拟模式（full全量滚动 half半量滚动）
      */
     private String simMode;
@@ -89,6 +94,14 @@ public class Fx67llDortmundExtraSimulate extends BaseEntity {
 
     public Long getSimId() {
         return simId;
+    }
+
+    public void setVersionId(Long versionId) {
+        this.versionId = versionId;
+    }
+
+    public Long getVersionId() {
+        return versionId;
     }
 
     public void setSimMode(String simMode) {
@@ -199,6 +212,7 @@ public class Fx67llDortmundExtraSimulate extends BaseEntity {
     public String toString() {
         return new ToStringBuilder(this, ToStringStyle.MULTI_LINE_STYLE)
                 .append("simId", getSimId())
+                .append("versionId", getVersionId())
                 .append("simMode", getSimMode())
                 .append("roundNo", getRoundNo())
                 .append("startValue", getStartValue())

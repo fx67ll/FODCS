@@ -6,6 +6,7 @@
 
     <resultMap type="Fx67llDortmundExtraSimulate" id="Fx67llDortmundExtraSimulateResult">
         <result property="simId" column="sim_id"/>
+        <result property="versionId" column="version_id"/>
         <result property="simMode" column="sim_mode"/>
         <result property="roundNo" column="round_no"/>
         <result property="startValue" column="start_value"/>
@@ -25,6 +26,7 @@
 
     <sql id="selectFx67llDortmundExtraSimulateVo">
         select sim_id,
+               version_id,
                sim_mode,
                round_no,
                start_value,
@@ -47,6 +49,7 @@
             resultMap="Fx67llDortmundExtraSimulateResult">
         <include refid="selectFx67llDortmundExtraSimulateVo"/>
         <where>
+            <if test="versionId != null ">and version_id = #{versionId}</if>
             <if test="simMode != null  and simMode != ''">and sim_mode = #{simMode}</if>
             <if test="roundNo != null ">and round_no = #{roundNo}</if>
             <if test="startValue != null  and startValue != ''">and start_value = #{startValue}</if>
@@ -77,6 +80,7 @@
             keyProperty="simId">
         insert into fx67ll_dortmund_extra_simulate
         <trim prefix="(" suffix=")" suffixOverrides=",">
+            <if test="versionId != null">version_id,</if>
             <if test="simMode != null and simMode != ''">sim_mode,</if>
             <if test="roundNo != null">round_no,</if>
             <if test="startValue != null and startValue != ''">start_value,</if>
@@ -94,6 +98,7 @@
             <if test="updateTime != null">update_time,</if>
         </trim>
         <trim prefix="values (" suffix=")" suffixOverrides=",">
+            <if test="versionId != null">#{versionId},</if>
             <if test="simMode != null and simMode != ''">#{simMode},</if>
             <if test="roundNo != null">#{roundNo},</if>
             <if test="startValue != null and startValue != ''">#{startValue},</if>

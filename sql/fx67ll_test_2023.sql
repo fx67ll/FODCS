@@ -1085,13 +1085,34 @@ CREATE TABLE `fx67ll_dortmund_match_score` (
 ) ENGINE=innodb DEFAULT CHARSET=utf8mb4 COMMENT='比赛标准化评分表';
 
 -- ----------------------------
--- 20、外快盈亏数值模拟轮次记录表
+-- 20、外快盈亏数值模拟版本记录表
+-- ----------------------------
+drop table if exists fx67ll_dortmund_extra_simulate_version;
+create table fx67ll_dortmund_extra_simulate_version (
+  version_id        bigint(20)        not null auto_increment    comment '数值模拟版本记录主键',
+  version_no        int(11)           default 1                  comment '版本序号（同一用户内递增）',
+  sim_mode          varchar(8)        default 'full'             comment '模拟模式（full全量滚动 half半量滚动）',
+  initial_value     varchar(23)       default '0'                comment '初始数值',
+  coefficient       varchar(23)       default '0'                comment '每轮系数',
+  target_value      varchar(23)       default '0'                comment '目标数值',
+  del_flag          char(1)           default '0'                comment '删除标志（0代表存在 2代表删除）',
+  user_id           bigint(20)                                   comment '用户ID',
+  create_by         varchar(64)       default ''                 comment '记录创建者用户名',
+  create_time       datetime                                     comment '记录创建时间',
+  update_by         varchar(64)       default ''                 comment '记录更新者',
+  update_time       datetime                                     comment '记录更新时间',
+  primary key (version_id)
+) engine=innodb auto_increment=1 comment = '外快盈亏数值模拟版本记录表';
+
+-- ----------------------------
+-- 21、外快盈亏数值模拟轮次记录表
 -- ----------------------------
 drop table if exists fx67ll_dortmund_extra_simulate;
 create table fx67ll_dortmund_extra_simulate (
   sim_id            bigint(20)        not null auto_increment    comment '数值模拟轮次记录主键',
+  version_id        bigint(20)        not null                    comment '所属模拟版本主键',
   sim_mode          varchar(8)        default 'full'             comment '模拟模式（full全量滚动 half半量滚动）',
-  round_no          int(11)           default 1                  comment '轮次序号（连续序列内序号，新序列从1开始）',
+  round_no          int(11)           default 1                  comment '轮次序号（版本内序号，新版本从1开始）',
   start_value       varchar(23)       default '0'                comment '本轮开始数值',
   join_value        varchar(23)       default '0'                comment '本轮参与滚动数值',
   is_hit            char(1)           default 'N'                comment '本轮是否达成（Y是 N否）',
@@ -1105,7 +1126,8 @@ create table fx67ll_dortmund_extra_simulate (
   create_time 	    datetime                                     comment '记录创建时间',
   update_by         varchar(64)       default ''                 comment '记录更新者',
   update_time       datetime                                     comment '记录更新时间',
-  primary key (sim_id)
+  primary key (sim_id),
+  KEY `idx_simulate_version_id` (`version_id`) COMMENT '版本ID索引（加速按版本查询轮次记录）'
 ) engine=innodb auto_increment=1 comment = '外快盈亏数值模拟轮次记录表';
 
 
