@@ -3,6 +3,12 @@ fx67ll One Data Center Server
 
 欢迎访问 [fx67ll's 管理系统](https://vip.fx67ll.com)
 
+## 0.11.3.20260915
+* 数值模拟版本表新增`版本名称`（`version_name`）与`作废标志`（`invalid_flag`，软删除，作废后不在列表中展示）两列，创建版本时保存版本名称  
+* 新增版本记录`作废`接口（`/dortmund/extra/simulate/version/invalidate/{versionId}` PUT），作废采用软删除且不可恢复，版本列表查询默认过滤已作废版本，权限复用`dortmund:extra:edit`  
+* 新增版本记录`作废`接口`提供给APP`专用（`invalidateSimulateVersionForApp`），作废前校验版本归属本人，且仅支持作废`24小时内`创建的版本，超时提示前往网页端后台操作  
+* 新增轮次记录时若`轮次序号为负`，自动强制作废所属版本（软删除），轮次记录随版本一并归档隐藏  
+
 ## 0.11.2.20260911
 * 新增数值模拟轮次记录`提供给APP`专用接口（列表/新增/删除），按登录用户过滤数据，删除校验记录归属
 * 新增`外快盈亏数值模拟版本记录`表`fx67ll_dortmund_extra_simulate_version`，版本保存各自的初始数值、每轮系数、目标数值与模拟模式，版本序号按用户自动递增
