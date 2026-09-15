@@ -74,6 +74,19 @@ public class Fx67llDortmundExtraSimulateVersionServiceImpl implements IFx67llDor
     }
 
     /**
+     * 作废外快盈亏数值模拟版本记录（软删除，作废后不在列表中展示）
+     *
+     * @param fx67llDortmundExtraSimulateVersion 外快盈亏数值模拟版本记录（需携带版本ID）
+     * @return 结果
+     */
+    @Override
+    public int invalidateFx67llDortmundExtraSimulateVersion(Fx67llDortmundExtraSimulateVersion fx67llDortmundExtraSimulateVersion) {
+        fx67llDortmundExtraSimulateVersion.setUpdateBy(SecurityUtils.getUsername());
+        fx67llDortmundExtraSimulateVersion.setUpdateTime(DateUtils.getNowDate());
+        return fx67llDortmundExtraSimulateVersionMapper.invalidateFx67llDortmundExtraSimulateVersion(fx67llDortmundExtraSimulateVersion);
+    }
+
+    /**
      * 根据版本ID查询外快盈亏数值模拟版本记录
      *
      * @param versionId 版本ID

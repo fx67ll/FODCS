@@ -7,11 +7,13 @@
     <resultMap type="Fx67llDortmundExtraSimulateVersion" id="Fx67llDortmundExtraSimulateVersionResult">
         <result property="versionId" column="version_id"/>
         <result property="versionNo" column="version_no"/>
+        <result property="versionName" column="version_name"/>
         <result property="simMode" column="sim_mode"/>
         <result property="initialValue" column="initial_value"/>
         <result property="coefficient" column="coefficient"/>
         <result property="targetValue" column="target_value"/>
         <result property="delFlag" column="del_flag"/>
+        <result property="invalidFlag" column="invalid_flag"/>
         <result property="userId" column="user_id"/>
         <result property="createBy" column="create_by"/>
         <result property="createTime" column="create_time"/>
@@ -22,11 +24,13 @@
     <sql id="selectFx67llDortmundExtraSimulateVersionVo">
         select version_id,
                version_no,
+               version_name,
                sim_mode,
                initial_value,
                coefficient,
                target_value,
                del_flag,
+               invalid_flag,
                user_id,
                create_by,
                create_time,
@@ -39,6 +43,7 @@
             resultMap="Fx67llDortmundExtraSimulateVersionResult">
         <include refid="selectFx67llDortmundExtraSimulateVersionVo"/>
         <where>
+            invalid_flag = '0'
             <if test="versionNo != null ">and version_no = #{versionNo}</if>
             <if test="simMode != null  and simMode != ''">and sim_mode = #{simMode}</if>
             <if test="initialValue != null  and initialValue != ''">and initial_value = #{initialValue}</if>
@@ -73,11 +78,13 @@
         insert into fx67ll_dortmund_extra_simulate_version
         <trim prefix="(" suffix=")" suffixOverrides=",">
             <if test="versionNo != null">version_no,</if>
+            <if test="versionName != null and versionName != ''">version_name,</if>
             <if test="simMode != null and simMode != ''">sim_mode,</if>
             <if test="initialValue != null and initialValue != ''">initial_value,</if>
             <if test="coefficient != null and coefficient != ''">coefficient,</if>
             <if test="targetValue != null and targetValue != ''">target_value,</if>
             <if test="delFlag != null">del_flag,</if>
+            <if test="invalidFlag != null">invalid_flag,</if>
             <if test="userId != null">user_id,</if>
             <if test="createBy != null">create_by,</if>
             <if test="createTime != null">create_time,</if>
@@ -86,11 +93,13 @@
         </trim>
         <trim prefix="values (" suffix=")" suffixOverrides=",">
             <if test="versionNo != null">#{versionNo},</if>
+            <if test="versionName != null and versionName != ''">#{versionName},</if>
             <if test="simMode != null and simMode != ''">#{simMode},</if>
             <if test="initialValue != null and initialValue != ''">#{initialValue},</if>
             <if test="coefficient != null and coefficient != ''">#{coefficient},</if>
             <if test="targetValue != null and targetValue != ''">#{targetValue},</if>
             <if test="delFlag != null">#{delFlag},</if>
+            <if test="invalidFlag != null">#{invalidFlag},</if>
             <if test="userId != null">#{userId},</if>
             <if test="createBy != null">#{createBy},</if>
             <if test="createTime != null">#{createTime},</if>
@@ -103,6 +112,7 @@
         update fx67ll_dortmund_extra_simulate_version
         <trim prefix="SET" suffixOverrides=",">
             <if test="versionNo != null">version_no = #{versionNo},</if>
+            <if test="versionName != null and versionName != ''">version_name = #{versionName},</if>
             <if test="simMode != null and simMode != ''">sim_mode = #{simMode},</if>
             <if test="initialValue != null and initialValue != ''">initial_value = #{initialValue},</if>
             <if test="coefficient != null and coefficient != ''">coefficient = #{coefficient},</if>
@@ -111,6 +121,14 @@
             <if test="updateBy != null">update_by = #{updateBy},</if>
             <if test="updateTime != null">update_time = #{updateTime},</if>
         </trim>
+        where version_id = #{versionId}
+    </update>
+
+    <update id="invalidateFx67llDortmundExtraSimulateVersion" parameterType="Fx67llDortmundExtraSimulateVersion">
+        update fx67ll_dortmund_extra_simulate_version
+        set invalid_flag = '1'
+        <if test="updateBy != null and updateBy != ''">, update_by = #{updateBy}</if>
+        <if test="updateTime != null">, update_time = #{updateTime}</if>
         where version_id = #{versionId}
     </update>
 </mapper>

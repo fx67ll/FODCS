@@ -5,6 +5,7 @@ import java.util.List;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -63,6 +64,18 @@ public class Fx67llDortmundExtraSimulateVersionController extends BaseController
     }
 
     /**
+     * 作废外快盈亏数值模拟版本记录（软删除，作废后不在列表中展示）
+     */
+    @PreAuthorize("@ss.hasPermi('dortmund:extra:edit')")
+    @Log(title = "作废外快盈亏数值模拟版本记录", businessType = BusinessType.UPDATE)
+    @PutMapping("/invalidate/{versionId}")
+    public AjaxResult invalidate(@PathVariable Long versionId) {
+        Fx67llDortmundExtraSimulateVersion invalidateVersion = new Fx67llDortmundExtraSimulateVersion();
+        invalidateVersion.setVersionId(versionId);
+        return toAjax(fx67llDortmundExtraSimulateVersionService.invalidateFx67llDortmundExtraSimulateVersion(invalidateVersion));
+    }
+
+    /**
      * 提供给 APP 查询外快盈亏数值模拟版本记录列表
      */
 //    如果只放开SecurityConfig中允许匿名请求的配置，不放开这里的权限配置，会返回获取用户信息异常的错误
@@ -97,6 +110,25 @@ public class Fx67llDortmundExtraSimulateVersionController extends BaseController
             return warn("此版本非本人创建，禁止修改！");
         } else {
             return toAjax(fx67llDortmundExtraSimulateVersionService.updateFx67llDortmundExtraSimulateVersion(fx67llDortmundExtraSimulateVersion));
+        }
+    }
+
+    /**
+     * 提供给 APP 作废外快盈亏数值模拟版本记录（软删除，作废后不在列表中展示，仅支持作废24小时内创建的版本）
+     */
+//    如果只放开SecurityConfig中允许匿名请求的配置，不放开这里的权限配置，会返回获取用户信息异常的错误
+//    @PreAuthorize("@ss.hasPermi('dortmund:extra:edit')")
+    @Log(title = "提供给 APP 作废外快盈亏数值模拟版本记录", businessType = BusinessType.UPDATE)
+    @PostMapping("/invalidateSimulateVersionForApp")
+    public AjaxResult invalidateSimulateVersionForApp(@RequestBody Fx67llDortmundExtraSimulateVersion fx67llDortmundExtraSimulateVersion) {
+        Fx67llDortmundExtraSimulateVersion version = fx67llDortmundExtraSimulateVersionService.selectFx67llDortmundExtraSimulateVersionById(fx67llDortmundExtraSimulateVersion.getVersionId());
+        if (version.getUserId() != SecurityUtils.getUserId()) {
+            return warn("此版本非本人创建，禁止作废！");
+        } else {
+            if (version.getCreateTime() == null || System.currentTimeMillis() - version.getCreateTime().getTime() > 24 * 60 * 60 * 1000L) {
+                return warn("版本创建时间已超过24小时，请在网页端后台操作！");
+            }
+            return toAjax(fx67llDortmundExtraSimulateVersionService.invalidateFx67llDortmundExtraSimulateVersion(fx67llDortmundExtraSimulateVersion));
         }
     }
 }

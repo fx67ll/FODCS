@@ -24,6 +24,11 @@ public class Fx67llDortmundExtraSimulateVersion extends BaseEntity {
     private Long versionNo;
 
     /**
+     * 版本名称
+     */
+    private String versionName;
+
+    /**
      * 模拟模式（full全量滚动 half半量滚动）
      */
     private String simMode;
@@ -47,6 +52,11 @@ public class Fx67llDortmundExtraSimulateVersion extends BaseEntity {
      * 删除标志（0代表存在 2代表删除）
      */
     private String delFlag;
+
+    /**
+     * 作废标志（0代表正常 1代表已作废，作废后不在列表中展示）
+     */
+    private String invalidFlag;
 
     /**
      * 用户ID
@@ -77,6 +87,14 @@ public class Fx67llDortmundExtraSimulateVersion extends BaseEntity {
 
     public Long getVersionNo() {
         return versionNo;
+    }
+
+    public void setVersionName(String versionName) {
+        this.versionName = versionName;
+    }
+
+    public String getVersionName() {
+        return versionName;
     }
 
     public void setSimMode(String simMode) {
@@ -119,6 +137,14 @@ public class Fx67llDortmundExtraSimulateVersion extends BaseEntity {
         return delFlag;
     }
 
+    public void setInvalidFlag(String invalidFlag) {
+        this.invalidFlag = invalidFlag;
+    }
+
+    public String getInvalidFlag() {
+        return invalidFlag;
+    }
+
     public void setUserId(Long userId) {
         this.userId = userId;
     }
@@ -148,11 +174,13 @@ public class Fx67llDortmundExtraSimulateVersion extends BaseEntity {
         return new ToStringBuilder(this, ToStringStyle.MULTI_LINE_STYLE)
                 .append("versionId", getVersionId())
                 .append("versionNo", getVersionNo())
+                .append("versionName", getVersionName())
                 .append("simMode", getSimMode())
                 .append("initialValue", getInitialValue())
                 .append("coefficient", getCoefficient())
                 .append("targetValue", getTargetValue())
                 .append("delFlag", getDelFlag())
+                .append("invalidFlag", getInvalidFlag())
                 .append("userId", getUserId())
                 .append("createBy", getCreateBy())
                 .append("createTime", getCreateTime())

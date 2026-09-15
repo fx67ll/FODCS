@@ -8,7 +8,9 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import com.ruoyi.fx67ll.dortmund.mapper.Fx67llDortmundExtraSimulateMapper;
 import com.ruoyi.fx67ll.dortmund.domain.Fx67llDortmundExtraSimulate;
+import com.ruoyi.fx67ll.dortmund.domain.Fx67llDortmundExtraSimulateVersion;
 import com.ruoyi.fx67ll.dortmund.service.IFx67llDortmundExtraSimulateService;
+import com.ruoyi.fx67ll.dortmund.service.IFx67llDortmundExtraSimulateVersionService;
 
 /**
  * 外快盈亏数值模拟轮次记录Service业务层处理
@@ -20,6 +22,9 @@ import com.ruoyi.fx67ll.dortmund.service.IFx67llDortmundExtraSimulateService;
 public class Fx67llDortmundExtraSimulateServiceImpl implements IFx67llDortmundExtraSimulateService {
     @Autowired
     private Fx67llDortmundExtraSimulateMapper fx67llDortmundExtraSimulateMapper;
+
+    @Autowired
+    private IFx67llDortmundExtraSimulateVersionService fx67llDortmundExtraSimulateVersionService;
 
     /**
      * 查询外快盈亏数值模拟轮次记录
@@ -56,7 +61,7 @@ public class Fx67llDortmundExtraSimulateServiceImpl implements IFx67llDortmundEx
     }
 
     /**
-     * 新增外快盈亏数值模拟轮次记录
+     * 新增外快盈亏数值模拟轮次记录（轮次为负时强制作废所属版本）
      *
      * @param fx67llDortmundExtraSimulate 外快盈亏数值模拟轮次记录
      * @return 结果
@@ -66,7 +71,14 @@ public class Fx67llDortmundExtraSimulateServiceImpl implements IFx67llDortmundEx
         fx67llDortmundExtraSimulate.setUserId(SecurityUtils.getUserId());
         fx67llDortmundExtraSimulate.setCreateBy(SecurityUtils.getUsername());
         fx67llDortmundExtraSimulate.setCreateTime(DateUtils.getNowDate());
-        return fx67llDortmundExtraSimulateMapper.insertFx67llDortmundExtraSimulate(fx67llDortmundExtraSimulate);
+        int rows = fx67llDortmundExtraSimulateMapper.insertFx67llDortmundExtraSimulate(fx67llDortmundExtraSimulate);
+        if (rows > 0 && fx67llDortmundExtraSimulate.getRoundNo() != null && fx67llDortmundExtraSimulate.getRoundNo() < 0) {
+            // 轮次为负，强制作废所属版本（软删除，作废后不在列表中展示）
+            Fx67llDortmundExtraSimulateVersion invalidateVersion = new Fx67llDortmundExtraSimulateVersion();
+            invalidateVersion.setVersionId(fx67llDortmundExtraSimulate.getVersionId());
+            fx67llDortmundExtraSimulateVersionService.invalidateFx67llDortmundExtraSimulateVersion(invalidateVersion);
+        }
+        return rows;
     }
 
     /**
