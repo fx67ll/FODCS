@@ -1091,11 +1091,13 @@ drop table if exists fx67ll_dortmund_extra_simulate_version;
 create table fx67ll_dortmund_extra_simulate_version (
   version_id        bigint(20)        not null auto_increment    comment '数值模拟版本记录主键',
   version_no        int(11)           default 1                  comment '版本序号（同一用户内递增）',
+  version_name      varchar(64)       default ''                 comment '版本名称',
   sim_mode          varchar(8)        default 'full'             comment '模拟模式（full全量滚动 half半量滚动）',
   initial_value     varchar(23)       default '0'                comment '初始数值',
   coefficient       varchar(23)       default '0'                comment '每轮系数',
   target_value      varchar(23)       default '0'                comment '目标数值',
   del_flag          char(1)           default '0'                comment '删除标志（0代表存在 2代表删除）',
+  invalid_flag      char(1)           default '0'                comment '作废标志（0代表正常 1代表已作废，作废后不在列表中展示）',
   user_id           bigint(20)                                   comment '用户ID',
   create_by         varchar(64)       default ''                 comment '记录创建者用户名',
   create_time       datetime                                     comment '记录创建时间',
