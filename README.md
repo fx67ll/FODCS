@@ -3,6 +3,13 @@ fx67ll One Data Center Server
 
 欢迎访问 [fx67ll's 管理系统](https://vip.fx67ll.com)
 
+## 0.11.5.20260922
+* `历史号码出现频率统计`接口（`getLotteryHistoryStatistics`）统计范围扩展至排列三、排列五、七星彩：排列三/排列五中奖号码整串数字全部计入`前区`，七星彩前六位(0-9)计入`前区`、最后一位尾号(0-14)单独计入`后区`，原有大乐透/双色球统计逻辑不变  
+
+## 0.11.4.20260917
+* `麻将室预约记录`APP端列表查询（`selectReservationLogByRoomAndDate`）补充返回`user_id`与`user_name`字段，`sys_user`关联查询本就存在，仅补充选择列，结果集映射无需改动  
+* 配套移动端`麻将室预约`页面将进入页面时的两次预约查询合并为单次请求，全部预约时段一次返回，我的预约时段改为前端按用户名筛选，减少重复请求  
+
 ## 0.11.3.20260915
 * 数值模拟版本表新增`版本名称`（`version_name`）与`作废标志`（`invalid_flag`，软删除，作废后不在列表中展示）两列，创建版本时保存版本名称  
 * 新增版本记录`作废`接口（`/dortmund/extra/simulate/version/invalidate/{versionId}` PUT），作废采用软删除且不可恢复，版本列表查询默认过滤已作废版本，权限复用`dortmund:extra:edit`  
