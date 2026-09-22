@@ -255,7 +255,7 @@
             number,
             COUNT(*) AS occurrence_count
             FROM (
-            -- 解析前区号码
+            -- 解析前区号码（排列三/排列五无'-'分隔符，整串数字全部计入前区）
             SELECT
             number_type,
             '前区' AS zone,
@@ -266,7 +266,7 @@
             UNION SELECT 6 UNION SELECT 7 UNION SELECT 8 UNION SELECT 9 UNION SELECT 10
             ) nums
             WHERE del_flag = '0'
-            AND number_type IN (1, 2)
+            AND number_type IN (1, 2, 3, 4)
             AND winning_number != ''
             AND winning_number IS NOT NULL
             AND nums.pos &lt;= (LENGTH(SUBSTRING_INDEX(winning_number, '-', 1))
@@ -292,6 +292,45 @@
             AND nums.pos &lt;= (LENGTH(SUBSTRING_INDEX(winning_number, '-', -1))
             - LENGTH(REPLACE(SUBSTRING_INDEX(winning_number, '-', -1), ',', '')) + 1)
             AND TRIM(SUBSTRING_INDEX(SUBSTRING_INDEX(SUBSTRING_INDEX(winning_number, '-', -1), ',', nums.pos), ',', -1)) != ''
+
+            UNION ALL
+
+            -- 解析七星彩前六位号码（0-9数字，记为前区）
+            SELECT
+            number_type,
+            '前区' AS zone,
+            SUBSTRING_INDEX(SUBSTRING_INDEX(SUBSTRING_INDEX(winning_number, ',', 6), ',', nums.pos), ',', -1) AS number
+            FROM fx67ll_lottery_log
+            JOIN (
+            SELECT 1 AS pos UNION SELECT 2 UNION SELECT 3 UNION SELECT 4 UNION SELECT 5
+            UNION SELECT 6 UNION SELECT 7 UNION SELECT 8 UNION SELECT 9 UNION SELECT 10
+            ) nums
+            WHERE del_flag = '0'
+            AND number_type = 5
+            AND winning_number != ''
+            AND winning_number IS NOT NULL
+            AND nums.pos &lt;= (LENGTH(SUBSTRING_INDEX(winning_number, ',', 6))
+            - LENGTH(REPLACE(SUBSTRING_INDEX(winning_number, ',', 6), ',', '')) + 1)
+            AND TRIM(SUBSTRING_INDEX(SUBSTRING_INDEX(SUBSTRING_INDEX(winning_number, ',', 6), ',', nums.pos), ',', -1)) != ''
+
+            UNION ALL
+
+            -- 解析七星彩最后一位号码（0-14数字，记为后区）
+            SELECT
+            number_type,
+            '后区' AS zone,
+            SUBSTRING_INDEX(winning_number, ',', -1) AS number
+            FROM fx67ll_lottery_log
+            JOIN (
+            SELECT 1 AS pos UNION SELECT 2 UNION SELECT 3 UNION SELECT 4 UNION SELECT 5
+            UNION SELECT 6 UNION SELECT 7 UNION SELECT 8 UNION SELECT 9 UNION SELECT 10
+            ) nums
+            WHERE del_flag = '0'
+            AND number_type = 5
+            AND winning_number != ''
+            AND winning_number IS NOT NULL
+            AND nums.pos = 1
+            AND TRIM(SUBSTRING_INDEX(winning_number, ',', -1)) != ''
             ) split_data
             GROUP BY number_type, zone, number
             ) freq_data
