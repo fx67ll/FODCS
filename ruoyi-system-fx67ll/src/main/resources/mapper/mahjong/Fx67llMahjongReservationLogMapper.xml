@@ -61,6 +61,8 @@
             resultMap="Fx67llMahjongReservationLogExtResult">
         SELECT
         rl.mahjong_reservation_log_id,
+        rl.user_id,
+        su.user_name,
         rl.mahjong_room_name,
         rl.reservation_start_time,
         rl.reservation_end_time,
