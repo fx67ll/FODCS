@@ -67,4 +67,13 @@ public interface IFx67llDortmundExtraService {
      * @return 结果
      */
     public int deleteFx67llDortmundExtraByExtraId(Long extraId);
+
+    /**
+     * 合并外快盈亏历史记录
+     *
+     * @param extraIds 需要合并的外快盈亏记录主键集合
+     * @param extraRemark 合并后新记录的备注（可不填写）
+     * @return 合并后新生成记录的主键
+     */
+    public Long mergeFx67llDortmundExtras(Long[] extraIds, String extraRemark);
 }

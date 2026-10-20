@@ -19,6 +19,7 @@ import com.ruoyi.common.core.controller.BaseController;
 import com.ruoyi.common.core.domain.AjaxResult;
 import com.ruoyi.common.enums.BusinessType;
 import com.ruoyi.fx67ll.dortmund.domain.Fx67llDortmundExtra;
+import com.ruoyi.fx67ll.dortmund.domain.Fx67llDortmundExtraMergeBody;
 import com.ruoyi.fx67ll.dortmund.service.IFx67llDortmundExtraService;
 import com.ruoyi.common.utils.poi.ExcelUtil;
 import com.ruoyi.common.core.page.TableDataInfo;
@@ -118,6 +119,23 @@ public class Fx67llDortmundExtraController extends BaseController {
     @DeleteMapping("/{extraIds}")
     public AjaxResult remove(@PathVariable Long[] extraIds) {
         return toAjax(fx67llDortmundExtraService.deleteFx67llDortmundExtraByExtraIds(extraIds));
+    }
+
+    /**
+     * 合并外快盈亏历史记录
+     * <p>
+     * 合并所选的多条连续历史记录为一条新记录：总金额、当前本金、落袋金额、目标金额等快照类字段
+     * 取合并范围内时间序最后一条的原值，盈亏金额取所选记录盈亏金额之和并按正负推导是否盈利，
+     * 创建时间沿用最后一条记录的原始创建时间，备注取前端合并确认弹窗中录入的内容（可不填写）；
+     * 合并完成后删除全部被合并的旧记录，整个流程在一个事务内完成。
+     * 仅支持合并同一用户创建且在其个人历史序列中连续的记录。
+     */
+    @PreAuthorize("@ss.hasPermi('dortmund:extra:merge')")
+    @Log(title = "合并外快盈亏历史记录", businessType = BusinessType.UPDATE)
+    @PostMapping("/merge")
+    public AjaxResult merge(@RequestBody Fx67llDortmundExtraMergeBody mergeBody) {
+        Long mergedExtraId = fx67llDortmundExtraService.mergeFx67llDortmundExtras(mergeBody.getExtraIds(), mergeBody.getExtraRemark());
+        return AjaxResult.success("合并成功", mergedExtraId);
     }
 
     /**
