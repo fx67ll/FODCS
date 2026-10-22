@@ -76,4 +76,15 @@ public interface IFx67llDortmundExtraService {
      * @return 合并后新生成记录的主键
      */
     public Long mergeFx67llDortmundExtras(Long[] extraIds, String extraRemark);
+
+    /**
+     * 提供给 APP 合并外快盈亏历史记录
+     * <p>
+     * 与 Web 端合并逻辑一致，区别在于额外校验所有待合并记录均为当前登录用户本人创建，防止越权合并他人数据
+     *
+     * @param extraIds 需要合并的外快盈亏记录主键集合
+     * @param extraRemark 合并后新记录的备注（可不填写）
+     * @return 合并后新生成记录的主键
+     */
+    public Long mergeFx67llDortmundExtrasForApp(Long[] extraIds, String extraRemark);
 }

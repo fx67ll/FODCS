@@ -128,17 +128,38 @@ public class Fx67llDortmundExtraServiceImpl implements IFx67llDortmundExtraServi
     /**
      * 合并外快盈亏历史记录
      * <p>
+     * 详见接口注释。Web 端管理视角不做本人归属限制，仅要求所选记录为同一用户创建。
+     */
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public Long mergeFx67llDortmundExtras(Long[] extraIds, String extraRemark) {
+        return doMergeFx67llDortmundExtras(extraIds, extraRemark, null);
+    }
+
+    /**
+     * 提供给 APP 合并外快盈亏历史记录
+     * <p>
+     * 详见接口注释。与 Web 端合并逻辑一致，区别在于额外校验所有待合并记录均为当前登录用户本人创建，防止越权合并他人数据。
+     */
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public Long mergeFx67llDortmundExtrasForApp(Long[] extraIds, String extraRemark) {
+        return doMergeFx67llDortmundExtras(extraIds, extraRemark, SecurityUtils.getUserId());
+    }
+
+    /**
+     * 合并外快盈亏历史记录的内部实现
+     * <p>
      * 详见接口注释。该方法在一个事务内完成"读取-校验-合并-新增-删除"全流程，
      * 任一步抛出异常（含 ServiceException 业务校验异常）都会触发回滚，保证不会出现
      * "合并了但没删"或"删了但没合并"的脏数据。
      *
      * @param extraIds 需要合并的外快盈亏记录主键集合
      * @param extraRemark 合并后新记录的备注（可不填写）
+     * @param currentUserId 当前登录用户主键，非空时要求所有待合并记录均为该用户本人创建（APP 端防越权），为空时仅校验同一用户创建（Web 端管理视角）
      * @return 合并后新生成记录的主键
      */
-    @Override
-    @Transactional(rollbackFor = Exception.class)
-    public Long mergeFx67llDortmundExtras(Long[] extraIds, String extraRemark) {
+    private Long doMergeFx67llDortmundExtras(Long[] extraIds, String extraRemark, Long currentUserId) {
         // ---------- 1. 入参基础校验 ----------
         if (extraIds == null || extraIds.length < 2) {
             throw new ServiceException("请至少选择两条记录进行合并！");
@@ -176,6 +197,10 @@ public class Fx67llDortmundExtraServiceImpl implements IFx67llDortmundExtraServi
             if (!Objects.equals(mergedUserId, extra.getUserId())) {
                 throw new ServiceException("仅支持合并同一用户创建的记录！");
             }
+        }
+        // APP 端越权校验：在"同一用户创建"的基础上，进一步要求该用户为当前登录用户本人
+        if (currentUserId != null && !currentUserId.equals(mergedUserId)) {
+            throw new ServiceException("存在非本人创建的记录，禁止合并！");
         }
 
         // ---------- 3. 校验历史数据连续性 ----------

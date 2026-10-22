@@ -139,6 +139,21 @@ public class Fx67llDortmundExtraController extends BaseController {
     }
 
     /**
+     * 提供给 APP 合并外快盈亏历史记录
+     * <p>
+     * 与 Web 端 /merge 接口逻辑一致，区别在于不做管理端权限校验，
+     * 而是在 Service 层校验所有待合并记录均为当前登录用户本人创建。
+     */
+//    如果只放开SecurityConfig中允许匿名请求的配置，不放开这里的权限配置，会返回获取用户信息异常的错误
+//    @PreAuthorize("@ss.hasPermi('dortmund:extra:merge')")
+    @Log(title = "提供给 APP 合并外快盈亏历史记录", businessType = BusinessType.UPDATE)
+    @PostMapping("/mergeExtraForApp")
+    public AjaxResult mergeExtraForApp(@RequestBody Fx67llDortmundExtraMergeBody mergeBody) {
+        Long mergedExtraId = fx67llDortmundExtraService.mergeFx67llDortmundExtrasForApp(mergeBody.getExtraIds(), mergeBody.getExtraRemark());
+        return AjaxResult.success("合并成功", mergedExtraId);
+    }
+
+    /**
      * 提供给 APP 删除外快盈亏记录
      */
 //    如果只放开SecurityConfig中允许匿名请求的配置，不放开这里的权限配置，会返回获取用户信息异常的错误
