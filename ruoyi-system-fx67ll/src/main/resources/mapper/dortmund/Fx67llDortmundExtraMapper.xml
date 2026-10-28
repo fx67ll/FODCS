@@ -1,4 +1,10 @@
 <?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<!-- PHASE_GATE_SUSPENDED
+本 Mapper 不在执行计划第一阶段（第 1–9 周，数据隔离前）范围内。
+方案已重做本模块，归入执行计划第一阶段（第 6–7 周，外快盈亏）。
+原语句保留在本注释中。验证通过后，由负责人在对应阶段删除注释并按新方案重写。
+<?xml version="1.0" encoding="UTF-8" ?>
 <!DOCTYPE mapper
         PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
@@ -140,4 +146,7 @@
             #{extraId}
         </foreach>
     </delete>
+</mapper>
+-->
+<mapper namespace="com.ruoyi.fx67ll.dortmund.mapper.Fx67llDortmundExtraMapper">
 </mapper>
