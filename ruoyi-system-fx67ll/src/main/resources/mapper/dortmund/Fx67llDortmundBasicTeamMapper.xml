@@ -143,7 +143,6 @@
     <update id="updateFx67llDortmundBasicTeam" parameterType="Fx67llDortmundBasicTeam">
         update fx67ll_dortmund_team
         <trim prefix="SET" suffixOverrides=",">
-            <if test="teamCode != null and teamCode != ''">team_code = #{teamCode},</if>
             <if test="teamName != null and teamName != ''">team_name = #{teamName},</if>
             <if test="teamNameShort != null">team_name_short = #{teamNameShort},</if>
             <if test="teamNameEn != null">team_name_en = #{teamNameEn},</if>

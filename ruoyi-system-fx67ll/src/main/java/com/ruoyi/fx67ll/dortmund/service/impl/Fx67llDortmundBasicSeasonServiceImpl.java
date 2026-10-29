@@ -2,9 +2,11 @@ package com.ruoyi.fx67ll.dortmund.service.impl;
 
 import java.util.List;
 
+import com.ruoyi.common.exception.ServiceException;
 import com.ruoyi.common.utils.DateUtils;
 import com.ruoyi.common.utils.SecurityUtils;
-import com.ruoyi.fx67ll.dortmund.domain.Fx67llDortmundBasicTeam;
+import com.ruoyi.fx67ll.dortmund.domain.Fx67llDortmundBasicMatch;
+import com.ruoyi.fx67ll.dortmund.mapper.Fx67llDortmundBasicMatchMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import com.ruoyi.fx67ll.dortmund.mapper.Fx67llDortmundBasicSeasonMapper;
@@ -21,6 +23,9 @@ import com.ruoyi.fx67ll.dortmund.service.IFx67llDortmundBasicSeasonService;
 public class Fx67llDortmundBasicSeasonServiceImpl implements IFx67llDortmundBasicSeasonService {
     @Autowired
     private Fx67llDortmundBasicSeasonMapper fx67llDortmundBasicSeasonMapper;
+
+    @Autowired
+    private Fx67llDortmundBasicMatchMapper fx67llDortmundBasicMatchMapper;
 
     /**
      * 查询赛季管理
@@ -64,6 +69,7 @@ public class Fx67llDortmundBasicSeasonServiceImpl implements IFx67llDortmundBasi
      */
     @Override
     public int insertFx67llDortmundBasicSeason(Fx67llDortmundBasicSeason fx67llDortmundBasicSeason) {
+        checkSeasonStartAndEndDate(fx67llDortmundBasicSeason);
         fx67llDortmundBasicSeason.setUserId(SecurityUtils.getUserId());
         fx67llDortmundBasicSeason.setCreateBy(SecurityUtils.getUsername());
         fx67llDortmundBasicSeason.setCreateTime(DateUtils.getNowDate());
@@ -78,6 +84,10 @@ public class Fx67llDortmundBasicSeasonServiceImpl implements IFx67llDortmundBasi
      */
     @Override
     public int updateFx67llDortmundBasicSeason(Fx67llDortmundBasicSeason fx67llDortmundBasicSeason) {
+        if (fx67llDortmundBasicSeason.getSeasonId() == null) {
+            throw new ServiceException("赛季主键不能为空！");
+        }
+        checkSeasonStartAndEndDate(fx67llDortmundBasicSeason);
         fx67llDortmundBasicSeason.setUpdateBy(SecurityUtils.getUsername());
         fx67llDortmundBasicSeason.setUpdateTime(DateUtils.getNowDate());
         return fx67llDortmundBasicSeasonMapper.updateFx67llDortmundBasicSeason(fx67llDortmundBasicSeason);
@@ -91,6 +101,12 @@ public class Fx67llDortmundBasicSeasonServiceImpl implements IFx67llDortmundBasi
      */
     @Override
     public int deleteFx67llDortmundBasicSeasonBySeasonIds(Long[] seasonIds) {
+        if (seasonIds == null || seasonIds.length == 0) {
+            return 0;
+        }
+        for (Long seasonId : seasonIds) {
+            checkSeasonReferenceBeforeDelete(seasonId);
+        }
         return fx67llDortmundBasicSeasonMapper.deleteFx67llDortmundBasicSeasonBySeasonIds(seasonIds);
     }
 
@@ -102,6 +118,33 @@ public class Fx67llDortmundBasicSeasonServiceImpl implements IFx67llDortmundBasi
      */
     @Override
     public int deleteFx67llDortmundBasicSeasonBySeasonId(Long seasonId) {
+        checkSeasonReferenceBeforeDelete(seasonId);
         return fx67llDortmundBasicSeasonMapper.deleteFx67llDortmundBasicSeasonBySeasonId(seasonId);
+    }
+
+    /**
+     * 校验赛季开始日期不得晚于结束日期
+     *
+     * @param fx67llDortmundBasicSeason 赛季管理
+     */
+    private void checkSeasonStartAndEndDate(Fx67llDortmundBasicSeason fx67llDortmundBasicSeason) {
+        if (fx67llDortmundBasicSeason.getSeasonStartDate() != null && fx67llDortmundBasicSeason.getSeasonEndDate() != null
+                && fx67llDortmundBasicSeason.getSeasonStartDate().after(fx67llDortmundBasicSeason.getSeasonEndDate())) {
+            throw new ServiceException("赛季开始日期不得晚于结束日期！");
+        }
+    }
+
+    /**
+     * 删除前校验赛季是否被比赛或信息点引用，被引用时返回统一"已被引用"错误
+     *
+     * @param seasonId 赛季管理主键
+     */
+    private void checkSeasonReferenceBeforeDelete(Long seasonId) {
+        Fx67llDortmundBasicMatch matchQuery = new Fx67llDortmundBasicMatch();
+        matchQuery.setSeasonId(seasonId);
+        List<Fx67llDortmundBasicMatch> matchList = fx67llDortmundBasicMatchMapper.selectFx67llDortmundBasicMatchList(matchQuery);
+        if (matchList != null && !matchList.isEmpty()) {
+            throw new ServiceException("赛季已被比赛引用，不能删除；可改用结束赛季");
+        }
     }
 }

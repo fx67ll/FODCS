@@ -12,6 +12,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import com.ruoyi.common.annotation.Log;
+import com.ruoyi.common.annotation.RepeatSubmit;
 import com.ruoyi.common.core.controller.BaseController;
 import com.ruoyi.common.core.domain.AjaxResult;
 import com.ruoyi.common.enums.BusinessType;
@@ -44,10 +45,20 @@ public class Fx67llDortmundExtraSimulateController extends BaseController {
     }
 
     /**
+     * 查询数值轮次的关联方案计划
+     */
+    @PreAuthorize("@ss.hasPermi('dortmund:extra:list')")
+    @GetMapping("/plans/{simId}")
+    public AjaxResult getPlans(@PathVariable Long simId) {
+        return success(fx67llDortmundExtraSimulateService.selectFx67llDortmundExtraSimulatePlansBySimId(simId));
+    }
+
+    /**
      * 新增外快盈亏数值模拟轮次记录
      */
     @PreAuthorize("@ss.hasPermi('dortmund:extra:add')")
     @Log(title = "新增外快盈亏数值模拟轮次记录", businessType = BusinessType.INSERT)
+    @RepeatSubmit
     @PostMapping
     public AjaxResult add(@RequestBody Fx67llDortmundExtraSimulate fx67llDortmundExtraSimulate) {
         return toAjax(fx67llDortmundExtraSimulateService.insertFx67llDortmundExtraSimulate(fx67llDortmundExtraSimulate));
@@ -81,6 +92,7 @@ public class Fx67llDortmundExtraSimulateController extends BaseController {
 //    如果只放开SecurityConfig中允许匿名请求的配置，不放开这里的权限配置，会返回获取用户信息异常的错误
 //    @PreAuthorize("@ss.hasPermi('dortmund:extra:add')")
     @Log(title = "提供给 APP 新增外快盈亏数值模拟轮次记录", businessType = BusinessType.INSERT)
+    @RepeatSubmit
     @PostMapping("/addSimulateForApp")
     public AjaxResult addSimulateForApp(@RequestBody Fx67llDortmundExtraSimulate fx67llDortmundExtraSimulate) {
         return toAjax(fx67llDortmundExtraSimulateService.insertFx67llDortmundExtraSimulate(fx67llDortmundExtraSimulate));
@@ -94,7 +106,7 @@ public class Fx67llDortmundExtraSimulateController extends BaseController {
     @Log(title = "提供给 APP 删除外快盈亏数值模拟轮次记录", businessType = BusinessType.DELETE)
     @DeleteMapping("/deleteSimulateByIdForApp/{simId}")
     public AjaxResult deleteSimulateByIdForApp(@PathVariable Long simId) {
-        if (fx67llDortmundExtraSimulateService.selectFx67llDortmundExtraSimulateBySimId(simId).getUserId() != SecurityUtils.getUserId()) {
+        if (!fx67llDortmundExtraSimulateService.selectFx67llDortmundExtraSimulateBySimId(simId).getUserId().equals(SecurityUtils.getUserId())) {
             return warn("此记录非本人创建，禁止删除！");
         } else {
             return toAjax(fx67llDortmundExtraSimulateService.deleteFx67llDortmundExtraSimulateBySimId(simId));

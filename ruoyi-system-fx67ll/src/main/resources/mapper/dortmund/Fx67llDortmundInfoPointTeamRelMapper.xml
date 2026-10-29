@@ -1,0 +1,82 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.ruoyi.fx67ll.dortmund.mapper.Fx67llDortmundInfoPointTeamRelMapper">
+
+    <resultMap type="Fx67llDortmundInfoPointTeamRel" id="Fx67llDortmundInfoPointTeamRelResult">
+        <result property="relationId" column="relation_id"/>
+        <result property="infoPointId" column="info_point_id"/>
+        <result property="teamId" column="team_id"/>
+        <result property="relationStatus" column="relation_status"/>
+        <result property="teamName" column="team_name"/>
+        <result property="createBy" column="create_by"/>
+        <result property="createTime" column="create_time"/>
+        <result property="updateBy" column="update_by"/>
+        <result property="updateTime" column="update_time"/>
+    </resultMap>
+
+    <sql id="selectFx67llDortmundInfoPointTeamRelVo">
+        select r.relation_id,
+               r.info_point_id,
+               r.team_id,
+               r.relation_status,
+               t.team_name as team_name,
+               r.create_by,
+               r.create_time,
+               r.update_by,
+               r.update_time
+        from fx67ll_dortmund_info_point_team_rel r
+                 left join fx67ll_dortmund_team t on r.team_id = t.team_id
+    </sql>
+
+    <select id="selectFx67llDortmundInfoPointTeamRelList" parameterType="Fx67llDortmundInfoPointTeamRel"
+            resultMap="Fx67llDortmundInfoPointTeamRelResult">
+        <include refid="selectFx67llDortmundInfoPointTeamRelVo"/>
+        <where>
+            <if test="relationId != null ">and r.relation_id = #{relationId}</if>
+            <if test="infoPointId != null ">and r.info_point_id = #{infoPointId}</if>
+            <if test="teamId != null ">and r.team_id = #{teamId}</if>
+            <if test="relationStatus != null  and relationStatus != ''">and r.relation_status = #{relationStatus}</if>
+        </where>
+    </select>
+
+    <select id="selectFx67llDortmundInfoPointTeamRelByRelationId" parameterType="Long"
+            resultMap="Fx67llDortmundInfoPointTeamRelResult">
+        <include refid="selectFx67llDortmundInfoPointTeamRelVo"/>
+        where r.relation_id = #{relationId}
+    </select>
+
+    <insert id="insertFx67llDortmundInfoPointTeamRel" parameterType="Fx67llDortmundInfoPointTeamRel"
+            useGeneratedKeys="true" keyProperty="relationId">
+        insert into fx67ll_dortmund_info_point_team_rel
+        <trim prefix="(" suffix=")" suffixOverrides=",">
+            <if test="infoPointId != null">info_point_id,</if>
+            <if test="teamId != null">team_id,</if>
+            <if test="relationStatus != null">relation_status,</if>
+            <if test="createBy != null">create_by,</if>
+            <if test="createTime != null">create_time,</if>
+            <if test="updateBy != null">update_by,</if>
+            <if test="updateTime != null">update_time,</if>
+        </trim>
+        <trim prefix="values (" suffix=")" suffixOverrides=",">
+            <if test="infoPointId != null">#{infoPointId},</if>
+            <if test="teamId != null">#{teamId},</if>
+            <if test="relationStatus != null">#{relationStatus},</if>
+            <if test="createBy != null">#{createBy},</if>
+            <if test="createTime != null">#{createTime},</if>
+            <if test="updateBy != null">#{updateBy},</if>
+            <if test="updateTime != null">#{updateTime},</if>
+        </trim>
+    </insert>
+
+    <update id="updateFx67llDortmundInfoPointTeamRel" parameterType="Fx67llDortmundInfoPointTeamRel">
+        update fx67ll_dortmund_info_point_team_rel
+        <trim prefix="SET" suffixOverrides=",">
+            <if test="relationStatus != null">relation_status = #{relationStatus},</if>
+            <if test="updateBy != null">update_by = #{updateBy},</if>
+            <if test="updateTime != null">update_time = #{updateTime},</if>
+        </trim>
+        where relation_id = #{relationId}
+    </update>
+</mapper>

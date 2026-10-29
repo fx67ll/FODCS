@@ -1,184 +1,171 @@
 package com.ruoyi.web.controller.fx67ll.dortmund;
 
+import java.util.List;
+import javax.servlet.http.HttpServletResponse;
+
+import com.ruoyi.common.utils.SecurityUtils;
+import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
+import com.ruoyi.common.annotation.Log;
+import com.ruoyi.common.core.controller.BaseController;
+import com.ruoyi.common.core.domain.AjaxResult;
+import com.ruoyi.common.enums.BusinessType;
+import com.ruoyi.fx67ll.dortmund.domain.Fx67llDortmundExtra;
+import com.ruoyi.fx67ll.dortmund.domain.Fx67llDortmundExtraMergeBody;
+import com.ruoyi.fx67ll.dortmund.service.IFx67llDortmundExtraService;
+import com.ruoyi.common.utils.poi.ExcelUtil;
+import com.ruoyi.common.core.page.TableDataInfo;
+
 /**
- * PHASE_GATE_SUSPENDED
- * 本文件在第 6 周之前暂不改造。
- * 方案已重做本模块，归入执行计划第一阶段（第 6–7 周，外快盈亏）。
- * 原实现整段保留在下方行注释中。验证通过后，由负责人在对应阶段删除注释并按新方案重写。
- * 当前类型不提供业务方法。
+ * 外快盈亏记录Controller
+ *
+ * @author fx67ll
+ * @date 2023-08-17
  */
-public class Fx67llDortmundExtraController {
+@RestController
+@RequestMapping("/dortmund/extra")
+public class Fx67llDortmundExtraController extends BaseController {
+    @Autowired
+    private IFx67llDortmundExtraService fx67llDortmundExtraService;
+
+    /**
+     * 查询外快盈亏记录列表
+     */
+    @PreAuthorize("@ss.hasPermi('dortmund:extra:list')")
+    @GetMapping("/list")
+    public TableDataInfo list(Fx67llDortmundExtra fx67llDortmundExtra) {
+        startPage();
+        List<Fx67llDortmundExtra> list = fx67llDortmundExtraService.selectFx67llDortmundExtraList(fx67llDortmundExtra);
+        return getDataTable(list);
+    }
+
+    /**
+     * 提供给 APP 查询外快盈亏记录列表
+     */
+//    如果只放开SecurityConfig中允许匿名请求的配置，不放开这里的权限配置，会返回获取用户信息异常的错误
+//    @PreAuthorize("@ss.hasPermi('dortmund:extra:list')")
+    @GetMapping("/getExtraListForApp")
+    public TableDataInfo getExtraListForApp(Fx67llDortmundExtra fx67llDortmundExtra) {
+        startPageForApp();
+        List<Fx67llDortmundExtra> list = fx67llDortmundExtraService.selectFx67llDortmundExtraListByUserId(fx67llDortmundExtra);
+        return getDataTable(list);
+    }
+
+    /**
+     * 导出外快盈亏记录列表
+     */
+    @PreAuthorize("@ss.hasPermi('dortmund:extra:export')")
+    @Log(title = "导出外快盈亏记录列表", businessType = BusinessType.EXPORT)
+    @PostMapping("/export")
+    public void export(HttpServletResponse response, Fx67llDortmundExtra fx67llDortmundExtra) {
+        List<Fx67llDortmundExtra> list = fx67llDortmundExtraService.selectFx67llDortmundExtraList(fx67llDortmundExtra);
+        ExcelUtil<Fx67llDortmundExtra> util = new ExcelUtil<Fx67llDortmundExtra>(Fx67llDortmundExtra.class);
+        util.exportExcel(response, list, "外快盈亏记录数据");
+    }
+
+    /**
+     * 获取外快盈亏记录详细信息
+     */
+    @PreAuthorize("@ss.hasPermi('dortmund:extra:query')")
+    @GetMapping(value = "/{extraId}")
+    public AjaxResult getInfo(@PathVariable("extraId") Long extraId) {
+        return success(fx67llDortmundExtraService.selectFx67llDortmundExtraByExtraId(extraId));
+    }
+
+    /**
+     * 新增外快盈亏记录
+     */
+    @PreAuthorize("@ss.hasPermi('dortmund:extra:add')")
+    @Log(title = "新增外快盈亏记录", businessType = BusinessType.INSERT)
+    @PostMapping
+    public AjaxResult add(@RequestBody Fx67llDortmundExtra fx67llDortmundExtra) {
+        return toAjax(fx67llDortmundExtraService.insertFx67llDortmundExtra(fx67llDortmundExtra));
+    }
+
+    /**
+     * 提供给 APP 新增外快盈亏记录
+     */
+//    如果只放开SecurityConfig中允许匿名请求的配置，不放开这里的权限配置，会返回获取用户信息异常的错误
+//    @PreAuthorize("@ss.hasPermi('dortmund:extra:add')")
+    @Log(title = "提供给 APP 新增外快盈亏记录", businessType = BusinessType.INSERT)
+    @PostMapping("/addExtraForApp")
+    public AjaxResult addExtraForApp(@RequestBody Fx67llDortmundExtra fx67llDortmundExtra) {
+        return toAjax(fx67llDortmundExtraService.insertFx67llDortmundExtra(fx67llDortmundExtra));
+    }
+
+    /**
+     * 修改外快盈亏记录
+     */
+    @PreAuthorize("@ss.hasPermi('dortmund:extra:edit')")
+    @Log(title = "修改外快盈亏记录", businessType = BusinessType.UPDATE)
+    @PutMapping
+    public AjaxResult edit(@RequestBody Fx67llDortmundExtra fx67llDortmundExtra) {
+        return toAjax(fx67llDortmundExtraService.updateFx67llDortmundExtra(fx67llDortmundExtra));
+    }
+
+    /**
+     * 删除外快盈亏记录
+     */
+    @PreAuthorize("@ss.hasPermi('dortmund:extra:remove')")
+    @Log(title = "删除外快盈亏记录", businessType = BusinessType.DELETE)
+    @DeleteMapping("/{extraIds}")
+    public AjaxResult remove(@PathVariable Long[] extraIds) {
+        return toAjax(fx67llDortmundExtraService.deleteFx67llDortmundExtraByExtraIds(extraIds));
+    }
+
+    /**
+     * 合并外快盈亏历史记录
+     * <p>
+     * 合并所选的多条连续历史记录为一条新记录：总金额、当前本金、落袋金额、目标金额等快照类字段
+     * 取合并范围内时间序最后一条的原值，盈亏金额取所选记录盈亏金额之和并按正负推导是否盈利，
+     * 创建时间沿用最后一条记录的原始创建时间，备注取前端合并确认弹窗中录入的内容（可不填写）；
+     * 合并完成后删除全部被合并的旧记录，整个流程在一个事务内完成。
+     * 仅支持合并同一用户创建且在其个人历史序列中连续的记录。
+     * 新记录的关联方案计划取所选记录关联的并集并去重，旧记录的关系行随旧记录删除。
+     */
+    @PreAuthorize("@ss.hasPermi('dortmund:extra:merge')")
+    @Log(title = "合并外快盈亏历史记录", businessType = BusinessType.UPDATE)
+    @PostMapping("/merge")
+    public AjaxResult merge(@RequestBody Fx67llDortmundExtraMergeBody mergeBody) {
+        Long mergedExtraId = fx67llDortmundExtraService.mergeFx67llDortmundExtras(mergeBody.getExtraIds(), mergeBody.getExtraRemark());
+        return AjaxResult.success("合并成功", mergedExtraId);
+    }
+
+    /**
+     * 提供给 APP 合并外快盈亏历史记录
+     * <p>
+     * 与 Web 端 /merge 接口逻辑一致，区别在于不做管理端权限校验，
+     * 而是在 Service 层校验所有待合并记录均为当前登录用户本人创建。
+     */
+//    如果只放开SecurityConfig中允许匿名请求的配置，不放开这里的权限配置，会返回获取用户信息异常的错误
+//    @PreAuthorize("@ss.hasPermi('dortmund:extra:merge')")
+    @Log(title = "提供给 APP 合并外快盈亏历史记录", businessType = BusinessType.UPDATE)
+    @PostMapping("/mergeExtraForApp")
+    public AjaxResult mergeExtraForApp(@RequestBody Fx67llDortmundExtraMergeBody mergeBody) {
+        Long mergedExtraId = fx67llDortmundExtraService.mergeFx67llDortmundExtrasForApp(mergeBody.getExtraIds(), mergeBody.getExtraRemark());
+        return AjaxResult.success("合并成功", mergedExtraId);
+    }
+
+    /**
+     * 提供给 APP 删除外快盈亏记录
+     */
+//    如果只放开SecurityConfig中允许匿名请求的配置，不放开这里的权限配置，会返回获取用户信息异常的错误
+//    @PreAuthorize("@ss.hasPermi('dortmund:extra:remove')")
+    @Log(title = "提供给 APP 删除外快盈亏记录", businessType = BusinessType.DELETE)
+    @DeleteMapping("/deleteExtraByIdForApp/{extraId}")
+    public AjaxResult deleteExtraByIdForApp(@PathVariable Long extraId) {
+        if (!fx67llDortmundExtraService.selectFx67llDortmundExtraByExtraId(extraId).getUserId().equals(SecurityUtils.getUserId())) {
+            return warn("此记录非本人创建，禁止删除！");
+        } else {
+            return toAjax(fx67llDortmundExtraService.deleteFx67llDortmundExtraByExtraId(extraId));
+        }
+    }
 }
-// ----- original source begins -----
-// package com.ruoyi.web.controller.fx67ll.dortmund;
-// 
-// import java.util.List;
-// import javax.servlet.http.HttpServletResponse;
-// 
-// import com.ruoyi.common.utils.SecurityUtils;
-// import org.springframework.security.access.prepost.PreAuthorize;
-// import org.springframework.beans.factory.annotation.Autowired;
-// import org.springframework.web.bind.annotation.GetMapping;
-// import org.springframework.web.bind.annotation.PostMapping;
-// import org.springframework.web.bind.annotation.PutMapping;
-// import org.springframework.web.bind.annotation.DeleteMapping;
-// import org.springframework.web.bind.annotation.PathVariable;
-// import org.springframework.web.bind.annotation.RequestBody;
-// import org.springframework.web.bind.annotation.RequestMapping;
-// import org.springframework.web.bind.annotation.RestController;
-// import com.ruoyi.common.annotation.Log;
-// import com.ruoyi.common.core.controller.BaseController;
-// import com.ruoyi.common.core.domain.AjaxResult;
-// import com.ruoyi.common.enums.BusinessType;
-// import com.ruoyi.fx67ll.dortmund.domain.Fx67llDortmundExtra;
-// import com.ruoyi.fx67ll.dortmund.domain.Fx67llDortmundExtraMergeBody;
-// import com.ruoyi.fx67ll.dortmund.service.IFx67llDortmundExtraService;
-// import com.ruoyi.common.utils.poi.ExcelUtil;
-// import com.ruoyi.common.core.page.TableDataInfo;
-// 
-// /**
-//  * 外快盈亏记录Controller
-//  *
-//  * @author fx67ll
-//  * @date 2023-08-17
-//  */
-// @RestController
-// @RequestMapping("/dortmund/extra")
-// public class Fx67llDortmundExtraController extends BaseController {
-//     @Autowired
-//     private IFx67llDortmundExtraService fx67llDortmundExtraService;
-// 
-//     /**
-//      * 查询外快盈亏记录列表
-//      */
-//     @PreAuthorize("@ss.hasPermi('dortmund:extra:list')")
-//     @GetMapping("/list")
-//     public TableDataInfo list(Fx67llDortmundExtra fx67llDortmundExtra) {
-//         startPage();
-//         List<Fx67llDortmundExtra> list = fx67llDortmundExtraService.selectFx67llDortmundExtraList(fx67llDortmundExtra);
-//         return getDataTable(list);
-//     }
-// 
-//     /**
-//      * 提供给 APP 查询外快盈亏记录列表
-//      */
-// //    如果只放开SecurityConfig中允许匿名请求的配置，不放开这里的权限配置，会返回获取用户信息异常的错误
-// //    @PreAuthorize("@ss.hasPermi('dortmund:extra:list')")
-//     @GetMapping("/getExtraListForApp")
-//     public TableDataInfo getExtraListForApp(Fx67llDortmundExtra fx67llDortmundExtra) {
-//         startPageForApp();
-//         List<Fx67llDortmundExtra> list = fx67llDortmundExtraService.selectFx67llDortmundExtraListByUserId(fx67llDortmundExtra);
-//         return getDataTable(list);
-//     }
-// 
-//     /**
-//      * 导出外快盈亏记录列表
-//      */
-//     @PreAuthorize("@ss.hasPermi('dortmund:extra:export')")
-//     @Log(title = "导出外快盈亏记录列表", businessType = BusinessType.EXPORT)
-//     @PostMapping("/export")
-//     public void export(HttpServletResponse response, Fx67llDortmundExtra fx67llDortmundExtra) {
-//         List<Fx67llDortmundExtra> list = fx67llDortmundExtraService.selectFx67llDortmundExtraList(fx67llDortmundExtra);
-//         ExcelUtil<Fx67llDortmundExtra> util = new ExcelUtil<Fx67llDortmundExtra>(Fx67llDortmundExtra.class);
-//         util.exportExcel(response, list, "外快盈亏记录数据");
-//     }
-// 
-//     /**
-//      * 获取外快盈亏记录详细信息
-//      */
-//     @PreAuthorize("@ss.hasPermi('dortmund:extra:query')")
-//     @GetMapping(value = "/{extraId}")
-//     public AjaxResult getInfo(@PathVariable("extraId") Long extraId) {
-//         return success(fx67llDortmundExtraService.selectFx67llDortmundExtraByExtraId(extraId));
-//     }
-// 
-//     /**
-//      * 新增外快盈亏记录
-//      */
-//     @PreAuthorize("@ss.hasPermi('dortmund:extra:add')")
-//     @Log(title = "新增外快盈亏记录", businessType = BusinessType.INSERT)
-//     @PostMapping
-//     public AjaxResult add(@RequestBody Fx67llDortmundExtra fx67llDortmundExtra) {
-//         return toAjax(fx67llDortmundExtraService.insertFx67llDortmundExtra(fx67llDortmundExtra));
-//     }
-// 
-//     /**
-//      * 提供给 APP 新增外快盈亏记录
-//      */
-// //    如果只放开SecurityConfig中允许匿名请求的配置，不放开这里的权限配置，会返回获取用户信息异常的错误
-// //    @PreAuthorize("@ss.hasPermi('dortmund:extra:add')")
-//     @Log(title = "提供给 APP 新增外快盈亏记录", businessType = BusinessType.INSERT)
-//     @PostMapping("/addExtraForApp")
-//     public AjaxResult addExtraForApp(@RequestBody Fx67llDortmundExtra fx67llDortmundExtra) {
-//         return toAjax(fx67llDortmundExtraService.insertFx67llDortmundExtra(fx67llDortmundExtra));
-//     }
-// 
-//     /**
-//      * 修改外快盈亏记录
-//      */
-//     @PreAuthorize("@ss.hasPermi('dortmund:extra:edit')")
-//     @Log(title = "修改外快盈亏记录", businessType = BusinessType.UPDATE)
-//     @PutMapping
-//     public AjaxResult edit(@RequestBody Fx67llDortmundExtra fx67llDortmundExtra) {
-//         return toAjax(fx67llDortmundExtraService.updateFx67llDortmundExtra(fx67llDortmundExtra));
-//     }
-// 
-//     /**
-//      * 删除外快盈亏记录
-//      */
-//     @PreAuthorize("@ss.hasPermi('dortmund:extra:remove')")
-//     @Log(title = "删除外快盈亏记录", businessType = BusinessType.DELETE)
-//     @DeleteMapping("/{extraIds}")
-//     public AjaxResult remove(@PathVariable Long[] extraIds) {
-//         return toAjax(fx67llDortmundExtraService.deleteFx67llDortmundExtraByExtraIds(extraIds));
-//     }
-// 
-//     /**
-//      * 合并外快盈亏历史记录
-//      * <p>
-//      * 合并所选的多条连续历史记录为一条新记录：总金额、当前本金、落袋金额、目标金额等快照类字段
-//      * 取合并范围内时间序最后一条的原值，盈亏金额取所选记录盈亏金额之和并按正负推导是否盈利，
-//      * 创建时间沿用最后一条记录的原始创建时间，备注取前端合并确认弹窗中录入的内容（可不填写）；
-//      * 合并完成后删除全部被合并的旧记录，整个流程在一个事务内完成。
-//      * 仅支持合并同一用户创建且在其个人历史序列中连续的记录。
-//      */
-//     @PreAuthorize("@ss.hasPermi('dortmund:extra:merge')")
-//     @Log(title = "合并外快盈亏历史记录", businessType = BusinessType.UPDATE)
-//     @PostMapping("/merge")
-//     public AjaxResult merge(@RequestBody Fx67llDortmundExtraMergeBody mergeBody) {
-//         Long mergedExtraId = fx67llDortmundExtraService.mergeFx67llDortmundExtras(mergeBody.getExtraIds(), mergeBody.getExtraRemark());
-//         return AjaxResult.success("合并成功", mergedExtraId);
-//     }
-// 
-//     /**
-//      * 提供给 APP 合并外快盈亏历史记录
-//      * <p>
-//      * 与 Web 端 /merge 接口逻辑一致，区别在于不做管理端权限校验，
-//      * 而是在 Service 层校验所有待合并记录均为当前登录用户本人创建。
-//      */
-// //    如果只放开SecurityConfig中允许匿名请求的配置，不放开这里的权限配置，会返回获取用户信息异常的错误
-// //    @PreAuthorize("@ss.hasPermi('dortmund:extra:merge')")
-//     @Log(title = "提供给 APP 合并外快盈亏历史记录", businessType = BusinessType.UPDATE)
-//     @PostMapping("/mergeExtraForApp")
-//     public AjaxResult mergeExtraForApp(@RequestBody Fx67llDortmundExtraMergeBody mergeBody) {
-//         Long mergedExtraId = fx67llDortmundExtraService.mergeFx67llDortmundExtrasForApp(mergeBody.getExtraIds(), mergeBody.getExtraRemark());
-//         return AjaxResult.success("合并成功", mergedExtraId);
-//     }
-// 
-//     /**
-//      * 提供给 APP 删除外快盈亏记录
-//      */
-// //    如果只放开SecurityConfig中允许匿名请求的配置，不放开这里的权限配置，会返回获取用户信息异常的错误
-// //    @PreAuthorize("@ss.hasPermi('dortmund:extra:remove')")
-//     @Log(title = "提供给 APP 删除外快盈亏记录", businessType = BusinessType.DELETE)
-//     @DeleteMapping("/deleteExtraByIdForApp/{extraId}")
-//     public AjaxResult deleteExtraByIdForApp(@PathVariable Long extraId) {
-//         if (fx67llDortmundExtraService.selectFx67llDortmundExtraByExtraId(extraId).getUserId() != SecurityUtils.getUserId()) {
-//             return warn("此记录非本人创建，禁止删除！");
-//         } else {
-//             return toAjax(fx67llDortmundExtraService.deleteFx67llDortmundExtraByExtraId(extraId));
-//         }
-//     }
-// }
-// 
-// ----- original source ends -----

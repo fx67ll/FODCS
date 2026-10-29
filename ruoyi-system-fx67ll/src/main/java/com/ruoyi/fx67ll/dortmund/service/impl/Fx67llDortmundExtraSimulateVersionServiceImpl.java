@@ -6,7 +6,9 @@ import com.ruoyi.common.utils.DateUtils;
 import com.ruoyi.common.utils.SecurityUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import com.ruoyi.fx67ll.dortmund.mapper.Fx67llDortmundExtraSimulateVersionMapper;
+import com.ruoyi.fx67ll.dortmund.mapper.Fx67llDortmundRoundPlanRelMapper;
 import com.ruoyi.fx67ll.dortmund.domain.Fx67llDortmundExtraSimulateVersion;
 import com.ruoyi.fx67ll.dortmund.service.IFx67llDortmundExtraSimulateVersionService;
 
@@ -20,6 +22,9 @@ import com.ruoyi.fx67ll.dortmund.service.IFx67llDortmundExtraSimulateVersionServ
 public class Fx67llDortmundExtraSimulateVersionServiceImpl implements IFx67llDortmundExtraSimulateVersionService {
     @Autowired
     private Fx67llDortmundExtraSimulateVersionMapper fx67llDortmundExtraSimulateVersionMapper;
+
+    @Autowired
+    private Fx67llDortmundRoundPlanRelMapper fx67llDortmundRoundPlanRelMapper;
 
     /**
      * 查询外快盈亏数值模拟版本记录列表
@@ -75,12 +80,16 @@ public class Fx67llDortmundExtraSimulateVersionServiceImpl implements IFx67llDor
 
     /**
      * 作废外快盈亏数值模拟版本记录（软删除，作废后不在列表中展示）
+     * <p>
+     * 同一事务里先删该版本全部轮次的方案计划关系行再作废版本，方案计划和比赛不动
      *
      * @param fx67llDortmundExtraSimulateVersion 外快盈亏数值模拟版本记录（需携带版本ID）
      * @return 结果
      */
     @Override
+    @Transactional(rollbackFor = Exception.class)
     public int invalidateFx67llDortmundExtraSimulateVersion(Fx67llDortmundExtraSimulateVersion fx67llDortmundExtraSimulateVersion) {
+        fx67llDortmundRoundPlanRelMapper.deleteFx67llDortmundRoundPlanRelByVersionId(fx67llDortmundExtraSimulateVersion.getVersionId());
         fx67llDortmundExtraSimulateVersion.setUpdateBy(SecurityUtils.getUsername());
         fx67llDortmundExtraSimulateVersion.setUpdateTime(DateUtils.getNowDate());
         return fx67llDortmundExtraSimulateVersionMapper.invalidateFx67llDortmundExtraSimulateVersion(fx67llDortmundExtraSimulateVersion);

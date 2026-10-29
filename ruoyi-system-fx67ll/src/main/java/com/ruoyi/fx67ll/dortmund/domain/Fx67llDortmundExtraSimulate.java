@@ -1,5 +1,7 @@
 package com.ruoyi.fx67ll.dortmund.domain;
 
+import java.util.List;
+
 import org.apache.commons.lang3.builder.ToStringBuilder;
 import org.apache.commons.lang3.builder.ToStringStyle;
 import com.ruoyi.common.core.domain.BaseEntity;
@@ -87,6 +89,36 @@ public class Fx67llDortmundExtraSimulate extends BaseEntity {
      * 创建结束时间
      */
     private String endCreateTime;
+
+    /**
+     * 已关联方案计划ID集合（非表字段，新增轮次时可选提交，不传表示不关联）
+     */
+    private Long[] planIds;
+
+    /**
+     * 当场新建方案计划集合（非表字段，新增轮次时可选提交，元素只用已有比赛，不能带图片对象键）
+     */
+    private List<Fx67llDortmundPlan> newPlans;
+
+    /**
+     * 图片对象键集合（非表字段，仅用于检测并拒绝请求中携带的图片对象键，数值轮次不保存图片）
+     */
+    private String[] planImageObjectKeys;
+
+    /**
+     * 关联方案计划摘要（非表字段，轮次方案计划查询只读返回，仅对拥有方案计划查询权限的用户填充）
+     */
+    private List<Fx67llDortmundPlan> plans;
+
+    /**
+     * 不可见关联方案计划数量（非表字段，轮次方案计划查询只读返回）
+     */
+    private Integer hiddenPlanCount;
+
+    /**
+     * 关联方案计划数量（非表字段，列表只读派生值）
+     */
+    private Integer planCount;
 
     public void setSimId(Long simId) {
         this.simId = simId;
@@ -208,6 +240,54 @@ public class Fx67llDortmundExtraSimulate extends BaseEntity {
         this.endCreateTime = endCreateTime;
     }
 
+    public Long[] getPlanIds() {
+        return planIds;
+    }
+
+    public void setPlanIds(Long[] planIds) {
+        this.planIds = planIds;
+    }
+
+    public List<Fx67llDortmundPlan> getNewPlans() {
+        return newPlans;
+    }
+
+    public void setNewPlans(List<Fx67llDortmundPlan> newPlans) {
+        this.newPlans = newPlans;
+    }
+
+    public String[] getPlanImageObjectKeys() {
+        return planImageObjectKeys;
+    }
+
+    public void setPlanImageObjectKeys(String[] planImageObjectKeys) {
+        this.planImageObjectKeys = planImageObjectKeys;
+    }
+
+    public List<Fx67llDortmundPlan> getPlans() {
+        return plans;
+    }
+
+    public void setPlans(List<Fx67llDortmundPlan> plans) {
+        this.plans = plans;
+    }
+
+    public Integer getHiddenPlanCount() {
+        return hiddenPlanCount;
+    }
+
+    public void setHiddenPlanCount(Integer hiddenPlanCount) {
+        this.hiddenPlanCount = hiddenPlanCount;
+    }
+
+    public Integer getPlanCount() {
+        return planCount;
+    }
+
+    public void setPlanCount(Integer planCount) {
+        this.planCount = planCount;
+    }
+
     @Override
     public String toString() {
         return new ToStringBuilder(this, ToStringStyle.MULTI_LINE_STYLE)
@@ -228,6 +308,12 @@ public class Fx67llDortmundExtraSimulate extends BaseEntity {
                 .append("createTime", getCreateTime())
                 .append("beginCreateTime", getBeginCreateTime())
                 .append("endCreateTime", getEndCreateTime())
+                .append("planIds", getPlanIds())
+                .append("newPlans", getNewPlans())
+                .append("planImageObjectKeys", getPlanImageObjectKeys())
+                .append("plans", getPlans())
+                .append("hiddenPlanCount", getHiddenPlanCount())
+                .append("planCount", getPlanCount())
                 .append("updateBy", getUpdateBy())
                 .append("updateTime", getUpdateTime())
                 .toString();

@@ -1,0 +1,95 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.ruoyi.fx67ll.dortmund.mapper.Fx67llDortmundPlanMatchRelMapper">
+
+    <resultMap type="Fx67llDortmundPlanMatchRel" id="Fx67llDortmundPlanMatchRelResult">
+        <result property="relId" column="rel_id"/>
+        <result property="planId" column="plan_id"/>
+        <result property="matchId" column="match_id"/>
+        <result property="createBy" column="create_by"/>
+        <result property="createTime" column="create_time"/>
+        <result property="updateBy" column="update_by"/>
+        <result property="updateTime" column="update_time"/>
+    </resultMap>
+
+    <sql id="selectFx67llDortmundPlanMatchRelVo">
+        select rel_id,
+               plan_id,
+               match_id,
+               create_by,
+               create_time,
+               update_by,
+               update_time
+        from fx67ll_dortmund_plan_match_rel
+    </sql>
+
+    <select id="selectFx67llDortmundPlanMatchRelList" parameterType="Fx67llDortmundPlanMatchRel"
+            resultMap="Fx67llDortmundPlanMatchRelResult">
+        <include refid="selectFx67llDortmundPlanMatchRelVo"/>
+        <where>
+            <if test="planId != null ">and plan_id = #{planId}</if>
+            <if test="matchId != null ">and match_id = #{matchId}</if>
+        </where>
+    </select>
+
+    <select id="selectFx67llDortmundPlanMatchRelByRelId" parameterType="Long"
+            resultMap="Fx67llDortmundPlanMatchRelResult">
+        <include refid="selectFx67llDortmundPlanMatchRelVo"/>
+        where rel_id = #{relId}
+    </select>
+
+    <insert id="insertFx67llDortmundPlanMatchRel" parameterType="Fx67llDortmundPlanMatchRel" useGeneratedKeys="true"
+            keyProperty="relId">
+        insert into fx67ll_dortmund_plan_match_rel
+        <trim prefix="(" suffix=")" suffixOverrides=",">
+            <if test="planId != null">plan_id,</if>
+            <if test="matchId != null">match_id,</if>
+            <if test="createBy != null">create_by,</if>
+            <if test="createTime != null">create_time,</if>
+            <if test="updateBy != null">update_by,</if>
+            <if test="updateTime != null">update_time,</if>
+        </trim>
+        <trim prefix="values (" suffix=")" suffixOverrides=",">
+            <if test="planId != null">#{planId},</if>
+            <if test="matchId != null">#{matchId},</if>
+            <if test="createBy != null">#{createBy},</if>
+            <if test="createTime != null">#{createTime},</if>
+            <if test="updateBy != null">#{updateBy},</if>
+            <if test="updateTime != null">#{updateTime},</if>
+        </trim>
+    </insert>
+
+    <update id="updateFx67llDortmundPlanMatchRel" parameterType="Fx67llDortmundPlanMatchRel">
+        update fx67ll_dortmund_plan_match_rel
+        <trim prefix="SET" suffixOverrides=",">
+            <if test="planId != null">plan_id = #{planId},</if>
+            <if test="matchId != null">match_id = #{matchId},</if>
+            <if test="createBy != null">create_by = #{createBy},</if>
+            <if test="createTime != null">create_time = #{createTime},</if>
+            <if test="updateBy != null">update_by = #{updateBy},</if>
+            <if test="updateTime != null">update_time = #{updateTime},</if>
+        </trim>
+        where rel_id = #{relId}
+    </update>
+
+    <delete id="deleteFx67llDortmundPlanMatchRelByRelId" parameterType="Long">
+        delete
+        from fx67ll_dortmund_plan_match_rel
+        where rel_id = #{relId}
+    </delete>
+
+    <delete id="deleteFx67llDortmundPlanMatchRelByRelIds" parameterType="String">
+        delete from fx67ll_dortmund_plan_match_rel where rel_id in
+        <foreach item="relId" collection="array" open="(" separator="," close=")">
+            #{relId}
+        </foreach>
+    </delete>
+
+    <delete id="deleteFx67llDortmundPlanMatchRelByPlanId" parameterType="Long">
+        delete
+        from fx67ll_dortmund_plan_match_rel
+        where plan_id = #{planId}
+    </delete>
+</mapper>

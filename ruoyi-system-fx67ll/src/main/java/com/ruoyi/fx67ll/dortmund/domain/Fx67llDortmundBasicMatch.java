@@ -61,8 +61,8 @@ public class Fx67llDortmundBasicMatch extends BaseEntity {
     /**
      * 比赛开球时间
      */
-    @JsonFormat(pattern = "yyyy-MM-dd")
-    @Excel(name = "比赛开球时间", width = 30, dateFormat = "yyyy-MM-dd")
+    @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
+    @Excel(name = "比赛开球时间", width = 30, dateFormat = "yyyy-MM-dd HH:mm:ss")
     private Date matchTime;
 
     /**
@@ -72,9 +72,9 @@ public class Fx67llDortmundBasicMatch extends BaseEntity {
     private String matchVenue;
 
     /**
-     * 比赛状态（字典码：0-未开始，1-进行中，2-已结束）
+     * 比赛状态（字典码：0-正常，1-关闭）
      */
-    @Excel(name = "比赛状态", readConverterExp = "字=典码：0-未开始，1-进行中，2-已结束")
+    @Excel(name = "比赛状态", readConverterExp = "字=典码：0-正常，1-关闭")
     private String matchStatus;
 
     /**
@@ -92,6 +92,21 @@ public class Fx67llDortmundBasicMatch extends BaseEntity {
      */
     @Excel(name = "比赛业务备注", readConverterExp = "如=轮次、特殊说明")
     private String matchRemark;
+
+    /**
+     * 新增赛季对象（新增比赛时同时创建赛季，仅比赛接口支持该嵌套新增）
+     */
+    private Fx67llDortmundBasicSeason newSeason;
+
+    /**
+     * 新增主队对象（新增比赛时同时创建主队，仅比赛接口支持该嵌套新增）
+     */
+    private Fx67llDortmundBasicTeam newHomeTeam;
+
+    /**
+     * 新增客队对象（新增比赛时同时创建客队，仅比赛接口支持该嵌套新增）
+     */
+    private Fx67llDortmundBasicTeam newAwayTeam;
 
 
     /**
@@ -242,6 +257,30 @@ public class Fx67llDortmundBasicMatch extends BaseEntity {
         return matchRemark;
     }
 
+    public Fx67llDortmundBasicSeason getNewSeason() {
+        return newSeason;
+    }
+
+    public void setNewSeason(Fx67llDortmundBasicSeason newSeason) {
+        this.newSeason = newSeason;
+    }
+
+    public Fx67llDortmundBasicTeam getNewHomeTeam() {
+        return newHomeTeam;
+    }
+
+    public void setNewHomeTeam(Fx67llDortmundBasicTeam newHomeTeam) {
+        this.newHomeTeam = newHomeTeam;
+    }
+
+    public Fx67llDortmundBasicTeam getNewAwayTeam() {
+        return newAwayTeam;
+    }
+
+    public void setNewAwayTeam(Fx67llDortmundBasicTeam newAwayTeam) {
+        this.newAwayTeam = newAwayTeam;
+    }
+
     public void setDelFlag(String delFlag) {
         this.delFlag = delFlag;
     }
@@ -322,6 +361,9 @@ public class Fx67llDortmundBasicMatch extends BaseEntity {
                 .append("analysisCount", getAnalysisCount())
                 .append("matchResult", getMatchResult())
                 .append("matchRemark", getMatchRemark())
+                .append("newSeason", getNewSeason())
+                .append("newHomeTeam", getNewHomeTeam())
+                .append("newAwayTeam", getNewAwayTeam())
                 .append("createBy", getCreateBy())
                 .append("createTime", getCreateTime())
                 .append("updateBy", getUpdateBy())

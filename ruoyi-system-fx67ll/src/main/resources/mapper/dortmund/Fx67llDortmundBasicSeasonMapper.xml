@@ -123,7 +123,6 @@
     <update id="updateFx67llDortmundBasicSeason" parameterType="Fx67llDortmundBasicSeason">
         update fx67ll_dortmund_season
         <trim prefix="SET" suffixOverrides=",">
-            <if test="seasonCode != null and seasonCode != ''">season_code = #{seasonCode},</if>
             <if test="seasonName != null and seasonName != ''">season_name = #{seasonName},</if>
             <if test="seasonRemark != null">season_remark = #{seasonRemark},</if>
             <if test="seasonStartDate != null">season_start_date = #{seasonStartDate},</if>

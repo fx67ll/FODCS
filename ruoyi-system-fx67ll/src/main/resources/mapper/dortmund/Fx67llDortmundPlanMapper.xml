@@ -1,0 +1,133 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.ruoyi.fx67ll.dortmund.mapper.Fx67llDortmundPlanMapper">
+
+    <resultMap type="Fx67llDortmundPlan" id="Fx67llDortmundPlanResult">
+        <result property="planId" column="plan_id"/>
+        <result property="planContent" column="plan_content"/>
+        <result property="planRate" column="plan_rate"/>
+        <result property="planAmount" column="plan_amount"/>
+        <result property="planRemark" column="plan_remark"/>
+        <result property="planImageObjectKeysStr" column="plan_image_object_keys"/>
+        <result property="userId" column="user_id"/>
+        <result property="createBy" column="create_by"/>
+        <result property="createTime" column="create_time"/>
+        <result property="updateBy" column="update_by"/>
+        <result property="updateTime" column="update_time"/>
+        <result property="delFlag" column="del_flag"/>
+    </resultMap>
+
+    <sql id="selectFx67llDortmundPlanVo">
+        select plan_id,
+               plan_content,
+               plan_rate,
+               plan_amount,
+               plan_remark,
+               plan_image_object_keys,
+               user_id,
+               create_by,
+               create_time,
+               update_by,
+               update_time,
+               del_flag
+        from fx67ll_dortmund_plan
+    </sql>
+
+    <select id="selectFx67llDortmundPlanList" parameterType="Fx67llDortmundPlan"
+            resultMap="Fx67llDortmundPlanResult">
+        <include refid="selectFx67llDortmundPlanVo"/>
+        <where>
+            <if test="planId != null ">and plan_id = #{planId}</if>
+            <if test="planContent != null  and planContent != ''">and plan_content like concat('%', #{planContent},
+                '%')
+            </if>
+            <if test="planRemark != null  and planRemark != ''">and plan_remark like concat('%', #{planRemark},
+                '%')
+            </if>
+            <if test="delFlag != null  and delFlag != ''">and del_flag = #{delFlag}</if>
+            <if test="userId != null ">and user_id = #{userId}</if>
+            <if test="createBy != null  and createBy != ''">and create_by like concat('%',
+                #{createBy}, '%')
+            </if>
+            <if test="beginCreateTime != null and endCreateTime != ''">and create_time between #{beginCreateTime} and
+                #{endCreateTime}
+            </if>
+            <if test="updateBy != null  and updateBy != ''">and update_by like concat('%',
+                #{updateBy}, '%')
+            </if>
+            <if test="beginUpdateTime != null and endUpdateTime != ''">and update_time between #{beginUpdateTime} and
+                #{endUpdateTime}
+            </if>
+            <if test="matchId != null">
+                and plan_id in (select plan_id from fx67ll_dortmund_plan_match_rel where match_id = #{matchId})
+            </if>
+        </where>
+        order by STR_TO_DATE(create_time, "%Y-%m-%d %H:%i:%s") desc
+    </select>
+
+    <select id="selectFx67llDortmundPlanByPlanId" parameterType="Long" resultMap="Fx67llDortmundPlanResult">
+        <include refid="selectFx67llDortmundPlanVo"/>
+        where plan_id = #{planId}
+    </select>
+
+    <insert id="insertFx67llDortmundPlan" parameterType="Fx67llDortmundPlan" useGeneratedKeys="true"
+            keyProperty="planId">
+        insert into fx67ll_dortmund_plan
+        <trim prefix="(" suffix=")" suffixOverrides=",">
+            <if test="planContent != null and planContent != ''">plan_content,</if>
+            <if test="planRate != null">plan_rate,</if>
+            <if test="planAmount != null">plan_amount,</if>
+            <if test="planRemark != null">plan_remark,</if>
+            <if test="planImageObjectKeysStr != null">plan_image_object_keys,</if>
+            <if test="createBy != null">create_by,</if>
+            <if test="createTime != null">create_time,</if>
+            <if test="updateBy != null">update_by,</if>
+            <if test="updateTime != null">update_time,</if>
+            <if test="delFlag != null">del_flag,</if>
+            <if test="userId != null">user_id,</if>
+        </trim>
+        <trim prefix="values (" suffix=")" suffixOverrides=",">
+            <if test="planContent != null and planContent != ''">#{planContent},</if>
+            <if test="planRate != null">#{planRate},</if>
+            <if test="planAmount != null">#{planAmount},</if>
+            <if test="planRemark != null">#{planRemark},</if>
+            <if test="planImageObjectKeysStr != null">#{planImageObjectKeysStr},</if>
+            <if test="createBy != null">#{createBy},</if>
+            <if test="createTime != null">#{createTime},</if>
+            <if test="updateBy != null">#{updateBy},</if>
+            <if test="updateTime != null">#{updateTime},</if>
+            <if test="delFlag != null">#{delFlag},</if>
+            <if test="userId != null">#{userId},</if>
+        </trim>
+    </insert>
+
+    <update id="updateFx67llDortmundPlan" parameterType="Fx67llDortmundPlan">
+        update fx67ll_dortmund_plan
+        <trim prefix="SET" suffixOverrides=",">
+            <if test="planContent != null and planContent != ''">plan_content = #{planContent},</if>
+            <if test="planRate != null">plan_rate = #{planRate},</if>
+            <if test="planAmount != null">plan_amount = #{planAmount},</if>
+            <if test="planRemark != null">plan_remark = #{planRemark},</if>
+            <if test="planImageObjectKeysStr != null">plan_image_object_keys = #{planImageObjectKeysStr},</if>
+            <if test="updateBy != null">update_by = #{updateBy},</if>
+            <if test="updateTime != null">update_time = #{updateTime},</if>
+            <if test="delFlag != null">del_flag = #{delFlag},</if>
+        </trim>
+        where plan_id = #{planId}
+    </update>
+
+    <delete id="deleteFx67llDortmundPlanByPlanId" parameterType="Long">
+        delete
+        from fx67ll_dortmund_plan
+        where plan_id = #{planId}
+    </delete>
+
+    <delete id="deleteFx67llDortmundPlanByPlanIds" parameterType="String">
+        delete from fx67ll_dortmund_plan where plan_id in
+        <foreach item="planId" collection="array" open="(" separator="," close=")">
+            #{planId}
+        </foreach>
+    </delete>
+</mapper>

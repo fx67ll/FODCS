@@ -1,0 +1,182 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.ruoyi.fx67ll.dortmund.mapper.Fx67llDortmundInfoPointMapper">
+
+    <resultMap type="Fx67llDortmundInfoPoint" id="Fx67llDortmundInfoPointResult">
+        <result property="infoPointId" column="info_point_id"/>
+        <result property="infoPointType" column="info_point_type"/>
+        <result property="seasonId" column="season_id"/>
+        <result property="seasonName" column="season_name"/>
+        <result property="matchId" column="match_id"/>
+        <result property="matchTime" column="match_time"/>
+        <result property="homeTeamName" column="home_team_name"/>
+        <result property="awayTeamName" column="away_team_name"/>
+        <result property="pointTitle" column="point_title"/>
+        <result property="pointContent" column="point_content"/>
+        <result property="sourceName" column="source_name"/>
+        <result property="sourceUrl" column="source_url"/>
+        <result property="sourcePublishTime" column="source_publish_time"/>
+        <result property="collectTime" column="collect_time"/>
+        <result property="effectiveStartTime" column="effective_start_time"/>
+        <result property="effectiveEndTime" column="effective_end_time"/>
+        <result property="pointStatus" column="point_status"/>
+        <result property="allowPublic" column="allow_public"/>
+        <result property="pointRemark" column="point_remark"/>
+        <result property="userId" column="user_id"/>
+        <result property="createBy" column="create_by"/>
+        <result property="createTime" column="create_time"/>
+        <result property="updateBy" column="update_by"/>
+        <result property="updateTime" column="update_time"/>
+    </resultMap>
+
+    <sql id="selectFx67llDortmundInfoPointVo">
+        select p.info_point_id,
+               p.info_point_type,
+               p.season_id,
+               s.season_name as season_name,
+               p.match_id,
+               m.match_time  as match_time,
+               ht.team_name  as home_team_name,
+               at.team_name  as away_team_name,
+               p.point_title,
+               p.point_content,
+               p.source_name,
+               p.source_url,
+               p.source_publish_time,
+               p.collect_time,
+               p.effective_start_time,
+               p.effective_end_time,
+               p.point_status,
+               p.allow_public,
+               p.point_remark,
+               p.user_id,
+               p.create_by,
+               p.create_time,
+               p.update_by,
+               p.update_time
+        from fx67ll_dortmund_info_point p
+                 left join fx67ll_dortmund_season s on p.season_id = s.season_id
+                 left join fx67ll_dortmund_match m on p.match_id = m.match_id
+                 left join fx67ll_dortmund_team ht on m.home_team_id = ht.team_id
+                 left join fx67ll_dortmund_team at on m.away_team_id = at.team_id
+    </sql>
+
+    <select id="selectFx67llDortmundInfoPointList" parameterType="Fx67llDortmundInfoPoint"
+            resultMap="Fx67llDortmundInfoPointResult">
+        <include refid="selectFx67llDortmundInfoPointVo"/>
+        <where>
+            <if test="infoPointId != null ">and p.info_point_id = #{infoPointId}</if>
+            <if test="infoPointType != null  and infoPointType != ''">and p.info_point_type = #{infoPointType}</if>
+            <if test="seasonId != null ">and p.season_id = #{seasonId}</if>
+            <if test="matchId != null ">and p.match_id = #{matchId}</if>
+            <if test="pointStatus != null  and pointStatus != ''">and p.point_status = #{pointStatus}</if>
+            <if test="allowPublic != null  and allowPublic != ''">and p.allow_public = #{allowPublic}</if>
+            <if test="pointTitle != null  and pointTitle != ''">and p.point_title like concat('%', #{pointTitle},
+                '%')
+            </if>
+            <if test="pointContent != null  and pointContent != ''">and p.point_content like concat('%',
+                #{pointContent}, '%')
+            </if>
+            <if test="sourceName != null  and sourceName != ''">and p.source_name like concat('%', #{sourceName},
+                '%')
+            </if>
+            <if test="userId != null ">and p.user_id = #{userId}</if>
+            <if test="createBy != null  and createBy != ''">and p.create_by like concat('%',
+                #{createBy}, '%')
+            </if>
+            <if test="beginCreateTime != null and endCreateTime != ''">and p.create_time between #{beginCreateTime} and
+                #{endCreateTime}
+            </if>
+            <if test="updateBy != null  and updateBy != ''">and p.update_by like concat('%',
+                #{updateBy}, '%')
+            </if>
+            <if test="beginUpdateTime != null and endUpdateTime != ''">and p.update_time between #{beginUpdateTime} and
+                #{endUpdateTime}
+            </if>
+        </where>
+        order by STR_TO_DATE(p.create_time, "%Y-%m-%d %H:%i:%s") desc
+    </select>
+
+    <select id="selectFx67llDortmundInfoPointByInfoPointId" parameterType="Long"
+            resultMap="Fx67llDortmundInfoPointResult">
+        <include refid="selectFx67llDortmundInfoPointVo"/>
+        where p.info_point_id = #{infoPointId}
+    </select>
+
+    <insert id="insertFx67llDortmundInfoPoint" parameterType="Fx67llDortmundInfoPoint" useGeneratedKeys="true"
+            keyProperty="infoPointId">
+        insert into fx67ll_dortmund_info_point
+        <trim prefix="(" suffix=")" suffixOverrides=",">
+            <if test="infoPointType != null and infoPointType != ''">info_point_type,</if>
+            <if test="seasonId != null">season_id,</if>
+            <if test="matchId != null">match_id,</if>
+            <if test="pointTitle != null and pointTitle != ''">point_title,</if>
+            <if test="pointContent != null and pointContent != ''">point_content,</if>
+            <if test="sourceName != null and sourceName != ''">source_name,</if>
+            <if test="sourceUrl != null">source_url,</if>
+            <if test="sourcePublishTime != null">source_publish_time,</if>
+            <if test="collectTime != null">collect_time,</if>
+            <if test="effectiveStartTime != null">effective_start_time,</if>
+            <if test="effectiveEndTime != null">effective_end_time,</if>
+            <if test="pointStatus != null">point_status,</if>
+            <if test="allowPublic != null">allow_public,</if>
+            <if test="pointRemark != null">point_remark,</if>
+            <if test="createBy != null">create_by,</if>
+            <if test="createTime != null">create_time,</if>
+            <if test="updateBy != null">update_by,</if>
+            <if test="updateTime != null">update_time,</if>
+            <if test="userId != null">user_id,</if>
+        </trim>
+        <trim prefix="values (" suffix=")" suffixOverrides=",">
+            <if test="infoPointType != null and infoPointType != ''">#{infoPointType},</if>
+            <if test="seasonId != null">#{seasonId},</if>
+            <if test="matchId != null">#{matchId},</if>
+            <if test="pointTitle != null and pointTitle != ''">#{pointTitle},</if>
+            <if test="pointContent != null and pointContent != ''">#{pointContent},</if>
+            <if test="sourceName != null and sourceName != ''">#{sourceName},</if>
+            <if test="sourceUrl != null">#{sourceUrl},</if>
+            <if test="sourcePublishTime != null">#{sourcePublishTime},</if>
+            <if test="collectTime != null">#{collectTime},</if>
+            <if test="effectiveStartTime != null">#{effectiveStartTime},</if>
+            <if test="effectiveEndTime != null">#{effectiveEndTime},</if>
+            <if test="pointStatus != null">#{pointStatus},</if>
+            <if test="allowPublic != null">#{allowPublic},</if>
+            <if test="pointRemark != null">#{pointRemark},</if>
+            <if test="createBy != null">#{createBy},</if>
+            <if test="createTime != null">#{createTime},</if>
+            <if test="updateBy != null">#{updateBy},</if>
+            <if test="updateTime != null">#{updateTime},</if>
+            <if test="userId != null">#{userId},</if>
+        </trim>
+    </insert>
+
+    <update id="updateFx67llDortmundInfoPoint" parameterType="Fx67llDortmundInfoPoint">
+        update fx67ll_dortmund_info_point
+        <trim prefix="SET" suffixOverrides=",">
+            <if test="pointTitle != null and pointTitle != ''">point_title = #{pointTitle},</if>
+            <if test="pointContent != null and pointContent != ''">point_content = #{pointContent},</if>
+            <if test="sourceName != null and sourceName != ''">source_name = #{sourceName},</if>
+            <if test="sourceUrl != null">source_url = #{sourceUrl},</if>
+            <if test="sourcePublishTime != null">source_publish_time = #{sourcePublishTime},</if>
+            <if test="collectTime != null">collect_time = #{collectTime},</if>
+            <if test="effectiveStartTime != null">effective_start_time = #{effectiveStartTime},</if>
+            <if test="effectiveEndTime != null">effective_end_time = #{effectiveEndTime},</if>
+            <if test="allowPublic != null">allow_public = #{allowPublic},</if>
+            <if test="pointRemark != null">point_remark = #{pointRemark},</if>
+            <if test="updateBy != null">update_by = #{updateBy},</if>
+            <if test="updateTime != null">update_time = #{updateTime},</if>
+        </trim>
+        where info_point_id = #{infoPointId}
+    </update>
+
+    <update id="updateFx67llDortmundInfoPointStatus" parameterType="Fx67llDortmundInfoPoint">
+        update fx67ll_dortmund_info_point
+        set point_status = #{pointStatus},
+            update_by = #{updateBy},
+            update_time = #{updateTime}
+        where info_point_id = #{infoPointId}
+          and point_status != #{pointStatus}
+    </update>
+</mapper>

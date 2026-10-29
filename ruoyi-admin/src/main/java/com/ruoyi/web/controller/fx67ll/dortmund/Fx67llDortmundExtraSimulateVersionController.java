@@ -106,7 +106,7 @@ public class Fx67llDortmundExtraSimulateVersionController extends BaseController
     @Log(title = "提供给 APP 修改外快盈亏数值模拟版本记录", businessType = BusinessType.UPDATE)
     @PostMapping("/updateSimulateVersionForApp")
     public AjaxResult updateSimulateVersionForApp(@RequestBody Fx67llDortmundExtraSimulateVersion fx67llDortmundExtraSimulateVersion) {
-        if (fx67llDortmundExtraSimulateVersionService.selectFx67llDortmundExtraSimulateVersionById(fx67llDortmundExtraSimulateVersion.getVersionId()).getUserId() != SecurityUtils.getUserId()) {
+        if (!fx67llDortmundExtraSimulateVersionService.selectFx67llDortmundExtraSimulateVersionById(fx67llDortmundExtraSimulateVersion.getVersionId()).getUserId().equals(SecurityUtils.getUserId())) {
             return warn("此版本非本人创建，禁止修改！");
         } else {
             return toAjax(fx67llDortmundExtraSimulateVersionService.updateFx67llDortmundExtraSimulateVersion(fx67llDortmundExtraSimulateVersion));
@@ -122,7 +122,7 @@ public class Fx67llDortmundExtraSimulateVersionController extends BaseController
     @PostMapping("/invalidateSimulateVersionForApp")
     public AjaxResult invalidateSimulateVersionForApp(@RequestBody Fx67llDortmundExtraSimulateVersion fx67llDortmundExtraSimulateVersion) {
         Fx67llDortmundExtraSimulateVersion version = fx67llDortmundExtraSimulateVersionService.selectFx67llDortmundExtraSimulateVersionById(fx67llDortmundExtraSimulateVersion.getVersionId());
-        if (version.getUserId() != SecurityUtils.getUserId()) {
+        if (!version.getUserId().equals(SecurityUtils.getUserId())) {
             return warn("此版本非本人创建，禁止作废！");
         } else {
             if (version.getCreateTime() == null || System.currentTimeMillis() - version.getCreateTime().getTime() > 24 * 60 * 60 * 1000L) {
