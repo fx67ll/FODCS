@@ -68,6 +68,11 @@ public class Fx67llDortmundPlan extends BaseEntity {
     private Long[] matchIds;
 
     /**
+     * 查询用关联比赛ID（非表字段，列表按单场比赛过滤关联方案计划，与 matchIds 提交字段区分）
+     */
+    private Long matchId;
+
+    /**
      * 当场新建比赛集合（非表字段，只能引用已有赛季和球队，不能带 newSeason 等嵌套字段）
      */
     private List<Fx67llDortmundBasicMatch> newMatches;
@@ -175,6 +180,14 @@ public class Fx67llDortmundPlan extends BaseEntity {
 
     public void setMatchIds(Long[] matchIds) {
         this.matchIds = matchIds;
+    }
+
+    public Long getMatchId() {
+        return matchId;
+    }
+
+    public void setMatchId(Long matchId) {
+        this.matchId = matchId;
     }
 
     public List<Fx67llDortmundBasicMatch> getNewMatches() {
