@@ -29,7 +29,7 @@ public class Fx67llDortmundInfoPointTeamRel extends BaseEntity {
     private Long teamId;
 
     /**
-     * 关联状态（0-有效，1-停用，字典fx67ll_dortmund_relation_status）
+     * 关联状态（0-有效，1-停用，复用sys_normal_disable）
      */
     private String relationStatus;
 

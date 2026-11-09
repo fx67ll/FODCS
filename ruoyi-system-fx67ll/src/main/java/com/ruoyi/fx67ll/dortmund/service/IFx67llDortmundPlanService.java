@@ -2,9 +2,9 @@ package com.ruoyi.fx67ll.dortmund.service;
 
 import java.util.List;
 
-import org.springframework.web.multipart.MultipartFile;
-
 import com.ruoyi.fx67ll.dortmund.domain.Fx67llDortmundPlan;
+import com.ruoyi.fx67ll.dortmund.domain.Fx67llDortmundPlanSummary;
+import com.ruoyi.fx67ll.dortmund.domain.Fx67llDortmundReturnCombination;
 
 /**
  * 方案计划Service接口
@@ -68,13 +68,25 @@ public interface IFx67llDortmundPlanService {
     public int deleteFx67llDortmundPlanByPlanId(Long planId);
 
     /**
-     * 上传方案计划图片
-     * <p>
-     * 复用 RuoYi 现有上传实现（随机文件名、现有存储路径、大小/扩展名/MIME/文件头校验），返回相对对象键；
-     * 上传成功后写入 24 小时签发记录，保存方案计划时校验归属并一次性消费
+     * 查询可关联的已采用回报组合
      *
-     * @param file 上传的图片文件
-     * @return 相对对象键
+     * @return 已采用回报组合集合
      */
-    public String uploadPlanImage(MultipartFile file) throws Exception;
+    public List<Fx67llDortmundReturnCombination> selectAdoptedReturnCombinationOptions();
+
+    /**
+     * 查询方案计划已保存摘要
+     *
+     * @param planId 方案计划主键
+     * @return 方案计划摘要
+     */
+    public Fx67llDortmundPlanSummary selectPlanSummary(Long planId);
+
+    /**
+     * 刷新并保存方案计划摘要
+     *
+     * @param planId 方案计划主键
+     * @return 方案计划摘要
+     */
+    public Fx67llDortmundPlanSummary refreshPlanSummary(Long planId);
 }

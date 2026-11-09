@@ -44,22 +44,66 @@ public class Fx67llDortmundPlan extends BaseEntity {
     private BigDecimal planAmount;
 
     /**
+     * 已选择的采用回报组合主键集合（非表字段）
+     */
+    private List<Long> combinationIds;
+
+    /**
+     * 按关联组合自动计算的倍率
+     */
+    @Excel(name = "自动倍率")
+    private BigDecimal calculatedPlanRate;
+
+    /**
+     * 按关联组合自动计算的金额
+     */
+    @Excel(name = "自动金额")
+    private BigDecimal calculatedPlanAmount;
+
+    /**
+     * 最近一次成功保存的方案计划摘要正文
+     */
+    private String summaryContent;
+
+    /**
+     * 摘要更新标记（Y-需要刷新，N-与当前数据一致）
+     */
+    private String summaryUpdateFlag;
+
+    /**
+     * 最近一次成功保存摘要正文的时间
+     */
+    @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
+    private Date summaryUpdateTime;
+
+    /**
+     * 有效倍率（非表字段，手工倍率优先）
+     */
+    @Excel(name = "有效倍率")
+    private BigDecimal effectivePlanRate;
+
+    /**
+     * 有效金额（非表字段，手工金额优先）
+     */
+    @Excel(name = "有效金额")
+    private BigDecimal effectivePlanAmount;
+
+    /**
      * 其他说明
      */
     @Excel(name = "其他说明")
     private String planRemark;
 
     /**
-     * 图片对象键集合（非表字段，接口提交与返回均为数组，最多两个相对对象键）
-     * 不传（null）表示图片保持不变；空数组表示全部移除；非空数组表示按提交集合替换
+     * 第一阶段方案计划图片对象键集合（第1.5阶段不再使用，仅保留代码兼容）
      */
+    @JsonIgnore
     private String[] planImageObjectKeys;
 
     /**
-     * 图片对象键逗号分隔串（表字段，由服务层从数组拼接写入并拆分读出，不直接出现在接口中）
+     * 第一阶段方案计划图片对象键分隔串（第1.5阶段不再映射数据库）
      */
     @JsonIgnore
-    @Excel(name = "图片对象键")
     private String planImageObjectKeysStr;
 
     /**
@@ -150,6 +194,70 @@ public class Fx67llDortmundPlan extends BaseEntity {
         return planAmount;
     }
 
+    public List<Long> getCombinationIds() {
+        return combinationIds;
+    }
+
+    public void setCombinationIds(List<Long> combinationIds) {
+        this.combinationIds = combinationIds;
+    }
+
+    public BigDecimal getCalculatedPlanRate() {
+        return calculatedPlanRate;
+    }
+
+    public void setCalculatedPlanRate(BigDecimal calculatedPlanRate) {
+        this.calculatedPlanRate = calculatedPlanRate;
+    }
+
+    public BigDecimal getCalculatedPlanAmount() {
+        return calculatedPlanAmount;
+    }
+
+    public void setCalculatedPlanAmount(BigDecimal calculatedPlanAmount) {
+        this.calculatedPlanAmount = calculatedPlanAmount;
+    }
+
+    public String getSummaryContent() {
+        return summaryContent;
+    }
+
+    public void setSummaryContent(String summaryContent) {
+        this.summaryContent = summaryContent;
+    }
+
+    public String getSummaryUpdateFlag() {
+        return summaryUpdateFlag;
+    }
+
+    public void setSummaryUpdateFlag(String summaryUpdateFlag) {
+        this.summaryUpdateFlag = summaryUpdateFlag;
+    }
+
+    public Date getSummaryUpdateTime() {
+        return summaryUpdateTime;
+    }
+
+    public void setSummaryUpdateTime(Date summaryUpdateTime) {
+        this.summaryUpdateTime = summaryUpdateTime;
+    }
+
+    public BigDecimal getEffectivePlanRate() {
+        return effectivePlanRate;
+    }
+
+    public void setEffectivePlanRate(BigDecimal effectivePlanRate) {
+        this.effectivePlanRate = effectivePlanRate;
+    }
+
+    public BigDecimal getEffectivePlanAmount() {
+        return effectivePlanAmount;
+    }
+
+    public void setEffectivePlanAmount(BigDecimal effectivePlanAmount) {
+        this.effectivePlanAmount = effectivePlanAmount;
+    }
+
     public void setPlanRemark(String planRemark) {
         this.planRemark = planRemark;
     }
@@ -173,6 +281,7 @@ public class Fx67llDortmundPlan extends BaseEntity {
     public void setPlanImageObjectKeysStr(String planImageObjectKeysStr) {
         this.planImageObjectKeysStr = planImageObjectKeysStr;
     }
+
 
     public Long[] getMatchIds() {
         return matchIds;
@@ -269,6 +378,14 @@ public class Fx67llDortmundPlan extends BaseEntity {
                 .append("planContent", getPlanContent())
                 .append("planRate", getPlanRate())
                 .append("planAmount", getPlanAmount())
+                .append("combinationIds", getCombinationIds())
+                .append("calculatedPlanRate", getCalculatedPlanRate())
+                .append("calculatedPlanAmount", getCalculatedPlanAmount())
+                .append("summaryContent", getSummaryContent())
+                .append("summaryUpdateFlag", getSummaryUpdateFlag())
+                .append("summaryUpdateTime", getSummaryUpdateTime())
+                .append("effectivePlanRate", getEffectivePlanRate())
+                .append("effectivePlanAmount", getEffectivePlanAmount())
                 .append("planRemark", getPlanRemark())
                 .append("planImageObjectKeys", getPlanImageObjectKeys())
                 .append("planImageObjectKeysStr", getPlanImageObjectKeysStr())

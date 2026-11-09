@@ -1,0 +1,102 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.ruoyi.fx67ll.dortmund.mapper.Fx67llDortmundReturnGenerationMapper">
+
+    <resultMap type="Fx67llDortmundReturnGeneration" id="Fx67llDortmundReturnGenerationResult">
+        <result property="generationId" column="generation_id"/>
+        <result property="generationCode" column="generation_code"/>
+        <result property="generationMode" column="generation_mode"/>
+        <result property="inputAmount" column="input_amount"/>
+        <result property="targetAmount" column="target_amount"/>
+        <result property="requestSnapshot" column="request_snapshot"/>
+        <result property="generationStatus" column="generation_status"/>
+        <result property="generationRemark" column="generation_remark"/>
+        <result property="generatedCount" column="generated_count"/>
+        <result property="startedTime" column="started_time"/>
+        <result property="finishedTime" column="finished_time"/>
+        <result property="userId" column="user_id"/>
+        <result property="createBy" column="create_by"/>
+        <result property="createTime" column="create_time"/>
+        <result property="updateBy" column="update_by"/>
+        <result property="updateTime" column="update_time"/>
+    </resultMap>
+
+    <select id="selectFx67llDortmundReturnGenerationByGenerationId"
+            resultMap="Fx67llDortmundReturnGenerationResult">
+        select generation_id,
+               generation_code,
+               generation_mode,
+               input_amount,
+               target_amount,
+               request_snapshot,
+               generation_status,
+               generation_remark,
+               generated_count,
+               started_time,
+               finished_time,
+               user_id,
+               create_by,
+               create_time,
+               update_by,
+               update_time
+        from fx67ll_dortmund_return_generation
+        where generation_id = #{generationId}
+    </select>
+
+    <select id="selectFx67llDortmundReturnGenerationList" parameterType="Fx67llDortmundReturnGeneration"
+            resultMap="Fx67llDortmundReturnGenerationResult">
+        select generation_id,
+               generation_code,
+               generation_mode,
+               input_amount,
+               target_amount,
+               generation_status,
+               generation_remark,
+               generated_count,
+               started_time,
+               finished_time,
+               user_id,
+               create_by,
+               create_time,
+               update_by,
+               update_time
+        from fx67ll_dortmund_return_generation
+        <where>
+            <if test="generationId != null">and generation_id = #{generationId}</if>
+            <if test="generationStatus != null and generationStatus != ''">
+                and generation_status = #{generationStatus}
+            </if>
+            <if test="generationMode != null and generationMode != ''">and generation_mode = #{generationMode}</if>
+            <if test="userId != null">and user_id = #{userId}</if>
+            <if test="beginCreateTime != null and beginCreateTime != '' and endCreateTime != null and endCreateTime != ''">
+                and create_time between #{beginCreateTime} and #{endCreateTime}
+            </if>
+        </where>
+        order by create_time desc, generation_id desc
+    </select>
+
+    <insert id="insertFx67llDortmundReturnGeneration" parameterType="Fx67llDortmundReturnGeneration"
+            useGeneratedKeys="true" keyProperty="generationId">
+        insert into fx67ll_dortmund_return_generation
+        (generation_code, generation_mode, input_amount, target_amount, request_snapshot, generation_status,
+         generation_remark, generated_count, started_time, finished_time, user_id, create_by, create_time,
+         update_by, update_time)
+        values
+        (#{generationCode}, #{generationMode}, #{inputAmount}, #{targetAmount}, #{requestSnapshot},
+         #{generationStatus}, #{generationRemark}, #{generatedCount}, #{startedTime}, #{finishedTime}, #{userId},
+         #{createBy}, #{createTime}, #{updateBy}, #{updateTime})
+    </insert>
+
+    <update id="updateFx67llDortmundReturnGeneration" parameterType="Fx67llDortmundReturnGeneration">
+        update fx67ll_dortmund_return_generation
+        set generation_status = #{generationStatus},
+            generation_remark = #{generationRemark},
+            generated_count = #{generatedCount},
+            finished_time = #{finishedTime},
+            update_by = #{updateBy},
+            update_time = #{updateTime}
+        where generation_id = #{generationId}
+    </update>
+</mapper>

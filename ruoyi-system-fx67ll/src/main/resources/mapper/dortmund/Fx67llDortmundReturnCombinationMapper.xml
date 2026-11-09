@@ -1,0 +1,129 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.ruoyi.fx67ll.dortmund.mapper.Fx67llDortmundReturnCombinationMapper">
+
+    <resultMap type="Fx67llDortmundReturnCombination" id="Fx67llDortmundReturnCombinationResult">
+        <result property="combinationId" column="combination_id"/>
+        <result property="generationId" column="generation_id"/>
+        <result property="generationCode" column="generation_code"/>
+        <result property="generationMode" column="generation_mode"/>
+        <result property="generationStatus" column="generation_status"/>
+        <result property="combinationCode" column="combination_code"/>
+        <result property="combinationTitle" column="combination_title"/>
+        <result property="combinationReason" column="combination_reason"/>
+        <result property="combinedOdds" column="combined_odds"/>
+        <result property="estimatedReturn" column="estimated_return"/>
+        <result property="deviationAmount" column="deviation_amount"/>
+        <result property="adoptedFlag" column="adopted_flag"/>
+        <result property="reviewBy" column="review_by"/>
+        <result property="reviewTime" column="review_time"/>
+        <result property="combinationImageObjectKeys" column="combination_image_object_keys"/>
+        <result property="combinationRemark" column="combination_remark"/>
+        <result property="userId" column="user_id"/>
+        <result property="matchCount" column="match_count"/>
+        <result property="createBy" column="create_by"/>
+        <result property="createTime" column="create_time"/>
+        <result property="updateBy" column="update_by"/>
+        <result property="updateTime" column="update_time"/>
+    </resultMap>
+
+    <sql id="selectFx67llDortmundReturnCombinationListVo">
+        select c.combination_id,
+               c.generation_id,
+               g.generation_code,
+               g.generation_mode,
+               c.combination_code,
+               c.combination_title,
+               c.combined_odds,
+               c.estimated_return,
+               c.deviation_amount,
+               c.adopted_flag,
+               c.review_by,
+               c.review_time,
+               c.user_id,
+               c.create_by,
+               c.create_time,
+               c.update_by,
+               c.update_time,
+               (select count(1)
+                from fx67ll_dortmund_return_combination_item i
+                where i.combination_id = c.combination_id) as match_count
+        from fx67ll_dortmund_return_combination c
+                 join fx67ll_dortmund_return_generation g on g.generation_id = c.generation_id
+    </sql>
+
+    <select id="selectFx67llDortmundReturnCombinationByCombinationId"
+            resultMap="Fx67llDortmundReturnCombinationResult">
+        select c.*,
+               g.generation_code,
+               g.generation_mode,
+               g.generation_status,
+               (select count(1)
+                from fx67ll_dortmund_return_combination_item i
+                where i.combination_id = c.combination_id) as match_count
+        from fx67ll_dortmund_return_combination c
+                 join fx67ll_dortmund_return_generation g on g.generation_id = c.generation_id
+        where c.combination_id = #{combinationId}
+    </select>
+
+    <select id="selectFx67llDortmundReturnCombinationByCombinationIdForUpdate"
+            resultMap="Fx67llDortmundReturnCombinationResult">
+        select c.*,
+               g.generation_code,
+               g.generation_mode,
+               g.generation_status,
+               (select count(1)
+                from fx67ll_dortmund_return_combination_item i
+                where i.combination_id = c.combination_id) as match_count
+        from fx67ll_dortmund_return_combination c
+                 join fx67ll_dortmund_return_generation g on g.generation_id = c.generation_id
+        where c.combination_id = #{combinationId}
+        for update
+    </select>
+
+    <select id="selectFx67llDortmundReturnCombinationList" parameterType="Fx67llDortmundReturnCombination"
+            resultMap="Fx67llDortmundReturnCombinationResult">
+        <include refid="selectFx67llDortmundReturnCombinationListVo"/>
+        <where>
+            <if test="combinationId != null">and c.combination_id = #{combinationId}</if>
+            <if test="generationId != null">and c.generation_id = #{generationId}</if>
+            <if test="generationMode != null and generationMode != ''">and g.generation_mode = #{generationMode}</if>
+            <if test="adoptedFlag != null and adoptedFlag != ''">and c.adopted_flag = #{adoptedFlag}</if>
+            <if test="userId != null">and c.user_id = #{userId}</if>
+            <if test="beginCreateTime != null and beginCreateTime != '' and endCreateTime != null and endCreateTime != ''">
+                and c.create_time between #{beginCreateTime} and #{endCreateTime}
+            </if>
+        </where>
+        order by abs(c.deviation_amount), c.create_time desc, c.combination_id desc
+    </select>
+
+    <insert id="insertFx67llDortmundReturnCombination" parameterType="Fx67llDortmundReturnCombination"
+            useGeneratedKeys="true" keyProperty="combinationId">
+        insert into fx67ll_dortmund_return_combination
+        (generation_id, combination_code, combination_title, combination_reason, combined_odds, estimated_return,
+         deviation_amount, adopted_flag, combination_image_object_keys, combination_remark, user_id, create_by,
+         create_time, update_by, update_time)
+        values
+        (#{generationId}, #{combinationCode}, #{combinationTitle}, #{combinationReason}, #{combinedOdds},
+         #{estimatedReturn}, #{deviationAmount}, #{adoptedFlag}, #{combinationImageObjectKeys},
+         #{combinationRemark}, #{userId}, #{createBy}, #{createTime}, #{updateBy}, #{updateTime})
+    </insert>
+
+    <update id="updateAdoptedFlag" parameterType="Fx67llDortmundReturnCombination">
+        update fx67ll_dortmund_return_combination
+        set adopted_flag = #{adoptedFlag},
+            review_by = #{reviewBy},
+            review_time = #{reviewTime},
+            update_by = #{updateBy},
+            update_time = #{updateTime}
+        where combination_id = #{combinationId}
+    </update>
+
+    <select id="countPlanRelationsByCombinationId" resultType="int">
+        select count(1)
+        from fx67ll_dortmund_plan_return_rel
+        where combination_id = #{combinationId}
+    </select>
+</mapper>

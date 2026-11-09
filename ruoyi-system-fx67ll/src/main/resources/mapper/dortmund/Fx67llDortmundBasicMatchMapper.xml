@@ -6,6 +6,7 @@
 
     <resultMap type="Fx67llDortmundBasicMatch" id="Fx67llDortmundBasicMatchResult">
         <result property="matchId" column="match_id"/>
+        <result property="matchCode" column="match_code"/>
         <result property="seasonId" column="season_id"/>
         <result property="seasonName" column="season_name"/>
         <result property="homeTeamId" column="home_team_id"/>
@@ -28,6 +29,7 @@
 
     <sql id="selectFx67llDortmundBasicMatchWithJoinVo">
         select m.match_id,
+               m.match_code,
                m.season_id,
                s.season_name as season_name,
                m.home_team_id,
@@ -58,6 +60,7 @@
         <include refid="selectFx67llDortmundBasicMatchWithJoinVo"/>
         <where>
             <if test="matchId != null ">and m.match_id = #{matchId}</if>
+            <if test="matchCode != null and matchCode != ''">and m.match_code like concat('%', #{matchCode}, '%')</if>
             <if test="seasonId != null ">and m.season_id = #{seasonId}</if>
             <if test="homeTeamId != null ">and m.home_team_id = #{homeTeamId}</if>
             <if test="awayTeamId != null ">and m.away_team_id = #{awayTeamId}</if>
@@ -94,6 +97,7 @@
             keyProperty="matchId">
         insert into fx67ll_dortmund_match
         <trim prefix="(" suffix=")" suffixOverrides=",">
+            <if test="matchCode != null and matchCode != ''">match_code,</if>
             <if test="seasonId != null">season_id,</if>
             <if test="homeTeamId != null">home_team_id,</if>
             <if test="awayTeamId != null">away_team_id,</if>
@@ -111,6 +115,7 @@
             <if test="userId != null">user_id,</if>
         </trim>
         <trim prefix="values (" suffix=")" suffixOverrides=",">
+            <if test="matchCode != null and matchCode != ''">#{matchCode},</if>
             <if test="seasonId != null">#{seasonId},</if>
             <if test="homeTeamId != null">#{homeTeamId},</if>
             <if test="awayTeamId != null">#{awayTeamId},</if>

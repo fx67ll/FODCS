@@ -44,6 +44,30 @@ public interface Fx67llDortmundPlanMapper {
     public int updateFx67llDortmundPlan(Fx67llDortmundPlan fx67llDortmundPlan);
 
     /**
+     * 修改第1.5阶段方案计划业务字段
+     *
+     * @param fx67llDortmundPlan 方案计划
+     * @return 结果
+     */
+    public int updateFx67llDortmundPlanPhase15(Fx67llDortmundPlan fx67llDortmundPlan);
+
+    /**
+     * 修改方案计划摘要
+     *
+     * @param fx67llDortmundPlan 方案计划
+     * @return 结果
+     */
+    public int updateFx67llDortmundPlanSummary(Fx67llDortmundPlan fx67llDortmundPlan);
+
+    /**
+     * 按比赛主键标记关联方案计划摘要需要更新
+     *
+     * @param matchId 比赛主键
+     * @return 结果
+     */
+    public int markSummaryUpdateByMatchId(Long matchId);
+
+    /**
      * 删除方案计划
      *
      * @param planId 方案计划主键

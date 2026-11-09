@@ -1,0 +1,55 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.ruoyi.fx67ll.dortmund.mapper.Fx67llDortmundReturnCombinationItemMapper">
+
+    <resultMap type="Fx67llDortmundReturnCombinationItem" id="Fx67llDortmundReturnCombinationItemResult">
+        <result property="itemId" column="item_id"/>
+        <result property="combinationId" column="combination_id"/>
+        <result property="matchId" column="match_id"/>
+        <result property="oddsId" column="odds_id"/>
+        <result property="matchCode" column="match_code"/>
+        <result property="selectionType" column="selection_type"/>
+        <result property="oddsValueSnapshot" column="odds_value_snapshot"/>
+        <result property="manualWeightSnapshot" column="manual_weight_snapshot"/>
+        <result property="appliedWeight" column="applied_weight"/>
+        <result property="itemSort" column="item_sort"/>
+        <result property="matchSummary" column="match_summary"/>
+        <result property="createBy" column="create_by"/>
+        <result property="createTime" column="create_time"/>
+    </resultMap>
+
+    <select id="selectItemsByCombinationId" resultMap="Fx67llDortmundReturnCombinationItemResult">
+        select i.item_id,
+               i.combination_id,
+               i.match_id,
+               i.odds_id,
+               m.match_code,
+               i.selection_type,
+               i.odds_value_snapshot,
+               i.manual_weight_snapshot,
+               i.applied_weight,
+               i.item_sort,
+               concat(coalesce(ht.team_name, ''), ' vs ', coalesce(at.team_name, ''), ' ',
+                      date_format(m.match_time, '%Y-%m-%d %H:%i')) as match_summary,
+               i.create_by,
+               i.create_time
+        from fx67ll_dortmund_return_combination_item i
+                 left join fx67ll_dortmund_match m on m.match_id = i.match_id
+                 left join fx67ll_dortmund_team ht on ht.team_id = m.home_team_id
+                 left join fx67ll_dortmund_team at on at.team_id = m.away_team_id
+        where i.combination_id = #{combinationId}
+        order by i.item_sort, i.item_id
+    </select>
+
+    <insert id="insertFx67llDortmundReturnCombinationItem"
+            parameterType="Fx67llDortmundReturnCombinationItem" useGeneratedKeys="true" keyProperty="itemId">
+        insert into fx67ll_dortmund_return_combination_item
+        (combination_id, match_id, odds_id, selection_type, odds_value_snapshot, manual_weight_snapshot,
+         applied_weight, item_sort, create_by, create_time)
+        values
+        (#{combinationId}, #{matchId}, #{oddsId}, #{selectionType}, #{oddsValueSnapshot},
+         #{manualWeightSnapshot}, #{appliedWeight}, #{itemSort}, #{createBy}, #{createTime})
+    </insert>
+</mapper>

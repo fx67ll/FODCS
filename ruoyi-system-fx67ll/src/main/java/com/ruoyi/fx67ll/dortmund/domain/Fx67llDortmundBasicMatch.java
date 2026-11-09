@@ -23,6 +23,17 @@ public class Fx67llDortmundBasicMatch extends BaseEntity {
     private Long matchId;
 
     /**
+     * 官方比赛标识（创建后不可修改）
+     */
+    @Excel(name = "比赛编码")
+    private String matchCode;
+
+    /**
+     * 同步新增的首条倍率记录（非表字段）
+     */
+    private Fx67llDortmundOdds newOdds;
+
+    /**
      * 所属赛季ID（外键，关联fx67ll_dortmund_season.season_id）
      */
     @Excel(name = "所属赛季ID", readConverterExp = "外=键，关联fx67ll_dortmund_season.season_id")
@@ -157,6 +168,22 @@ public class Fx67llDortmundBasicMatch extends BaseEntity {
 
     public Long getMatchId() {
         return matchId;
+    }
+
+    public String getMatchCode() {
+        return matchCode;
+    }
+
+    public void setMatchCode(String matchCode) {
+        this.matchCode = matchCode;
+    }
+
+    public Fx67llDortmundOdds getNewOdds() {
+        return newOdds;
+    }
+
+    public void setNewOdds(Fx67llDortmundOdds newOdds) {
+        this.newOdds = newOdds;
     }
 
     public void setSeasonId(Long seasonId) {
@@ -349,6 +376,8 @@ public class Fx67llDortmundBasicMatch extends BaseEntity {
     public String toString() {
         return new ToStringBuilder(this, ToStringStyle.MULTI_LINE_STYLE)
                 .append("matchId", getMatchId())
+                .append("matchCode", getMatchCode())
+                .append("newOdds", getNewOdds())
                 .append("seasonId", getSeasonId())
                 .append("seasonName", getSeasonName())
                 .append("homeTeamId", getHomeTeamId())

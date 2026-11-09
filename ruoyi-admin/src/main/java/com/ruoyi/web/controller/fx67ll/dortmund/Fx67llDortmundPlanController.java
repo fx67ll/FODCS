@@ -12,9 +12,7 @@ import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
-import org.springframework.web.multipart.MultipartFile;
 import com.ruoyi.common.annotation.Log;
 import com.ruoyi.common.annotation.RepeatSubmit;
 import com.ruoyi.common.core.controller.BaseController;
@@ -70,6 +68,35 @@ public class Fx67llDortmundPlanController extends BaseController {
     }
 
     /**
+     * 查询可关联的已采用回报组合
+     */
+    @PreAuthorize("@ss.hasPermi('dortmund:return:list')")
+    @GetMapping("/return/options")
+    public AjaxResult returnOptions() {
+        return success(fx67llDortmundPlanService.selectAdoptedReturnCombinationOptions());
+    }
+
+    /**
+     * 获取方案计划已保存摘要
+     */
+    @PreAuthorize("@ss.hasPermi('dortmund:plan:summary')")
+    @GetMapping("/{planId}/summary")
+    public AjaxResult summary(@PathVariable("planId") Long planId) {
+        return success(fx67llDortmundPlanService.selectPlanSummary(planId));
+    }
+
+    /**
+     * 刷新并保存方案计划摘要
+     */
+    @PreAuthorize("@ss.hasPermi('dortmund:plan:summary')")
+    @Log(title = "方案计划摘要", businessType = BusinessType.UPDATE)
+    @RepeatSubmit
+    @PostMapping("/{planId}/summary/refresh")
+    public AjaxResult refreshSummary(@PathVariable("planId") Long planId) {
+        return success(fx67llDortmundPlanService.refreshPlanSummary(planId));
+    }
+
+    /**
      * 新增方案计划
      */
     @PreAuthorize("@ss.hasPermi('dortmund:plan:add')")
@@ -99,19 +126,5 @@ public class Fx67llDortmundPlanController extends BaseController {
     @DeleteMapping("/{planIds}")
     public AjaxResult remove(@PathVariable Long[] planIds) {
         return toAjax(fx67llDortmundPlanService.deleteFx67llDortmundPlanByPlanIds(planIds));
-    }
-
-    /**
-     * 上传方案计划图片
-     */
-    @PreAuthorize("@ss.hasPermi('dortmund:plan:image:upload')")
-    @Log(title = "方案计划图片", businessType = BusinessType.INSERT)
-    @RepeatSubmit
-    @PostMapping("/image/upload")
-    public AjaxResult uploadImage(@RequestParam("file") MultipartFile file) throws Exception {
-        String objectKey = fx67llDortmundPlanService.uploadPlanImage(file);
-        AjaxResult ajax = AjaxResult.success();
-        ajax.put("objectKey", objectKey);
-        return ajax;
     }
 }

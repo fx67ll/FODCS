@@ -1,0 +1,195 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.ruoyi.fx67ll.dortmund.mapper.Fx67llDortmundOddsMapper">
+
+    <resultMap type="Fx67llDortmundOdds" id="Fx67llDortmundOddsResult">
+        <result property="oddsId" column="odds_id"/>
+        <result property="matchId" column="match_id"/>
+        <result property="matchCode" column="match_code"/>
+        <result property="matchSummary" column="match_summary"/>
+        <result property="oddsCode" column="odds_code"/>
+        <result property="sourceTime" column="source_time"/>
+        <result property="handicapValue" column="handicap_value"/>
+        <result property="homeWinOdds" column="home_win_odds"/>
+        <result property="homeWinWeight" column="home_win_weight"/>
+        <result property="drawOdds" column="draw_odds"/>
+        <result property="drawWeight" column="draw_weight"/>
+        <result property="awayWinOdds" column="away_win_odds"/>
+        <result property="awayWinWeight" column="away_win_weight"/>
+        <result property="handicapHomeWinOdds" column="handicap_home_win_odds"/>
+        <result property="handicapHomeWinWeight" column="handicap_home_win_weight"/>
+        <result property="handicapDrawOdds" column="handicap_draw_odds"/>
+        <result property="handicapDrawWeight" column="handicap_draw_weight"/>
+        <result property="handicapAwayWinOdds" column="handicap_away_win_odds"/>
+        <result property="handicapAwayWinWeight" column="handicap_away_win_weight"/>
+        <result property="activeFlag" column="active_flag"/>
+        <result property="oddsRemark" column="odds_remark"/>
+        <result property="userId" column="user_id"/>
+        <result property="createBy" column="create_by"/>
+        <result property="createTime" column="create_time"/>
+        <result property="updateBy" column="update_by"/>
+        <result property="updateTime" column="update_time"/>
+        <result property="delFlag" column="del_flag"/>
+    </resultMap>
+
+    <sql id="selectFx67llDortmundOddsVo">
+        select o.odds_id,
+               o.match_id,
+               m.match_code,
+               concat(coalesce(ht.team_name, ''), ' vs ', coalesce(at.team_name, ''), ' ',
+                      date_format(m.match_time, '%Y-%m-%d %H:%i')) as match_summary,
+               o.odds_code,
+               o.source_time,
+               o.handicap_value,
+               o.home_win_odds,
+               o.home_win_weight,
+               o.draw_odds,
+               o.draw_weight,
+               o.away_win_odds,
+               o.away_win_weight,
+               o.handicap_home_win_odds,
+               o.handicap_home_win_weight,
+               o.handicap_draw_odds,
+               o.handicap_draw_weight,
+               o.handicap_away_win_odds,
+               o.handicap_away_win_weight,
+               o.active_flag,
+               o.odds_remark,
+               o.user_id,
+               o.create_by,
+               o.create_time,
+               o.update_by,
+               o.update_time,
+               o.del_flag
+        from fx67ll_dortmund_odds o
+                 left join fx67ll_dortmund_match m on m.match_id = o.match_id
+                 left join fx67ll_dortmund_team ht on ht.team_id = m.home_team_id
+                 left join fx67ll_dortmund_team at on at.team_id = m.away_team_id
+    </sql>
+
+    <select id="selectFx67llDortmundOddsByOddsId" resultMap="Fx67llDortmundOddsResult">
+        <include refid="selectFx67llDortmundOddsVo"/>
+        where o.odds_id = #{oddsId}
+    </select>
+
+    <select id="selectFx67llDortmundOddsList" parameterType="Fx67llDortmundOdds"
+            resultMap="Fx67llDortmundOddsResult">
+        <include refid="selectFx67llDortmundOddsVo"/>
+        <where>
+            <if test="oddsId != null">and o.odds_id = #{oddsId}</if>
+            <if test="matchId != null">and o.match_id = #{matchId}</if>
+            <if test="matchCode != null and matchCode != ''">
+                and m.match_code like concat('%', #{matchCode}, '%')
+            </if>
+            <if test="activeFlag != null and activeFlag != ''">and o.active_flag = #{activeFlag}</if>
+            <if test="userId != null">and o.user_id = #{userId}</if>
+            <if test="beginSourceTime != null and beginSourceTime != '' and endSourceTime != null and endSourceTime != ''">
+                and o.source_time between #{beginSourceTime} and #{endSourceTime}
+            </if>
+            <if test="delFlag != null and delFlag != ''">and o.del_flag = #{delFlag}</if>
+        </where>
+        order by o.source_time desc, o.odds_id desc
+    </select>
+
+    <select id="selectActiveFx67llDortmundOddsByMatchId" resultMap="Fx67llDortmundOddsResult">
+        <include refid="selectFx67llDortmundOddsVo"/>
+        where o.match_id = #{matchId}
+          and o.active_flag = 'Y'
+          and o.del_flag = '0'
+        limit 1
+    </select>
+
+    <select id="selectMatchIdForUpdate" parameterType="Long" resultType="Long">
+        select match_id
+        from fx67ll_dortmund_match
+        where match_id = #{matchId}
+          and match_status = '0'
+          and del_flag = '0'
+        for update
+    </select>
+
+    <insert id="insertFx67llDortmundOdds" parameterType="Fx67llDortmundOdds"
+            useGeneratedKeys="true" keyProperty="oddsId">
+        insert into fx67ll_dortmund_odds
+        (match_id, odds_code, source_time, handicap_value, home_win_odds, home_win_weight, draw_odds,
+         draw_weight, away_win_odds, away_win_weight, handicap_home_win_odds, handicap_home_win_weight,
+         handicap_draw_odds, handicap_draw_weight, handicap_away_win_odds, handicap_away_win_weight,
+         active_flag, odds_remark, user_id, create_by, create_time, update_by, update_time, del_flag)
+        values
+        (#{matchId}, #{oddsCode}, #{sourceTime}, #{handicapValue}, #{homeWinOdds}, #{homeWinWeight}, #{drawOdds},
+         #{drawWeight}, #{awayWinOdds}, #{awayWinWeight}, #{handicapHomeWinOdds}, #{handicapHomeWinWeight},
+         #{handicapDrawOdds}, #{handicapDrawWeight}, #{handicapAwayWinOdds}, #{handicapAwayWinWeight},
+         #{activeFlag}, #{oddsRemark}, #{userId}, #{createBy}, #{createTime}, #{updateBy}, #{updateTime}, #{delFlag})
+    </insert>
+
+    <update id="updateFx67llDortmundOdds" parameterType="Fx67llDortmundOdds">
+        update fx67ll_dortmund_odds
+        set source_time = #{sourceTime},
+            handicap_value = #{handicapValue},
+            home_win_odds = #{homeWinOdds},
+            home_win_weight = #{homeWinWeight},
+            draw_odds = #{drawOdds},
+            draw_weight = #{drawWeight},
+            away_win_odds = #{awayWinOdds},
+            away_win_weight = #{awayWinWeight},
+            handicap_home_win_odds = #{handicapHomeWinOdds},
+            handicap_home_win_weight = #{handicapHomeWinWeight},
+            handicap_draw_odds = #{handicapDrawOdds},
+            handicap_draw_weight = #{handicapDrawWeight},
+            handicap_away_win_odds = #{handicapAwayWinOdds},
+            handicap_away_win_weight = #{handicapAwayWinWeight},
+            odds_remark = #{oddsRemark},
+            update_by = #{updateBy},
+            update_time = #{updateTime}
+        where odds_id = #{oddsId}
+    </update>
+
+    <update id="deactivateOddsByMatchId" parameterType="Fx67llDortmundOdds">
+        update fx67ll_dortmund_odds
+        set active_flag = 'N',
+            update_by = #{updateBy},
+            update_time = #{updateTime}
+        where match_id = #{matchId}
+          and del_flag = '0'
+    </update>
+
+    <update id="activateOtherOddsByMatchId" parameterType="Fx67llDortmundOdds">
+        update fx67ll_dortmund_odds
+        set active_flag = 'N',
+            update_by = #{updateBy},
+            update_time = #{updateTime}
+        where match_id = #{matchId}
+          and odds_id &lt;&gt; #{oddsId}
+          and del_flag = '0'
+    </update>
+
+    <update id="activateFx67llDortmundOdds" parameterType="Fx67llDortmundOdds">
+        update fx67ll_dortmund_odds
+        set active_flag = 'Y',
+            update_by = #{updateBy},
+            update_time = #{updateTime}
+        where odds_id = #{oddsId}
+          and del_flag = '0'
+    </update>
+
+    <delete id="deleteFx67llDortmundOddsByOddsIds" parameterType="Long[]">
+        delete from fx67ll_dortmund_odds where odds_id in
+        <foreach collection="array" item="oddsId" open="(" separator="," close=")">
+            #{oddsId}
+        </foreach>
+    </delete>
+
+    <select id="countCombinationItemsByOddsId" resultType="int">
+        select count(1)
+        from fx67ll_dortmund_return_combination_item
+        where odds_id = #{oddsId}
+    </select>
+
+    <select id="countOddsByMatchId" resultType="int">
+        select count(1)
+        from fx67ll_dortmund_odds
+        where match_id = #{matchId}
+    </select>
+</mapper>

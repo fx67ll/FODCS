@@ -10,7 +10,11 @@
         <result property="planRate" column="plan_rate"/>
         <result property="planAmount" column="plan_amount"/>
         <result property="planRemark" column="plan_remark"/>
-        <result property="planImageObjectKeysStr" column="plan_image_object_keys"/>
+        <result property="calculatedPlanRate" column="calculated_plan_rate"/>
+        <result property="calculatedPlanAmount" column="calculated_plan_amount"/>
+        <result property="summaryContent" column="summary_content"/>
+        <result property="summaryUpdateFlag" column="summary_update_flag"/>
+        <result property="summaryUpdateTime" column="summary_update_time"/>
         <result property="userId" column="user_id"/>
         <result property="createBy" column="create_by"/>
         <result property="createTime" column="create_time"/>
@@ -25,7 +29,11 @@
                plan_rate,
                plan_amount,
                plan_remark,
-               plan_image_object_keys,
+               calculated_plan_rate,
+               calculated_plan_amount,
+               summary_content,
+               summary_update_flag,
+               summary_update_time,
                user_id,
                create_by,
                create_time,
@@ -80,7 +88,11 @@
             <if test="planRate != null">plan_rate,</if>
             <if test="planAmount != null">plan_amount,</if>
             <if test="planRemark != null">plan_remark,</if>
-            <if test="planImageObjectKeysStr != null">plan_image_object_keys,</if>
+            <if test="calculatedPlanRate != null">calculated_plan_rate,</if>
+            <if test="calculatedPlanAmount != null">calculated_plan_amount,</if>
+            <if test="summaryContent != null">summary_content,</if>
+            <if test="summaryUpdateFlag != null">summary_update_flag,</if>
+            <if test="summaryUpdateTime != null">summary_update_time,</if>
             <if test="createBy != null">create_by,</if>
             <if test="createTime != null">create_time,</if>
             <if test="updateBy != null">update_by,</if>
@@ -93,7 +105,11 @@
             <if test="planRate != null">#{planRate},</if>
             <if test="planAmount != null">#{planAmount},</if>
             <if test="planRemark != null">#{planRemark},</if>
-            <if test="planImageObjectKeysStr != null">#{planImageObjectKeysStr},</if>
+            <if test="calculatedPlanRate != null">#{calculatedPlanRate},</if>
+            <if test="calculatedPlanAmount != null">#{calculatedPlanAmount},</if>
+            <if test="summaryContent != null">#{summaryContent},</if>
+            <if test="summaryUpdateFlag != null">#{summaryUpdateFlag},</if>
+            <if test="summaryUpdateTime != null">#{summaryUpdateTime},</if>
             <if test="createBy != null">#{createBy},</if>
             <if test="createTime != null">#{createTime},</if>
             <if test="updateBy != null">#{updateBy},</if>
@@ -110,12 +126,49 @@
             <if test="planRate != null">plan_rate = #{planRate},</if>
             <if test="planAmount != null">plan_amount = #{planAmount},</if>
             <if test="planRemark != null">plan_remark = #{planRemark},</if>
-            <if test="planImageObjectKeysStr != null">plan_image_object_keys = #{planImageObjectKeysStr},</if>
+            <if test="calculatedPlanRate != null">calculated_plan_rate = #{calculatedPlanRate},</if>
+            <if test="calculatedPlanAmount != null">calculated_plan_amount = #{calculatedPlanAmount},</if>
+            <if test="summaryContent != null">summary_content = #{summaryContent},</if>
+            <if test="summaryUpdateFlag != null">summary_update_flag = #{summaryUpdateFlag},</if>
+            <if test="summaryUpdateTime != null">summary_update_time = #{summaryUpdateTime},</if>
             <if test="updateBy != null">update_by = #{updateBy},</if>
             <if test="updateTime != null">update_time = #{updateTime},</if>
             <if test="delFlag != null">del_flag = #{delFlag},</if>
         </trim>
         where plan_id = #{planId}
+    </update>
+
+    <update id="updateFx67llDortmundPlanPhase15" parameterType="Fx67llDortmundPlan">
+        update fx67ll_dortmund_plan
+        set plan_content = #{planContent},
+            plan_rate = #{planRate},
+            plan_amount = #{planAmount},
+            plan_remark = #{planRemark},
+            calculated_plan_rate = #{calculatedPlanRate},
+            calculated_plan_amount = #{calculatedPlanAmount},
+            summary_update_flag = #{summaryUpdateFlag},
+            update_by = #{updateBy},
+            update_time = #{updateTime}
+        where plan_id = #{planId}
+    </update>
+
+    <update id="updateFx67llDortmundPlanSummary" parameterType="Fx67llDortmundPlan">
+        update fx67ll_dortmund_plan
+        set summary_content = #{summaryContent},
+            summary_update_flag = #{summaryUpdateFlag},
+            summary_update_time = #{summaryUpdateTime},
+            update_by = #{updateBy},
+            update_time = #{updateTime}
+        where plan_id = #{planId}
+    </update>
+
+    <update id="markSummaryUpdateByMatchId" parameterType="Long">
+        update fx67ll_dortmund_plan p
+                 join fx67ll_dortmund_plan_match_rel r on r.plan_id = p.plan_id
+        set p.summary_update_flag = 'Y',
+            p.update_time = now()
+        where r.match_id = #{matchId}
+          and p.del_flag = '0'
     </update>
 
     <delete id="deleteFx67llDortmundPlanByPlanId" parameterType="Long">
