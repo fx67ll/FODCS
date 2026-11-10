@@ -48,6 +48,16 @@ public interface IFx67llDortmundInfoPointService {
     public int updateFx67llDortmundInfoPoint(Fx67llDortmundInfoPoint fx67llDortmundInfoPoint);
 
     /**
+     * 批量删除统一信息点
+     * <p>
+     * 同一事务删除信息点及其球队关联，逐条执行数据范围校验
+     *
+     * @param infoPointIds 需要删除的统一信息点主键集合
+     * @return 结果
+     */
+    public int deleteFx67llDortmundInfoPointByInfoPointIds(Long[] infoPointIds);
+
+    /**
      * 修改信息点状态
      * <p>
      * 条件更新，影响行数不是 1 时按已处理、状态变化或记录不存在返回

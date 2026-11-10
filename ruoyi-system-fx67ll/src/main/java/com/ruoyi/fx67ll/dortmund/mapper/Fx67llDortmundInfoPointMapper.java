@@ -50,4 +50,12 @@ public interface Fx67llDortmundInfoPointMapper {
      * @return 结果
      */
     public int updateFx67llDortmundInfoPointStatus(Fx67llDortmundInfoPoint fx67llDortmundInfoPoint);
+
+    /**
+     * 批量删除统一信息点
+     *
+     * @param infoPointIds 需要删除的统一信息点主键集合
+     * @return 结果
+     */
+    public int deleteFx67llDortmundInfoPointByInfoPointIds(Long[] infoPointIds);
 }

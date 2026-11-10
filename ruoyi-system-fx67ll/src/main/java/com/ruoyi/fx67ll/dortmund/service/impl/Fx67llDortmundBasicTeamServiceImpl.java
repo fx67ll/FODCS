@@ -2,6 +2,8 @@ package com.ruoyi.fx67ll.dortmund.service.impl;
 
 import java.util.List;
 
+import com.ruoyi.fx67ll.dortmund.domain.Fx67llDortmundInfoPoint;
+
 import com.ruoyi.common.exception.ServiceException;
 import com.ruoyi.common.utils.DateUtils;
 import com.ruoyi.common.utils.SecurityUtils;
@@ -13,7 +15,9 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import com.ruoyi.fx67ll.dortmund.mapper.Fx67llDortmundBasicTeamMapper;
 import com.ruoyi.fx67ll.dortmund.domain.Fx67llDortmundBasicTeam;
+import com.ruoyi.fx67ll.dortmund.service.IFx67llDortmundInfoPointService;
 import com.ruoyi.fx67ll.dortmund.service.IFx67llDortmundBasicTeamService;
+import org.springframework.transaction.annotation.Transactional;
 
 /**
  * 球队管理Service业务层处理
@@ -31,6 +35,9 @@ public class Fx67llDortmundBasicTeamServiceImpl implements IFx67llDortmundBasicT
 
     @Autowired
     private Fx67llDortmundInfoPointTeamRelMapper fx67llDortmundInfoPointTeamRelMapper;
+
+    @Autowired
+    private IFx67llDortmundInfoPointService fx67llDortmundInfoPointService;
 
     /**
      * 查询球队管理
@@ -73,11 +80,14 @@ public class Fx67llDortmundBasicTeamServiceImpl implements IFx67llDortmundBasicT
      * @return 结果
      */
     @Override
+    @Transactional(rollbackFor = Exception.class)
     public int insertFx67llDortmundBasicTeam(Fx67llDortmundBasicTeam fx67llDortmundBasicTeam) {
         fx67llDortmundBasicTeam.setUserId(SecurityUtils.getUserId());
         fx67llDortmundBasicTeam.setCreateBy(SecurityUtils.getUsername());
         fx67llDortmundBasicTeam.setCreateTime(DateUtils.getNowDate());
-        return fx67llDortmundBasicTeamMapper.insertFx67llDortmundBasicTeam(fx67llDortmundBasicTeam);
+        int rows = fx67llDortmundBasicTeamMapper.insertFx67llDortmundBasicTeam(fx67llDortmundBasicTeam);
+        insertNewInfoPoints(fx67llDortmundBasicTeam);
+        return rows;
     }
 
     /**
@@ -148,6 +158,23 @@ public class Fx67llDortmundBasicTeamServiceImpl implements IFx67llDortmundBasicT
         List<Fx67llDortmundInfoPointTeamRel> relList = fx67llDortmundInfoPointTeamRelMapper.selectFx67llDortmundInfoPointTeamRelList(relQuery);
         if (relList != null && !relList.isEmpty()) {
             throw new ServiceException("球队已被信息点引用，不能删除；可改用停用");
+        }
+    }
+
+    /**
+     * 创建球队时同步写入关联的赛季球队信息点
+     *
+     * @param fx67llDortmundBasicTeam 球队管理对象
+     */
+    private void insertNewInfoPoints(Fx67llDortmundBasicTeam fx67llDortmundBasicTeam) {
+        List<Fx67llDortmundInfoPoint> newInfoPoints = fx67llDortmundBasicTeam.getNewInfoPoints();
+        if (newInfoPoints == null || newInfoPoints.isEmpty()) {
+            return;
+        }
+        for (Fx67llDortmundInfoPoint infoPoint : newInfoPoints) {
+            infoPoint.setInfoPointType("T");
+            infoPoint.setTeamIds(new Long[] { fx67llDortmundBasicTeam.getTeamId() });
+            fx67llDortmundInfoPointService.insertFx67llDortmundInfoPoint(infoPoint);
         }
     }
 }

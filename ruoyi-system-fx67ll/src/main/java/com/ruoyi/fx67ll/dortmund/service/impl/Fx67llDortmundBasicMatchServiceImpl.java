@@ -21,6 +21,7 @@ import com.ruoyi.fx67ll.dortmund.mapper.Fx67llDortmundPlanMatchRelMapper;
 import com.ruoyi.fx67ll.dortmund.service.IFx67llDortmundBasicMatchService;
 import com.ruoyi.fx67ll.dortmund.service.IFx67llDortmundBasicSeasonService;
 import com.ruoyi.fx67ll.dortmund.service.IFx67llDortmundBasicTeamService;
+import com.ruoyi.fx67ll.dortmund.service.IFx67llDortmundInfoPointService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.dao.DuplicateKeyException;
 import org.springframework.stereotype.Service;
@@ -44,6 +45,9 @@ public class Fx67llDortmundBasicMatchServiceImpl implements IFx67llDortmundBasic
 
     @Autowired
     private IFx67llDortmundBasicTeamService fx67llDortmundBasicTeamService;
+
+    @Autowired
+    private IFx67llDortmundInfoPointService fx67llDortmundInfoPointService;
 
     @Autowired
     private Fx67llDortmundInfoPointMapper fx67llDortmundInfoPointMapper;
@@ -117,8 +121,11 @@ public class Fx67llDortmundBasicMatchServiceImpl implements IFx67llDortmundBasic
         fx67llDortmundBasicMatch.setCreateTime(DateUtils.getNowDate());
         try {
             int rows = fx67llDortmundBasicMatchMapper.insertFx67llDortmundBasicMatch(fx67llDortmundBasicMatch);
-            if (rows > 0 && fx67llDortmundBasicMatch.getNewOdds() != null) {
-                insertInitialOdds(fx67llDortmundBasicMatch.getNewOdds(), fx67llDortmundBasicMatch.getMatchId());
+            if (rows > 0) {
+                if (fx67llDortmundBasicMatch.getNewOdds() != null) {
+                    insertInitialOdds(fx67llDortmundBasicMatch.getNewOdds(), fx67llDortmundBasicMatch.getMatchId());
+                }
+                insertNewInfoPoints(fx67llDortmundBasicMatch);
             }
             return rows;
         } catch (DuplicateKeyException e) {
@@ -143,7 +150,8 @@ public class Fx67llDortmundBasicMatchServiceImpl implements IFx67llDortmundBasic
             throw new ServiceException("比赛主键不能为空！");
         }
         if (fx67llDortmundBasicMatch.getNewSeason() != null || fx67llDortmundBasicMatch.getNewHomeTeam() != null
-                || fx67llDortmundBasicMatch.getNewAwayTeam() != null || fx67llDortmundBasicMatch.getNewOdds() != null) {
+                || fx67llDortmundBasicMatch.getNewAwayTeam() != null || fx67llDortmundBasicMatch.getNewOdds() != null
+                || fx67llDortmundBasicMatch.getNewInfoPoints() != null) {
             throw new ServiceException("修改比赛不支持当场新建赛季、球队或倍率记录，请改选已有记录！");
         }
         Fx67llDortmundBasicMatch oldMatch = fx67llDortmundBasicMatchMapper
@@ -297,6 +305,24 @@ public class Fx67llDortmundBasicMatchServiceImpl implements IFx67llDortmundBasic
             fx67llDortmundOddsMapper.insertFx67llDortmundOdds(fx67llDortmundOdds);
         } catch (DuplicateKeyException e) {
             throw new ServiceException("倍率记录编码已存在！");
+        }
+    }
+
+    /**
+     * 创建比赛时同步写入关联的比赛临时信息点
+     *
+     * @param fx67llDortmundBasicMatch 比赛记录对象
+     */
+    private void insertNewInfoPoints(Fx67llDortmundBasicMatch fx67llDortmundBasicMatch) {
+        List<Fx67llDortmundInfoPoint> newInfoPoints = fx67llDortmundBasicMatch.getNewInfoPoints();
+        if (newInfoPoints == null || newInfoPoints.isEmpty()) {
+            return;
+        }
+        for (Fx67llDortmundInfoPoint infoPoint : newInfoPoints) {
+            infoPoint.setInfoPointType("M");
+            infoPoint.setMatchId(fx67llDortmundBasicMatch.getMatchId());
+            infoPoint.setTeamIds(new Long[0]);
+            fx67llDortmundInfoPointService.insertFx67llDortmundInfoPoint(infoPoint);
         }
     }
 

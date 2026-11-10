@@ -8,6 +8,10 @@ import org.apache.commons.lang3.builder.ToStringStyle;
 import com.ruoyi.common.annotation.Excel;
 import com.ruoyi.common.core.domain.BaseEntity;
 
+import java.util.List;
+
+import com.ruoyi.fx67ll.dortmund.domain.Fx67llDortmundInfoPoint;
+
 /**
  * 比赛记录对象 fx67ll_dortmund_match
  *
@@ -118,6 +122,11 @@ public class Fx67llDortmundBasicMatch extends BaseEntity {
      * 新增客队对象（新增比赛时同时创建客队，仅比赛接口支持该嵌套新增）
      */
     private Fx67llDortmundBasicTeam newAwayTeam;
+
+    /**
+     * 创建比赛时同步创建的关联信息点
+     */
+    private List<Fx67llDortmundInfoPoint> newInfoPoints;
 
 
     /**
@@ -308,6 +317,14 @@ public class Fx67llDortmundBasicMatch extends BaseEntity {
         this.newAwayTeam = newAwayTeam;
     }
 
+    public List<Fx67llDortmundInfoPoint> getNewInfoPoints() {
+        return newInfoPoints;
+    }
+
+    public void setNewInfoPoints(List<Fx67llDortmundInfoPoint> newInfoPoints) {
+        this.newInfoPoints = newInfoPoints;
+    }
+
     public void setDelFlag(String delFlag) {
         this.delFlag = delFlag;
     }
@@ -393,6 +410,7 @@ public class Fx67llDortmundBasicMatch extends BaseEntity {
                 .append("newSeason", getNewSeason())
                 .append("newHomeTeam", getNewHomeTeam())
                 .append("newAwayTeam", getNewAwayTeam())
+                .append("newInfoPoints", getNewInfoPoints())
                 .append("createBy", getCreateBy())
                 .append("createTime", getCreateTime())
                 .append("updateBy", getUpdateBy())

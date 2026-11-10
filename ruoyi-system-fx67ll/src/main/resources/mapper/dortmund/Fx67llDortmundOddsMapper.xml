@@ -79,6 +79,9 @@
         <include refid="selectFx67llDortmundOddsVo"/>
         <where>
             <if test="oddsId != null">and o.odds_id = #{oddsId}</if>
+            <if test="oddsCode != null and oddsCode != ''">
+                and o.odds_code like concat('%', #{oddsCode}, '%')
+            </if>
             <if test="matchId != null">and o.match_id = #{matchId}</if>
             <if test="matchCode != null and matchCode != ''">
                 and m.match_code like concat('%', #{matchCode}, '%')

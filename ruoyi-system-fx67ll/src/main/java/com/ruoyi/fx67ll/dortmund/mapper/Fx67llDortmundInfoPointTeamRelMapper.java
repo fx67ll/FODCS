@@ -42,4 +42,12 @@ public interface Fx67llDortmundInfoPointTeamRelMapper {
      * @return 结果
      */
     public int updateFx67llDortmundInfoPointTeamRel(Fx67llDortmundInfoPointTeamRel fx67llDortmundInfoPointTeamRel);
+
+    /**
+     * 批量删除信息点球队关联
+     *
+     * @param infoPointIds 需要删除的信息点主键集合
+     * @return 结果
+     */
+    public int deleteFx67llDortmundInfoPointTeamRelByInfoPointIds(Long[] infoPointIds);
 }

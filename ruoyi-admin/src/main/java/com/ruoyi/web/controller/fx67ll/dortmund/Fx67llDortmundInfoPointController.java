@@ -5,6 +5,7 @@ import java.util.List;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -74,6 +75,16 @@ public class Fx67llDortmundInfoPointController extends BaseController {
     @PutMapping
     public AjaxResult edit(@RequestBody Fx67llDortmundInfoPoint fx67llDortmundInfoPoint) {
         return toAjax(fx67llDortmundInfoPointService.updateFx67llDortmundInfoPoint(fx67llDortmundInfoPoint));
+    }
+
+    /**
+     * 删除统一信息点
+     */
+    @PreAuthorize("@ss.hasPermi('dortmund:info:point:remove')")
+    @Log(title = "统一信息点", businessType = BusinessType.DELETE)
+    @DeleteMapping("/{infoPointIds}")
+    public AjaxResult remove(@PathVariable Long[] infoPointIds) {
+        return toAjax(fx67llDortmundInfoPointService.deleteFx67llDortmundInfoPointByInfoPointIds(infoPointIds));
     }
 
     /**

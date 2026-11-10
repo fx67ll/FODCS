@@ -5,6 +5,10 @@ import org.apache.commons.lang3.builder.ToStringStyle;
 import com.ruoyi.common.annotation.Excel;
 import com.ruoyi.common.core.domain.BaseEntity;
 
+import java.util.List;
+
+import com.ruoyi.fx67ll.dortmund.domain.Fx67llDortmundInfoPoint;
+
 /**
  * 球队管理对象 fx67ll_dortmund_team
  *
@@ -120,6 +124,11 @@ public class Fx67llDortmundBasicTeam extends BaseEntity {
      * 更新结束时间
      */
     private String endUpdateTime;
+
+    /**
+     * 创建球队时同步创建的关联信息点
+     */
+    private List<Fx67llDortmundInfoPoint> newInfoPoints;
 
     public void setTeamId(Long teamId) {
         this.teamId = teamId;
@@ -269,6 +278,14 @@ public class Fx67llDortmundBasicTeam extends BaseEntity {
         return endUpdateTime;
     }
 
+    public List<Fx67llDortmundInfoPoint> getNewInfoPoints() {
+        return newInfoPoints;
+    }
+
+    public void setNewInfoPoints(List<Fx67llDortmundInfoPoint> newInfoPoints) {
+        this.newInfoPoints = newInfoPoints;
+    }
+
     public void setEndUpdateTime(String endUpdateTime) {
         this.endUpdateTime = endUpdateTime;
     }
@@ -299,6 +316,7 @@ public class Fx67llDortmundBasicTeam extends BaseEntity {
                 .append("endCreateTime", getEndCreateTime())
                 .append("beginUpdateTime", getBeginUpdateTime())
                 .append("endUpdateTime", getEndUpdateTime())
+                .append("newInfoPoints", getNewInfoPoints())
                 .toString();
     }
 }

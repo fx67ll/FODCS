@@ -200,6 +200,37 @@ public class Fx67llDortmundInfoPointServiceImpl implements IFx67llDortmundInfoPo
     }
 
     /**
+     * 批量删除统一信息点
+     * <p>
+     * 删除信息点时同步清理球队关系，逐条校验数据范围，任一记录无权删除则整体回滚
+     *
+     * @param infoPointIds 统一信息点主键集合
+     * @return 结果
+     */
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public int deleteFx67llDortmundInfoPointByInfoPointIds(Long[] infoPointIds) {
+        if (infoPointIds == null || infoPointIds.length == 0) {
+            return 0;
+        }
+        for (Long infoPointId : infoPointIds) {
+            Fx67llDortmundInfoPoint infoPoint = fx67llDortmundInfoPointMapper
+                    .selectFx67llDortmundInfoPointByInfoPointId(infoPointId);
+            if (infoPoint == null) {
+                throw new ServiceException("信息点不存在或已被删除！");
+            }
+            if (!checkInfoPointDataScope(infoPoint.getUserId())) {
+                throw new ServiceException("没有权限删除该信息点！");
+            }
+        }
+        int rows = fx67llDortmundInfoPointMapper
+                .deleteFx67llDortmundInfoPointByInfoPointIds(infoPointIds);
+        fx67llDortmundInfoPointTeamRelMapper
+                .deleteFx67llDortmundInfoPointTeamRelByInfoPointIds(infoPointIds);
+        return rows;
+    }
+
+    /**
      * 查询比赛的有效信息点
      * <p>
      * T 类型同时检查启用、球队关联启用、赛季与比赛赛季一致、赛季状态、结束日期和生效时间窗；

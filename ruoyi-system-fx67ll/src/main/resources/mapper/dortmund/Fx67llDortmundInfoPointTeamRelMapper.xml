@@ -79,4 +79,9 @@
         </trim>
         where relation_id = #{relationId}
     </update>
+
+    <delete id="deleteFx67llDortmundInfoPointTeamRelByInfoPointIds" parameterType="Long">
+        delete from fx67ll_dortmund_info_point_team_rel where info_point_id in
+        <foreach collection="array" item="infoPointId" open="(" separator="," close=")">#{infoPointId}</foreach>
+    </delete>
 </mapper>

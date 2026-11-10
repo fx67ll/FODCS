@@ -71,6 +71,14 @@
             <if test="infoPointType != null  and infoPointType != ''">and p.info_point_type = #{infoPointType}</if>
             <if test="seasonId != null ">and p.season_id = #{seasonId}</if>
             <if test="matchId != null ">and p.match_id = #{matchId}</if>
+            <if test="teamIds != null and teamIds.length > 0">and exists (
+                select 1
+                from fx67ll_dortmund_info_point_team_rel tr
+                where tr.info_point_id = p.info_point_id
+                  and tr.relation_status = '0'
+                  and tr.team_id in
+                <foreach collection="teamIds" item="teamId" open="(" separator="," close=")">#{teamId}</foreach>
+            )</if>
             <if test="pointStatus != null  and pointStatus != ''">and p.point_status = #{pointStatus}</if>
             <if test="allowPublic != null  and allowPublic != ''">and p.allow_public = #{allowPublic}</if>
             <if test="pointTitle != null  and pointTitle != ''">and p.point_title like concat('%', #{pointTitle},
@@ -179,4 +187,9 @@
         where info_point_id = #{infoPointId}
           and point_status != #{pointStatus}
     </update>
+
+    <delete id="deleteFx67llDortmundInfoPointByInfoPointIds" parameterType="Long">
+        delete from fx67ll_dortmund_info_point where info_point_id in
+        <foreach collection="array" item="infoPointId" open="(" separator="," close=")">#{infoPointId}</foreach>
+    </delete>
 </mapper>
