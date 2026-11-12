@@ -74,6 +74,11 @@ public class Fx67llDortmundBasicMatch extends BaseEntity {
     private String awayTeamName;
 
     /**
+     * 对阵球队名称（查询字段，主客队任一匹配）
+     */
+    private String teamName;
+
+    /**
      * 比赛开球时间
      */
     @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
@@ -243,6 +248,14 @@ public class Fx67llDortmundBasicMatch extends BaseEntity {
         this.awayTeamName = awayTeamName;
     }
 
+    public String getTeamName() {
+        return teamName;
+    }
+
+    public void setTeamName(String teamName) {
+        this.teamName = teamName;
+    }
+
     public void setMatchTime(Date matchTime) {
         this.matchTime = matchTime;
     }
@@ -401,6 +414,7 @@ public class Fx67llDortmundBasicMatch extends BaseEntity {
                 .append("homeTeamName", getHomeTeamName())
                 .append("awayTeamId", getAwayTeamId())
                 .append("awayTeamName", getAwayTeamName())
+                .append("teamName", getTeamName())
                 .append("matchTime", getMatchTime())
                 .append("matchVenue", getMatchVenue())
                 .append("matchStatus", getMatchStatus())

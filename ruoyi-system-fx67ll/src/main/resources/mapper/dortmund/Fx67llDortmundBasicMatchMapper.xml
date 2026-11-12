@@ -62,8 +62,14 @@
             <if test="matchId != null ">and m.match_id = #{matchId}</if>
             <if test="matchCode != null and matchCode != ''">and m.match_code like concat('%', #{matchCode}, '%')</if>
             <if test="seasonId != null ">and m.season_id = #{seasonId}</if>
+            <if test="teamName != null and teamName != ''">
+                and (ht.team_name like concat('%', #{teamName}, '%')
+                or at.team_name like concat('%', #{teamName}, '%'))
+            </if>
             <if test="homeTeamId != null ">and m.home_team_id = #{homeTeamId}</if>
             <if test="awayTeamId != null ">and m.away_team_id = #{awayTeamId}</if>
+            <if test="homeTeamName != null and homeTeamName != ''">and ht.team_name like concat('%', #{homeTeamName}, '%')</if>
+            <if test="awayTeamName != null and awayTeamName != ''">and at.team_name like concat('%', #{awayTeamName}, '%')</if>
             <if test="matchTime != null ">and m.match_time = #{matchTime}</if>
             <if test="matchVenue != null  and matchVenue != ''">and m.match_venue = #{matchVenue}</if>
             <if test="matchStatus != null  and matchStatus != ''">and m.match_status = #{matchStatus}</if>
