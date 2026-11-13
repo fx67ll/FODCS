@@ -5,6 +5,7 @@ import java.util.List;
 import com.ruoyi.common.utils.DateUtils;
 import com.ruoyi.common.utils.SecurityUtils;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.dao.DuplicateKeyException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import com.ruoyi.fx67ll.dortmund.mapper.Fx67llDortmundExtraSimulateVersionMapper;
@@ -56,13 +57,28 @@ public class Fx67llDortmundExtraSimulateVersionServiceImpl implements IFx67llDor
      * @return 结果
      */
     @Override
+    @Transactional(rollbackFor = Exception.class)
     public int insertFx67llDortmundExtraSimulateVersion(Fx67llDortmundExtraSimulateVersion fx67llDortmundExtraSimulateVersion) {
-        Long maxVersionNo = fx67llDortmundExtraSimulateVersionMapper.selectMaxVersionNoByUserId(SecurityUtils.getUserId());
-        fx67llDortmundExtraSimulateVersion.setVersionNo(maxVersionNo == null ? 1L : maxVersionNo + 1);
-        fx67llDortmundExtraSimulateVersion.setUserId(SecurityUtils.getUserId());
+        Long userId = SecurityUtils.getUserId();
+        fx67llDortmundExtraSimulateVersion.setUserId(userId);
         fx67llDortmundExtraSimulateVersion.setCreateBy(SecurityUtils.getUsername());
         fx67llDortmundExtraSimulateVersion.setCreateTime(DateUtils.getNowDate());
-        return fx67llDortmundExtraSimulateVersionMapper.insertFx67llDortmundExtraSimulateVersion(fx67llDortmundExtraSimulateVersion);
+        for (int attempt = 0; attempt < 3; attempt++) {
+            Long maxVersionNo = fx67llDortmundExtraSimulateVersionMapper
+                    .selectMaxVersionNoByUserIdForUpdate(userId);
+            fx67llDortmundExtraSimulateVersion.setVersionNo(
+                    maxVersionNo == null ? 1L : maxVersionNo + 1);
+            try {
+                return fx67llDortmundExtraSimulateVersionMapper
+                        .insertFx67llDortmundExtraSimulateVersion(fx67llDortmundExtraSimulateVersion);
+            } catch (DuplicateKeyException e) {
+                if (attempt == 2) {
+                    throw new com.ruoyi.common.exception.ServiceException(
+                            "版本序号生成发生并发冲突，请重新提交！");
+                }
+            }
+        }
+        throw new com.ruoyi.common.exception.ServiceException("版本序号生成失败，请重新提交！");
     }
 
     /**

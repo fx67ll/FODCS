@@ -1,6 +1,7 @@
 package com.ruoyi.fx67ll.dortmund.mapper;
 
 import java.util.List;
+import org.apache.ibatis.annotations.Param;
 
 import com.ruoyi.fx67ll.dortmund.domain.Fx67llDortmundPlanMatchRel;
 
@@ -26,6 +27,14 @@ public interface Fx67llDortmundPlanMatchRelMapper {
      * @return 方案计划与比赛关系集合
      */
     public List<Fx67llDortmundPlanMatchRel> selectFx67llDortmundPlanMatchRelList(Fx67llDortmundPlanMatchRel fx67llDortmundPlanMatchRel);
+
+    /**
+     * 按方案计划主键集合批量查询比赛关系
+     *
+     * @param planIds 方案计划主键集合
+     * @return 比赛关系集合
+     */
+    public List<Fx67llDortmundPlanMatchRel> selectFx67llDortmundPlanMatchRelListByPlanIds(@Param("planIds") List<Long> planIds);
 
     /**
      * 新增方案计划与比赛关系

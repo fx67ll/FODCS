@@ -20,6 +20,14 @@ public interface Fx67llDortmundPlanMapper {
     public Fx67llDortmundPlan selectFx67llDortmundPlanByPlanId(Long planId);
 
     /**
+     * 锁定方案计划行，供摘要刷新和方案编辑串行化使用。
+     *
+     * @param planId 方案计划主键
+     * @return 方案计划
+     */
+    public Fx67llDortmundPlan selectFx67llDortmundPlanByPlanIdForUpdate(Long planId);
+
+    /**
      * 查询方案计划列表
      *
      * @param fx67llDortmundPlan 方案计划

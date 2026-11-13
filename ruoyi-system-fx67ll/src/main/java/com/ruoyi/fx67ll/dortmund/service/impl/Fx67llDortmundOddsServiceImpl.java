@@ -81,9 +81,19 @@ public class Fx67llDortmundOddsServiceImpl implements IFx67llDortmundOddsService
      */
     @Override
     public Fx67llDortmundOdds selectActiveFx67llDortmundOddsByMatchId(Long matchId) {
+        if (matchId == null) {
+            throw new ServiceException("比赛主键不能为空！");
+        }
+        int activeCount = fx67llDortmundOddsMapper.countActiveOddsByMatchId(matchId);
+        if (activeCount == 0) {
+            throw new ServiceException("该比赛没有有效倍率记录，请先在倍率管理中启用一条有效倍率！");
+        }
+        if (activeCount > 1) {
+            throw new ServiceException("该比赛存在多条有效倍率记录，请先调整至仅一条有效倍率！");
+        }
         Fx67llDortmundOdds odds = fx67llDortmundOddsMapper.selectActiveFx67llDortmundOddsByMatchId(matchId);
         if (odds == null || (!hasAllDataScope() && !SecurityUtils.getUserId().equals(odds.getUserId()))) {
-            return null;
+            throw new ServiceException("有效倍率记录不存在或没有访问权限！");
         }
         return odds;
     }

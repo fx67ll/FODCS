@@ -353,20 +353,14 @@ public class Fx67llDortmundExtraServiceImpl implements IFx67llDortmundExtraServi
     }
 
     /**
-     * 校验请求中的方案计划关联字段：图片对象键一律拒绝，newPlans 元素只能引用已有比赛
+     * 校验请求中的方案计划关联字段：newPlans 元素只能引用已有比赛
      *
      * @param fx67llDortmundExtra 外快盈亏记录
      */
     private void checkPlanFieldsInRequest(Fx67llDortmundExtra fx67llDortmundExtra) {
-        if (fx67llDortmundExtra.getPlanImageObjectKeys() != null) {
-            throw new ServiceException("外快盈亏请求不允许携带图片对象键！");
-        }
         List<Fx67llDortmundPlan> newPlans = fx67llDortmundExtra.getNewPlans();
         if (newPlans != null) {
             for (Fx67llDortmundPlan newPlan : newPlans) {
-                if (newPlan.getPlanImageObjectKeys() != null) {
-                    throw new ServiceException("外快盈亏请求不允许携带图片对象键！");
-                }
                 if (newPlan.getNewMatches() != null && !newPlan.getNewMatches().isEmpty()) {
                     throw new ServiceException("外快盈亏内新建方案计划只能引用已有比赛，不能当场新建比赛！");
                 }

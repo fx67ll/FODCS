@@ -71,6 +71,9 @@
             <if test="matchId != null">
                 and plan_id in (select plan_id from fx67ll_dortmund_plan_match_rel where match_id = #{matchId})
             </if>
+            <if test="combinationId != null">
+                and plan_id in (select plan_id from fx67ll_dortmund_plan_return_rel where combination_id = #{combinationId})
+            </if>
         </where>
         order by STR_TO_DATE(create_time, "%Y-%m-%d %H:%i:%s") desc
     </select>
@@ -183,4 +186,11 @@
             #{planId}
         </foreach>
     </delete>
+    <select id='selectFx67llDortmundPlanByPlanIdForUpdate' parameterType='Long'
+            resultMap='Fx67llDortmundPlanResult'>
+        <include refid='selectFx67llDortmundPlanVo'/>
+        where plan_id = #{planId}
+        for update
+    </select>
+
 </mapper>

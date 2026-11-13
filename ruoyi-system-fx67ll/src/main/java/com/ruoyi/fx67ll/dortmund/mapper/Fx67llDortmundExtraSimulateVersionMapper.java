@@ -20,12 +20,12 @@ public interface Fx67llDortmundExtraSimulateVersionMapper {
     public List<Fx67llDortmundExtraSimulateVersion> selectFx67llDortmundExtraSimulateVersionList(Fx67llDortmundExtraSimulateVersion fx67llDortmundExtraSimulateVersion);
 
     /**
-     * 查询用户已创建的最大版本序号
+     * 锁定并查询用户当前最大版本序号
      *
      * @param userId 用户ID
      * @return 最大版本序号
      */
-    public Long selectMaxVersionNoByUserId(Long userId);
+    public Long selectMaxVersionNoByUserIdForUpdate(Long userId);
 
     /**
      * 根据版本ID查询外快盈亏数值模拟版本记录

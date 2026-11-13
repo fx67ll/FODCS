@@ -1,6 +1,7 @@
 package com.ruoyi.fx67ll.dortmund.mapper;
 
 import java.util.List;
+import org.apache.ibatis.annotations.Param;
 
 import com.ruoyi.fx67ll.dortmund.domain.Fx67llDortmundPlanReturnRel;
 
@@ -18,6 +19,14 @@ public interface Fx67llDortmundPlanReturnRelMapper {
      * @return 回报组合关系集合
      */
     public List<Fx67llDortmundPlanReturnRel> selectListByPlanId(Long planId);
+
+    /**
+     * 按方案计划主键集合批量查询回报组合关系
+     *
+     * @param planIds 方案计划主键集合
+     * @return 回报组合关系集合
+     */
+    public List<Fx67llDortmundPlanReturnRel> selectListByPlanIds(@Param("planIds") List<Long> planIds);
 
     /**
      * 查询回报组合已关联的方案计划主键

@@ -22,8 +22,8 @@ public class Fx67llDortmundReturnGenerateRequest {
     /** 比赛主键集合 */
     private List<Long> matchIds;
 
-    /** 临时图片对象键集合 */
-    private List<String> imageObjectKeys;
+    /** 客户端幂等请求号，同一用户重复提交时返回同一批次 */
+    private String clientRequestId;
 
     public String getGenerationMode() {
         return generationMode;
@@ -57,11 +57,11 @@ public class Fx67llDortmundReturnGenerateRequest {
         this.matchIds = matchIds;
     }
 
-    public List<String> getImageObjectKeys() {
-        return imageObjectKeys;
+    public String getClientRequestId() {
+        return clientRequestId;
     }
 
-    public void setImageObjectKeys(List<String> imageObjectKeys) {
-        this.imageObjectKeys = imageObjectKeys;
+    public void setClientRequestId(String clientRequestId) {
+        this.clientRequestId = clientRequestId;
     }
 }

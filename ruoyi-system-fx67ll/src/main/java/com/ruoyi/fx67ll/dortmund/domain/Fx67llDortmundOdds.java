@@ -91,6 +91,18 @@ public class Fx67llDortmundOdds extends BaseEntity {
     /** 倍率来源结束时间 */
     private String endSourceTime;
 
+    /** 创建开始时间 */
+    private String beginCreateTime;
+
+    /** 创建结束时间 */
+    private String endCreateTime;
+
+    /** 更新开始时间 */
+    private String beginUpdateTime;
+
+    /** 更新结束时间 */
+    private String endUpdateTime;
+
     /** 同一事务内新增的比赛 */
     private Fx67llDortmundBasicMatch newMatch;
 
@@ -292,6 +304,38 @@ public class Fx67llDortmundOdds extends BaseEntity {
 
     public void setEndSourceTime(String endSourceTime) {
         this.endSourceTime = endSourceTime;
+    }
+
+    public String getBeginCreateTime() {
+        return beginCreateTime;
+    }
+
+    public void setBeginCreateTime(String beginCreateTime) {
+        this.beginCreateTime = beginCreateTime;
+    }
+
+    public String getEndCreateTime() {
+        return endCreateTime;
+    }
+
+    public void setEndCreateTime(String endCreateTime) {
+        this.endCreateTime = endCreateTime;
+    }
+
+    public String getBeginUpdateTime() {
+        return beginUpdateTime;
+    }
+
+    public void setBeginUpdateTime(String beginUpdateTime) {
+        this.beginUpdateTime = beginUpdateTime;
+    }
+
+    public String getEndUpdateTime() {
+        return endUpdateTime;
+    }
+
+    public void setEndUpdateTime(String endUpdateTime) {
+        this.endUpdateTime = endUpdateTime;
     }
 
     public Fx67llDortmundBasicMatch getNewMatch() {

@@ -36,16 +36,21 @@ public class Fx67llDortmundReturnCombinationItem extends BaseEntity {
     /** 倍率值快照 */
     private BigDecimal oddsValueSnapshot;
 
-    /** 手工权重快照 */
+    /** 用户提交时的原始手工权重快照，允许为空；空值只在AI输入和appliedWeight中按100解释 */
     private BigDecimal manualWeightSnapshot;
 
-    /** 本次应用权重 */
+    /**
+     * AI评估权重（0-100）
+     * <p>
+     * 仅用于记录AI对本次比赛选择类型的评估权重，便于复核候选组合的生成依据；
+     * 不参与组合倍率、预计回报、偏差金额或方案金额等任何金额计算。
+     */
     private BigDecimal appliedWeight;
 
     /** 明细排序 */
     private Integer itemSort;
 
-    /** 选择理由 */
+    /** 逐场选择理由快照；不参与任何金额计算 */
     private String selectionReason;
 
     /** 比赛摘要 */
@@ -120,10 +125,12 @@ public class Fx67llDortmundReturnCombinationItem extends BaseEntity {
     }
 
     public BigDecimal getAppliedWeight() {
+        // AI评估权重仅用于生成解释和历史复核，不是金额系数。
         return appliedWeight;
     }
 
     public void setAppliedWeight(BigDecimal appliedWeight) {
+        // AI评估权重仅用于生成解释和历史复核，不是金额系数。
         this.appliedWeight = appliedWeight;
     }
 
@@ -162,6 +169,7 @@ public class Fx67llDortmundReturnCombinationItem extends BaseEntity {
                 .append("selectionType", getSelectionType())
                 .append("oddsValueSnapshot", getOddsValueSnapshot())
                 .append("manualWeightSnapshot", getManualWeightSnapshot())
+                // appliedWeight: AI评估权重，不参与任何金额计算。
                 .append("appliedWeight", getAppliedWeight())
                 .append("itemSort", getItemSort())
                 .append("selectionReason", getSelectionReason())

@@ -4,7 +4,6 @@ import java.math.BigDecimal;
 import java.util.Date;
 import java.util.List;
 
-import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.ruoyi.common.core.domain.BaseEntity;
 import org.apache.commons.lang3.builder.ToStringBuilder;
 import org.apache.commons.lang3.builder.ToStringStyle;
@@ -33,6 +32,12 @@ public class Fx67llDortmundReturnCombination extends BaseEntity {
     /** 生成批次状态 */
     private String generationStatus;
 
+    /** 查询关键字：组合编码或标题（非表列） */
+    private String keyword;
+
+    /** 查询条件：关联比赛主键（非表列） */
+    private Long matchId;
+
     /** 回报组合编码 */
     private String combinationCode;
 
@@ -60,12 +65,11 @@ public class Fx67llDortmundReturnCombination extends BaseEntity {
     /** 最近审核时间 */
     private Date reviewTime;
 
-    /** 组合图片对象键分隔串（表字段，不直接出现在接口中） */
-    @JsonIgnore
-    private String combinationImageObjectKeys;
+    /** 组合有效图片集合（非表字段，仅详情返回） */
+    private List<Fx67llDortmundReturnImage> images;
 
-    /** 组合图片对象键集合（非表字段） */
-    private String[] imageObjectKeys;
+    /** 是否已被方案计划引用（非表字段） */
+    private Boolean planLinked;
 
     /** AI分析业务输出 */
     private String combinationRemark;
@@ -84,6 +88,12 @@ public class Fx67llDortmundReturnCombination extends BaseEntity {
 
     /** 创建结束时间 */
     private String endCreateTime;
+
+    /** 列表排序字段，服务端白名单校验（非表列） */
+    private String sortField;
+
+    /** 列表排序方向，asc/desc（非表列） */
+    private String sortOrder;
 
     public Long getCombinationId() {
         return combinationId;
@@ -123,6 +133,22 @@ public class Fx67llDortmundReturnCombination extends BaseEntity {
 
     public void setGenerationStatus(String generationStatus) {
         this.generationStatus = generationStatus;
+    }
+
+    public String getKeyword() {
+        return keyword;
+    }
+
+    public void setKeyword(String keyword) {
+        this.keyword = keyword;
+    }
+
+    public Long getMatchId() {
+        return matchId;
+    }
+
+    public void setMatchId(Long matchId) {
+        this.matchId = matchId;
     }
 
     public String getCombinationCode() {
@@ -197,20 +223,20 @@ public class Fx67llDortmundReturnCombination extends BaseEntity {
         this.reviewTime = reviewTime;
     }
 
-    public String getCombinationImageObjectKeys() {
-        return combinationImageObjectKeys;
+    public List<Fx67llDortmundReturnImage> getImages() {
+        return images;
     }
 
-    public void setCombinationImageObjectKeys(String combinationImageObjectKeys) {
-        this.combinationImageObjectKeys = combinationImageObjectKeys;
+    public void setImages(List<Fx67llDortmundReturnImage> images) {
+        this.images = images;
     }
 
-    public String[] getImageObjectKeys() {
-        return imageObjectKeys;
+    public Boolean getPlanLinked() {
+        return planLinked;
     }
 
-    public void setImageObjectKeys(String[] imageObjectKeys) {
-        this.imageObjectKeys = imageObjectKeys;
+    public void setPlanLinked(Boolean planLinked) {
+        this.planLinked = planLinked;
     }
 
     public String getCombinationRemark() {
@@ -261,6 +287,22 @@ public class Fx67llDortmundReturnCombination extends BaseEntity {
         this.endCreateTime = endCreateTime;
     }
 
+    public String getSortField() {
+        return sortField;
+    }
+
+    public void setSortField(String sortField) {
+        this.sortField = sortField;
+    }
+
+    public String getSortOrder() {
+        return sortOrder;
+    }
+
+    public void setSortOrder(String sortOrder) {
+        this.sortOrder = sortOrder;
+    }
+
     @Override
     public String toString() {
         return new ToStringBuilder(this, ToStringStyle.MULTI_LINE_STYLE)
@@ -269,6 +311,8 @@ public class Fx67llDortmundReturnCombination extends BaseEntity {
                 .append("generationCode", getGenerationCode())
                 .append("generationMode", getGenerationMode())
                 .append("generationStatus", getGenerationStatus())
+                .append("keyword", getKeyword())
+                .append("matchId", getMatchId())
                 .append("combinationCode", getCombinationCode())
                 .append("combinationTitle", getCombinationTitle())
                 .append("combinationReason", getCombinationReason())
@@ -278,7 +322,8 @@ public class Fx67llDortmundReturnCombination extends BaseEntity {
                 .append("adoptedFlag", getAdoptedFlag())
                 .append("reviewBy", getReviewBy())
                 .append("reviewTime", getReviewTime())
-                .append("imageObjectKeys", getImageObjectKeys())
+                .append("images", getImages())
+                .append("planLinked", getPlanLinked())
                 .append("userId", getUserId())
                 .append("createBy", getCreateBy())
                 .append("createTime", getCreateTime())

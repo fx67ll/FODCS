@@ -1,0 +1,142 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.ruoyi.fx67ll.dortmund.mapper.Fx67llDortmundReturnImageMapper">
+
+    <resultMap type="Fx67llDortmundReturnImage" id="Fx67llDortmundReturnImageResult">
+        <result property="imageId" column="image_id"/>
+        <result property="combinationId" column="combination_id"/>
+        <result property="objectKey" column="object_key"/>
+        <result property="originalName" column="original_name"/>
+        <result property="contentType" column="content_type"/>
+        <result property="fileSize" column="file_size"/>
+        <result property="userId" column="user_id"/>
+        <result property="imageState" column="image_state"/>
+        <result property="expireTime" column="expire_time"/>
+        <result property="deleteAttempts" column="delete_attempts"/>
+        <result property="nextRetryTime" column="next_retry_time"/>
+        <result property="lastError" column="last_error"/>
+        <result property="createBy" column="create_by"/>
+        <result property="createTime" column="create_time"/>
+        <result property="updateBy" column="update_by"/>
+        <result property="updateTime" column="update_time"/>
+    </resultMap>
+
+    <sql id="selectImageVo">
+        select i.image_id, i.combination_id, i.object_key, i.original_name, i.content_type, i.file_size,
+               i.user_id, i.image_state, i.expire_time, i.delete_attempts, i.next_retry_time, i.last_error,
+               i.create_by, i.create_time, i.update_by, i.update_time
+        from fx67ll_dortmund_return_image i
+    </sql>
+
+    <insert id="insertImage" parameterType="Fx67llDortmundReturnImage" useGeneratedKeys="true"
+            keyProperty="imageId">
+        insert into fx67ll_dortmund_return_image
+        (combination_id, object_key, original_name, content_type, file_size, user_id, image_state, expire_time,
+         delete_attempts, next_retry_time, last_error, create_by, create_time, update_by, update_time)
+        values
+        (#{combinationId}, #{objectKey}, #{originalName}, #{contentType}, #{fileSize}, #{userId}, #{imageState},
+         #{expireTime}, #{deleteAttempts}, #{nextRetryTime}, #{lastError}, #{createBy}, #{createTime},
+         #{updateBy}, #{updateTime})
+    </insert>
+
+    <select id="selectByImageIdForUpdate" resultMap="Fx67llDortmundReturnImageResult">
+        <include refid="selectImageVo"/>
+        where i.image_id = #{imageId}
+        for update
+    </select>
+
+    <select id="selectActiveImagesByCombinationId" resultMap="Fx67llDortmundReturnImageResult">
+        <include refid="selectImageVo"/>
+        where i.combination_id = #{combinationId}
+          and i.image_state = 'B'
+        order by i.image_id
+    </select>
+
+    <select id="countActiveImagesByCombinationId" resultType="int">
+        select count(1)
+        from fx67ll_dortmund_return_image
+        where combination_id = #{combinationId}
+          and image_state = 'B'
+    </select>
+
+    <update id="bindToCombination">
+        update fx67ll_dortmund_return_image
+        set combination_id = #{combinationId},
+            image_state = 'B',
+            expire_time = null,
+            next_retry_time = null,
+            last_error = null,
+            update_time = now()
+        where image_id = #{imageId}
+          and user_id = #{userId}
+          and image_state = 'T'
+          and combination_id is null
+    </update>
+
+    <select id="selectOrphanImages" parameterType="Fx67llDortmundReturnImage"
+            resultMap="Fx67llDortmundReturnImageResult">
+        <include refid="selectImageVo"/>
+        left join fx67ll_dortmund_return_combination c on c.combination_id = i.combination_id
+        <where>
+            (
+                (i.image_state = 'T' and i.expire_time is not null and i.expire_time &lt;= now())
+                or (i.image_state = 'B' and (c.combination_id is null or c.adopted_flag &lt;&gt; 'Y'))
+                or (i.image_state in ('D', 'Q') and (i.next_retry_time is null or i.next_retry_time &lt;= now()))
+            )
+            <if test="userId != null">and i.user_id = #{userId}</if>
+            <if test="beginCreateTime != null and beginCreateTime != ''">
+                and i.create_time &gt;= #{beginCreateTime}
+            </if>
+            <if test="endCreateTime != null and endCreateTime != ''">
+                and i.create_time &lt;= #{endCreateTime}
+            </if>
+        </where>
+        order by i.create_time desc, i.image_id desc
+    </select>
+
+    <select id="selectCleanupCandidateIds" resultType="java.lang.Long">
+        select i.image_id
+        from fx67ll_dortmund_return_image i
+        left join fx67ll_dortmund_return_combination c on c.combination_id = i.combination_id
+        where (
+                (i.image_state = 'T' and i.expire_time is not null and i.expire_time &lt;= now())
+                or (i.image_state = 'B' and (c.combination_id is null or c.adopted_flag &lt;&gt; 'Y'))
+                or (i.image_state in ('D', 'Q')
+                    and (i.next_retry_time is null or i.next_retry_time &lt;= now())
+                    and i.delete_attempts &lt; #{quarantineRetryLimit})
+              )
+        order by coalesce(i.next_retry_time, i.expire_time, i.create_time), i.image_id
+        limit #{limit}
+    </select>
+
+    <update id="markDeletePending">
+        update fx67ll_dortmund_return_image
+        set image_state = 'D',
+            expire_time = null,
+            next_retry_time = now(),
+            last_error = #{reason},
+            update_time = now()
+        where image_id = #{imageId}
+          and image_state in ('T', 'B', 'D', 'Q')
+    </update>
+
+    <update id="markDeleteFailed">
+        update fx67ll_dortmund_return_image
+        set delete_attempts = delete_attempts + 1,
+            last_error = #{error},
+            image_state = <choose><when test="quarantine">'Q'</when><otherwise>'D'</otherwise></choose>,
+            next_retry_time = date_add(now(), interval 15 minute),
+            update_time = now()
+        where image_id = #{imageId}
+          and image_state in ('T', 'B', 'D', 'Q')
+    </update>
+
+    <delete id="deleteImage">
+        delete from fx67ll_dortmund_return_image
+        where image_id = #{imageId}
+          and image_state = 'D'
+    </delete>
+
+</mapper>

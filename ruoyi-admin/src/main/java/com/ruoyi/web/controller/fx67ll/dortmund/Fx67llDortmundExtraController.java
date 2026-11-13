@@ -162,7 +162,11 @@ public class Fx67llDortmundExtraController extends BaseController {
     @Log(title = "提供给 APP 删除外快盈亏记录", businessType = BusinessType.DELETE)
     @DeleteMapping("/deleteExtraByIdForApp/{extraId}")
     public AjaxResult deleteExtraByIdForApp(@PathVariable Long extraId) {
-        if (!fx67llDortmundExtraService.selectFx67llDortmundExtraByExtraId(extraId).getUserId().equals(SecurityUtils.getUserId())) {
+        Fx67llDortmundExtra extra = fx67llDortmundExtraService.selectFx67llDortmundExtraByExtraId(extraId);
+        if (extra == null) {
+            return warn("外快盈亏记录不存在！");
+        }
+        if (!SecurityUtils.getUserId().equals(extra.getUserId())) {
             return warn("此记录非本人创建，禁止删除！");
         } else {
             return toAjax(fx67llDortmundExtraService.deleteFx67llDortmundExtraByExtraId(extraId));

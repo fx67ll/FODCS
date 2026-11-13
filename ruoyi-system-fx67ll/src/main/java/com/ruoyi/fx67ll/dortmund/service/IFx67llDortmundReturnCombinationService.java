@@ -5,6 +5,8 @@ import java.util.List;
 import com.ruoyi.fx67ll.dortmund.domain.Fx67llDortmundReturnCombination;
 import com.ruoyi.fx67ll.dortmund.domain.Fx67llDortmundReturnGenerateRequest;
 import com.ruoyi.fx67ll.dortmund.domain.Fx67llDortmundReturnGeneration;
+import com.ruoyi.fx67ll.dortmund.domain.Fx67llDortmundReturnImage;
+import com.ruoyi.fx67ll.dortmund.domain.Fx67llDortmundReturnImageCleanupResult;
 import org.springframework.web.multipart.MultipartFile;
 
 /**
@@ -23,6 +25,11 @@ public interface IFx67llDortmundReturnCombinationService {
     public Fx67llDortmundReturnGeneration generate(Fx67llDortmundReturnGenerateRequest request);
 
     /**
+     * 执行一次异步批次调度扫描，由定时器和运维手动触发共用。
+     */
+    public void dispatchPendingGenerations();
+
+    /**
      * 查询回报组合生成批次列表
      *
      * @param fx67llDortmundReturnGeneration 生成批次查询条件
@@ -35,9 +42,11 @@ public interface IFx67llDortmundReturnCombinationService {
      * 查询回报组合生成批次详情
      *
      * @param generationId 生成批次主键
+     * @param sortField    候选排序字段，可为空
+     * @param sortOrder    候选排序方向，asc/desc，可为空
      * @return 生成批次详情
      */
-    public Fx67llDortmundReturnGeneration selectGenerationById(Long generationId);
+    public Fx67llDortmundReturnGeneration selectGenerationById(Long generationId, String sortField, String sortOrder);
 
     /**
      * 查询回报组合列表
@@ -66,18 +75,46 @@ public interface IFx67llDortmundReturnCombinationService {
     public int updateAdoptedFlag(Long combinationId, String adoptedFlag);
 
     /**
-     * 上传回报组合图片
+     * 批量采用回报组合。
      *
-     * @param file 上传的图片文件
-     * @return 相对对象键
+     * @param combinationIds 组合主键集合
+     * @return 实际更新条数
      */
-    public String uploadReturnImage(MultipartFile file) throws Exception;
+    public int batchAdopt(List<Long> combinationIds);
 
     /**
-     * 删除尚未固化的回报组合图片
+     * 为已采用回报组合上传图片。
      *
-     * @param objectKey 图片相对对象键
+     * @param combinationId 回报组合主键
+     * @param file          上传的图片文件
+     * @return 已绑定的图片登记
+     */
+    public Fx67llDortmundReturnImage uploadCombinationImage(Long combinationId, MultipartFile file) throws Exception;
+
+    /**
+     * 删除已采用回报组合的图片。
+     *
+     * @param combinationId 回报组合主键
+     * @param imageId       图片登记主键
      * @return 结果
      */
-    public int removeTemporaryReturnImage(String objectKey);
+    public int removeCombinationImage(Long combinationId, Long imageId);
+
+    /**
+     * 查询组合当前有效图片，仅返回B状态。
+     *
+     * @param combinationId 回报组合主键
+     * @return 有效图片集合
+     */
+    public List<Fx67llDortmundReturnImage> selectImagesByCombinationId(Long combinationId);
+
+    /**
+     * 查询时间范围内的孤儿图片。
+     */
+    public List<Fx67llDortmundReturnImage> selectOrphanImageList(Fx67llDortmundReturnImage query);
+
+    /**
+     * 批量删除孤儿图片并返回逐项结果。
+     */
+    public Fx67llDortmundReturnImageCleanupResult deleteOrphanImages(List<Long> imageIds);
 }

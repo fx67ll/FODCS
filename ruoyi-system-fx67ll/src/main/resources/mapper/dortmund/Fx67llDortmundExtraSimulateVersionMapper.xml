@@ -61,10 +61,13 @@
         order by version_id desc
     </select>
 
-    <select id="selectMaxVersionNoByUserId" parameterType="Long" resultType="Long">
-        select max(version_no)
+    <select id="selectMaxVersionNoByUserIdForUpdate" parameterType="Long" resultType="Long">
+        select version_no
         from fx67ll_dortmund_extra_simulate_version
         where user_id = #{userId}
+        order by version_no desc
+        limit 1
+        for update
     </select>
 
     <select id="selectFx67llDortmundExtraSimulateVersionById" parameterType="Long"

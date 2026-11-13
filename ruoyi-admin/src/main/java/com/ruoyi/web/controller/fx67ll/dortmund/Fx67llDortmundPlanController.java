@@ -68,15 +68,6 @@ public class Fx67llDortmundPlanController extends BaseController {
     }
 
     /**
-     * 查询可关联的已采用回报组合
-     */
-    @PreAuthorize("@ss.hasPermi('dortmund:return:list')")
-    @GetMapping("/return/options")
-    public AjaxResult returnOptions() {
-        return success(fx67llDortmundPlanService.selectAdoptedReturnCombinationOptions());
-    }
-
-    /**
      * 获取方案计划已保存摘要
      */
     @PreAuthorize("@ss.hasPermi('dortmund:plan:summary')")

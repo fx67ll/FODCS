@@ -40,6 +40,15 @@
         where rel_id = #{relId}
     </select>
 
+    <select id="selectFx67llDortmundPlanMatchRelListByPlanIds" resultMap="Fx67llDortmundPlanMatchRelResult">
+        <include refid="selectFx67llDortmundPlanMatchRelVo"/>
+        where plan_id in
+        <foreach item="planId" collection="planIds" open="(" separator="," close=")">
+            #{planId}
+        </foreach>
+        order by plan_id, rel_id
+    </select>
+
     <insert id="insertFx67llDortmundPlanMatchRel" parameterType="Fx67llDortmundPlanMatchRel" useGeneratedKeys="true"
             keyProperty="relId">
         insert into fx67ll_dortmund_plan_match_rel

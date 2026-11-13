@@ -1,6 +1,7 @@
 package com.ruoyi.fx67ll.dortmund.mapper;
 
 import java.util.List;
+import org.apache.ibatis.annotations.Param;
 import com.ruoyi.fx67ll.dortmund.domain.Fx67llDortmundBasicMatch;
 
 /**
@@ -26,6 +27,14 @@ public interface Fx67llDortmundBasicMatchMapper
      * @return 比赛记录集合
      */
     public List<Fx67llDortmundBasicMatch> selectFx67llDortmundBasicMatchList(Fx67llDortmundBasicMatch fx67llDortmundBasicMatch);
+
+    /**
+     * 按主键集合批量查询比赛（用于方案计划列表关联比赛补全）
+     *
+     * @param matchIds 比赛主键集合
+     * @return 比赛集合
+     */
+    public List<Fx67llDortmundBasicMatch> selectFx67llDortmundBasicMatchListByIds(@Param("matchIds") List<Long> matchIds);
 
     /**
      * 新增比赛记录

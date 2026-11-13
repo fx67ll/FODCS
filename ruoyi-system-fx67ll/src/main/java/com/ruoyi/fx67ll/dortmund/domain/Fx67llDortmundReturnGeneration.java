@@ -53,6 +53,24 @@ public class Fx67llDortmundReturnGeneration extends BaseEntity {
     /** 数据归属用户主键 */
     private Long userId;
 
+    /** 客户端幂等请求号（同一用户内唯一） */
+    private String clientRequestId;
+
+    /** 当前异步任务租约持有者 */
+    private String workerId;
+
+    /** 租约到期时间，过期后允许其他节点接管 */
+    private Date leaseExpireTime;
+
+    /** 已尝试次数（含当前执行） */
+    private Integer attemptCount;
+
+    /** 最大尝试次数 */
+    private Integer maxAttempts;
+
+    /** 下次可重试时间 */
+    private Date nextRetryTime;
+
     /** 回报组合集合 */
     private List<Fx67llDortmundReturnCombination> combinations;
 
@@ -158,6 +176,54 @@ public class Fx67llDortmundReturnGeneration extends BaseEntity {
         this.userId = userId;
     }
 
+    public String getClientRequestId() {
+        return clientRequestId;
+    }
+
+    public void setClientRequestId(String clientRequestId) {
+        this.clientRequestId = clientRequestId;
+    }
+
+    public String getWorkerId() {
+        return workerId;
+    }
+
+    public void setWorkerId(String workerId) {
+        this.workerId = workerId;
+    }
+
+    public Date getLeaseExpireTime() {
+        return leaseExpireTime;
+    }
+
+    public void setLeaseExpireTime(Date leaseExpireTime) {
+        this.leaseExpireTime = leaseExpireTime;
+    }
+
+    public Integer getAttemptCount() {
+        return attemptCount;
+    }
+
+    public void setAttemptCount(Integer attemptCount) {
+        this.attemptCount = attemptCount;
+    }
+
+    public Integer getMaxAttempts() {
+        return maxAttempts;
+    }
+
+    public void setMaxAttempts(Integer maxAttempts) {
+        this.maxAttempts = maxAttempts;
+    }
+
+    public Date getNextRetryTime() {
+        return nextRetryTime;
+    }
+
+    public void setNextRetryTime(Date nextRetryTime) {
+        this.nextRetryTime = nextRetryTime;
+    }
+
     public List<Fx67llDortmundReturnCombination> getCombinations() {
         return combinations;
     }
@@ -196,6 +262,12 @@ public class Fx67llDortmundReturnGeneration extends BaseEntity {
                 .append("startedTime", getStartedTime())
                 .append("finishedTime", getFinishedTime())
                 .append("userId", getUserId())
+                .append("clientRequestId", getClientRequestId())
+                .append("workerId", getWorkerId())
+                .append("leaseExpireTime", getLeaseExpireTime())
+                .append("attemptCount", getAttemptCount())
+                .append("maxAttempts", getMaxAttempts())
+                .append("nextRetryTime", getNextRetryTime())
                 .append("createBy", getCreateBy())
                 .append("createTime", getCreateTime())
                 .append("updateBy", getUpdateBy())

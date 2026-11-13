@@ -19,7 +19,6 @@
         <result property="adoptedFlag" column="adopted_flag"/>
         <result property="reviewBy" column="review_by"/>
         <result property="reviewTime" column="review_time"/>
-        <result property="combinationImageObjectKeys" column="combination_image_object_keys"/>
         <result property="combinationRemark" column="combination_remark"/>
         <result property="userId" column="user_id"/>
         <result property="matchCount" column="match_count"/>
@@ -34,6 +33,7 @@
                c.generation_id,
                g.generation_code,
                g.generation_mode,
+               g.generation_status,
                c.combination_code,
                c.combination_title,
                c.combined_odds,
@@ -90,25 +90,68 @@
             <if test="combinationId != null">and c.combination_id = #{combinationId}</if>
             <if test="generationId != null">and c.generation_id = #{generationId}</if>
             <if test="generationMode != null and generationMode != ''">and g.generation_mode = #{generationMode}</if>
+            <if test="generationStatus != null and generationStatus != ''">and g.generation_status = #{generationStatus}</if>
             <if test="adoptedFlag != null and adoptedFlag != ''">and c.adopted_flag = #{adoptedFlag}</if>
             <if test="userId != null">and c.user_id = #{userId}</if>
+            <if test="matchId != null">
+                and exists (
+                    select 1
+                    from fx67ll_dortmund_return_combination_item mi
+                    where mi.combination_id = c.combination_id
+                      and mi.match_id = #{matchId}
+                )
+            </if>
+            <if test="keyword != null and keyword != ''">
+                and (c.combination_code like concat('%', #{keyword}, '%')
+                    or c.combination_title like concat('%', #{keyword}, '%'))
+            </if>
             <if test="beginCreateTime != null and beginCreateTime != '' and endCreateTime != null and endCreateTime != ''">
                 and c.create_time between #{beginCreateTime} and #{endCreateTime}
             </if>
         </where>
-        order by abs(c.deviation_amount), c.create_time desc, c.combination_id desc
+        <choose>
+            <when test="sortField == 'combinedOdds'">
+                order by c.combined_odds
+                <choose><when test="sortOrder == 'asc'">asc</when><otherwise>desc</otherwise></choose>,
+                c.combination_id desc
+            </when>
+            <when test="sortField == 'estimatedReturn'">
+                order by c.estimated_return
+                <choose><when test="sortOrder == 'asc'">asc</when><otherwise>desc</otherwise></choose>,
+                c.combination_id desc
+            </when>
+            <when test="sortField == 'deviationAmount'">
+                order by abs(c.deviation_amount)
+                <choose><when test="sortOrder == 'asc'">asc</when><otherwise>desc</otherwise></choose>,
+                c.combination_id desc
+            </when>
+            <when test="sortField == 'matchCount'">
+                order by match_count
+                <choose><when test="sortOrder == 'asc'">asc</when><otherwise>desc</otherwise></choose>,
+                c.combination_id desc
+            </when>
+            <when test="sortField == 'reviewTime'">
+                order by c.review_time
+                <choose><when test="sortOrder == 'asc'">asc</when><otherwise>desc</otherwise></choose>,
+                c.combination_id desc
+            </when>
+            <otherwise>
+                order by c.create_time
+                <choose><when test="sortOrder == 'asc'">asc</when><otherwise>desc</otherwise></choose>,
+                c.combination_id desc
+            </otherwise>
+        </choose>
     </select>
 
     <insert id="insertFx67llDortmundReturnCombination" parameterType="Fx67llDortmundReturnCombination"
             useGeneratedKeys="true" keyProperty="combinationId">
         insert into fx67ll_dortmund_return_combination
         (generation_id, combination_code, combination_title, combination_reason, combined_odds, estimated_return,
-         deviation_amount, adopted_flag, combination_image_object_keys, combination_remark, user_id, create_by,
-         create_time, update_by, update_time)
+         deviation_amount, adopted_flag, combination_remark, user_id, create_by, create_time, update_by, update_time)
         values
         (#{generationId}, #{combinationCode}, #{combinationTitle}, #{combinationReason}, #{combinedOdds},
-         #{estimatedReturn}, #{deviationAmount}, #{adoptedFlag}, #{combinationImageObjectKeys},
-         #{combinationRemark}, #{userId}, #{createBy}, #{createTime}, #{updateBy}, #{updateTime})
+         #{estimatedReturn}, #{deviationAmount}, #{adoptedFlag}, #{combinationRemark}, #{userId}, #{createBy},
+         #{createTime}, #{updateBy}, #{updateTime})
     </insert>
 
     <update id="updateAdoptedFlag" parameterType="Fx67llDortmundReturnCombination">

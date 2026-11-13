@@ -106,7 +106,12 @@ public class Fx67llDortmundExtraSimulateController extends BaseController {
     @Log(title = "提供给 APP 删除外快盈亏数值模拟轮次记录", businessType = BusinessType.DELETE)
     @DeleteMapping("/deleteSimulateByIdForApp/{simId}")
     public AjaxResult deleteSimulateByIdForApp(@PathVariable Long simId) {
-        if (!fx67llDortmundExtraSimulateService.selectFx67llDortmundExtraSimulateBySimId(simId).getUserId().equals(SecurityUtils.getUserId())) {
+        Fx67llDortmundExtraSimulate simulate = fx67llDortmundExtraSimulateService
+                .selectFx67llDortmundExtraSimulateBySimId(simId);
+        if (simulate == null) {
+            return warn("数值模拟轮次记录不存在！");
+        }
+        if (!SecurityUtils.getUserId().equals(simulate.getUserId())) {
             return warn("此记录非本人创建，禁止删除！");
         } else {
             return toAjax(fx67llDortmundExtraSimulateService.deleteFx67llDortmundExtraSimulateBySimId(simId));

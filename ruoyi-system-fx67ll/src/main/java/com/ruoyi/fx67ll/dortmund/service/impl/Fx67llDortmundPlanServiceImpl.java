@@ -5,20 +5,16 @@ import java.math.RoundingMode;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Date;
+import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
-import java.util.concurrent.TimeUnit;
-
-import com.ruoyi.common.config.RuoYiConfig;
-import com.ruoyi.common.constant.Constants;
+import java.util.Map;
+import java.util.Objects;
 import com.ruoyi.common.core.domain.entity.SysRole;
-import com.ruoyi.common.core.redis.RedisCache;
 import com.ruoyi.common.exception.ServiceException;
 import com.ruoyi.common.utils.DateUtils;
 import com.ruoyi.common.utils.SecurityUtils;
-import com.ruoyi.common.utils.file.FileUploadUtils;
-import com.ruoyi.common.utils.file.FileUtils;
-import com.ruoyi.common.utils.file.MimeTypeUtils;
 import com.ruoyi.fx67ll.dortmund.domain.Fx67llDortmundBasicMatch;
 import com.ruoyi.fx67ll.dortmund.domain.Fx67llDortmundExtraPlanRel;
 import com.ruoyi.fx67ll.dortmund.domain.Fx67llDortmundPlan;
@@ -30,17 +26,15 @@ import com.ruoyi.fx67ll.dortmund.domain.Fx67llDortmundReturnGeneration;
 import com.ruoyi.fx67ll.dortmund.domain.Fx67llDortmundPlanMatchRel;
 import com.ruoyi.fx67ll.dortmund.domain.Fx67llDortmundRoundPlanRel;
 import com.ruoyi.fx67ll.dortmund.mapper.Fx67llDortmundExtraPlanRelMapper;
+import com.ruoyi.fx67ll.dortmund.mapper.Fx67llDortmundBasicMatchMapper;
 import com.ruoyi.fx67ll.dortmund.mapper.Fx67llDortmundPlanMatchRelMapper;
 import com.ruoyi.fx67ll.dortmund.mapper.Fx67llDortmundRoundPlanRelMapper;
 import com.ruoyi.fx67ll.dortmund.service.IFx67llDortmundBasicMatchService;
 import com.ruoyi.fx67ll.dortmund.service.IFx67llDortmundPlanService;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.dao.DuplicateKeyException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.web.multipart.MultipartFile;
 import com.ruoyi.fx67ll.dortmund.mapper.Fx67llDortmundPlanMapper;
 import com.ruoyi.fx67ll.dortmund.mapper.Fx67llDortmundPlanReturnRelMapper;
 import com.ruoyi.fx67ll.dortmund.mapper.Fx67llDortmundReturnCombinationMapper;
@@ -55,8 +49,6 @@ import com.ruoyi.fx67ll.dortmund.service.IFx67llDortmundReturnCombinationService
  */
 @Service
 public class Fx67llDortmundPlanServiceImpl implements IFx67llDortmundPlanService {
-    private static final Logger log = LoggerFactory.getLogger(Fx67llDortmundPlanServiceImpl.class);
-
     /**
      * 正文最大长度
      */
@@ -67,25 +59,9 @@ public class Fx67llDortmundPlanServiceImpl implements IFx67llDortmundPlanService
      */
     private static final int REMARK_MAX_LENGTH = 1023;
 
-    /**
-     * 图片对象键签发记录的 Redis 键前缀，完整键为 前缀 + 用户ID + 对象键
-     */
-    private static final String PLAN_IMAGE_ISSUED_KEY_PREFIX = "dortmund:plan:image:issued:";
+    private static final BigDecimal MAX_PLAN_RATE = new BigDecimal("999999999999999999.999999");
 
-    /**
-     * 图片对象键签发记录的过期时间（小时）
-     */
-    private static final int PLAN_IMAGE_ISSUED_TTL_HOURS = 24;
-
-    /**
-     * 单条方案计划允许保存的图片对象键数量上限
-     */
-    private static final int PLAN_IMAGE_MAX_COUNT = 2;
-
-    /**
-     * 单个图片对象键的最大长度
-     */
-    private static final int PLAN_IMAGE_KEY_MAX_LENGTH = 1023;
+    private static final BigDecimal MAX_PLAN_AMOUNT = new BigDecimal("9999999999999999999999.99");
 
     @Autowired
     private Fx67llDortmundPlanMapper fx67llDortmundPlanMapper;
@@ -115,7 +91,7 @@ public class Fx67llDortmundPlanServiceImpl implements IFx67llDortmundPlanService
     private IFx67llDortmundBasicMatchService fx67llDortmundBasicMatchService;
 
     @Autowired
-    private RedisCache redisCache;
+    private Fx67llDortmundBasicMatchMapper fx67llDortmundBasicMatchMapper;
 
     /**
      * 查询方案计划
@@ -152,10 +128,7 @@ public class Fx67llDortmundPlanServiceImpl implements IFx67llDortmundPlanService
         }
         fx67llDortmundPlan.setDelFlag("0");
         List<Fx67llDortmundPlan> list = fx67llDortmundPlanMapper.selectFx67llDortmundPlanList(fx67llDortmundPlan);
-        for (Fx67llDortmundPlan plan : list) {
-            fillMatchesAndCount(plan);
-            fillPhase15Fields(plan);
-        }
+        fillPlanListDetails(list);
         return list;
     }
 
@@ -278,37 +251,6 @@ public class Fx67llDortmundPlanServiceImpl implements IFx67llDortmundPlanService
     }
 
     /**
-     * 上传方案计划图片
-     * <p>
-     * 复用 RuoYi 现有上传实现（随机文件名、现有存储路径、大小/扩展名/MIME/文件头校验），返回相对对象键；
-     * 上传成功后写入 24 小时签发记录，保存方案计划时校验归属并一次性消费
-     *
-     * @param file 上传的图片文件
-     * @return 相对对象键
-     */
-    public String uploadPlanImage(MultipartFile file) throws Exception {
-        if (file == null || file.isEmpty()) {
-            throw new ServiceException("上传图片不能为空！");
-        }
-        String objectKey = FileUploadUtils.upload(RuoYiConfig.getUploadPath(), file, MimeTypeUtils.IMAGE_EXTENSION);
-        redisCache.setCacheObject(PLAN_IMAGE_ISSUED_KEY_PREFIX + SecurityUtils.getUserId() + ":" + objectKey,
-                SecurityUtils.getUsername(), PLAN_IMAGE_ISSUED_TTL_HOURS, TimeUnit.HOURS);
-        return objectKey;
-    }
-
-    /**
-     * 查询可关联的已采用回报组合
-     *
-     * @return 已采用回报组合集合
-     */
-    @Override
-    public List<Fx67llDortmundReturnCombination> selectAdoptedReturnCombinationOptions() {
-        Fx67llDortmundReturnCombination query = new Fx67llDortmundReturnCombination();
-        query.setAdoptedFlag("Y");
-        return fx67llDortmundReturnCombinationService.selectCombinationList(query);
-    }
-
-    /**
      * 查询方案计划已保存摘要
      *
      * @param planId 方案计划主键
@@ -328,7 +270,7 @@ public class Fx67llDortmundPlanServiceImpl implements IFx67llDortmundPlanService
     @Override
     @Transactional(rollbackFor = Exception.class)
     public Fx67llDortmundPlanSummary refreshPlanSummary(Long planId) {
-        Fx67llDortmundPlan plan = loadPlanForPhase15(planId);
+        Fx67llDortmundPlan plan = loadPlanForPhase15(planId, true);
         String content = formatPlanSummary(plan, loadPlanCombinations(planId));
         plan.setSummaryContent(content);
         plan.setSummaryUpdateFlag("N");
@@ -360,6 +302,8 @@ public class Fx67llDortmundPlanServiceImpl implements IFx67llDortmundPlanService
         if (fx67llDortmundPlan.getPlanAmount() != null && fx67llDortmundPlan.getPlanAmount().compareTo(BigDecimal.ZERO) < 0) {
             throw new ServiceException("方案计划金额有值时必须大于等于0！");
         }
+        validatePlanRate(fx67llDortmundPlan.getPlanRate(), "方案计划倍率");
+        validatePlanAmount(fx67llDortmundPlan.getPlanAmount(), "方案计划金额");
     }
 
     private int insertPhase15Plan(Fx67llDortmundPlan plan) {
@@ -372,6 +316,8 @@ public class Fx67llDortmundPlanServiceImpl implements IFx67llDortmundPlanService
         plan.setDelFlag("0");
         plan.setCalculatedPlanRate(stats.rate);
         plan.setCalculatedPlanAmount(stats.amount);
+        validatePlanRate(plan.getCalculatedPlanRate(), "方案自动倍率");
+        validatePlanAmount(plan.getCalculatedPlanAmount(), "方案自动金额");
         plan.setSummaryUpdateFlag("Y");
         int rows = fx67llDortmundPlanMapper.insertFx67llDortmundPlan(plan);
         if (rows > 0) {
@@ -384,19 +330,22 @@ public class Fx67llDortmundPlanServiceImpl implements IFx67llDortmundPlanService
         if (plan.getPlanId() == null) {
             throw new ServiceException("方案计划主键不能为空！");
         }
-        Fx67llDortmundPlan oldPlan = fx67llDortmundPlanMapper.selectFx67llDortmundPlanByPlanId(plan.getPlanId());
+        Fx67llDortmundPlan oldPlan = fx67llDortmundPlanMapper.selectFx67llDortmundPlanByPlanIdForUpdate(plan.getPlanId());
         if (oldPlan == null || !"0".equals(oldPlan.getDelFlag()) || !checkPlanDataScope(oldPlan.getUserId())) {
             throw new ServiceException("方案计划不存在或没有访问权限！");
         }
         checkPlanFields(plan);
         PlanCombinationStats stats = collectCombinationStats(plan.getCombinationIds(), plan.getPlanId());
-        if (!sameIds(selectPlanCombinationIds(plan.getPlanId()), plan.getCombinationIds())) {
+        List<Long> oldCombinationIds = selectPlanCombinationIds(plan.getPlanId());
+        if (!sameIds(oldCombinationIds, plan.getCombinationIds())) {
             plan.setPlanRate(null);
             plan.setPlanAmount(null);
         }
         plan.setCalculatedPlanRate(stats.rate);
         plan.setCalculatedPlanAmount(stats.amount);
-        plan.setSummaryUpdateFlag("Y");
+        validatePlanRate(plan.getCalculatedPlanRate(), "方案自动倍率");
+        validatePlanAmount(plan.getCalculatedPlanAmount(), "方案自动金额");
+        plan.setSummaryUpdateFlag(resolveSummaryFlag(plan, oldPlan, oldCombinationIds));
         plan.setUpdateBy(SecurityUtils.getUsername());
         plan.setUpdateTime(DateUtils.getNowDate());
         int rows = fx67llDortmundPlanMapper.updateFx67llDortmundPlanPhase15(plan);
@@ -463,14 +412,16 @@ public class Fx67llDortmundPlanServiceImpl implements IFx67llDortmundPlanService
         fx67llDortmundPlanMatchRelMapper.deleteFx67llDortmundPlanMatchRelByPlanId(planId);
         int sort = 0;
         try {
-            for (Long combinationId : combinationIds) {
-                Fx67llDortmundPlanReturnRel relation = new Fx67llDortmundPlanReturnRel();
-                relation.setPlanId(planId);
-                relation.setCombinationId(combinationId);
-                relation.setRelSort(sort++);
-                relation.setCreateBy(SecurityUtils.getUsername());
-                relation.setCreateTime(DateUtils.getNowDate());
-                fx67llDortmundPlanReturnRelMapper.insertFx67llDortmundPlanReturnRel(relation);
+            if (combinationIds != null) {
+                for (Long combinationId : combinationIds) {
+                    Fx67llDortmundPlanReturnRel relation = new Fx67llDortmundPlanReturnRel();
+                    relation.setPlanId(planId);
+                    relation.setCombinationId(combinationId);
+                    relation.setRelSort(sort++);
+                    relation.setCreateBy(SecurityUtils.getUsername());
+                    relation.setCreateTime(DateUtils.getNowDate());
+                    fx67llDortmundPlanReturnRelMapper.insertFx67llDortmundPlanReturnRel(relation);
+                }
             }
         } catch (DuplicateKeyException e) {
             throw new ServiceException("回报组合已被其他方案计划引用，请刷新后重试！");
@@ -505,7 +456,13 @@ public class Fx67llDortmundPlanServiceImpl implements IFx67llDortmundPlanService
     }
 
     private Fx67llDortmundPlan loadPlanForPhase15(Long planId) {
-        Fx67llDortmundPlan plan = fx67llDortmundPlanMapper.selectFx67llDortmundPlanByPlanId(planId);
+        return loadPlanForPhase15(planId, false);
+    }
+
+    private Fx67llDortmundPlan loadPlanForPhase15(Long planId, boolean forUpdate) {
+        Fx67llDortmundPlan plan = forUpdate
+                ? fx67llDortmundPlanMapper.selectFx67llDortmundPlanByPlanIdForUpdate(planId)
+                : fx67llDortmundPlanMapper.selectFx67llDortmundPlanByPlanId(planId);
         if (plan == null || !"0".equals(plan.getDelFlag()) || !checkPlanDataScope(plan.getUserId())) {
             throw new ServiceException("方案计划不存在或没有访问权限！");
         }
@@ -554,8 +511,61 @@ public class Fx67llDortmundPlanServiceImpl implements IFx67llDortmundPlanService
                 .equals(new LinkedHashSet<>(right == null ? new ArrayList<Long>() : right));
     }
 
+    /**
+     * 解析摘要更新标记。
+     * <p>
+     * Y表示摘要已过期、需要刷新；N表示摘要正文仍与当前计划数据一致。新增计划和数据有变化的修改一律强制Y，
+     * 只有摘要正文存在、组合关系及摘要所包含的业务字段均未变化时，才允许用户显式提交N。
+     */
+    private String resolveSummaryFlag(Fx67llDortmundPlan plan, Fx67llDortmundPlan oldPlan,
+            List<Long> oldCombinationIds) {
+        String requested = plan.getSummaryUpdateFlag();
+        if (requested == null || requested.trim().isEmpty()) {
+            return "Y";
+        }
+        if (!"Y".equals(requested) && !"N".equals(requested)) {
+            throw new ServiceException("摘要更新标记只能为Y或N！");
+        }
+        if ("Y".equals(requested)) {
+            return "Y";
+        }
+        boolean materialChanged = !Objects.equals(plan.getPlanContent(), oldPlan.getPlanContent())
+                || !sameAmount(plan.getPlanRate(), oldPlan.getPlanRate())
+                || !sameAmount(plan.getPlanAmount(), oldPlan.getPlanAmount())
+                || !Objects.equals(plan.getPlanRemark(), oldPlan.getPlanRemark())
+                || !sameIds(oldCombinationIds, plan.getCombinationIds());
+        if (!"N".equals(oldPlan.getSummaryUpdateFlag()) || oldPlan.getSummaryUpdateTime() == null) {
+            return "Y";
+        }
+        if (materialChanged || oldPlan.getSummaryContent() == null || oldPlan.getSummaryContent().trim().isEmpty()) {
+            return "Y";
+        }
+        return "N";
+    }
+
+    private boolean sameAmount(BigDecimal left, BigDecimal right) {
+        if (left == null || right == null) {
+            return left == right;
+        }
+        return left.compareTo(right) == 0;
+    }
+
     private BigDecimal defaultAmount(BigDecimal value) {
         return value == null ? BigDecimal.ZERO : value;
+    }
+
+    private void validatePlanRate(BigDecimal value, String label) {
+        if (value != null && (value.compareTo(MAX_PLAN_RATE) > 0
+                || value.stripTrailingZeros().scale() > 6)) {
+            throw new ServiceException(label + "超出数据库允许范围，最多18位整数和6位小数！");
+        }
+    }
+
+    private void validatePlanAmount(BigDecimal value, String label) {
+        if (value != null && (value.compareTo(MAX_PLAN_AMOUNT) > 0
+                || value.stripTrailingZeros().scale() > 2)) {
+            throw new ServiceException(label + "超出数据库允许范围，最多22位整数和2位小数！");
+        }
     }
 
     private static class PlanCombinationStats {
@@ -684,133 +694,86 @@ public class Fx67llDortmundPlanServiceImpl implements IFx67llDortmundPlanService
     }
 
     /**
-     * 解析方案计划请求中的图片对象键集合
-     * <p>
-     * 不传（null）表示图片保持不变；无上传权限时非空提交整体拒绝、空提交视为未提交；
-     * 每个对象键必须在当前计划已保存的集合中或命中当前用户的签发记录，去重后最多两个
+     * 批量补全方案计划列表的关联比赛与回报组合，避免逐行查询
      *
-     * @param fx67llDortmundPlan 方案计划
-     * @param currentKeys        当前计划已保存的图片对象键集合（新增时为空）
-     * @return 解析后的图片对象键集合，null 表示请求未提交图片
+     * @param plans 当前页方案计划
      */
-    private List<String> resolvePlanImageKeys(Fx67llDortmundPlan fx67llDortmundPlan, List<String> currentKeys) {
-        String[] requestKeys = fx67llDortmundPlan.getPlanImageObjectKeys();
-        if (!hasPermission("dortmund:plan:image:upload")) {
-            if (requestKeys != null && requestKeys.length > 0) {
-                throw new ServiceException("没有方案计划图片上传权限，不能提交图片对象键！");
-            }
-            return null;
+    private void fillPlanListDetails(List<Fx67llDortmundPlan> plans) {
+        if (plans == null || plans.isEmpty()) {
+            return;
         }
-        if (requestKeys == null) {
-            return null;
-        }
-        LinkedHashSet<String> keySet = new LinkedHashSet<>();
-        for (String requestKey : requestKeys) {
-            String objectKey = requestKey == null ? "" : requestKey.trim();
-            if (objectKey.isEmpty()) {
-                throw new ServiceException("图片对象键不能为空！");
+        List<Long> planIds = new ArrayList<>();
+        Map<Long, List<Long>> matchIdsByPlan = new LinkedHashMap<>();
+        Map<Long, List<Fx67llDortmundBasicMatch>> matchesByPlan = new LinkedHashMap<>();
+        Map<Long, List<Long>> combinationIdsByPlan = new LinkedHashMap<>();
+        for (Fx67llDortmundPlan plan : plans) {
+            if (plan.getPlanId() == null) {
+                continue;
             }
-            if (objectKey.length() > PLAN_IMAGE_KEY_MAX_LENGTH) {
-                throw new ServiceException("单个图片对象键长度不能超过 1023 个字符！");
-            }
-            if (!objectKey.startsWith(Constants.RESOURCE_PREFIX + "/")) {
-                throw new ServiceException("图片对象键格式非法！");
-            }
-            keySet.add(objectKey);
+            planIds.add(plan.getPlanId());
+            matchIdsByPlan.put(plan.getPlanId(), new ArrayList<>());
+            matchesByPlan.put(plan.getPlanId(), new ArrayList<>());
+            combinationIdsByPlan.put(plan.getPlanId(), new ArrayList<>());
         }
-        if (keySet.size() > PLAN_IMAGE_MAX_COUNT) {
-            throw new ServiceException("方案计划最多只能保存 2 个图片对象键！");
+        if (planIds.isEmpty()) {
+            return;
         }
-        List<String> imageKeys = new ArrayList<>(keySet);
-        for (String objectKey : imageKeys) {
-            boolean onCurrentPlan = currentKeys != null && currentKeys.contains(objectKey);
-            String issuedKey = PLAN_IMAGE_ISSUED_KEY_PREFIX + SecurityUtils.getUserId() + ":" + objectKey;
-            if (!onCurrentPlan && redisCache.getCacheObject(issuedKey) == null) {
-                throw new ServiceException("图片对象键未上传或已失效，请重新上传！");
-            }
-        }
-        return imageKeys;
-    }
 
-    /**
-     * 拼接图片对象键为逗号分隔串（空集合拼接为空串，用于清空表字段）
-     *
-     * @param imageKeys 图片对象键集合
-     * @return 逗号分隔串
-     */
-    private String joinPlanImageKeys(List<String> imageKeys) {
-        return String.join(",", imageKeys);
-    }
-
-    /**
-     * 拆分表字段中的图片对象键逗号分隔串
-     *
-     * @param keysStr 图片对象键逗号分隔串
-     * @return 图片对象键集合
-     */
-    private List<String> splitPlanImageKeys(String keysStr) {
-        List<String> imageKeys = new ArrayList<>();
-        if (keysStr != null && !keysStr.trim().isEmpty()) {
-            for (String key : keysStr.split(",")) {
-                String objectKey = key.trim();
-                if (!objectKey.isEmpty()) {
-                    imageKeys.add(objectKey);
+        List<Fx67llDortmundPlanMatchRel> matchRelations =
+                fx67llDortmundPlanMatchRelMapper.selectFx67llDortmundPlanMatchRelListByPlanIds(planIds);
+        LinkedHashSet<Long> matchIds = new LinkedHashSet<>();
+        if (matchRelations != null) {
+            for (Fx67llDortmundPlanMatchRel relation : matchRelations) {
+                List<Long> planMatchIds = matchIdsByPlan.get(relation.getPlanId());
+                if (planMatchIds != null && relation.getMatchId() != null) {
+                    planMatchIds.add(relation.getMatchId());
+                    matchIds.add(relation.getMatchId());
                 }
             }
         }
-        return imageKeys;
-    }
 
-    /**
-     * 保存成功后一次性消费图片对象键的签发记录
-     *
-     * @param imageKeys 本次保存落库的图片对象键集合
-     */
-    private void consumeIssuedPlanImageKeys(List<String> imageKeys) {
-        if (imageKeys == null || imageKeys.isEmpty()) {
-            return;
-        }
-        for (String objectKey : imageKeys) {
-            redisCache.deleteObject(PLAN_IMAGE_ISSUED_KEY_PREFIX + SecurityUtils.getUserId() + ":" + objectKey);
-        }
-    }
-
-    /**
-     * 删除已落库的图片对象键对应的本地文件
-     * <p>
-     * 删除失败仅记录待清理日志，不影响业务事务
-     *
-     * @param imageKeys 待删除文件对应的图片对象键集合
-     */
-    private void deletePlanImageFiles(List<String> imageKeys) {
-        if (imageKeys == null || imageKeys.isEmpty()) {
-            return;
-        }
-        for (String objectKey : imageKeys) {
-            try {
-                String localPath = RuoYiConfig.getProfile() + objectKey.substring(Constants.RESOURCE_PREFIX.length());
-                if (!FileUtils.deleteFile(localPath)) {
-                    log.warn("方案计划图片文件待清理（文件不存在或删除失败）：{}", localPath);
+        Map<Long, Fx67llDortmundBasicMatch> matchById = new HashMap<>();
+        if (!matchIds.isEmpty()) {
+            List<Fx67llDortmundBasicMatch> matches =
+                    fx67llDortmundBasicMatchMapper.selectFx67llDortmundBasicMatchListByIds(new ArrayList<>(matchIds));
+            if (matches != null) {
+                for (Fx67llDortmundBasicMatch match : matches) {
+                    matchById.put(match.getMatchId(), match);
                 }
-            } catch (Exception e) {
-                log.warn("方案计划图片文件删除异常，待清理：" + objectKey, e);
             }
         }
-    }
+        for (Map.Entry<Long, List<Long>> entry : matchIdsByPlan.entrySet()) {
+            List<Fx67llDortmundBasicMatch> planMatches = matchesByPlan.get(entry.getKey());
+            for (Long matchId : entry.getValue()) {
+                Fx67llDortmundBasicMatch match = matchById.get(matchId);
+                if (match != null) {
+                    planMatches.add(match);
+                }
+            }
+        }
 
-    /**
-     * 按权限填充方案计划的图片对象键数组
-     * <p>
-     * 仅有图片查询权限的用户能拿到对象键，其余用户数组与导出字段均置空
-     *
-     * @param plan 方案计划
-     */
-    private void fillPlanImageKeys(Fx67llDortmundPlan plan) {
-        if (hasPermission("dortmund:plan:image:query")) {
-            plan.setPlanImageObjectKeys(splitPlanImageKeys(plan.getPlanImageObjectKeysStr()).toArray(new String[0]));
-        } else {
-            plan.setPlanImageObjectKeys(null);
-            plan.setPlanImageObjectKeysStr(null);
+        List<Fx67llDortmundPlanReturnRel> returnRelations =
+                fx67llDortmundPlanReturnRelMapper.selectListByPlanIds(planIds);
+        if (returnRelations != null) {
+            for (Fx67llDortmundPlanReturnRel relation : returnRelations) {
+                List<Long> planCombinationIds = combinationIdsByPlan.get(relation.getPlanId());
+                if (planCombinationIds != null && relation.getCombinationId() != null) {
+                    planCombinationIds.add(relation.getCombinationId());
+                }
+            }
+        }
+
+        for (Fx67llDortmundPlan plan : plans) {
+            if (plan.getPlanId() == null) {
+                continue;
+            }
+            List<Fx67llDortmundBasicMatch> matches = matchesByPlan.get(plan.getPlanId());
+            plan.setMatches(matches == null ? new ArrayList<>() : matches);
+            plan.setMatchCount(matches == null ? 0 : matches.size());
+            List<Long> combinationIds = combinationIdsByPlan.get(plan.getPlanId());
+            plan.setCombinationIds(combinationIds == null ? new ArrayList<>() : combinationIds);
+            plan.setEffectivePlanRate(plan.getPlanRate() == null ? plan.getCalculatedPlanRate() : plan.getPlanRate());
+            plan.setEffectivePlanAmount(plan.getPlanAmount() == null ? plan.getCalculatedPlanAmount() : plan.getPlanAmount());
         }
     }
 
@@ -861,14 +824,4 @@ public class Fx67llDortmundPlanServiceImpl implements IFx67llDortmundPlanService
         return hasAllDataScope() || SecurityUtils.getUserId().equals(planUserId);
     }
 
-    /**
-     * 判断当前用户是否拥有指定功能权限
-     *
-     * @param permission 权限标识
-     * @return 是否拥有权限
-     */
-    private boolean hasPermission(String permission) {
-        return SecurityUtils.getLoginUser().getPermissions().contains(permission)
-                || SecurityUtils.getLoginUser().getPermissions().contains("*:*:*");
-    }
 }

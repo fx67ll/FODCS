@@ -17,6 +17,12 @@
         <result property="startedTime" column="started_time"/>
         <result property="finishedTime" column="finished_time"/>
         <result property="userId" column="user_id"/>
+        <result property="clientRequestId" column="client_request_id"/>
+        <result property="workerId" column="worker_id"/>
+        <result property="leaseExpireTime" column="lease_expire_time"/>
+        <result property="attemptCount" column="attempt_count"/>
+        <result property="maxAttempts" column="max_attempts"/>
+        <result property="nextRetryTime" column="next_retry_time"/>
         <result property="createBy" column="create_by"/>
         <result property="createTime" column="create_time"/>
         <result property="updateBy" column="update_by"/>
@@ -37,6 +43,12 @@
                started_time,
                finished_time,
                user_id,
+               client_request_id,
+               worker_id,
+               lease_expire_time,
+               attempt_count,
+               max_attempts,
+               next_retry_time,
                create_by,
                create_time,
                update_by,
@@ -58,6 +70,12 @@
                started_time,
                finished_time,
                user_id,
+               client_request_id,
+               worker_id,
+               lease_expire_time,
+               attempt_count,
+               max_attempts,
+               next_retry_time,
                create_by,
                create_time,
                update_by,
@@ -81,11 +99,13 @@
             useGeneratedKeys="true" keyProperty="generationId">
         insert into fx67ll_dortmund_return_generation
         (generation_code, generation_mode, input_amount, target_amount, request_snapshot, generation_status,
-         generation_remark, generated_count, started_time, finished_time, user_id, create_by, create_time,
-         update_by, update_time)
+         generation_remark, generated_count, started_time, finished_time, user_id, client_request_id, worker_id,
+         lease_expire_time, attempt_count, max_attempts, next_retry_time, create_by, create_time, update_by,
+         update_time)
         values
         (#{generationCode}, #{generationMode}, #{inputAmount}, #{targetAmount}, #{requestSnapshot},
          #{generationStatus}, #{generationRemark}, #{generatedCount}, #{startedTime}, #{finishedTime}, #{userId},
+         #{clientRequestId}, #{workerId}, #{leaseExpireTime}, #{attemptCount}, #{maxAttempts}, #{nextRetryTime},
          #{createBy}, #{createTime}, #{updateBy}, #{updateTime})
     </insert>
 
@@ -98,5 +118,146 @@
             update_by = #{updateBy},
             update_time = #{updateTime}
         where generation_id = #{generationId}
+    </update>
+
+    <select id="selectByClientRequestId" resultMap="Fx67llDortmundReturnGenerationResult">
+        select generation_id,
+               generation_code,
+               generation_mode,
+               input_amount,
+               target_amount,
+               request_snapshot,
+               generation_status,
+               generation_remark,
+               generated_count,
+               started_time,
+               finished_time,
+               user_id,
+               client_request_id,
+               worker_id,
+               lease_expire_time,
+               attempt_count,
+               max_attempts,
+               next_retry_time,
+               create_by,
+               create_time,
+               update_by,
+               update_time
+        from fx67ll_dortmund_return_generation
+        where user_id = #{userId}
+          and client_request_id = #{clientRequestId}
+        limit 1
+    </select>
+
+    <select id="selectPendingGenerationIds" resultType="java.lang.Long">
+        select generation_id
+        from fx67ll_dortmund_return_generation
+        where generation_status = '0'
+          and (lease_expire_time is null or lease_expire_time &lt; now())
+          and (next_retry_time is null or next_retry_time &lt;= now())
+        order by coalesce(next_retry_time, create_time), generation_id
+        limit #{limit}
+    </select>
+
+    <update id="claimGeneration">
+        update fx67ll_dortmund_return_generation
+        set worker_id = #{workerId},
+            lease_expire_time = date_add(now(), interval #{leaseSeconds} second),
+            attempt_count = attempt_count + 1,
+            update_time = now()
+        where generation_id = #{generationId}
+          and generation_status = '0'
+          and attempt_count &lt; #{maxAttempts}
+          and (lease_expire_time is null or lease_expire_time &lt; now())
+          and (next_retry_time is null or next_retry_time &lt;= now())
+    </update>
+
+    <select id="selectGenerationForUpdate" resultMap="Fx67llDortmundReturnGenerationResult">
+        select generation_id,
+               generation_code,
+               generation_mode,
+               input_amount,
+               target_amount,
+               request_snapshot,
+               generation_status,
+               generation_remark,
+               generated_count,
+               started_time,
+               finished_time,
+               user_id,
+               client_request_id,
+               worker_id,
+               lease_expire_time,
+               attempt_count,
+               max_attempts,
+               next_retry_time,
+               create_by,
+               create_time,
+               update_by,
+               update_time
+        from fx67ll_dortmund_return_generation
+        where generation_id = #{generationId}
+        for update
+    </select>
+
+    <update id="completeGenerationSuccess">
+        update fx67ll_dortmund_return_generation
+        set generation_status = '1',
+            generation_remark = #{remark},
+            generated_count = #{generatedCount},
+            finished_time = now(),
+            worker_id = null,
+            lease_expire_time = null,
+            next_retry_time = null,
+            update_by = #{updateBy},
+            update_time = now()
+        where generation_id = #{generationId}
+          and worker_id = #{workerId}
+          and generation_status = '0'
+    </update>
+
+    <update id="releaseGenerationForRetry">
+        update fx67ll_dortmund_return_generation
+        set generation_remark = #{remark},
+            worker_id = null,
+            lease_expire_time = null,
+            next_retry_time = date_add(now(), interval #{retrySeconds} second),
+            update_by = #{updateBy},
+            update_time = now()
+        where generation_id = #{generationId}
+          and worker_id = #{workerId}
+          and generation_status = '0'
+    </update>
+
+    <update id="failGeneration">
+        update fx67ll_dortmund_return_generation
+        set generation_status = '2',
+            generation_remark = #{remark},
+            finished_time = now(),
+            worker_id = null,
+            lease_expire_time = null,
+            next_retry_time = null,
+            update_by = #{updateBy},
+            update_time = now()
+        where generation_id = #{generationId}
+          and worker_id = #{workerId}
+          and generation_status = '0'
+    </update>
+
+    <update id="failExhaustedGeneration">
+        update fx67ll_dortmund_return_generation
+        set generation_status = '2',
+            generation_remark = #{remark},
+            finished_time = now(),
+            worker_id = null,
+            lease_expire_time = null,
+            next_retry_time = null,
+            update_by = coalesce(create_by, 'system'),
+            update_time = now()
+        where generation_id = #{generationId}
+          and generation_status = '0'
+          and attempt_count &gt;= max_attempts
+          and lease_expire_time is not null
+          and lease_expire_time &lt; now()
     </update>
 </mapper>

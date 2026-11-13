@@ -113,6 +113,13 @@
         where p.info_point_id = #{infoPointId}
     </select>
 
+    <select id="countSeasonInfoPointsBySeasonId" resultType="int">
+        select count(1)
+        from fx67ll_dortmund_info_point
+        where season_id = #{seasonId}
+          and info_point_type = 'T'
+    </select>
+
     <insert id="insertFx67llDortmundInfoPoint" parameterType="Fx67llDortmundInfoPoint" useGeneratedKeys="true"
             keyProperty="infoPointId">
         insert into fx67ll_dortmund_info_point

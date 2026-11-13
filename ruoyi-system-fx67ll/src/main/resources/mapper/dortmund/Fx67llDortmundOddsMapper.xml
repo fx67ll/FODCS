@@ -91,6 +91,12 @@
             <if test="beginSourceTime != null and beginSourceTime != '' and endSourceTime != null and endSourceTime != ''">
                 and o.source_time between #{beginSourceTime} and #{endSourceTime}
             </if>
+            <if test="beginCreateTime != null and beginCreateTime != '' and endCreateTime != null and endCreateTime != ''">
+                and o.create_time between #{beginCreateTime} and #{endCreateTime}
+            </if>
+            <if test="beginUpdateTime != null and beginUpdateTime != '' and endUpdateTime != null and endUpdateTime != ''">
+                and o.update_time between #{beginUpdateTime} and #{endUpdateTime}
+            </if>
             <if test="delFlag != null and delFlag != ''">and o.del_flag = #{delFlag}</if>
         </where>
         order by o.source_time desc, o.odds_id desc
@@ -101,7 +107,16 @@
         where o.match_id = #{matchId}
           and o.active_flag = 'Y'
           and o.del_flag = '0'
+        order by o.odds_id desc
         limit 1
+    </select>
+
+    <select id="countActiveOddsByMatchId" resultType="int">
+        select count(1)
+        from fx67ll_dortmund_odds
+        where match_id = #{matchId}
+          and active_flag = 'Y'
+          and del_flag = '0'
     </select>
 
     <select id="selectMatchIdForUpdate" parameterType="Long" resultType="Long">

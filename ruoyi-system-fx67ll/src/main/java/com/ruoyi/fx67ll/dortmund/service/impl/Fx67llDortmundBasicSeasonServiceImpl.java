@@ -7,6 +7,7 @@ import com.ruoyi.common.utils.DateUtils;
 import com.ruoyi.common.utils.SecurityUtils;
 import com.ruoyi.fx67ll.dortmund.domain.Fx67llDortmundBasicMatch;
 import com.ruoyi.fx67ll.dortmund.mapper.Fx67llDortmundBasicMatchMapper;
+import com.ruoyi.fx67ll.dortmund.mapper.Fx67llDortmundInfoPointMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import com.ruoyi.fx67ll.dortmund.mapper.Fx67llDortmundBasicSeasonMapper;
@@ -26,6 +27,9 @@ public class Fx67llDortmundBasicSeasonServiceImpl implements IFx67llDortmundBasi
 
     @Autowired
     private Fx67llDortmundBasicMatchMapper fx67llDortmundBasicMatchMapper;
+
+    @Autowired
+    private Fx67llDortmundInfoPointMapper fx67llDortmundInfoPointMapper;
 
     /**
      * 查询赛季管理
@@ -145,6 +149,9 @@ public class Fx67llDortmundBasicSeasonServiceImpl implements IFx67llDortmundBasi
         List<Fx67llDortmundBasicMatch> matchList = fx67llDortmundBasicMatchMapper.selectFx67llDortmundBasicMatchList(matchQuery);
         if (matchList != null && !matchList.isEmpty()) {
             throw new ServiceException("赛季已被比赛引用，不能删除；可改用结束赛季");
+        }
+        if (fx67llDortmundInfoPointMapper.countSeasonInfoPointsBySeasonId(seasonId) > 0) {
+            throw new ServiceException("赛季已被信息点引用，不能删除；可改用结束赛季");
         }
     }
 }

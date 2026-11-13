@@ -58,4 +58,6 @@ public interface Fx67llDortmundInfoPointMapper {
      * @return 结果
      */
     public int deleteFx67llDortmundInfoPointByInfoPointIds(Long[] infoPointIds);
+
+    public int countSeasonInfoPointsBySeasonId(Long seasonId);
 }

@@ -20,11 +20,15 @@ import com.ruoyi.common.core.controller.BaseController;
 import com.ruoyi.common.core.domain.AjaxResult;
 import com.ruoyi.common.core.page.TableDataInfo;
 import com.ruoyi.common.enums.BusinessType;
+import com.ruoyi.common.utils.DateUtils;
 import com.ruoyi.common.utils.poi.ExcelUtil;
+import com.ruoyi.fx67ll.dortmund.domain.Fx67llDortmundReturnBatchAdoptRequest;
 import com.ruoyi.fx67ll.dortmund.domain.Fx67llDortmundReturnCombination;
 import com.ruoyi.fx67ll.dortmund.domain.Fx67llDortmundReturnCombinationExportResponse;
 import com.ruoyi.fx67ll.dortmund.domain.Fx67llDortmundReturnGenerateRequest;
 import com.ruoyi.fx67ll.dortmund.domain.Fx67llDortmundReturnGeneration;
+import com.ruoyi.fx67ll.dortmund.domain.Fx67llDortmundReturnGenerationExportResponse;
+import com.ruoyi.fx67ll.dortmund.domain.Fx67llDortmundReturnImage;
 import com.ruoyi.fx67ll.dortmund.service.IFx67llDortmundReturnCombinationService;
 
 /**
@@ -65,8 +69,11 @@ public class Fx67llDortmundReturnCombinationController extends BaseController {
      */
     @PreAuthorize("@ss.hasPermi('dortmund:return:query')")
     @GetMapping("/generation/{generationId}")
-    public AjaxResult generationInfo(@PathVariable("generationId") Long generationId) {
-        return success(fx67llDortmundReturnCombinationService.selectGenerationById(generationId));
+    public AjaxResult generationInfo(@PathVariable("generationId") Long generationId,
+            @RequestParam(value = "sortField", required = false) String sortField,
+            @RequestParam(value = "sortOrder", required = false) String sortOrder) {
+        return success(fx67llDortmundReturnCombinationService.selectGenerationById(
+                generationId, sortField, sortOrder));
     }
 
     /**
@@ -111,26 +118,58 @@ public class Fx67llDortmundReturnCombinationController extends BaseController {
     }
 
     /**
-     * 上传回报组合图片
+     * 批量采用回报组合
+     */
+    @PreAuthorize("@ss.hasPermi('dortmund:return:review')")
+    @Log(title = "Dortmund回报组合批量审核", businessType = BusinessType.UPDATE)
+    @RepeatSubmit
+    @PostMapping("/batch/adopt")
+    public AjaxResult batchAdopt(@RequestBody Fx67llDortmundReturnBatchAdoptRequest request) {
+        return success(fx67llDortmundReturnCombinationService.batchAdopt(
+                request == null ? null : request.getCombinationIds()));
+    }
+
+    /**
+     * 为已采用回报组合上传图片
      */
     @PreAuthorize("@ss.hasPermi('dortmund:return:image:upload')")
     @Log(title = "Dortmund回报组合图片", businessType = BusinessType.INSERT)
     @RepeatSubmit
-    @PostMapping("/image/upload")
-    public AjaxResult uploadImage(@RequestParam("file") MultipartFile file) throws Exception {
-        AjaxResult result = success();
-        result.put("objectKey", fx67llDortmundReturnCombinationService.uploadReturnImage(file));
-        return result;
+    @PostMapping("/{combinationId}/image")
+    public AjaxResult uploadImage(@PathVariable("combinationId") Long combinationId,
+            @RequestParam("file") MultipartFile file) throws Exception {
+        return success(fx67llDortmundReturnCombinationService.uploadCombinationImage(combinationId, file));
     }
 
     /**
-     * 删除尚未固化的回报组合图片
+     * 删除已采用回报组合的图片
      */
     @PreAuthorize("@ss.hasPermi('dortmund:return:image:remove')")
     @Log(title = "Dortmund回报组合图片", businessType = BusinessType.DELETE)
-    @DeleteMapping("/image")
-    public AjaxResult removeImage(@RequestParam("objectKey") String objectKey) {
-        return toAjax(fx67llDortmundReturnCombinationService.removeTemporaryReturnImage(objectKey));
+    @DeleteMapping("/{combinationId}/image/{imageId}")
+    public AjaxResult removeImage(@PathVariable("combinationId") Long combinationId,
+            @PathVariable("imageId") Long imageId) {
+        return toAjax(fx67llDortmundReturnCombinationService.removeCombinationImage(combinationId, imageId));
+    }
+
+    /**
+     * 查询指定日期范围内的孤儿图片
+     */
+    @PreAuthorize("@ss.hasPermi('dortmund:return:image:query')")
+    @GetMapping("/image/orphans")
+    public AjaxResult orphanImages(Fx67llDortmundReturnImage query) {
+        return success(fx67llDortmundReturnCombinationService.selectOrphanImageList(query));
+    }
+
+    /**
+     * 批量删除选中的孤儿图片
+     */
+    @PreAuthorize("@ss.hasPermi('dortmund:return:image:remove')")
+    @Log(title = "Dortmund孤儿回报组合图片", businessType = BusinessType.DELETE)
+    @RepeatSubmit
+    @DeleteMapping("/image/orphans")
+    public AjaxResult removeOrphanImages(@RequestBody List<Long> imageIds) {
+        return success(fx67llDortmundReturnCombinationService.deleteOrphanImages(imageIds));
     }
 
     /**
@@ -149,5 +188,29 @@ public class Fx67llDortmundReturnCombinationController extends BaseController {
                 new ExcelUtil<Fx67llDortmundReturnCombinationExportResponse>(
                         Fx67llDortmundReturnCombinationExportResponse.class);
         util.exportExcel(response, exportList, "Dortmund回报组合");
+    }
+
+    /**
+     * 导出生成批次记录；不包含请求快照和AI供应商治理信息
+     */
+    @PreAuthorize("@ss.hasPermi('dortmund:return:export')")
+    @Log(title = "Dortmund回报组合批次", businessType = BusinessType.EXPORT)
+    @PostMapping("/generation/export")
+    public void exportGenerations(HttpServletResponse response, Fx67llDortmundReturnGeneration query) {
+        List<Fx67llDortmundReturnGeneration> list =
+                fx67llDortmundReturnCombinationService.selectGenerationList(query);
+        List<Fx67llDortmundReturnGenerationExportResponse> exportList = new ArrayList<>();
+        for (Fx67llDortmundReturnGeneration item : list) {
+            exportList.add(new Fx67llDortmundReturnGenerationExportResponse(
+                    item,
+                    item.getStartedTime() == null ? null
+                            : DateUtils.parseDateToStr("yyyy-MM-dd HH:mm:ss", item.getStartedTime()),
+                    item.getFinishedTime() == null ? null
+                            : DateUtils.parseDateToStr("yyyy-MM-dd HH:mm:ss", item.getFinishedTime())));
+        }
+        ExcelUtil<Fx67llDortmundReturnGenerationExportResponse> util =
+                new ExcelUtil<Fx67llDortmundReturnGenerationExportResponse>(
+                        Fx67llDortmundReturnGenerationExportResponse.class);
+        util.exportExcel(response, exportList, "Dortmund回报组合批次");
     }
 }

@@ -8,12 +8,15 @@ import com.alibaba.fastjson2.JSON;
 import com.alibaba.fastjson2.JSONArray;
 import com.alibaba.fastjson2.JSONObject;
 import com.ruoyi.common.exception.ServiceException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.http.client.SimpleClientHttpRequestFactory;
 import org.springframework.stereotype.Service;
+import org.springframework.web.client.HttpStatusCodeException;
 import org.springframework.web.client.RestClientException;
 import org.springframework.web.client.RestTemplate;
 
@@ -27,6 +30,8 @@ import org.springframework.web.client.RestTemplate;
  */
 @Service
 public class DeepSeekReturnCombinationAnalyzer implements ReturnCombinationAiAnalysisPort {
+    private static final Logger log = LoggerFactory.getLogger(DeepSeekReturnCombinationAnalyzer.class);
+
     private static final int CONNECT_TIMEOUT_SECONDS = 10;
 
     private static final int READ_TIMEOUT_SECONDS = 45;
@@ -40,6 +45,9 @@ public class DeepSeekReturnCombinationAnalyzer implements ReturnCombinationAiAna
     @Value("${dortmund.ai.deepseek.model:}")
     private String deepSeekModel;
 
+    @Value("${dortmund.ai.deepseek.max-tokens:4096}")
+    private int deepSeekMaxTokens;
+
     private final RestTemplate restTemplate = createRestTemplate();
 
     /**
@@ -50,22 +58,38 @@ public class DeepSeekReturnCombinationAnalyzer implements ReturnCombinationAiAna
      */
     @Override
     public ReturnCombinationAiOutput analyze(ReturnCombinationAiInput input) {
-        if (isBlank(deepSeekEndpoint) || isBlank(deepSeekApiKey) || isBlank(deepSeekModel)) {
+        String endpoint = deepSeekEndpoint;
+        String apiKey = deepSeekApiKey;
+        String model = deepSeekModel;
+        int maxTokens = deepSeekMaxTokens > 0 ? deepSeekMaxTokens : 4096;
+        if (isBlank(endpoint) || isBlank(apiKey) || isBlank(model)) {
             throw new ServiceException("DeepSeek分析配置不完整！");
         }
         JSONObject request = new JSONObject();
-        request.put("model", deepSeekModel);
+        request.put("model", model);
         request.put("temperature", 0.2);
+        request.put("max_tokens", maxTokens);
         request.put("messages", buildMessages(input));
         request.put("response_format", JSONObject.of("type", "json_object"));
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.APPLICATION_JSON);
-        headers.setBearerAuth(deepSeekApiKey);
+        headers.setBearerAuth(apiKey);
         try {
-            String rawResponse = restTemplate.postForObject(deepSeekEndpoint,
+            String rawResponse = restTemplate.postForObject(normalizeEndpoint(endpoint),
                     new HttpEntity<>(request.toJSONString(), headers), String.class);
             return parseResponse(rawResponse);
+        } catch (HttpStatusCodeException e) {
+            int statusCode = e.getRawStatusCode();
+            log.error("DeepSeek分析请求失败，HTTP状态码：{}，响应：{}", statusCode, limitLog(e.getResponseBodyAsString()));
+            if (statusCode == 401 || statusCode == 403) {
+                throw new ServiceException("DeepSeek分析鉴权失败，请检查接口密钥配置！");
+            }
+            if (statusCode == 429) {
+                throw new ServiceException("DeepSeek分析请求过于频繁，请稍后重试！");
+            }
+            throw new ServiceException("DeepSeek分析请求失败，HTTP状态码：" + statusCode + "！");
         } catch (RestClientException e) {
+            log.error("DeepSeek分析网络请求失败", e);
             throw new ServiceException("DeepSeek分析请求失败，请稍后重试！");
         } catch (ServiceException e) {
             throw e;
@@ -78,7 +102,19 @@ public class DeepSeekReturnCombinationAnalyzer implements ReturnCombinationAiAna
         List<JSONObject> messages = new ArrayList<>();
         JSONObject systemMessage = new JSONObject();
         systemMessage.put("role", "system");
-        systemMessage.put("content", "Return JSON only: {candidates:[{title,reason,selections:[{matchId,selectionType,appliedWeight,reason}]}],analysisContent}. selectionType must be HW, DR, AW, HH, HD, or HA. Each candidate contains 1 to 8 unique matches and no more than 10 candidates. Do not return database odds values or amounts. S uses input weights; A returns a weight from 0 to 100.");
+        systemMessage.put("content", "You are a football parlay risk analyst. Return strict JSON only with this shape: "
+                + "{candidates:[{title,reason,selections:[{matchId,selectionType,appliedWeight,reason}]}],analysisContent}. "
+                + "Generate no more than 10 candidates. Every candidate must contain 1 to 8 unique matches. "
+                + "selectionType must be HW, DR, AW, HH, HD, or HA. Prefer selections that can move estimated return close to the target, "
+                + "while avoiding duplicate matches and clearly correlated alternatives. Do not return odds values or calculated amounts. "
+                + "Each odds item contains matchSummary with teams and kickoff time; handicapValue and all prices/weights are separate supplied fields. "
+                + "Use matchSummary for matchup/time context and the explicit odds fields for market context. Match identity, handicap and every "
+                + "odds/weight value must come from the supplied odds object; matchSummary must never override or invent odds. "
+                + "Treat every item in businessObjectives as a mandatory business goal, not optional advice. "
+                + "S mode uses the supplied manual weights; A mode returns an appliedWeight from 0 to 100 for each selection. "
+                + "appliedWeight is evaluation metadata only. It is not a stake ratio, multiplier or amount and must never be used to calculate "
+                + "combined odds, estimated return, target deviation or any monetary value. "
+                + "Keep title and reason concise, and make analysisContent a compact Chinese explanation.");
         messages.add(systemMessage);
         JSONObject userMessage = new JSONObject();
         userMessage.put("role", "user");
@@ -138,6 +174,7 @@ public class DeepSeekReturnCombinationAnalyzer implements ReturnCombinationAiAna
             ReturnCombinationAiAnalysisPort.Selection selection = new ReturnCombinationAiAnalysisPort.Selection();
             selection.setMatchId(selectionValue.getLong("matchId"));
             selection.setSelectionType(selectionValue.getString("selectionType"));
+            // AI评估权重仅用于解释与复核，不参与任何金额计算。
             selection.setAppliedWeight(selectionValue.getBigDecimal("appliedWeight"));
             selection.setReason(selectionValue.getString("reason"));
             selections.add(selection);
@@ -150,6 +187,21 @@ public class DeepSeekReturnCombinationAnalyzer implements ReturnCombinationAiAna
         factory.setConnectTimeout((int) Duration.ofSeconds(CONNECT_TIMEOUT_SECONDS).toMillis());
         factory.setReadTimeout((int) Duration.ofSeconds(READ_TIMEOUT_SECONDS).toMillis());
         return new RestTemplate(factory);
+    }
+
+    private String normalizeEndpoint(String endpoint) {
+        String value = endpoint.trim();
+        if (!value.startsWith("http://") && !value.startsWith("https://")) {
+            return "https://" + value;
+        }
+        return value;
+    }
+
+    private String limitLog(String value) {
+        if (isBlank(value)) {
+            return "";
+        }
+        return value.length() > 500 ? value.substring(0, 500) : value;
     }
 
     private String stripCodeFence(String content) {
@@ -167,4 +219,5 @@ public class DeepSeekReturnCombinationAnalyzer implements ReturnCombinationAiAna
     private boolean isBlank(String value) {
         return value == null || value.trim().isEmpty();
     }
+
 }

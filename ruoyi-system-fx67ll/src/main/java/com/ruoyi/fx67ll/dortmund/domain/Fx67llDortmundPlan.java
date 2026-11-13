@@ -5,7 +5,6 @@ import java.util.Date;
 import java.util.List;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
-import com.fasterxml.jackson.annotation.JsonIgnore;
 import org.apache.commons.lang3.builder.ToStringBuilder;
 import org.apache.commons.lang3.builder.ToStringStyle;
 import com.ruoyi.common.annotation.Excel;
@@ -95,18 +94,6 @@ public class Fx67llDortmundPlan extends BaseEntity {
     private String planRemark;
 
     /**
-     * 第一阶段方案计划图片对象键集合（第1.5阶段不再使用，仅保留代码兼容）
-     */
-    @JsonIgnore
-    private String[] planImageObjectKeys;
-
-    /**
-     * 第一阶段方案计划图片对象键分隔串（第1.5阶段不再映射数据库）
-     */
-    @JsonIgnore
-    private String planImageObjectKeysStr;
-
-    /**
      * 已关联比赛ID集合（非表字段，与 newMatches 合并去重后写入关系表）
      */
     private Long[] matchIds;
@@ -115,6 +102,11 @@ public class Fx67llDortmundPlan extends BaseEntity {
      * 查询用关联比赛ID（非表字段，列表按单场比赛过滤关联方案计划，与 matchIds 提交字段区分）
      */
     private Long matchId;
+
+    /**
+     * 查询用关联回报组合ID（非表字段，列表按组合过滤关联方案计划）
+     */
+    private Long combinationId;
 
     /**
      * 当场新建比赛集合（非表字段，只能引用已有赛季和球队，不能带 newSeason 等嵌套字段）
@@ -266,23 +258,6 @@ public class Fx67llDortmundPlan extends BaseEntity {
         return planRemark;
     }
 
-    public String[] getPlanImageObjectKeys() {
-        return planImageObjectKeys;
-    }
-
-    public void setPlanImageObjectKeys(String[] planImageObjectKeys) {
-        this.planImageObjectKeys = planImageObjectKeys;
-    }
-
-    public String getPlanImageObjectKeysStr() {
-        return planImageObjectKeysStr;
-    }
-
-    public void setPlanImageObjectKeysStr(String planImageObjectKeysStr) {
-        this.planImageObjectKeysStr = planImageObjectKeysStr;
-    }
-
-
     public Long[] getMatchIds() {
         return matchIds;
     }
@@ -297,6 +272,14 @@ public class Fx67llDortmundPlan extends BaseEntity {
 
     public void setMatchId(Long matchId) {
         this.matchId = matchId;
+    }
+
+    public Long getCombinationId() {
+        return combinationId;
+    }
+
+    public void setCombinationId(Long combinationId) {
+        this.combinationId = combinationId;
     }
 
     public List<Fx67llDortmundBasicMatch> getNewMatches() {
@@ -387,8 +370,6 @@ public class Fx67llDortmundPlan extends BaseEntity {
                 .append("effectivePlanRate", getEffectivePlanRate())
                 .append("effectivePlanAmount", getEffectivePlanAmount())
                 .append("planRemark", getPlanRemark())
-                .append("planImageObjectKeys", getPlanImageObjectKeys())
-                .append("planImageObjectKeysStr", getPlanImageObjectKeysStr())
                 .append("matchIds", getMatchIds())
                 .append("newMatches", getNewMatches())
                 .append("matches", getMatches())

@@ -13,7 +13,9 @@
         <result property="selectionType" column="selection_type"/>
         <result property="oddsValueSnapshot" column="odds_value_snapshot"/>
         <result property="manualWeightSnapshot" column="manual_weight_snapshot"/>
+        <!-- appliedWeight仅为AI评估权重，不参与任何金额计算。 -->
         <result property="appliedWeight" column="applied_weight"/>
+        <result property="selectionReason" column="selection_reason"/>
         <result property="itemSort" column="item_sort"/>
         <result property="matchSummary" column="match_summary"/>
         <result property="createBy" column="create_by"/>
@@ -30,6 +32,7 @@
                i.odds_value_snapshot,
                i.manual_weight_snapshot,
                i.applied_weight,
+               i.selection_reason,
                i.item_sort,
                concat(coalesce(ht.team_name, ''), ' vs ', coalesce(at.team_name, ''), ' ',
                       date_format(m.match_time, '%Y-%m-%d %H:%i')) as match_summary,
@@ -47,9 +50,9 @@
             parameterType="Fx67llDortmundReturnCombinationItem" useGeneratedKeys="true" keyProperty="itemId">
         insert into fx67ll_dortmund_return_combination_item
         (combination_id, match_id, odds_id, selection_type, odds_value_snapshot, manual_weight_snapshot,
-         applied_weight, item_sort, create_by, create_time)
+         applied_weight, selection_reason, item_sort, create_by, create_time)
         values
         (#{combinationId}, #{matchId}, #{oddsId}, #{selectionType}, #{oddsValueSnapshot},
-         #{manualWeightSnapshot}, #{appliedWeight}, #{itemSort}, #{createBy}, #{createTime})
+         #{manualWeightSnapshot}, #{appliedWeight}, #{selectionReason}, #{itemSort}, #{createBy}, #{createTime})
     </insert>
 </mapper>

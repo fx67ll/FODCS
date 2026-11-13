@@ -17,6 +17,7 @@ import com.ruoyi.fx67ll.dortmund.service.IFx67llDortmundExtraSimulateService;
 import com.ruoyi.fx67ll.dortmund.service.IFx67llDortmundExtraSimulateVersionService;
 import com.ruoyi.fx67ll.dortmund.service.IFx67llDortmundPlanService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.dao.DuplicateKeyException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -115,11 +116,28 @@ public class Fx67llDortmundExtraSimulateServiceImpl implements IFx67llDortmundEx
     @Transactional(rollbackFor = Exception.class)
     public int insertFx67llDortmundExtraSimulate(Fx67llDortmundExtraSimulate fx67llDortmundExtraSimulate) {
         checkPlanFieldsInRequest(fx67llDortmundExtraSimulate);
+        if (fx67llDortmundExtraSimulate.getVersionId() == null) {
+            throw new ServiceException("数值模拟版本主键不能为空！");
+        }
+        Fx67llDortmundExtraSimulateVersion version = fx67llDortmundExtraSimulateVersionService
+                .selectFx67llDortmundExtraSimulateVersionById(fx67llDortmundExtraSimulate.getVersionId());
+        if (version == null || !SecurityUtils.getUserId().equals(version.getUserId())) {
+            throw new ServiceException("数值模拟版本不存在或没有访问权限！");
+        }
+        if ("1".equals(version.getInvalidFlag())) {
+            throw new ServiceException("数值模拟版本已作废，不能继续新增轮次！");
+        }
         List<Long> planIds = resolveRequestPlanIds(fx67llDortmundExtraSimulate);
         fx67llDortmundExtraSimulate.setUserId(SecurityUtils.getUserId());
         fx67llDortmundExtraSimulate.setCreateBy(SecurityUtils.getUsername());
         fx67llDortmundExtraSimulate.setCreateTime(DateUtils.getNowDate());
-        int rows = fx67llDortmundExtraSimulateMapper.insertFx67llDortmundExtraSimulate(fx67llDortmundExtraSimulate);
+        int rows;
+        try {
+            rows = fx67llDortmundExtraSimulateMapper.insertFx67llDortmundExtraSimulate(
+                    fx67llDortmundExtraSimulate);
+        } catch (DuplicateKeyException e) {
+            throw new ServiceException("当前版本已存在相同轮次序号，请刷新后重试！");
+        }
         if (rows > 0) {
             insertRoundPlanRels(fx67llDortmundExtraSimulate.getSimId(), planIds);
             if (fx67llDortmundExtraSimulate.getRoundNo() != null && fx67llDortmundExtraSimulate.getRoundNo() < 0) {
@@ -149,20 +167,14 @@ public class Fx67llDortmundExtraSimulateServiceImpl implements IFx67llDortmundEx
     }
 
     /**
-     * 校验请求中的方案计划关联字段：图片对象键一律拒绝，newPlans 元素只能引用已有比赛
+     * 校验请求中的方案计划关联字段：newPlans 元素只能引用已有比赛
      *
      * @param fx67llDortmundExtraSimulate 外快盈亏数值模拟轮次记录
      */
     private void checkPlanFieldsInRequest(Fx67llDortmundExtraSimulate fx67llDortmundExtraSimulate) {
-        if (fx67llDortmundExtraSimulate.getPlanImageObjectKeys() != null) {
-            throw new ServiceException("数值轮次请求不允许携带图片对象键！");
-        }
         List<Fx67llDortmundPlan> newPlans = fx67llDortmundExtraSimulate.getNewPlans();
         if (newPlans != null) {
             for (Fx67llDortmundPlan newPlan : newPlans) {
-                if (newPlan.getPlanImageObjectKeys() != null) {
-                    throw new ServiceException("数值轮次请求不允许携带图片对象键！");
-                }
                 if (newPlan.getNewMatches() != null && !newPlan.getNewMatches().isEmpty()) {
                     throw new ServiceException("数值轮次内新建方案计划只能引用已有比赛，不能当场新建比赛！");
                 }

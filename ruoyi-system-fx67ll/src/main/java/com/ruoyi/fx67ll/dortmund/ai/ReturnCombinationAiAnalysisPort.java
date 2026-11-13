@@ -34,6 +34,9 @@ public interface ReturnCombinationAiAnalysisPort {
 
         private List<Fx67llDortmundOdds> odds;
 
+        /** 本次调用的显式业务目标，供未来通用AI编排复用 */
+        private List<String> businessObjectives;
+
         public String getGenerationMode() {
             return generationMode;
         }
@@ -64,6 +67,14 @@ public interface ReturnCombinationAiAnalysisPort {
 
         public void setOdds(List<Fx67llDortmundOdds> odds) {
             this.odds = odds;
+        }
+
+        public List<String> getBusinessObjectives() {
+            return businessObjectives;
+        }
+
+        public void setBusinessObjectives(List<String> businessObjectives) {
+            this.businessObjectives = businessObjectives;
         }
     }
 
@@ -145,6 +156,10 @@ public interface ReturnCombinationAiAnalysisPort {
 
         private String selectionType;
 
+        /**
+         * AI评估权重（0-100），仅用于AI选型解释和历史复核。
+         * 不参与金额计算，不是投注比例或金额系数。
+         */
         private BigDecimal appliedWeight;
 
         private String reason;
@@ -166,10 +181,12 @@ public interface ReturnCombinationAiAnalysisPort {
         }
 
         public BigDecimal getAppliedWeight() {
+            // AI评估权重仅供生成解释，不进入金额公式。
             return appliedWeight;
         }
 
         public void setAppliedWeight(BigDecimal appliedWeight) {
+            // AI评估权重仅供生成解释，不进入金额公式。
             this.appliedWeight = appliedWeight;
         }
 

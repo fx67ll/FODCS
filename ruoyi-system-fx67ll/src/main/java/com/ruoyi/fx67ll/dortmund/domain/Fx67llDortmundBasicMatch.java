@@ -103,6 +103,12 @@ public class Fx67llDortmundBasicMatch extends BaseEntity {
     @Excel(name = "AI分析次数", readConverterExp = "统=计该比赛已生成的分析报告数量")
     private Integer analysisCount;
 
+    /** 当前有效odds筛选标记（Y/N，非表列） */
+    private String hasActiveOdds;
+
+    /** 引用该比赛的已采用回报组合数（展示字段，非表列） */
+    private Integer adoptedCombinationCount;
+
     /** 比赛结果（字典码：0-主队胜，1-平局，2-客队胜） */
     @Excel(name = "比赛结果", readConverterExp = "字=典码：0-主队胜，1-平局，2-客队胜")
     private String matchResult;
@@ -288,6 +294,22 @@ public class Fx67llDortmundBasicMatch extends BaseEntity {
         return analysisCount;
     }
 
+    public String getHasActiveOdds() {
+        return hasActiveOdds;
+    }
+
+    public void setHasActiveOdds(String hasActiveOdds) {
+        this.hasActiveOdds = hasActiveOdds;
+    }
+
+    public Integer getAdoptedCombinationCount() {
+        return adoptedCombinationCount;
+    }
+
+    public void setAdoptedCombinationCount(Integer adoptedCombinationCount) {
+        this.adoptedCombinationCount = adoptedCombinationCount;
+    }
+
     public void setMatchResult(String matchResult)
     {
         this.matchResult = matchResult;
@@ -419,6 +441,8 @@ public class Fx67llDortmundBasicMatch extends BaseEntity {
                 .append("matchVenue", getMatchVenue())
                 .append("matchStatus", getMatchStatus())
                 .append("analysisCount", getAnalysisCount())
+                .append("hasActiveOdds", getHasActiveOdds())
+                .append("adoptedCombinationCount", getAdoptedCombinationCount())
                 .append("matchResult", getMatchResult())
                 .append("matchRemark", getMatchRemark())
                 .append("newSeason", getNewSeason())

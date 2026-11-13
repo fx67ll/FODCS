@@ -35,6 +35,23 @@
         where combination_id = #{combinationId}
     </select>
 
+    <select id="selectListByPlanIds" resultMap="Fx67llDortmundPlanReturnRelResult">
+        select rel_id,
+               plan_id,
+               combination_id,
+               rel_sort,
+               create_by,
+               create_time,
+               update_by,
+               update_time
+        from fx67ll_dortmund_plan_return_rel
+        where plan_id in
+        <foreach item="planId" collection="planIds" open="(" separator="," close=")">
+            #{planId}
+        </foreach>
+        order by plan_id, rel_sort, rel_id
+    </select>
+
     <insert id="insertFx67llDortmundPlanReturnRel" parameterType="Fx67llDortmundPlanReturnRel"
             useGeneratedKeys="true" keyProperty="relId">
         insert into fx67ll_dortmund_plan_return_rel

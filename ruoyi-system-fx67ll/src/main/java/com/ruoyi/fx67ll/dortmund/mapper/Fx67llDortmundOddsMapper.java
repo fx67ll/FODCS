@@ -17,6 +17,8 @@ public interface Fx67llDortmundOddsMapper {
 
     public Fx67llDortmundOdds selectActiveFx67llDortmundOddsByMatchId(Long matchId);
 
+    public int countActiveOddsByMatchId(Long matchId);
+
     public Long selectMatchIdForUpdate(Long matchId);
 
     public int insertFx67llDortmundOdds(Fx67llDortmundOdds fx67llDortmundOdds);

@@ -17,6 +17,8 @@
         <result property="matchVenue" column="match_venue"/>
         <result property="matchStatus" column="match_status"/>
         <result property="analysisCount" column="analysis_count"/>
+        <result property="hasActiveOdds" column="has_active_odds"/>
+        <result property="adoptedCombinationCount" column="adopted_combination_count"/>
         <result property="matchResult" column="match_result"/>
         <result property="matchRemark" column="match_remark"/>
         <result property="userId" column="user_id"/>
@@ -47,6 +49,13 @@
                m.create_time,
                m.update_by,
                m.update_time,
+               (select count(1)
+                from fx67ll_dortmund_return_combination_item ri
+                         join fx67ll_dortmund_return_combination rc
+                              on rc.combination_id = ri.combination_id
+                where ri.match_id = m.match_id
+                  and rc.adopted_flag = 'Y'
+                  and rc.user_id = m.user_id) as adopted_combination_count,
                m.del_flag
         from fx67ll_dortmund_match m
                  left join fx67ll_dortmund_season s on m.season_id = s.season_id
@@ -73,6 +82,30 @@
             <if test="matchTime != null ">and m.match_time = #{matchTime}</if>
             <if test="matchVenue != null  and matchVenue != ''">and m.match_venue = #{matchVenue}</if>
             <if test="matchStatus != null  and matchStatus != ''">and m.match_status = #{matchStatus}</if>
+            <if test="hasActiveOdds != null and hasActiveOdds != ''">
+                <choose>
+                    <when test='"Y".equals(hasActiveOdds)'>
+                        and exists (
+                            select 1
+                            from fx67ll_dortmund_odds ao
+                            where ao.match_id = m.match_id
+                              and ao.active_flag = 'Y'
+                              and ao.del_flag = '0'
+                              and ao.user_id = m.user_id
+                        )
+                    </when>
+                    <otherwise>
+                        and not exists (
+                            select 1
+                            from fx67ll_dortmund_odds ao
+                            where ao.match_id = m.match_id
+                              and ao.active_flag = 'Y'
+                              and ao.del_flag = '0'
+                              and ao.user_id = m.user_id
+                        )
+                    </otherwise>
+                </choose>
+            </if>
             <if test="analysisCount != null ">and m.analysis_count = #{analysisCount}</if>
             <if test="matchResult != null  and matchResult != ''"> and match_result = #{matchResult}</if>
             <if test="matchRemark != null  and matchRemark != ''"> and match_remark = #{matchRemark}</if>
@@ -97,6 +130,16 @@
             resultMap="Fx67llDortmundBasicMatchResult">
         <include refid="selectFx67llDortmundBasicMatchWithJoinVo"/>
         where m.match_id = #{matchId}
+    </select>
+
+    <select id="selectFx67llDortmundBasicMatchListByIds" resultMap="Fx67llDortmundBasicMatchResult">
+        <include refid="selectFx67llDortmundBasicMatchWithJoinVo"/>
+        where m.del_flag = '0'
+        and m.match_id in
+        <foreach item="matchId" collection="matchIds" open="(" separator="," close=")">
+            #{matchId}
+        </foreach>
+        order by m.match_id
     </select>
 
     <insert id="insertFx67llDortmundBasicMatch" parameterType="Fx67llDortmundBasicMatch" useGeneratedKeys="true"

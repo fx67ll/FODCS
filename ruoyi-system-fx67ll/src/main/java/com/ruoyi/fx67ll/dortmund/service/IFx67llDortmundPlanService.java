@@ -4,7 +4,6 @@ import java.util.List;
 
 import com.ruoyi.fx67ll.dortmund.domain.Fx67llDortmundPlan;
 import com.ruoyi.fx67ll.dortmund.domain.Fx67llDortmundPlanSummary;
-import com.ruoyi.fx67ll.dortmund.domain.Fx67llDortmundReturnCombination;
 
 /**
  * 方案计划Service接口
@@ -66,13 +65,6 @@ public interface IFx67llDortmundPlanService {
      * @return 结果
      */
     public int deleteFx67llDortmundPlanByPlanId(Long planId);
-
-    /**
-     * 查询可关联的已采用回报组合
-     *
-     * @return 已采用回报组合集合
-     */
-    public List<Fx67llDortmundReturnCombination> selectAdoptedReturnCombinationOptions();
 
     /**
      * 查询方案计划已保存摘要
