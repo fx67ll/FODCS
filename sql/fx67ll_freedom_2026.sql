@@ -1,5 +1,5 @@
 -- ----------------------------
--- 1、建表说明与删除段（先删旧遗留表，再删并重建本阶段 17 张表）
+-- 1、建表说明与删除段（先删旧遗留表，再删并重建本阶段 18 张表）
 -- ----------------------------
 
 -- 旧分析 / 评分（只删不建；先删除下游评分，再删除分析）
@@ -25,6 +25,7 @@ DROP TABLE IF EXISTS `fx67ll_dortmund_extra_simulate_version`;
 DROP TABLE IF EXISTS `fx67ll_dortmund_extra`;
 DROP TABLE IF EXISTS `fx67ll_dortmund_plan_match_rel`;
 DROP TABLE IF EXISTS `fx67ll_dortmund_plan_return_rel`;
+DROP TABLE IF EXISTS `fx67ll_dortmund_return_image`;
 DROP TABLE IF EXISTS `fx67ll_dortmund_return_combination_item`;
 DROP TABLE IF EXISTS `fx67ll_dortmund_return_combination`;
 DROP TABLE IF EXISTS `fx67ll_dortmund_return_generation`;
@@ -58,7 +59,6 @@ CREATE TABLE `fx67ll_dortmund_season` (
   UNIQUE KEY `uk_season_code` (`season_code`) COMMENT '赛季编码唯一索引（防止业务编码重复）',
   KEY `idx_season_status` (`season_status`) COMMENT '赛季状态索引（加速筛选进行中/已结束赛季）',
   KEY `idx_season_sort` (`season_sort`) COMMENT '赛季排序索引（加速前端展示排序）',
-  KEY `idx_user_id` (`user_id`) COMMENT '用户ID索引（加速按用户查询赛季）',
   KEY `idx_user_id_status` (`user_id`, `season_status`) COMMENT '用户+状态组合索引（优化按用户筛选进行中赛季）'
 ) ENGINE=innodb DEFAULT CHARSET=utf8mb4 COMMENT='赛季管理表';
 
@@ -89,7 +89,6 @@ CREATE TABLE `fx67ll_dortmund_team` (
   KEY `idx_team_status` (`team_status`) COMMENT '球队状态索引（加速筛选启用/停用球队）',
   KEY `idx_team_sort` (`team_sort`) COMMENT '球队排序索引（加速前端展示排序）',
   KEY `idx_team_country` (`team_country`) COMMENT '球队国家索引（加速按国家筛选球队）',
-  KEY `idx_user_id` (`user_id`) COMMENT '用户ID索引（加速按用户查询球队）',
   KEY `idx_user_id_country` (`user_id`, `team_country`) COMMENT '用户+国家组合索引（优化按用户筛选某国家球队）'
 ) ENGINE=innodb DEFAULT CHARSET=utf8mb4 COMMENT='球队管理表';
 
@@ -157,7 +156,6 @@ CREATE TABLE `fx67ll_dortmund_info_point` (
   KEY `idx_season_id` (`season_id`) COMMENT '赛季ID索引',
   KEY `idx_match_id` (`match_id`) COMMENT '比赛ID索引',
   KEY `idx_point_status` (`point_status`) COMMENT '信息点状态索引',
-  KEY `idx_user_id` (`user_id`) COMMENT '用户ID索引',
   KEY `idx_user_id_type` (`user_id`, `info_point_type`) COMMENT '用户+类型组合索引',
   FOREIGN KEY (`season_id`) REFERENCES `fx67ll_dortmund_season`(`season_id`) ON DELETE RESTRICT,
   FOREIGN KEY (`match_id`) REFERENCES `fx67ll_dortmund_match`(`match_id`) ON DELETE RESTRICT
@@ -215,7 +213,6 @@ CREATE TABLE `fx67ll_dortmund_odds` (
   UNIQUE KEY `uk_odds_user_code` (`user_id`, `odds_code`) COMMENT '用户+odds编码唯一索引',
   KEY `idx_odds_match_time` (`match_id`, `source_time`) COMMENT '比赛+来源时间索引',
   KEY `idx_odds_match_active` (`match_id`, `active_flag`) COMMENT '比赛+有效状态索引',
-  KEY `idx_odds_user_id` (`user_id`) COMMENT '用户ID索引',
   FOREIGN KEY (`match_id`) REFERENCES `fx67ll_dortmund_match` (`match_id`) ON DELETE RESTRICT
 ) ENGINE=innodb DEFAULT CHARSET=utf8mb4 COMMENT='比赛odds快照表';
 
@@ -232,17 +229,25 @@ CREATE TABLE `fx67ll_dortmund_return_generation` (
   `generation_status` char(1) NOT NULL DEFAULT '0' COMMENT '生成状态（0-处理中，1-成功，2-失败，复用fx67ll_ai_analysis_status）',
   `generation_remark` varchar(1023) DEFAULT NULL COMMENT '成功或失败的最新受控备注',
   `generated_count` int(11) unsigned NOT NULL DEFAULT 0 COMMENT '后端校验通过并落库的组合数',
-  `started_time` datetime NOT NULL COMMENT '生成批次业务开始时间',
+  `started_time` datetime NOT NULL COMMENT '生成批次受理并开始排队的时间；实际worker领取时间由lease_expire_time与尝试次数体现',
   `finished_time` datetime DEFAULT NULL COMMENT '生成批次业务结束时间',
   `user_id` bigint(20) NOT NULL COMMENT '归属用户',
+  `client_request_id` varchar(64) NOT NULL COMMENT '客户端幂等请求号（同一用户内唯一）',
+  `worker_id` varchar(64) DEFAULT NULL COMMENT '当前异步任务租约持有者',
+  `lease_expire_time` datetime DEFAULT NULL COMMENT '异步任务租约到期时间',
+  `attempt_count` int(11) NOT NULL DEFAULT 0 COMMENT '已尝试次数（含当前执行）',
+  `max_attempts` int(11) NOT NULL DEFAULT 3 COMMENT '最大尝试次数',
+  `next_retry_time` datetime DEFAULT NULL COMMENT '下次允许重试时间',
   `create_by` varchar(64) DEFAULT '' COMMENT '记录创建者用户名',
   `create_time` datetime DEFAULT CURRENT_TIMESTAMP COMMENT '记录创建时间',
   `update_by` varchar(64) DEFAULT '' COMMENT '记录最后更新者用户名',
   `update_time` datetime DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '记录最后更新时间',
   PRIMARY KEY (`generation_id`),
   UNIQUE KEY `uk_generation_user_code` (`user_id`, `generation_code`) COMMENT '用户+批次编码唯一索引',
+  UNIQUE KEY `uk_generation_client_request` (`user_id`, `client_request_id`) COMMENT '用户+客户端请求号幂等唯一索引',
   KEY `idx_generation_user_status_time` (`user_id`, `generation_status`, `create_time`) COMMENT '用户+状态+创建时间索引',
-  KEY `idx_generation_mode_time` (`generation_mode`, `create_time`) COMMENT '模式+创建时间索引'
+  KEY `idx_generation_mode_time` (`generation_mode`, `create_time`) COMMENT '模式+创建时间索引',
+  KEY `idx_generation_dispatch` (`generation_status`, `lease_expire_time`, `next_retry_time`, `create_time`) COMMENT '异步任务领取与租约恢复索引'
 ) ENGINE=innodb DEFAULT CHARSET=utf8mb4 COMMENT='回报组合生成批次表';
 
 -- ----------------------------
@@ -260,7 +265,6 @@ CREATE TABLE `fx67ll_dortmund_return_combination` (
   `adopted_flag` char(1) NOT NULL DEFAULT 'N' COMMENT '是否采用（复用sys_yes_no）',
   `review_by` varchar(64) DEFAULT NULL COMMENT '最近决定采用状态的用户名',
   `review_time` datetime DEFAULT NULL COMMENT '最近决定采用状态的时间',
-  `combination_image_object_keys` varchar(3071) DEFAULT NULL COMMENT '最多三个相对对象键，逗号分隔',
   `combination_remark` mediumtext COMMENT '完整业务分析内容及组合处理备注（不含AI治理元数据）',
   `user_id` bigint(20) NOT NULL COMMENT '归属用户',
   `create_by` varchar(64) DEFAULT '' COMMENT '记录创建者用户名',
@@ -285,7 +289,8 @@ CREATE TABLE `fx67ll_dortmund_return_combination_item` (
   `selection_type` char(2) NOT NULL COMMENT '选择类型（HW/DR/AW/HH/HD/HA）',
   `odds_value_snapshot` decimal(10,4) NOT NULL COMMENT '生成时倍率值快照',
   `manual_weight_snapshot` decimal(5,2) DEFAULT NULL COMMENT '用户原始权重快照（0-100）',
-  `applied_weight` decimal(5,2) NOT NULL COMMENT '本次实际使用权重（0-100）',
+  `applied_weight` decimal(5,2) NOT NULL COMMENT 'AI评估权重（0-100），仅用于解释与复核，不参与任何金额计算',
+  `selection_reason` varchar(1023) DEFAULT NULL COMMENT '逐场选择理由快照，仅用于复核，不参与任何金额计算',
   `item_sort` int(4) NOT NULL DEFAULT 0 COMMENT '组合内展示顺序',
   `create_by` varchar(64) DEFAULT '' COMMENT '记录创建者用户名',
   `create_time` datetime DEFAULT CURRENT_TIMESTAMP COMMENT '记录创建时间',
@@ -299,15 +304,44 @@ CREATE TABLE `fx67ll_dortmund_return_combination_item` (
 ) ENGINE=innodb DEFAULT CHARSET=utf8mb4 COMMENT='回报组合明细表';
 
 -- ----------------------------
--- 11、方案计划表（第 1.5 阶段最终定义）
+-- 11、回报组合图片登记表
+-- ----------------------------
+CREATE TABLE `fx67ll_dortmund_return_image` (
+  `image_id` bigint(20) NOT NULL AUTO_INCREMENT COMMENT '图片登记唯一标识（主键）',
+  `combination_id` bigint(20) DEFAULT NULL COMMENT '关联的回报组合ID；T状态未绑定时为空，B状态必须指向已采用组合',
+  `object_key` varchar(512) NOT NULL COMMENT 'RuoYi返回的相对对象键，全局唯一，不保存服务器绝对路径',
+  `original_name` varchar(255) DEFAULT NULL COMMENT '上传原始文件名',
+  `content_type` varchar(128) DEFAULT NULL COMMENT '文件MIME类型',
+  `file_size` bigint(20) NOT NULL DEFAULT 0 COMMENT '文件大小（字节）',
+  `user_id` bigint(20) NOT NULL COMMENT '图片归属用户，必须与所属组合user_id一致',
+  `image_state` char(1) NOT NULL DEFAULT 'T' COMMENT '图片状态（T-已存储未绑定，B-已绑定已采用组合，D-待删除，Q-隔离）',
+  `expire_time` datetime DEFAULT NULL COMMENT 'T状态临时过期时间；B状态为空',
+  `delete_attempts` int(11) NOT NULL DEFAULT 0 COMMENT '删除尝试次数',
+  `next_retry_time` datetime DEFAULT NULL COMMENT 'D/Q状态下次删除重试时间',
+  `last_error` varchar(500) DEFAULT NULL COMMENT '最近一次删除失败的受控错误摘要，不保存完整堆栈',
+  `create_by` varchar(64) DEFAULT '' COMMENT '实际上传人用户名，用于审计',
+  `create_time` datetime DEFAULT CURRENT_TIMESTAMP COMMENT '记录创建时间',
+  `update_by` varchar(64) DEFAULT '' COMMENT '记录最后更新者用户名',
+  `update_time` datetime DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '记录最后更新时间',
+  PRIMARY KEY (`image_id`),
+  UNIQUE KEY `uk_return_image_object_key` (`object_key`) COMMENT '对象键全局唯一',
+  KEY `idx_return_image_combination_state` (`combination_id`, `image_state`) COMMENT '组合+状态索引（详情、计数与按组合清理）',
+  KEY `idx_return_image_user_state_time` (`user_id`, `image_state`, `create_time`) COMMENT '用户+状态+上传时间索引',
+  KEY `idx_return_image_cleanup_expire` (`image_state`, `expire_time`) COMMENT 'T状态过期回收索引',
+  KEY `idx_return_image_cleanup_retry` (`image_state`, `next_retry_time`) COMMENT 'D/Q状态重试回收索引',
+  FOREIGN KEY (`combination_id`) REFERENCES `fx67ll_dortmund_return_combination` (`combination_id`) ON DELETE RESTRICT
+) ENGINE=innodb DEFAULT CHARSET=utf8mb4 COMMENT='回报组合图片登记与孤儿回收表';
+
+-- ----------------------------
+-- 12、方案计划表（第 1.5 阶段最终定义）
 -- ----------------------------
 CREATE TABLE `fx67ll_dortmund_plan` (
   `plan_id` bigint(20) NOT NULL AUTO_INCREMENT COMMENT '方案计划唯一标识（主键）',
   `plan_content` varchar(1023) NOT NULL COMMENT '正文',
-  `plan_rate` decimal(10,4) DEFAULT NULL COMMENT '手工调整倍率（空表示使用自动倍率）',
-  `plan_amount` decimal(14,2) DEFAULT NULL COMMENT '手工调整金额（空表示使用自动金额）',
-  `calculated_plan_rate` decimal(10,4) DEFAULT NULL COMMENT '按关联组合自动计算的倍率',
-  `calculated_plan_amount` decimal(14,2) DEFAULT NULL COMMENT '按关联组合自动计算的金额',
+  `plan_rate` decimal(24,6) DEFAULT NULL COMMENT '手工调整倍率（空表示使用自动倍率，最多18位整数与6位小数）',
+  `plan_amount` decimal(24,2) DEFAULT NULL COMMENT '手工调整金额（空表示使用自动金额，最多22位整数与2位小数）',
+  `calculated_plan_rate` decimal(24,6) DEFAULT NULL COMMENT '按关联组合自动计算的倍率，写入前校验上限',
+  `calculated_plan_amount` decimal(24,2) DEFAULT NULL COMMENT '按关联组合自动计算的金额，写入前校验上限',
   `summary_content` mediumtext COMMENT '最近一次成功保存的方案计划摘要正文',
   `summary_update_flag` char(1) NOT NULL DEFAULT 'Y' COMMENT '摘要更新标记（Y-需要刷新，N-与当前数据一致）',
   `summary_update_time` datetime DEFAULT NULL COMMENT '最近一次成功保存摘要正文的时间',
@@ -323,7 +357,7 @@ CREATE TABLE `fx67ll_dortmund_plan` (
 ) ENGINE=innodb DEFAULT CHARSET=utf8mb4 COMMENT='方案计划表';
 
 -- ----------------------------
--- 12、方案计划与回报组合关系表
+-- 13、方案计划与回报组合关系表
 -- ----------------------------
 CREATE TABLE `fx67ll_dortmund_plan_return_rel` (
   `rel_id` bigint(20) NOT NULL AUTO_INCREMENT COMMENT '关系唯一标识（主键）',
@@ -335,14 +369,14 @@ CREATE TABLE `fx67ll_dortmund_plan_return_rel` (
   `update_by` varchar(64) DEFAULT '' COMMENT '记录最后更新者用户名',
   `update_time` datetime DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '记录最后更新时间',
   PRIMARY KEY (`rel_id`),
-  UNIQUE KEY `uk_plan_combination` (`plan_id`, `combination_id`) COMMENT '同一方案计划与组合只保留一行',
   UNIQUE KEY `uk_plan_return_combination` (`combination_id`) COMMENT '同一组合最多被一个方案计划使用',
+  KEY `idx_plan_id` (`plan_id`) COMMENT '按方案计划查询并支撑plan_id外键',
   FOREIGN KEY (`plan_id`) REFERENCES `fx67ll_dortmund_plan` (`plan_id`) ON DELETE RESTRICT,
   FOREIGN KEY (`combination_id`) REFERENCES `fx67ll_dortmund_return_combination` (`combination_id`) ON DELETE RESTRICT
 ) ENGINE=innodb DEFAULT CHARSET=utf8mb4 COMMENT='方案计划与回报组合关系表';
 
 -- ----------------------------
--- 13、方案计划与比赛关系表
+-- 14、方案计划与比赛关系表
 -- ----------------------------
 CREATE TABLE `fx67ll_dortmund_plan_match_rel` (
   `rel_id` bigint(20) NOT NULL AUTO_INCREMENT COMMENT '关系唯一标识（主键）',
@@ -360,28 +394,30 @@ CREATE TABLE `fx67ll_dortmund_plan_match_rel` (
 ) ENGINE=innodb DEFAULT CHARSET=utf8mb4 COMMENT='方案计划与比赛关系表';
 
 -- ----------------------------
--- 14、外快盈亏表（第 6 周，按历史字段原样重建）
+-- 15、外快盈亏表（第 6 周，保留历史文本数值语义并补齐归属、时间默认值与索引）
 -- ----------------------------
 CREATE TABLE `fx67ll_dortmund_extra` (
   `extra_id` bigint(20) NOT NULL AUTO_INCREMENT COMMENT '外快记录主键',
-  `extra_money` varchar(23) DEFAULT '0' COMMENT '当前外快总金额',
+  `extra_money` varchar(23) NOT NULL DEFAULT '0' COMMENT '当前外快总金额（十进制文本，服务端按BigDecimal转换，不参与SQL算术）',
   `is_win` char(1) DEFAULT 'N' COMMENT '是否盈利（Y是 N否）',
-  `win_money` varchar(23) DEFAULT '0' COMMENT '外快盈亏金额',
-  `seed_money` varchar(23) DEFAULT '0' COMMENT '当前投入本金',
-  `save_money` varchar(23) DEFAULT '0' COMMENT '已经落袋为安的盈利金额',
-  `target_money` varchar(23) DEFAULT '0' COMMENT '目标金额',
+  `win_money` varchar(23) NOT NULL DEFAULT '0' COMMENT '外快盈亏金额（十进制文本，服务端按BigDecimal转换）',
+  `seed_money` varchar(23) NOT NULL DEFAULT '0' COMMENT '当前投入本金（十进制文本，服务端按BigDecimal转换）',
+  `save_money` varchar(23) NOT NULL DEFAULT '0' COMMENT '已经落袋为安的盈利金额（十进制文本，服务端按BigDecimal转换）',
+  `target_money` varchar(23) NOT NULL DEFAULT '0' COMMENT '目标金额（十进制文本，服务端按BigDecimal转换）',
   `extra_remark` varchar(1023) DEFAULT '' COMMENT '外快盈亏备注',
   `del_flag` char(1) DEFAULT '0' COMMENT '删除标志（0代表存在 2代表删除）',
-  `user_id` bigint(20) COMMENT '用户ID',
+  `user_id` bigint(20) NOT NULL COMMENT '归属用户ID（服务端写入）',
   `create_by` varchar(64) DEFAULT '' COMMENT '记录创建者用户名',
-  `create_time` datetime COMMENT '记录创建时间',
+  `create_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '记录创建时间',
   `update_by` varchar(64) DEFAULT '' COMMENT '记录更新者',
-  `update_time` datetime COMMENT '记录更新时间',
-  PRIMARY KEY (`extra_id`)
+  `update_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '记录更新时间',
+  PRIMARY KEY (`extra_id`),
+  KEY `idx_extra_user_create_time` (`user_id`, `create_time`) COMMENT '用户+创建时间索引（历史列表与APP查询）',
+  KEY `idx_extra_user_win_time` (`user_id`, `is_win`, `create_time`) COMMENT '用户+盈利状态+创建时间索引（筛选）'
 ) ENGINE=innodb DEFAULT CHARSET=utf8mb4 COMMENT='外快盈亏记录表';
 
 -- ----------------------------
--- 15、外快盈亏与方案计划关系表（第 6 周）
+-- 16、外快盈亏与方案计划关系表（第 6 周）
 -- ----------------------------
 CREATE TABLE `fx67ll_dortmund_extra_plan_rel` (
   `rel_id` bigint(20) NOT NULL AUTO_INCREMENT COMMENT '关系唯一标识（主键）',
@@ -399,53 +435,57 @@ CREATE TABLE `fx67ll_dortmund_extra_plan_rel` (
 ) ENGINE=innodb DEFAULT CHARSET=utf8mb4 COMMENT='外快盈亏与方案计划关系表';
 
 -- ----------------------------
--- 16、数值模拟版本表（第 8 周，按历史字段原样重建）
+-- 17、数值模拟版本表（第 8 周，保留历史文本数值语义并补齐唯一约束与索引）
 -- ----------------------------
 CREATE TABLE `fx67ll_dortmund_extra_simulate_version` (
   `version_id` bigint(20) NOT NULL AUTO_INCREMENT COMMENT '数值模拟版本记录主键',
-  `version_no` int(11) DEFAULT 1 COMMENT '版本序号（同一用户内递增）',
+  `version_no` int(11) NOT NULL DEFAULT 1 COMMENT '版本序号（同一用户内递增，数据库唯一约束兜底）',
   `version_name` varchar(64) DEFAULT '' COMMENT '版本名称',
   `sim_mode` varchar(8) DEFAULT 'full' COMMENT '模拟模式（full全量滚动 half半量滚动）',
-  `initial_value` varchar(23) DEFAULT '0' COMMENT '初始数值',
-  `coefficient` varchar(23) DEFAULT '0' COMMENT '每轮系数',
-  `target_value` varchar(23) DEFAULT '0' COMMENT '目标数值',
+  `initial_value` varchar(23) NOT NULL DEFAULT '0' COMMENT '初始数值（十进制文本，服务端按BigDecimal转换）',
+  `coefficient` varchar(23) NOT NULL DEFAULT '0' COMMENT '每轮系数（十进制文本，服务端按BigDecimal转换）',
+  `target_value` varchar(23) NOT NULL DEFAULT '0' COMMENT '目标数值（十进制文本，服务端按BigDecimal转换）',
   `del_flag` char(1) DEFAULT '0' COMMENT '删除标志（0代表存在 2代表删除）',
   `invalid_flag` char(1) DEFAULT '0' COMMENT '作废标志（0代表正常 1代表已作废，作废后不在列表中展示）',
-  `user_id` bigint(20) COMMENT '用户ID',
+  `user_id` bigint(20) NOT NULL COMMENT '归属用户ID（服务端写入）',
   `create_by` varchar(64) DEFAULT '' COMMENT '记录创建者用户名',
-  `create_time` datetime COMMENT '记录创建时间',
+  `create_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '记录创建时间',
   `update_by` varchar(64) DEFAULT '' COMMENT '记录更新者',
-  `update_time` datetime COMMENT '记录更新时间',
-  PRIMARY KEY (`version_id`)
+  `update_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '记录更新时间',
+  PRIMARY KEY (`version_id`),
+  UNIQUE KEY `uk_sim_version_user_no` (`user_id`, `version_no`) COMMENT '同一用户的版本序号唯一',
+  KEY `idx_sim_version_user_invalid_time` (`user_id`, `invalid_flag`, `create_time`) COMMENT '用户+作废状态+创建时间索引'
 ) ENGINE=innodb DEFAULT CHARSET=utf8mb4 COMMENT='外快盈亏数值模拟版本记录表';
 
 -- ----------------------------
--- 17、数值模拟轮次表（第 8 周，按历史字段原样重建）
+-- 18、数值模拟轮次表（第 8 周，保留历史文本数值语义并补齐唯一约束与版本外键）
 -- ----------------------------
 CREATE TABLE `fx67ll_dortmund_extra_simulate` (
   `sim_id` bigint(20) NOT NULL AUTO_INCREMENT COMMENT '数值模拟轮次记录主键',
   `version_id` bigint(20) NOT NULL COMMENT '所属模拟版本主键',
   `sim_mode` varchar(8) DEFAULT 'full' COMMENT '模拟模式（full全量滚动 half半量滚动）',
-  `round_no` int(11) DEFAULT 1 COMMENT '轮次序号（版本内序号，新版本从1开始）',
-  `start_value` varchar(23) DEFAULT '0' COMMENT '本轮开始数值',
-  `join_value` varchar(23) DEFAULT '0' COMMENT '本轮参与滚动数值',
+  `round_no` int(11) NOT NULL DEFAULT 1 COMMENT '轮次序号（版本内序号，新版本从1开始；负值表示强制作废版本）',
+  `start_value` varchar(23) NOT NULL DEFAULT '0' COMMENT '本轮开始数值（十进制文本，服务端按BigDecimal转换）',
+  `join_value` varchar(23) NOT NULL DEFAULT '0' COMMENT '本轮参与滚动数值（十进制文本，服务端按BigDecimal转换）',
   `is_hit` char(1) DEFAULT 'N' COMMENT '本轮是否达成（Y是 N否）',
-  `return_value` varchar(23) DEFAULT '0' COMMENT '本轮实际回收数值（不必然等于参与数值乘系数，支持部分回本）',
-  `end_value` varchar(23) DEFAULT '0' COMMENT '本轮结束数值',
-  `round_change` varchar(23) DEFAULT '0' COMMENT '本轮数值变动倍数',
-  `coefficient` varchar(23) DEFAULT '0' COMMENT '本轮使用系数',
+  `return_value` varchar(23) NOT NULL DEFAULT '0' COMMENT '本轮实际回收数值（十进制文本，允许部分回本）',
+  `end_value` varchar(23) NOT NULL DEFAULT '0' COMMENT '本轮结束数值（十进制文本，服务端按BigDecimal转换）',
+  `round_change` varchar(23) NOT NULL DEFAULT '0' COMMENT '本轮数值变动倍数（十进制文本，服务端按BigDecimal转换）',
+  `coefficient` varchar(23) NOT NULL DEFAULT '0' COMMENT '本轮使用系数（十进制文本，服务端按BigDecimal转换）',
   `del_flag` char(1) DEFAULT '0' COMMENT '删除标志（0代表存在 2代表删除）',
-  `user_id` bigint(20) COMMENT '用户ID',
+  `user_id` bigint(20) NOT NULL COMMENT '归属用户ID（服务端写入）',
   `create_by` varchar(64) DEFAULT '' COMMENT '记录创建者用户名',
-  `create_time` datetime COMMENT '记录创建时间',
+  `create_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '记录创建时间',
   `update_by` varchar(64) DEFAULT '' COMMENT '记录更新者',
-  `update_time` datetime COMMENT '记录更新时间',
+  `update_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '记录更新时间',
   PRIMARY KEY (`sim_id`),
-  KEY `idx_simulate_version_id` (`version_id`) COMMENT '版本ID索引（加速按版本查询轮次记录）'
+  UNIQUE KEY `uk_sim_round_version_no` (`version_id`, `round_no`) COMMENT '同一版本内轮次序号唯一',
+  KEY `idx_simulate_user_version_time` (`user_id`, `version_id`, `create_time`) COMMENT '用户+版本+创建时间索引',
+  FOREIGN KEY (`version_id`) REFERENCES `fx67ll_dortmund_extra_simulate_version`(`version_id`) ON DELETE RESTRICT
 ) ENGINE=innodb DEFAULT CHARSET=utf8mb4 COMMENT='外快盈亏数值模拟轮次记录表';
 
 -- ----------------------------
--- 18、数值轮次与方案计划关系表（第 8 周）
+-- 19、数值轮次与方案计划关系表（第 8 周）
 -- ----------------------------
 CREATE TABLE `fx67ll_dortmund_round_plan_rel` (
   `rel_id` bigint(20) NOT NULL AUTO_INCREMENT COMMENT '关系唯一标识（主键）',
@@ -463,7 +503,7 @@ CREATE TABLE `fx67ll_dortmund_round_plan_rel` (
 ) ENGINE=innodb DEFAULT CHARSET=utf8mb4 COMMENT='数值轮次与方案计划关系表';
 
 -- ----------------------------
--- 19、字典类型（复用字典自 fx67ll_ry_2023.sql 原样迁入，沿用原字典主键 18、19；本阶段新增字典从 20 起分配）
+-- 20、字典类型（复用字典自 fx67ll_ry_2023.sql 原样迁入，沿用原字典主键 18、19；本阶段新增字典从 20 起分配）
 -- ----------------------------
 
 -- 比赛标准化评分记录管理枚举项插入值
@@ -479,13 +519,13 @@ insert into sys_dict_type values(21, '是否可公开',          'fx67ll_dortmun
 -- 1.5阶段相关枚举项插入值
 insert into sys_dict_type values(22, '倍率类型',             'fx67ll_dortmund_odds_type',           '0', 'admin', sysdate(), '', null, '倍率类型列表');
 insert into sys_dict_type values(23, '回报生成模式',         'fx67ll_dortmund_generation_mode',     '0', 'admin', sysdate(), '', null, '回报生成模式列表');
-insert into sys_dict_type values(24, 'AI处理状态',           'fx67ll_ai_analysis_status',             '0', 'admin', sysdate(), '', null, 'AI生成、分析和评分共用处理状态列表');
+insert into sys_dict_type values(24, 'AI分析统一状态',       'fx67ll_ai_analysis_status',             '0', 'admin', sysdate(), '', null, 'AI统一状态列表：0处理中、1成功、2失败；生成、分析、评分及公开文本检测、审核、发布复用，页面按业务语境映射文案');
 
 -- ----------------------------
--- 20、字典数据（复用字典自 fx67ll_ry_2023.sql 原样迁入，沿用原字典编码 56 到 61；本阶段新增字典数据从 62 起分配）
+-- 21、字典数据（复用字典自 fx67ll_ry_2023.sql 原样迁入，沿用原字典编码 56 到 61；本阶段新增字典数据从 62 起分配）
 -- ----------------------------
 
--- 比赛标准化评分记录管理枚举项插入值
+-- 比赛结果枚举项插入值
 insert into sys_dict_data values(56, 1,  '胜',       '0',       'fx67ll_match_result',         '',   '',     'N', '0', 'admin', sysdate(), '', null, '胜');
 insert into sys_dict_data values(57, 2,  '平',       '1',       'fx67ll_match_result',         '',   '',     'N', '0', 'admin', sysdate(), '', null, '平');
 insert into sys_dict_data values(58, 3,  '负',       '2',       'fx67ll_match_result',         '',   '',     'N', '0', 'admin', sysdate(), '', null, '负');
@@ -515,7 +555,7 @@ insert into sys_dict_data values(71, 6,  '让分客胜',        'HA', 'fx67ll_do
 insert into sys_dict_data values(72, 1,  '主观模式',        'S',  'fx67ll_dortmund_generation_mode',    '',   '',     'N', '0', 'admin', sysdate(), '', null, '主观模式');
 insert into sys_dict_data values(73, 2,  'AI辅助模式',      'A',  'fx67ll_dortmund_generation_mode',    '',   '',     'N', '0', 'admin', sysdate(), '', null, 'AI辅助模式');
 
--- AI生成、分析和评分共用处理状态枚举项
+-- AI统一状态枚举项（0/1/2 保持历史编码；生成、分析、评分及公开文本检测、审核、发布的 0/1/2 共用）
 insert into sys_dict_data values(74, 1,  '处理中',          '0',  'fx67ll_ai_analysis_status',            '',   '',     'N', '0', 'admin', sysdate(), '', null, '处理中');
 insert into sys_dict_data values(75, 2,  '成功',            '1',  'fx67ll_ai_analysis_status',            '',   '',     'N', '0', 'admin', sysdate(), '', null, '成功');
 insert into sys_dict_data values(76, 3,  '失败',            '2',  'fx67ll_ai_analysis_status',            '',   '',     'N', '0', 'admin', sysdate(), '', null, '失败');
