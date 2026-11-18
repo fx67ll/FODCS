@@ -271,7 +271,7 @@ CREATE TABLE `fx67ll_dortmund_return_generation` (
 ) ENGINE=innodb DEFAULT CHARSET=utf8mb4 COMMENT='回报组合生成批次表';
 
 -- ----------------------------
--- 8.1、回报组合证据表（自动AI专用）
+-- 9、回报组合证据表（自动AI专用）
 -- ----------------------------
 CREATE TABLE `fx67ll_dortmund_return_evidence` (
   `evidence_id` bigint(20) NOT NULL AUTO_INCREMENT COMMENT '证据唯一标识（主键）',
@@ -304,7 +304,7 @@ CREATE TABLE `fx67ll_dortmund_return_evidence` (
 ) ENGINE=innodb DEFAULT CHARSET=utf8mb4 COMMENT='回报组合证据冻结表（自动AI专用）';
 
 -- ----------------------------
--- 9、回报组合主表
+-- 10、回报组合主表
 -- ----------------------------
 CREATE TABLE `fx67ll_dortmund_return_combination` (
   `combination_id` bigint(20) NOT NULL AUTO_INCREMENT COMMENT '回报组合唯一标识（主键）',
@@ -335,7 +335,7 @@ CREATE TABLE `fx67ll_dortmund_return_combination` (
 ) ENGINE=innodb DEFAULT CHARSET=utf8mb4 COMMENT='回报组合主表';
 
 -- ----------------------------
--- 10、回报组合明细表
+-- 11、回报组合明细表
 -- ----------------------------
 CREATE TABLE `fx67ll_dortmund_return_combination_item` (
   `item_id` bigint(20) NOT NULL AUTO_INCREMENT COMMENT '组合明细唯一标识（主键）',
@@ -363,7 +363,7 @@ CREATE TABLE `fx67ll_dortmund_return_combination_item` (
 ) ENGINE=innodb DEFAULT CHARSET=utf8mb4 COMMENT='回报组合明细表';
 
 -- ----------------------------
--- 11、回报组合图片登记表
+-- 12、回报组合图片登记表
 -- ----------------------------
 CREATE TABLE `fx67ll_dortmund_return_image` (
   `image_id` bigint(20) NOT NULL AUTO_INCREMENT COMMENT '图片登记唯一标识（主键）',
@@ -392,7 +392,7 @@ CREATE TABLE `fx67ll_dortmund_return_image` (
 ) ENGINE=innodb DEFAULT CHARSET=utf8mb4 COMMENT='回报组合图片登记与孤儿回收表';
 
 -- ----------------------------
--- 12、方案计划表（第 1.5 阶段最终定义）
+-- 13、方案计划表（第 1.5 阶段最终定义）
 -- ----------------------------
 CREATE TABLE `fx67ll_dortmund_plan` (
   `plan_id` bigint(20) NOT NULL AUTO_INCREMENT COMMENT '方案计划唯一标识（主键）',
@@ -416,7 +416,7 @@ CREATE TABLE `fx67ll_dortmund_plan` (
 ) ENGINE=innodb DEFAULT CHARSET=utf8mb4 COMMENT='方案计划表';
 
 -- ----------------------------
--- 13、方案计划与回报组合关系表
+-- 14、方案计划与回报组合关系表
 -- ----------------------------
 CREATE TABLE `fx67ll_dortmund_plan_return_rel` (
   `rel_id` bigint(20) NOT NULL AUTO_INCREMENT COMMENT '关系唯一标识（主键）',
@@ -435,7 +435,7 @@ CREATE TABLE `fx67ll_dortmund_plan_return_rel` (
 ) ENGINE=innodb DEFAULT CHARSET=utf8mb4 COMMENT='方案计划与回报组合关系表';
 
 -- ----------------------------
--- 14、方案计划与比赛关系表
+-- 15、方案计划与比赛关系表
 -- ----------------------------
 CREATE TABLE `fx67ll_dortmund_plan_match_rel` (
   `rel_id` bigint(20) NOT NULL AUTO_INCREMENT COMMENT '关系唯一标识（主键）',
@@ -453,7 +453,7 @@ CREATE TABLE `fx67ll_dortmund_plan_match_rel` (
 ) ENGINE=innodb DEFAULT CHARSET=utf8mb4 COMMENT='方案计划与比赛关系表';
 
 -- ----------------------------
--- 15、外快盈亏表（第 6 周，保留历史文本数值语义并补齐归属、时间默认值与索引）
+-- 16、外快盈亏表（第 6 周，保留历史文本数值语义并补齐归属、时间默认值与索引）
 -- ----------------------------
 CREATE TABLE `fx67ll_dortmund_extra` (
   `extra_id` bigint(20) NOT NULL AUTO_INCREMENT COMMENT '外快记录主键',
@@ -476,7 +476,7 @@ CREATE TABLE `fx67ll_dortmund_extra` (
 ) ENGINE=innodb DEFAULT CHARSET=utf8mb4 COMMENT='外快盈亏记录表';
 
 -- ----------------------------
--- 16、外快盈亏与方案计划关系表（第 6 周）
+-- 17、外快盈亏与方案计划关系表（第 6 周）
 -- ----------------------------
 CREATE TABLE `fx67ll_dortmund_extra_plan_rel` (
   `rel_id` bigint(20) NOT NULL AUTO_INCREMENT COMMENT '关系唯一标识（主键）',
@@ -494,7 +494,7 @@ CREATE TABLE `fx67ll_dortmund_extra_plan_rel` (
 ) ENGINE=innodb DEFAULT CHARSET=utf8mb4 COMMENT='外快盈亏与方案计划关系表';
 
 -- ----------------------------
--- 17、数值模拟版本表（第 8 周，保留历史文本数值语义并补齐唯一约束与索引）
+-- 18、数值模拟版本表（第 8 周，保留历史文本数值语义并补齐唯一约束与索引）
 -- ----------------------------
 CREATE TABLE `fx67ll_dortmund_extra_simulate_version` (
   `version_id` bigint(20) NOT NULL AUTO_INCREMENT COMMENT '数值模拟版本记录主键',
@@ -517,7 +517,7 @@ CREATE TABLE `fx67ll_dortmund_extra_simulate_version` (
 ) ENGINE=innodb DEFAULT CHARSET=utf8mb4 COMMENT='外快盈亏数值模拟版本记录表';
 
 -- ----------------------------
--- 18、数值模拟轮次表（第 8 周，保留历史文本数值语义并补齐唯一约束与版本外键）
+-- 19、数值模拟轮次表（第 8 周，保留历史文本数值语义并补齐唯一约束与版本外键）
 -- ----------------------------
 CREATE TABLE `fx67ll_dortmund_extra_simulate` (
   `sim_id` bigint(20) NOT NULL AUTO_INCREMENT COMMENT '数值模拟轮次记录主键',
@@ -544,7 +544,7 @@ CREATE TABLE `fx67ll_dortmund_extra_simulate` (
 ) ENGINE=innodb DEFAULT CHARSET=utf8mb4 COMMENT='外快盈亏数值模拟轮次记录表';
 
 -- ----------------------------
--- 19、数值轮次与方案计划关系表（第 8 周）
+-- 20、数值轮次与方案计划关系表（第 8 周）
 -- ----------------------------
 CREATE TABLE `fx67ll_dortmund_round_plan_rel` (
   `rel_id` bigint(20) NOT NULL AUTO_INCREMENT COMMENT '关系唯一标识（主键）',
@@ -562,7 +562,7 @@ CREATE TABLE `fx67ll_dortmund_round_plan_rel` (
 ) ENGINE=innodb DEFAULT CHARSET=utf8mb4 COMMENT='数值轮次与方案计划关系表';
 
 -- ----------------------------
--- 20、字典类型（复用字典自 fx67ll_ry_2023.sql 原样迁入，沿用原字典主键 18、19；本阶段新增字典从 20 起分配）
+-- 21、字典类型（复用字典自 fx67ll_ry_2023.sql 原样迁入，沿用原字典主键 18、19；本阶段新增字典从 20 起分配）
 -- ----------------------------
 
 -- 比赛标准化评分记录管理枚举项插入值
