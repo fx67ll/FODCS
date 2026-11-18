@@ -1,5 +1,5 @@
 -- ----------------------------
--- 1、建表说明与删除段（先删旧遗留表，再删并重建本阶段 18 张表）
+-- 1、建表说明与删除段（先删旧遗留表，再删并重建本阶段 19 张表）
 -- ----------------------------
 
 -- 旧分析 / 评分（只删不建；先删除下游评分，再删除分析）
@@ -28,6 +28,7 @@ DROP TABLE IF EXISTS `fx67ll_dortmund_plan_return_rel`;
 DROP TABLE IF EXISTS `fx67ll_dortmund_return_image`;
 DROP TABLE IF EXISTS `fx67ll_dortmund_return_combination_item`;
 DROP TABLE IF EXISTS `fx67ll_dortmund_return_combination`;
+DROP TABLE IF EXISTS `fx67ll_dortmund_return_evidence`;
 DROP TABLE IF EXISTS `fx67ll_dortmund_return_generation`;
 DROP TABLE IF EXISTS `fx67ll_dortmund_odds`;
 DROP TABLE IF EXISTS `fx67ll_dortmund_plan`;
@@ -190,17 +191,17 @@ CREATE TABLE `fx67ll_dortmund_odds` (
   `source_time` datetime NOT NULL COMMENT '该组odds对应时间',
   `handicap_value` decimal(8,2) NOT NULL COMMENT '让分值（完整六类odds固定必填）',
   `home_win_odds` decimal(10,4) NOT NULL COMMENT '主胜倍率',
-  `home_win_weight` decimal(5,2) DEFAULT NULL COMMENT '主胜权重（0-100，空值按100）',
+  `home_win_weight` int(11) DEFAULT NULL COMMENT '主胜权重×10000（0-10000；界面/API为0.0000-1.0000，空值按10000）',
   `draw_odds` decimal(10,4) NOT NULL COMMENT '平倍率',
-  `draw_weight` decimal(5,2) DEFAULT NULL COMMENT '平权重（0-100，空值按100）',
+  `draw_weight` int(11) DEFAULT NULL COMMENT '平权重×10000（0-10000；界面/API为0.0000-1.0000，空值按10000）',
   `away_win_odds` decimal(10,4) NOT NULL COMMENT '客胜倍率',
-  `away_win_weight` decimal(5,2) DEFAULT NULL COMMENT '客胜权重（0-100，空值按100）',
+  `away_win_weight` int(11) DEFAULT NULL COMMENT '客胜权重×10000（0-10000；界面/API为0.0000-1.0000，空值按10000）',
   `handicap_home_win_odds` decimal(10,4) NOT NULL COMMENT '让分主胜倍率',
-  `handicap_home_win_weight` decimal(5,2) DEFAULT NULL COMMENT '让分主胜权重（0-100，空值按100）',
+  `handicap_home_win_weight` int(11) DEFAULT NULL COMMENT '让分主胜权重×10000（0-10000；界面/API为0.0000-1.0000，空值按10000）',
   `handicap_draw_odds` decimal(10,4) NOT NULL COMMENT '让分平倍率',
-  `handicap_draw_weight` decimal(5,2) DEFAULT NULL COMMENT '让分平权重（0-100，空值按100）',
+  `handicap_draw_weight` int(11) DEFAULT NULL COMMENT '让分平权重×10000（0-10000；界面/API为0.0000-1.0000，空值按10000）',
   `handicap_away_win_odds` decimal(10,4) NOT NULL COMMENT '让分客胜倍率',
-  `handicap_away_win_weight` decimal(5,2) DEFAULT NULL COMMENT '让分客胜权重（0-100，空值按100）',
+  `handicap_away_win_weight` int(11) DEFAULT NULL COMMENT '让分客胜权重×10000（0-10000；界面/API为0.0000-1.0000，空值按10000）',
   `active_flag` char(1) NOT NULL DEFAULT 'N' COMMENT '当前有效记录（复用sys_yes_no）',
   `odds_remark` varchar(1023) DEFAULT NULL COMMENT '来源说明或业务备注',
   `user_id` bigint(20) NOT NULL COMMENT '服务端写入的归属用户',
@@ -226,7 +227,7 @@ CREATE TABLE `fx67ll_dortmund_return_generation` (
   `input_amount` decimal(14,2) NOT NULL COMMENT '基础金额',
   `target_amount` decimal(14,2) NOT NULL COMMENT '目标金额',
   `request_snapshot` mediumtext NOT NULL COMMENT '业务输入JSON快照（不含AI治理元数据）',
-  `generation_status` char(1) NOT NULL DEFAULT '0' COMMENT '生成状态（0-处理中，1-成功，2-失败，复用fx67ll_ai_analysis_status）',
+  `generation_status` char(1) NOT NULL DEFAULT '0' COMMENT '生成状态（0-处理中，1-成功，2-失败，3-待人工导入，复用fx67ll_ai_analysis_status）',
   `generation_remark` varchar(1023) DEFAULT NULL COMMENT '成功或失败的最新受控备注',
   `generated_count` int(11) unsigned NOT NULL DEFAULT 0 COMMENT '后端校验通过并落库的组合数',
   `started_time` datetime NOT NULL COMMENT '生成批次受理并开始排队的时间；实际worker领取时间由lease_expire_time与尝试次数体现',
@@ -238,6 +239,21 @@ CREATE TABLE `fx67ll_dortmund_return_generation` (
   `attempt_count` int(11) NOT NULL DEFAULT 0 COMMENT '已尝试次数（含当前执行）',
   `max_attempts` int(11) NOT NULL DEFAULT 3 COMMENT '最大尝试次数',
   `next_retry_time` datetime DEFAULT NULL COMMENT '下次允许重试时间',
+  `result_source` char(1) NOT NULL DEFAULT 'A' COMMENT '结果来源（A-自动AI，M-人工AI处理）',
+  `manual_import_by` varchar(64) DEFAULT NULL COMMENT '人工导入操作人用户名',
+  `manual_import_time` datetime DEFAULT NULL COMMENT '人工导入完成时间',
+  `data_as_of` datetime NOT NULL COMMENT '业务快照数据截止时间（受理批次时冻结）',
+  `ai_scene_code` varchar(64) NOT NULL DEFAULT 'DORTMUND_RETURN_COMBINATION' COMMENT '通用AI场景编码，稳定值不随供应商、模型或模板变化',
+  `ai_contract_version` varchar(32) NOT NULL DEFAULT '2.1' COMMENT 'AI标准化响应契约版本（自动AI为2.1，人工AI为1.0）',
+  `ai_plan_run_ref` varchar(128) DEFAULT NULL COMMENT '证据规划调用的供应商无关引用，不建外键',
+  `ai_analysis_run_ref` varchar(128) DEFAULT NULL COMMENT '最终分析调用的供应商无关引用，不建外键',
+  `ai_plan_input_snapshot` mediumtext COMMENT '证据规划调用的业务输入快照，仅含业务数据',
+  `ai_analysis_input_snapshot` mediumtext COMMENT '最终分析调用的业务输入快照，仅含业务数据',
+  `ai_call_refs` mediumtext COMMENT '供应商无关的调用阶段审计数组（阶段、场景、契约版本、请求号和耗时）',
+  `ai_result_snapshot` mediumtext COMMENT '标准化AI结果快照（analysisContent与candidates），不含供应商、模型、Prompt、Token、费用等治理元数据',
+  `ai_evidence_status` char(1) NOT NULL DEFAULT 'N' COMMENT '自动AI证据流程状态（N-不适用，P-规划或检索中，R-检索完成，S-证据已固化，F-失败）',
+  `ai_evidence_plan` mediumtext COMMENT '自动AI证据检索计划快照，仅供审计与后续通用AI模块复用',
+  `ai_evidence_error` varchar(1023) DEFAULT NULL COMMENT '自动AI证据规划或检索的受控错误摘要',
   `create_by` varchar(64) DEFAULT '' COMMENT '记录创建者用户名',
   `create_time` datetime DEFAULT CURRENT_TIMESTAMP COMMENT '记录创建时间',
   `update_by` varchar(64) DEFAULT '' COMMENT '记录最后更新者用户名',
@@ -247,8 +263,45 @@ CREATE TABLE `fx67ll_dortmund_return_generation` (
   UNIQUE KEY `uk_generation_client_request` (`user_id`, `client_request_id`) COMMENT '用户+客户端请求号幂等唯一索引',
   KEY `idx_generation_user_status_time` (`user_id`, `generation_status`, `create_time`) COMMENT '用户+状态+创建时间索引',
   KEY `idx_generation_mode_time` (`generation_mode`, `create_time`) COMMENT '模式+创建时间索引',
+  KEY `idx_generation_source_time` (`result_source`, `create_time`) COMMENT '结果来源+创建时间索引',
+  KEY `idx_generation_ai_plan_run_ref` (`ai_plan_run_ref`) COMMENT '证据规划调用引用检索索引',
+  KEY `idx_generation_ai_analysis_run_ref` (`ai_analysis_run_ref`) COMMENT '最终分析调用引用检索索引',
+  KEY `idx_generation_evidence_status` (`ai_evidence_status`) COMMENT '证据流程状态检索索引',
   KEY `idx_generation_dispatch` (`generation_status`, `lease_expire_time`, `next_retry_time`, `create_time`) COMMENT '异步任务领取与租约恢复索引'
 ) ENGINE=innodb DEFAULT CHARSET=utf8mb4 COMMENT='回报组合生成批次表';
+
+-- ----------------------------
+-- 8.1、回报组合证据表（自动AI专用）
+-- ----------------------------
+CREATE TABLE `fx67ll_dortmund_return_evidence` (
+  `evidence_id` bigint(20) NOT NULL AUTO_INCREMENT COMMENT '证据唯一标识（主键）',
+  `generation_id` bigint(20) NOT NULL COMMENT '所属生成批次ID（外键）',
+  `evidence_code` varchar(64) NOT NULL COMMENT 'AI可引用的稳定证据编码（S-业务证据，R-检索证据）',
+  `match_id` bigint(20) NOT NULL COMMENT '关联比赛ID（外键）',
+  `evidence_origin` char(1) NOT NULL COMMENT '证据来源（S-提交时冻结的业务证据，R-系统受控检索证据）',
+  `evidence_type` varchar(64) NOT NULL COMMENT '证据类型（MATCH_CONTEXT、TEAM_CONTEXT、SEASON_INFO、MATCH_INFO、ODDS、RETRIEVAL）',
+  `source_ref_id` varchar(64) DEFAULT NULL COMMENT '原始业务主键或检索条目序号',
+  `plan_query` varchar(512) DEFAULT NULL COMMENT '触发系统检索的AI规划查询',
+  `title` varchar(512) DEFAULT NULL COMMENT '证据标题',
+  `content` mediumtext COMMENT '清洗、规范化并冻结后的证据正文',
+  `source_name` varchar(233) DEFAULT NULL COMMENT '来源名称，仅来自后端记录',
+  `source_url` varchar(1023) DEFAULT NULL COMMENT '来源地址，仅来自后端记录，不接受AI生成URL',
+  `published_time` datetime DEFAULT NULL COMMENT '来源发布时间（可空）',
+  `retrieved_time` datetime DEFAULT NULL COMMENT '系统检索时间（业务证据为空）',
+  `content_hash` char(64) NOT NULL COMMENT '规范化证据内容SHA-256',
+  `source_tier` varchar(32) NOT NULL DEFAULT 'UNKNOWN' COMMENT '供应商无关来源层级（OFFICIAL/MAJOR_MEDIA/SPECIALIST/AGGREGATOR/UNKNOWN）',
+  `confidence` decimal(5,2) DEFAULT NULL COMMENT '系统证据置信度（可空）',
+  `create_by` varchar(64) DEFAULT '' COMMENT '固化操作人用户名',
+  `create_time` datetime DEFAULT CURRENT_TIMESTAMP COMMENT '记录创建时间',
+  PRIMARY KEY (`evidence_id`),
+  UNIQUE KEY `uk_return_evidence_code` (`generation_id`, `evidence_code`) COMMENT '批次+证据编码唯一索引',
+  KEY `idx_return_evidence_generation` (`generation_id`) COMMENT '按批次查询冻结证据',
+  KEY `idx_return_evidence_match` (`generation_id`, `match_id`) COMMENT '按批次+比赛查询证据',
+  KEY `idx_return_evidence_type` (`generation_id`, `evidence_type`) COMMENT '按批次+证据类型查询',
+  KEY `idx_return_evidence_tier` (`generation_id`, `source_tier`) COMMENT '按批次+来源层级查询',
+  FOREIGN KEY (`generation_id`) REFERENCES `fx67ll_dortmund_return_generation` (`generation_id`) ON DELETE RESTRICT,
+  FOREIGN KEY (`match_id`) REFERENCES `fx67ll_dortmund_match` (`match_id`) ON DELETE RESTRICT
+) ENGINE=innodb DEFAULT CHARSET=utf8mb4 COMMENT='回报组合证据冻结表（自动AI专用）';
 
 -- ----------------------------
 -- 9、回报组合主表
@@ -266,6 +319,9 @@ CREATE TABLE `fx67ll_dortmund_return_combination` (
   `review_by` varchar(64) DEFAULT NULL COMMENT '最近决定采用状态的用户名',
   `review_time` datetime DEFAULT NULL COMMENT '最近决定采用状态的时间',
   `combination_remark` mediumtext COMMENT '完整业务分析内容及组合处理备注（不含AI治理元数据）',
+  `evidence_chain` mediumtext COMMENT '候选完整证据链JSON，仅用于自动AI复核，不参与任何金额计算',
+  `ai_confidence` int(11) DEFAULT NULL COMMENT '候选置信度（0-100），仅用于复核与排序，不参与任何金额计算',
+  `risk_notes` varchar(2047) DEFAULT NULL COMMENT '候选风险说明，仅用于复核',
   `user_id` bigint(20) NOT NULL COMMENT '归属用户',
   `create_by` varchar(64) DEFAULT '' COMMENT '记录创建者用户名',
   `create_time` datetime DEFAULT CURRENT_TIMESTAMP COMMENT '记录创建时间',
@@ -288,9 +344,12 @@ CREATE TABLE `fx67ll_dortmund_return_combination_item` (
   `odds_id` bigint(20) NOT NULL COMMENT '生成时使用的odds快照ID（外键）',
   `selection_type` char(2) NOT NULL COMMENT '选择类型（HW/DR/AW/HH/HD/HA）',
   `odds_value_snapshot` decimal(10,4) NOT NULL COMMENT '生成时倍率值快照',
-  `manual_weight_snapshot` decimal(5,2) DEFAULT NULL COMMENT '用户原始权重快照（0-100）',
-  `applied_weight` decimal(5,2) NOT NULL COMMENT 'AI评估权重（0-100），仅用于解释与复核，不参与任何金额计算',
+  `manual_weight_snapshot` int(11) DEFAULT NULL COMMENT '用户原始权重快照×10000（0-10000；界面/API为0.0000-1.0000）',
+  `applied_weight` int(11) NOT NULL COMMENT 'AI评估权重×10000（0-10000；界面/API为0.0000-1.0000），仅用于解释与复核，不参与任何金额计算',
   `selection_reason` varchar(1023) DEFAULT NULL COMMENT '逐场选择理由快照，仅用于复核，不参与任何金额计算',
+  `weight_rationale` mediumtext COMMENT '完整权重推导说明，仅用于自动AI复核，不参与任何金额计算',
+  `evidence_refs` text COMMENT '本选择引用的候选证据因子编码JSON数组，仅用于复核',
+  `counter_evidence_refs` text COMMENT '已考虑但未占主导的反向证据因子编码JSON数组，仅用于复核',
   `item_sort` int(4) NOT NULL DEFAULT 0 COMMENT '组合内展示顺序',
   `create_by` varchar(64) DEFAULT '' COMMENT '记录创建者用户名',
   `create_time` datetime DEFAULT CURRENT_TIMESTAMP COMMENT '记录创建时间',
@@ -519,7 +578,7 @@ insert into sys_dict_type values(21, '是否可公开',          'fx67ll_dortmun
 -- 1.5阶段相关枚举项插入值
 insert into sys_dict_type values(22, '倍率类型',             'fx67ll_dortmund_odds_type',           '0', 'admin', sysdate(), '', null, '倍率类型列表');
 insert into sys_dict_type values(23, '回报生成模式',         'fx67ll_dortmund_generation_mode',     '0', 'admin', sysdate(), '', null, '回报生成模式列表');
-insert into sys_dict_type values(24, 'AI分析统一状态',       'fx67ll_ai_analysis_status',             '0', 'admin', sysdate(), '', null, 'AI统一状态列表：0处理中、1成功、2失败；生成、分析、评分及公开文本检测、审核、发布复用，页面按业务语境映射文案');
+insert into sys_dict_type values(24, 'AI分析统一状态',       'fx67ll_ai_analysis_status',             '0', 'admin', sysdate(), '', null, 'AI统一状态列表：0处理中、1成功、2失败、3待人工导入；生成、分析、评分及公开文本检测、审核、发布复用，页面按业务语境映射文案');
 
 -- ----------------------------
 -- 21、字典数据（复用字典自 fx67ll_ry_2023.sql 原样迁入，沿用原字典编码 56 到 61；本阶段新增字典数据从 62 起分配）
@@ -559,3 +618,4 @@ insert into sys_dict_data values(73, 2,  'AI辅助模式',      'A',  'fx67ll_do
 insert into sys_dict_data values(74, 1,  '处理中',          '0',  'fx67ll_ai_analysis_status',            '',   '',     'N', '0', 'admin', sysdate(), '', null, '处理中');
 insert into sys_dict_data values(75, 2,  '成功',            '1',  'fx67ll_ai_analysis_status',            '',   '',     'N', '0', 'admin', sysdate(), '', null, '成功');
 insert into sys_dict_data values(76, 3,  '失败',            '2',  'fx67ll_ai_analysis_status',            '',   '',     'N', '0', 'admin', sysdate(), '', null, '失败');
+insert into sys_dict_data values(77, 4,  '待人工导入',      '3',  'fx67ll_ai_analysis_status',            '',   '',     'N', '0', 'admin', sysdate(), '', null, '待人工导入');
