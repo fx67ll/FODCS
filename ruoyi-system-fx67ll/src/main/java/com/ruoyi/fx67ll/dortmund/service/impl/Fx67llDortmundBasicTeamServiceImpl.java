@@ -17,6 +17,7 @@ import com.ruoyi.fx67ll.dortmund.mapper.Fx67llDortmundBasicTeamMapper;
 import com.ruoyi.fx67ll.dortmund.domain.Fx67llDortmundBasicTeam;
 import com.ruoyi.fx67ll.dortmund.service.IFx67llDortmundInfoPointService;
 import com.ruoyi.fx67ll.dortmund.service.IFx67llDortmundBasicTeamService;
+import com.ruoyi.fx67ll.dortmund.support.DortmundFieldValidator;
 import org.springframework.transaction.annotation.Transactional;
 
 /**
@@ -82,6 +83,7 @@ public class Fx67llDortmundBasicTeamServiceImpl implements IFx67llDortmundBasicT
     @Override
     @Transactional(rollbackFor = Exception.class)
     public int insertFx67llDortmundBasicTeam(Fx67llDortmundBasicTeam fx67llDortmundBasicTeam) {
+        validateTeamFields(fx67llDortmundBasicTeam);
         fx67llDortmundBasicTeam.setUserId(SecurityUtils.getUserId());
         fx67llDortmundBasicTeam.setCreateBy(SecurityUtils.getUsername());
         fx67llDortmundBasicTeam.setCreateTime(DateUtils.getNowDate());
@@ -101,6 +103,11 @@ public class Fx67llDortmundBasicTeamServiceImpl implements IFx67llDortmundBasicT
         if (fx67llDortmundBasicTeam.getTeamId() == null) {
             throw new ServiceException("球队主键不能为空！");
         }
+        if (fx67llDortmundBasicTeamMapper.selectFx67llDortmundBasicTeamByTeamId(
+                fx67llDortmundBasicTeam.getTeamId()) == null) {
+            throw new ServiceException("球队不存在或已被删除，请刷新后重试！");
+        }
+        validateTeamFields(fx67llDortmundBasicTeam);
         fx67llDortmundBasicTeam.setUpdateBy(SecurityUtils.getUsername());
         fx67llDortmundBasicTeam.setUpdateTime(DateUtils.getNowDate());
         return fx67llDortmundBasicTeamMapper.updateFx67llDortmundBasicTeam(fx67llDortmundBasicTeam);
@@ -176,5 +183,38 @@ public class Fx67llDortmundBasicTeamServiceImpl implements IFx67llDortmundBasicT
             infoPoint.setTeamIds(new Long[] { fx67llDortmundBasicTeam.getTeamId() });
             fx67llDortmundInfoPointService.insertFx67llDortmundInfoPoint(infoPoint);
         }
+    }
+
+    /**
+     * 校验球队字段并统一去除文本首尾空格，长度上限与 fx67ll_dortmund_team 表结构一致
+     *
+     * @param fx67llDortmundBasicTeam 球队管理对象
+     */
+    private void validateTeamFields(Fx67llDortmundBasicTeam fx67llDortmundBasicTeam) {
+        fx67llDortmundBasicTeam.setTeamCode(DortmundFieldValidator.requireText(
+                fx67llDortmundBasicTeam.getTeamCode(), "球队编码", 23));
+        fx67llDortmundBasicTeam.setTeamName(DortmundFieldValidator.requireText(
+                fx67llDortmundBasicTeam.getTeamName(), "球队全称", 233));
+        fx67llDortmundBasicTeam.setTeamNameShort(DortmundFieldValidator.requireText(
+                fx67llDortmundBasicTeam.getTeamNameShort(), "球队昵称", 10));
+        fx67llDortmundBasicTeam.setTeamNameEn(DortmundFieldValidator.requireText(
+                fx67llDortmundBasicTeam.getTeamNameEn(), "球队英文名称", 233));
+        fx67llDortmundBasicTeam.setTeamLogoUrl(DortmundFieldValidator.requireText(
+                fx67llDortmundBasicTeam.getTeamLogoUrl(), "球队Logo", 1023));
+        fx67llDortmundBasicTeam.setTeamVenue(DortmundFieldValidator.requireText(
+                fx67llDortmundBasicTeam.getTeamVenue(), "球队主场", 233));
+        fx67llDortmundBasicTeam.setTeamCountry(DortmundFieldValidator.requireText(
+                fx67llDortmundBasicTeam.getTeamCountry(), "地区/联赛", 23));
+        fx67llDortmundBasicTeam.setTeamTag(DortmundFieldValidator.requireText(
+                fx67llDortmundBasicTeam.getTeamTag(), "球队标签", 1023));
+        fx67llDortmundBasicTeam.setTeamStatus(DortmundFieldValidator.validateEnum(
+                fx67llDortmundBasicTeam.getTeamStatus(), "球队状态", true, "0", "1"));
+        if (fx67llDortmundBasicTeam.getTeamSort() == null) {
+            fx67llDortmundBasicTeam.setTeamSort(0);
+        }
+        DortmundFieldValidator.validateInteger(fx67llDortmundBasicTeam.getTeamSort(),
+                "球队排序", 0, 1023, false);
+        fx67llDortmundBasicTeam.setTeamRemark(DortmundFieldValidator.optionalText(
+                fx67llDortmundBasicTeam.getTeamRemark(), "球队备注", 1023));
     }
 }

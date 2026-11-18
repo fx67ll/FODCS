@@ -20,6 +20,9 @@
         <result property="reviewBy" column="review_by"/>
         <result property="reviewTime" column="review_time"/>
         <result property="combinationRemark" column="combination_remark"/>
+        <result property="evidenceChain" column="evidence_chain"/>
+        <result property="aiConfidence" column="ai_confidence"/>
+        <result property="riskNotes" column="risk_notes"/>
         <result property="userId" column="user_id"/>
         <result property="matchCount" column="match_count"/>
         <result property="createBy" column="create_by"/>
@@ -42,6 +45,8 @@
                c.adopted_flag,
                c.review_by,
                c.review_time,
+               c.ai_confidence,
+               c.risk_notes,
                c.user_id,
                c.create_by,
                c.create_time,
@@ -135,6 +140,11 @@
                 <choose><when test="sortOrder == 'asc'">asc</when><otherwise>desc</otherwise></choose>,
                 c.combination_id desc
             </when>
+            <when test="sortField == 'aiConfidence'">
+                order by c.ai_confidence
+                <choose><when test="sortOrder == 'asc'">asc</when><otherwise>desc</otherwise></choose>,
+                c.combination_id desc
+            </when>
             <otherwise>
                 order by c.create_time
                 <choose><when test="sortOrder == 'asc'">asc</when><otherwise>desc</otherwise></choose>,
@@ -147,11 +157,12 @@
             useGeneratedKeys="true" keyProperty="combinationId">
         insert into fx67ll_dortmund_return_combination
         (generation_id, combination_code, combination_title, combination_reason, combined_odds, estimated_return,
-         deviation_amount, adopted_flag, combination_remark, user_id, create_by, create_time, update_by, update_time)
+         deviation_amount, adopted_flag, combination_remark, evidence_chain, ai_confidence, risk_notes,
+         user_id, create_by, create_time, update_by, update_time)
         values
         (#{generationId}, #{combinationCode}, #{combinationTitle}, #{combinationReason}, #{combinedOdds},
-         #{estimatedReturn}, #{deviationAmount}, #{adoptedFlag}, #{combinationRemark}, #{userId}, #{createBy},
-         #{createTime}, #{updateBy}, #{updateTime})
+         #{estimatedReturn}, #{deviationAmount}, #{adoptedFlag}, #{combinationRemark}, #{evidenceChain},
+         #{aiConfidence}, #{riskNotes}, #{userId}, #{createBy}, #{createTime}, #{updateBy}, #{updateTime})
     </insert>
 
     <update id="updateAdoptedFlag" parameterType="Fx67llDortmundReturnCombination">
@@ -168,5 +179,11 @@
         select count(1)
         from fx67ll_dortmund_plan_return_rel
         where combination_id = #{combinationId}
+    </select>
+
+    <select id="countByGenerationId" resultType="int">
+        select count(1)
+        from fx67ll_dortmund_return_combination
+        where generation_id = #{generationId}
     </select>
 </mapper>

@@ -36,11 +36,11 @@ public class Fx67llDortmundReturnCombinationItem extends BaseEntity {
     /** 倍率值快照 */
     private BigDecimal oddsValueSnapshot;
 
-    /** 用户提交时的原始手工权重快照，允许为空；空值只在AI输入和appliedWeight中按100解释 */
+    /** 用户提交时的原始手工权重快照（0.0000-1.0000），允许为空；空值在AI输入和appliedWeight中按1.0000解释 */
     private BigDecimal manualWeightSnapshot;
 
     /**
-     * AI评估权重（0-100）
+     * AI评估权重（0.0000-1.0000）
      * <p>
      * 仅用于记录AI对本次比赛选择类型的评估权重，便于复核候选组合的生成依据；
      * 不参与组合倍率、预计回报、偏差金额或方案金额等任何金额计算。
@@ -52,6 +52,15 @@ public class Fx67llDortmundReturnCombinationItem extends BaseEntity {
 
     /** 逐场选择理由快照；不参与任何金额计算 */
     private String selectionReason;
+
+    /** 完整权重推导说明，仅用于自动AI复核 */
+    private String weightRationale;
+
+    /** 本选择引用的候选证据因子编码JSON数组 */
+    private String evidenceRefs;
+
+    /** 已考虑但未占主导的反向证据因子编码JSON数组 */
+    private String counterEvidenceRefs;
 
     /** 比赛摘要 */
     private String matchSummary;
@@ -150,6 +159,30 @@ public class Fx67llDortmundReturnCombinationItem extends BaseEntity {
         this.selectionReason = selectionReason;
     }
 
+    public String getWeightRationale() {
+        return weightRationale;
+    }
+
+    public void setWeightRationale(String weightRationale) {
+        this.weightRationale = weightRationale;
+    }
+
+    public String getEvidenceRefs() {
+        return evidenceRefs;
+    }
+
+    public void setEvidenceRefs(String evidenceRefs) {
+        this.evidenceRefs = evidenceRefs;
+    }
+
+    public String getCounterEvidenceRefs() {
+        return counterEvidenceRefs;
+    }
+
+    public void setCounterEvidenceRefs(String counterEvidenceRefs) {
+        this.counterEvidenceRefs = counterEvidenceRefs;
+    }
+
     public String getMatchSummary() {
         return matchSummary;
     }
@@ -173,6 +206,9 @@ public class Fx67llDortmundReturnCombinationItem extends BaseEntity {
                 .append("appliedWeight", getAppliedWeight())
                 .append("itemSort", getItemSort())
                 .append("selectionReason", getSelectionReason())
+                .append("weightRationale", getWeightRationale())
+                .append("evidenceRefs", getEvidenceRefs())
+                .append("counterEvidenceRefs", getCounterEvidenceRefs())
                 .append("createBy", getCreateBy())
                 .append("createTime", getCreateTime())
                 .toString();

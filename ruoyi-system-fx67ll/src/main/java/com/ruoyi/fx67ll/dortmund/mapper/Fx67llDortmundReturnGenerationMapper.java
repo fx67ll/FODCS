@@ -50,7 +50,19 @@ public interface Fx67llDortmundReturnGenerationMapper {
      */
     public int completeGenerationSuccess(@Param("generationId") Long generationId,
             @Param("workerId") String workerId, @Param("generatedCount") int generatedCount,
-            @Param("remark") String remark, @Param("updateBy") String updateBy);
+            @Param("remark") String remark, @Param("updateBy") String updateBy,
+            @Param("aiResultSnapshot") String aiResultSnapshot,
+            @Param("aiAnalysisRunRef") String aiAnalysisRunRef,
+            @Param("aiAnalysisInputSnapshot") String aiAnalysisInputSnapshot,
+            @Param("aiCallRefs") String aiCallRefs);
+
+    /**
+     * 人工导入成功完成批次；只允许从待人工导入或遗留失败状态进入成功状态，防止覆盖已有结果。
+     */
+    public int completeManualGenerationSuccess(@Param("generationId") Long generationId,
+            @Param("generatedCount") int generatedCount, @Param("remark") String remark,
+            @Param("updateBy") String updateBy, @Param("aiResultSnapshot") String aiResultSnapshot,
+            @Param("aiAnalysisInputSnapshot") String aiAnalysisInputSnapshot);
 
     /**
      * 释放租约并安排有限重试。
@@ -69,4 +81,35 @@ public interface Fx67llDortmundReturnGenerationMapper {
      * 回收租约已过期且尝试次数达到上限的批次，防止worker崩溃后永久停留在处理中。
      */
     public int failExhaustedGeneration(@Param("generationId") Long generationId, @Param("remark") String remark);
+
+    /**
+     * 当前worker开始证据规划或检索，重置上一次尝试的证据状态。
+     */
+    public int startEvidenceWork(@Param("generationId") Long generationId, @Param("workerId") String workerId);
+
+    /**
+     * 在规划调用前保存规划业务输入快照，保证供应商调用失败时仍可审计。
+     */
+    public int savePlanInputSnapshot(@Param("generationId") Long generationId,
+            @Param("workerId") String workerId, @Param("planInputSnapshot") String planInputSnapshot);
+
+    /**
+     * 保存自动AI检索计划输出、规划调用引用和供应商无关调用审计数组。
+     */
+    public int saveEvidencePlan(@Param("generationId") Long generationId, @Param("workerId") String workerId,
+            @Param("planJson") String planJson, @Param("planRunRef") String planRunRef,
+            @Param("aiCallRefs") String aiCallRefs);
+
+    /**
+     * 在最终分析调用前保存分析业务输入快照。
+     */
+    public int saveAnalysisInputSnapshot(@Param("generationId") Long generationId,
+            @Param("workerId") String workerId, @Param("analysisInputSnapshot") String analysisInputSnapshot);
+
+    /**
+     * 更新当前worker的证据流程状态与受控错误摘要。
+     */
+    public int updateEvidenceStatus(@Param("generationId") Long generationId,
+            @Param("workerId") String workerId, @Param("status") String status,
+            @Param("error") String error);
 }

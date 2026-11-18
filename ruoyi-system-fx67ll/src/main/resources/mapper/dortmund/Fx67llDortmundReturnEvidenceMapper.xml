@@ -1,0 +1,67 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.ruoyi.fx67ll.dortmund.mapper.Fx67llDortmundReturnEvidenceMapper">
+
+    <resultMap type="Fx67llDortmundReturnEvidence" id="Fx67llDortmundReturnEvidenceResult">
+        <result property="evidenceId" column="evidence_id"/>
+        <result property="generationId" column="generation_id"/>
+        <result property="evidenceCode" column="evidence_code"/>
+        <result property="matchId" column="match_id"/>
+        <result property="evidenceOrigin" column="evidence_origin"/>
+        <result property="evidenceType" column="evidence_type"/>
+        <result property="sourceRefId" column="source_ref_id"/>
+        <result property="planQuery" column="plan_query"/>
+        <result property="title" column="title"/>
+        <result property="content" column="content"/>
+        <result property="sourceName" column="source_name"/>
+        <result property="sourceUrl" column="source_url"/>
+        <result property="publishedTime" column="published_time"/>
+        <result property="retrievedTime" column="retrieved_time"/>
+        <result property="contentHash" column="content_hash"/>
+        <result property="sourceTier" column="source_tier"/>
+        <result property="confidence" column="confidence"/>
+        <result property="createBy" column="create_by"/>
+        <result property="createTime" column="create_time"/>
+    </resultMap>
+
+    <insert id="insertBatch">
+        insert into fx67ll_dortmund_return_evidence
+        (generation_id, evidence_code, match_id, evidence_origin, evidence_type, source_ref_id, plan_query,
+         title, content, source_name, source_url, published_time, retrieved_time, content_hash, confidence,
+         source_tier, create_by, create_time)
+        values
+        <foreach collection="values" item="item" separator=",">
+            (#{item.generationId}, #{item.evidenceCode}, #{item.matchId}, #{item.evidenceOrigin},
+             #{item.evidenceType}, #{item.sourceRefId}, #{item.planQuery}, #{item.title}, #{item.content},
+             #{item.sourceName}, #{item.sourceUrl}, #{item.publishedTime}, #{item.retrievedTime},
+             #{item.contentHash}, #{item.confidence}, #{item.sourceTier}, #{item.createBy}, #{item.createTime})
+        </foreach>
+    </insert>
+
+    <select id="selectByGenerationId" resultMap="Fx67llDortmundReturnEvidenceResult">
+        select evidence_id,
+               generation_id,
+               evidence_code,
+               match_id,
+               evidence_origin,
+               evidence_type,
+               source_ref_id,
+               plan_query,
+               title,
+               content,
+               source_name,
+               source_url,
+               published_time,
+               retrieved_time,
+               content_hash,
+               source_tier,
+               confidence,
+               create_by,
+               create_time
+        from fx67ll_dortmund_return_evidence
+        where generation_id = #{generationId}
+        order by evidence_code, evidence_id
+    </select>
+</mapper>

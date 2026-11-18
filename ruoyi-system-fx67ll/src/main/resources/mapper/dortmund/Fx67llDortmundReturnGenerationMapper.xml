@@ -23,6 +23,21 @@
         <result property="attemptCount" column="attempt_count"/>
         <result property="maxAttempts" column="max_attempts"/>
         <result property="nextRetryTime" column="next_retry_time"/>
+        <result property="resultSource" column="result_source"/>
+        <result property="manualImportBy" column="manual_import_by"/>
+        <result property="manualImportTime" column="manual_import_time"/>
+        <result property="dataAsOf" column="data_as_of"/>
+        <result property="aiSceneCode" column="ai_scene_code"/>
+        <result property="aiContractVersion" column="ai_contract_version"/>
+        <result property="aiPlanRunRef" column="ai_plan_run_ref"/>
+        <result property="aiAnalysisRunRef" column="ai_analysis_run_ref"/>
+        <result property="aiPlanInputSnapshot" column="ai_plan_input_snapshot"/>
+        <result property="aiAnalysisInputSnapshot" column="ai_analysis_input_snapshot"/>
+        <result property="aiCallRefs" column="ai_call_refs"/>
+        <result property="aiResultSnapshot" column="ai_result_snapshot"/>
+        <result property="aiEvidenceStatus" column="ai_evidence_status"/>
+        <result property="aiEvidencePlan" column="ai_evidence_plan"/>
+        <result property="aiEvidenceError" column="ai_evidence_error"/>
         <result property="createBy" column="create_by"/>
         <result property="createTime" column="create_time"/>
         <result property="updateBy" column="update_by"/>
@@ -49,6 +64,21 @@
                attempt_count,
                max_attempts,
                next_retry_time,
+               result_source,
+               manual_import_by,
+               manual_import_time,
+               data_as_of,
+               ai_scene_code,
+               ai_contract_version,
+               ai_plan_run_ref,
+               ai_analysis_run_ref,
+               ai_plan_input_snapshot,
+               ai_analysis_input_snapshot,
+               ai_call_refs,
+               ai_result_snapshot,
+               ai_evidence_status,
+               ai_evidence_plan,
+               ai_evidence_error,
                create_by,
                create_time,
                update_by,
@@ -76,6 +106,16 @@
                attempt_count,
                max_attempts,
                next_retry_time,
+               result_source,
+               manual_import_by,
+               manual_import_time,
+               data_as_of,
+               ai_scene_code,
+               ai_contract_version,
+               ai_plan_run_ref,
+               ai_analysis_run_ref,
+               ai_evidence_status,
+               ai_evidence_error,
                create_by,
                create_time,
                update_by,
@@ -87,6 +127,7 @@
                 and generation_status = #{generationStatus}
             </if>
             <if test="generationMode != null and generationMode != ''">and generation_mode = #{generationMode}</if>
+            <if test="resultSource != null and resultSource != ''">and result_source = #{resultSource}</if>
             <if test="userId != null">and user_id = #{userId}</if>
             <if test="beginCreateTime != null and beginCreateTime != '' and endCreateTime != null and endCreateTime != ''">
                 and create_time between #{beginCreateTime} and #{endCreateTime}
@@ -100,12 +141,17 @@
         insert into fx67ll_dortmund_return_generation
         (generation_code, generation_mode, input_amount, target_amount, request_snapshot, generation_status,
          generation_remark, generated_count, started_time, finished_time, user_id, client_request_id, worker_id,
-         lease_expire_time, attempt_count, max_attempts, next_retry_time, create_by, create_time, update_by,
-         update_time)
+         lease_expire_time, attempt_count, max_attempts, next_retry_time, result_source, manual_import_by,
+         manual_import_time, data_as_of, ai_scene_code, ai_contract_version, ai_plan_run_ref, ai_analysis_run_ref,
+         ai_plan_input_snapshot, ai_analysis_input_snapshot, ai_call_refs, ai_result_snapshot,
+         ai_evidence_status, ai_evidence_plan, ai_evidence_error, create_by, create_time, update_by, update_time)
         values
         (#{generationCode}, #{generationMode}, #{inputAmount}, #{targetAmount}, #{requestSnapshot},
          #{generationStatus}, #{generationRemark}, #{generatedCount}, #{startedTime}, #{finishedTime}, #{userId},
          #{clientRequestId}, #{workerId}, #{leaseExpireTime}, #{attemptCount}, #{maxAttempts}, #{nextRetryTime},
+         #{resultSource}, #{manualImportBy}, #{manualImportTime}, #{dataAsOf}, #{aiSceneCode}, #{aiContractVersion},
+         #{aiPlanRunRef}, #{aiAnalysisRunRef}, #{aiPlanInputSnapshot}, #{aiAnalysisInputSnapshot}, #{aiCallRefs},
+         #{aiResultSnapshot}, #{aiEvidenceStatus}, #{aiEvidencePlan}, #{aiEvidenceError},
          #{createBy}, #{createTime}, #{updateBy}, #{updateTime})
     </insert>
 
@@ -139,6 +185,16 @@
                attempt_count,
                max_attempts,
                next_retry_time,
+               result_source,
+               manual_import_by,
+               manual_import_time,
+               data_as_of,
+               ai_scene_code,
+               ai_contract_version,
+               ai_plan_run_ref,
+               ai_analysis_run_ref,
+               ai_evidence_status,
+               ai_evidence_error,
                create_by,
                create_time,
                update_by,
@@ -191,6 +247,16 @@
                attempt_count,
                max_attempts,
                next_retry_time,
+               result_source,
+               manual_import_by,
+               manual_import_time,
+               data_as_of,
+               ai_scene_code,
+               ai_contract_version,
+               ai_plan_run_ref,
+               ai_analysis_run_ref,
+               ai_evidence_status,
+               ai_evidence_error,
                create_by,
                create_time,
                update_by,
@@ -209,6 +275,13 @@
             worker_id = null,
             lease_expire_time = null,
             next_retry_time = null,
+            result_source = 'A',
+            ai_analysis_run_ref = #{aiAnalysisRunRef},
+            ai_analysis_input_snapshot = #{aiAnalysisInputSnapshot},
+            ai_call_refs = #{aiCallRefs},
+            ai_result_snapshot = #{aiResultSnapshot},
+            ai_evidence_status = 'S',
+            ai_evidence_error = null,
             update_by = #{updateBy},
             update_time = now()
         where generation_id = #{generationId}
@@ -222,11 +295,38 @@
             worker_id = null,
             lease_expire_time = null,
             next_retry_time = date_add(now(), interval #{retrySeconds} second),
+            ai_evidence_status = case when generation_mode = 'A' then 'F' else ai_evidence_status end,
             update_by = #{updateBy},
             update_time = now()
         where generation_id = #{generationId}
           and worker_id = #{workerId}
           and generation_status = '0'
+    </update>
+
+    <update id="completeManualGenerationSuccess">
+        update fx67ll_dortmund_return_generation
+        set generation_status = '1',
+            generation_remark = #{remark},
+            generated_count = #{generatedCount},
+            finished_time = now(),
+            worker_id = null,
+            lease_expire_time = null,
+            next_retry_time = null,
+            result_source = 'M',
+            manual_import_by = #{updateBy},
+            manual_import_time = now(),
+            ai_plan_run_ref = null,
+            ai_analysis_run_ref = null,
+            ai_analysis_input_snapshot = #{aiAnalysisInputSnapshot},
+            ai_call_refs = null,
+            ai_result_snapshot = #{aiResultSnapshot},
+            ai_evidence_status = 'N',
+            ai_evidence_plan = null,
+            ai_evidence_error = null,
+            update_by = #{updateBy},
+            update_time = now()
+        where generation_id = #{generationId}
+          and generation_status in ('2', '3')
     </update>
 
     <update id="failGeneration">
@@ -237,6 +337,7 @@
             worker_id = null,
             lease_expire_time = null,
             next_retry_time = null,
+            ai_evidence_status = 'F',
             update_by = #{updateBy},
             update_time = now()
         where generation_id = #{generationId}
@@ -252,6 +353,7 @@
             worker_id = null,
             lease_expire_time = null,
             next_retry_time = null,
+            ai_evidence_status = 'F',
             update_by = coalesce(create_by, 'system'),
             update_time = now()
         where generation_id = #{generationId}
@@ -259,5 +361,60 @@
           and attempt_count &gt;= max_attempts
           and lease_expire_time is not null
           and lease_expire_time &lt; now()
+    </update>
+
+    <update id="startEvidenceWork">
+        update fx67ll_dortmund_return_generation
+        set ai_evidence_status = 'P',
+            ai_plan_run_ref = null,
+            ai_analysis_run_ref = null,
+            ai_plan_input_snapshot = null,
+            ai_analysis_input_snapshot = null,
+            ai_call_refs = null,
+            ai_evidence_plan = null,
+            ai_evidence_error = null,
+            update_time = now()
+        where generation_id = #{generationId}
+          and worker_id = #{workerId}
+          and generation_status = '0'
+    </update>
+
+    <update id="savePlanInputSnapshot">
+        update fx67ll_dortmund_return_generation
+        set ai_plan_input_snapshot = #{planInputSnapshot},
+            update_time = now()
+        where generation_id = #{generationId}
+          and worker_id = #{workerId}
+          and generation_status = '0'
+    </update>
+
+    <update id="saveEvidencePlan">
+        update fx67ll_dortmund_return_generation
+        set ai_evidence_plan = #{planJson},
+            ai_plan_run_ref = #{planRunRef},
+            ai_call_refs = #{aiCallRefs},
+            update_time = now()
+        where generation_id = #{generationId}
+          and worker_id = #{workerId}
+          and generation_status = '0'
+    </update>
+
+    <update id="saveAnalysisInputSnapshot">
+        update fx67ll_dortmund_return_generation
+        set ai_analysis_input_snapshot = #{analysisInputSnapshot},
+            update_time = now()
+        where generation_id = #{generationId}
+          and worker_id = #{workerId}
+          and generation_status = '0'
+    </update>
+
+    <update id="updateEvidenceStatus">
+        update fx67ll_dortmund_return_generation
+        set ai_evidence_status = #{status},
+            ai_evidence_error = #{error},
+            update_time = now()
+        where generation_id = #{generationId}
+          and worker_id = #{workerId}
+          and generation_status = '0'
     </update>
 </mapper>

@@ -40,37 +40,37 @@ public class Fx67llDortmundOdds extends BaseEntity {
     /** 主胜倍率 */
     private BigDecimal homeWinOdds;
 
-    /** 主胜权重 */
+    /** 主胜权重（0.0000-1.0000；接口值，落库时放大10000倍保存） */
     private BigDecimal homeWinWeight;
 
     /** 平局倍率 */
     private BigDecimal drawOdds;
 
-    /** 平局权重 */
+    /** 平局权重（0.0000-1.0000；接口值，落库时放大10000倍保存） */
     private BigDecimal drawWeight;
 
     /** 客胜倍率 */
     private BigDecimal awayWinOdds;
 
-    /** 客胜权重 */
+    /** 客胜权重（0.0000-1.0000；接口值，落库时放大10000倍保存） */
     private BigDecimal awayWinWeight;
 
     /** 让分主胜倍率 */
     private BigDecimal handicapHomeWinOdds;
 
-    /** 让分主胜权重 */
+    /** 让分主胜权重（0.0000-1.0000；接口值，落库时放大10000倍保存） */
     private BigDecimal handicapHomeWinWeight;
 
     /** 让分平局倍率 */
     private BigDecimal handicapDrawOdds;
 
-    /** 让分平局权重 */
+    /** 让分平局权重（0.0000-1.0000；接口值，落库时放大10000倍保存） */
     private BigDecimal handicapDrawWeight;
 
     /** 让分客胜倍率 */
     private BigDecimal handicapAwayWinOdds;
 
-    /** 让分客胜权重 */
+    /** 让分客胜权重（0.0000-1.0000；接口值，落库时放大10000倍保存） */
     private BigDecimal handicapAwayWinWeight;
 
     /** 是否为当前有效记录 */

@@ -22,6 +22,8 @@ import com.ruoyi.fx67ll.dortmund.service.IFx67llDortmundBasicMatchService;
 import com.ruoyi.fx67ll.dortmund.service.IFx67llDortmundBasicSeasonService;
 import com.ruoyi.fx67ll.dortmund.service.IFx67llDortmundBasicTeamService;
 import com.ruoyi.fx67ll.dortmund.service.IFx67llDortmundInfoPointService;
+import com.ruoyi.fx67ll.dortmund.support.DortmundFieldValidator;
+import com.ruoyi.fx67ll.dortmund.support.DortmundWeightCodec;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.dao.DuplicateKeyException;
 import org.springframework.stereotype.Service;
@@ -35,8 +37,6 @@ import org.springframework.transaction.annotation.Transactional;
  */
 @Service
 public class Fx67llDortmundBasicMatchServiceImpl implements IFx67llDortmundBasicMatchService {
-    private static final BigDecimal MAX_WEIGHT = new BigDecimal("100");
-
     @Autowired
     private Fx67llDortmundBasicMatchMapper fx67llDortmundBasicMatchMapper;
 
@@ -112,9 +112,9 @@ public class Fx67llDortmundBasicMatchServiceImpl implements IFx67llDortmundBasic
                 && fx67llDortmundBasicMatch.getNewOdds().getNewMatch() != null) {
             throw new ServiceException("新倍率记录不能继续嵌套新增比赛！");
         }
+        checkMatchScalarFields(fx67llDortmundBasicMatch);
         resolveNewSeasonAndTeams(fx67llDortmundBasicMatch);
         checkMatchFields(fx67llDortmundBasicMatch);
-        fx67llDortmundBasicMatch.setMatchCode(fx67llDortmundBasicMatch.getMatchCode().trim());
         fx67llDortmundBasicMatch.setAnalysisCount(null);
         fx67llDortmundBasicMatch.setUserId(SecurityUtils.getUserId());
         fx67llDortmundBasicMatch.setCreateBy(SecurityUtils.getUsername());
@@ -250,11 +250,7 @@ public class Fx67llDortmundBasicMatchServiceImpl implements IFx67llDortmundBasic
      * @param fx67llDortmundBasicMatch 比赛记录
      */
     private void checkMatchFields(Fx67llDortmundBasicMatch fx67llDortmundBasicMatch) {
-        if (fx67llDortmundBasicMatch.getMatchCode() == null
-                || fx67llDortmundBasicMatch.getMatchCode().trim().isEmpty()
-                || fx67llDortmundBasicMatch.getMatchCode().trim().length() > 23) {
-            throw new ServiceException("比赛编码不能为空且不能超过23个字符！");
-        }
+        checkMatchScalarFields(fx67llDortmundBasicMatch);
         if (fx67llDortmundBasicMatch.getSeasonId() == null) {
             throw new ServiceException("比赛所属赛季不能为空！");
         }
@@ -278,6 +274,29 @@ public class Fx67llDortmundBasicMatchServiceImpl implements IFx67llDortmundBasic
         if (fx67llDortmundBasicTeamService.selectFx67llDortmundBasicTeamByTeamId(
                 fx67llDortmundBasicMatch.getAwayTeamId()) == null) {
             throw new ServiceException("所选客队不存在，请重新选择！");
+        }
+    }
+
+    /**
+     * 校验比赛自身的文本、枚举和时间字段，不访问关联表
+     * <p>
+     * 当场新建赛季或球队前先执行本方法，避免父级字段不合法时仍先写入关联数据。
+     *
+     * @param fx67llDortmundBasicMatch 比赛记录
+     */
+    private void checkMatchScalarFields(Fx67llDortmundBasicMatch fx67llDortmundBasicMatch) {
+        fx67llDortmundBasicMatch.setMatchCode(DortmundFieldValidator.requireText(
+                fx67llDortmundBasicMatch.getMatchCode(), "比赛编码", 23));
+        fx67llDortmundBasicMatch.setMatchVenue(DortmundFieldValidator.optionalText(
+                fx67llDortmundBasicMatch.getMatchVenue(), "比赛场地", 233));
+        fx67llDortmundBasicMatch.setMatchStatus(DortmundFieldValidator.validateEnum(
+                fx67llDortmundBasicMatch.getMatchStatus(), "比赛状态", true, "0", "1"));
+        fx67llDortmundBasicMatch.setMatchResult(DortmundFieldValidator.validateEnum(
+                fx67llDortmundBasicMatch.getMatchResult(), "比赛结果", false, "0", "1", "2"));
+        fx67llDortmundBasicMatch.setMatchRemark(DortmundFieldValidator.optionalText(
+                fx67llDortmundBasicMatch.getMatchRemark(), "比赛备注", 1023));
+        if (fx67llDortmundBasicMatch.getMatchTime() == null) {
+            throw new ServiceException("比赛开球时间不能为空！");
         }
     }
 
@@ -327,34 +346,40 @@ public class Fx67llDortmundBasicMatchServiceImpl implements IFx67llDortmundBasic
     }
 
     private void checkInitialOddsFields(Fx67llDortmundOdds fx67llDortmundOdds) {
-        if (fx67llDortmundOdds.getOddsCode() == null || fx67llDortmundOdds.getOddsCode().trim().isEmpty()
-                || fx67llDortmundOdds.getOddsCode().trim().length() > 23
-                || fx67llDortmundOdds.getSourceTime() == null || fx67llDortmundOdds.getHandicapValue() == null) {
-            throw new ServiceException("倍率记录编码、来源时间和让分值不能为空！");
+        fx67llDortmundOdds.setOddsCode(DortmundFieldValidator.requireText(
+                fx67llDortmundOdds.getOddsCode(), "倍率记录编码", 23));
+        if (fx67llDortmundOdds.getSourceTime() == null) {
+            throw new ServiceException("倍率来源时间不能为空！");
         }
-        checkOddsValue(fx67llDortmundOdds.getHomeWinOdds());
-        checkOddsValue(fx67llDortmundOdds.getDrawOdds());
-        checkOddsValue(fx67llDortmundOdds.getAwayWinOdds());
-        checkOddsValue(fx67llDortmundOdds.getHandicapHomeWinOdds());
-        checkOddsValue(fx67llDortmundOdds.getHandicapDrawOdds());
-        checkOddsValue(fx67llDortmundOdds.getHandicapAwayWinOdds());
-        checkWeight(fx67llDortmundOdds.getHomeWinWeight());
-        checkWeight(fx67llDortmundOdds.getDrawWeight());
-        checkWeight(fx67llDortmundOdds.getAwayWinWeight());
-        checkWeight(fx67llDortmundOdds.getHandicapHomeWinWeight());
-        checkWeight(fx67llDortmundOdds.getHandicapDrawWeight());
-        checkWeight(fx67llDortmundOdds.getHandicapAwayWinWeight());
+        DortmundFieldValidator.validateDecimal(fx67llDortmundOdds.getHandicapValue(), "让分值",
+                true, true, null, null, new BigDecimal("999999.99"), 6, 2);
+        checkOddsValue(fx67llDortmundOdds.getHomeWinOdds(), "主胜倍率");
+        checkOddsValue(fx67llDortmundOdds.getDrawOdds(), "平局倍率");
+        checkOddsValue(fx67llDortmundOdds.getAwayWinOdds(), "客胜倍率");
+        checkOddsValue(fx67llDortmundOdds.getHandicapHomeWinOdds(), "让分主胜倍率");
+        checkOddsValue(fx67llDortmundOdds.getHandicapDrawOdds(), "让分平局倍率");
+        checkOddsValue(fx67llDortmundOdds.getHandicapAwayWinOdds(), "让分客胜倍率");
+        checkWeight(fx67llDortmundOdds.getHomeWinWeight(), "主胜权重");
+        checkWeight(fx67llDortmundOdds.getDrawWeight(), "平局权重");
+        checkWeight(fx67llDortmundOdds.getAwayWinWeight(), "客胜权重");
+        checkWeight(fx67llDortmundOdds.getHandicapHomeWinWeight(), "让分主胜权重");
+        checkWeight(fx67llDortmundOdds.getHandicapDrawWeight(), "让分平局权重");
+        checkWeight(fx67llDortmundOdds.getHandicapAwayWinWeight(), "让分客胜权重");
+        fx67llDortmundOdds.setOddsRemark(DortmundFieldValidator.optionalText(
+                fx67llDortmundOdds.getOddsRemark(), "倍率记录说明", 1023));
     }
 
-    private void checkOddsValue(BigDecimal value) {
+    private void checkOddsValue(BigDecimal value, String label) {
         if (value == null || value.signum() <= 0) {
-            throw new ServiceException("六类倍率值必须全部大于0！");
+            throw new ServiceException(label + "必须大于0！");
         }
+        DortmundFieldValidator.validateDecimal(value, label, true, false, null, BigDecimal.ZERO,
+                new BigDecimal("999999.9999"), 6, 4);
     }
 
-    private void checkWeight(BigDecimal value) {
-        if (value != null && (value.signum() < 0 || value.compareTo(MAX_WEIGHT) > 0)) {
-            throw new ServiceException("倍率权重必须在0到100之间！");
+    private void checkWeight(BigDecimal value, String label) {
+        if (value != null) {
+            DortmundWeightCodec.toUnits(value, label);
         }
     }
 

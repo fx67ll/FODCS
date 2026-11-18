@@ -15,8 +15,11 @@ public class Fx67llDortmundReturnGenerationExportResponse {
     @Excel(name = "生成模式", readConverterExp = "S=Subjective Mode,A=AI Mode")
     private String generationMode;
 
-    @Excel(name = "状态", readConverterExp = "0=处理中,1=成功,2=失败")
+    @Excel(name = "状态", readConverterExp = "0=处理中,1=成功,2=失败,3=待人工导入")
     private String generationStatus;
+
+    @Excel(name = "结果来源", readConverterExp = "A=自动AI,M=人工AI")
+    private String resultSource;
 
     @Excel(name = "基础金额")
     private String inputAmount;
@@ -44,6 +47,7 @@ public class Fx67llDortmundReturnGenerationExportResponse {
         this.generationCode = source.getGenerationCode();
         this.generationMode = source.getGenerationMode();
         this.generationStatus = source.getGenerationStatus();
+        this.resultSource = source.getResultSource();
         this.inputAmount = source.getInputAmount() == null ? null : source.getInputAmount().toPlainString();
         this.targetAmount = source.getTargetAmount() == null ? null : source.getTargetAmount().toPlainString();
         this.generatedCount = source.getGeneratedCount();
@@ -62,6 +66,10 @@ public class Fx67llDortmundReturnGenerationExportResponse {
 
     public String getGenerationStatus() {
         return generationStatus;
+    }
+
+    public String getResultSource() {
+        return resultSource;
     }
 
     public String getInputAmount() {

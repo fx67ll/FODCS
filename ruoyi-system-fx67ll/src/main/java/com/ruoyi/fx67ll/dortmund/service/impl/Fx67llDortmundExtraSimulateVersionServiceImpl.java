@@ -1,9 +1,13 @@
 package com.ruoyi.fx67ll.dortmund.service.impl;
 
+import java.math.BigDecimal;
 import java.util.List;
 
+import com.ruoyi.common.core.domain.entity.SysRole;
+import com.ruoyi.common.exception.ServiceException;
 import com.ruoyi.common.utils.DateUtils;
 import com.ruoyi.common.utils.SecurityUtils;
+import com.ruoyi.fx67ll.dortmund.support.DortmundFieldValidator;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.dao.DuplicateKeyException;
 import org.springframework.stereotype.Service;
@@ -59,6 +63,7 @@ public class Fx67llDortmundExtraSimulateVersionServiceImpl implements IFx67llDor
     @Override
     @Transactional(rollbackFor = Exception.class)
     public int insertFx67llDortmundExtraSimulateVersion(Fx67llDortmundExtraSimulateVersion fx67llDortmundExtraSimulateVersion) {
+        validateVersionFields(fx67llDortmundExtraSimulateVersion, true);
         Long userId = SecurityUtils.getUserId();
         fx67llDortmundExtraSimulateVersion.setUserId(userId);
         fx67llDortmundExtraSimulateVersion.setCreateBy(SecurityUtils.getUsername());
@@ -89,6 +94,12 @@ public class Fx67llDortmundExtraSimulateVersionServiceImpl implements IFx67llDor
      */
     @Override
     public int updateFx67llDortmundExtraSimulateVersion(Fx67llDortmundExtraSimulateVersion fx67llDortmundExtraSimulateVersion) {
+        Fx67llDortmundExtraSimulateVersion oldVersion = checkVersionAccess(
+                fx67llDortmundExtraSimulateVersion.getVersionId());
+        if ("1".equals(oldVersion.getInvalidFlag())) {
+            throw new ServiceException("数值模拟版本已作废，不能继续修改！");
+        }
+        validateVersionFields(fx67llDortmundExtraSimulateVersion, false);
         fx67llDortmundExtraSimulateVersion.setUpdateBy(SecurityUtils.getUsername());
         fx67llDortmundExtraSimulateVersion.setUpdateTime(DateUtils.getNowDate());
         return fx67llDortmundExtraSimulateVersionMapper.updateFx67llDortmundExtraSimulateVersion(fx67llDortmundExtraSimulateVersion);
@@ -105,6 +116,12 @@ public class Fx67llDortmundExtraSimulateVersionServiceImpl implements IFx67llDor
     @Override
     @Transactional(rollbackFor = Exception.class)
     public int invalidateFx67llDortmundExtraSimulateVersion(Fx67llDortmundExtraSimulateVersion fx67llDortmundExtraSimulateVersion) {
+        Fx67llDortmundExtraSimulateVersion oldVersion = checkVersionAccess(
+                fx67llDortmundExtraSimulateVersion.getVersionId());
+        if ("1".equals(oldVersion.getInvalidFlag())) {
+            throw new ServiceException("数值模拟版本已作废，请刷新后重试！");
+        }
+        // 先完成版本存在性与归属校验，再清理轮次关系，避免越权请求先破坏关联数据
         fx67llDortmundRoundPlanRelMapper.deleteFx67llDortmundRoundPlanRelByVersionId(fx67llDortmundExtraSimulateVersion.getVersionId());
         fx67llDortmundExtraSimulateVersion.setUpdateBy(SecurityUtils.getUsername());
         fx67llDortmundExtraSimulateVersion.setUpdateTime(DateUtils.getNowDate());
@@ -120,5 +137,73 @@ public class Fx67llDortmundExtraSimulateVersionServiceImpl implements IFx67llDor
     @Override
     public Fx67llDortmundExtraSimulateVersion selectFx67llDortmundExtraSimulateVersionById(Long versionId) {
         return fx67llDortmundExtraSimulateVersionMapper.selectFx67llDortmundExtraSimulateVersionById(versionId);
+    }
+
+    /**
+     * 校验版本字段，新增时全部必填，修改时只校验请求中实际携带的字段
+     * <p>
+     * 数值文本规则与前端数值模拟表单一致：普通十进制、最多20位整数和2位小数、总长度不超过23个字符；
+     * 初始数值和目标数值必须大于0，每轮系数必须大于1。
+     *
+     * @param version  版本记录
+     * @param creating 是否为新增
+     */
+    private void validateVersionFields(Fx67llDortmundExtraSimulateVersion version, boolean creating) {
+        version.setVersionName(creating
+                ? DortmundFieldValidator.requireText(version.getVersionName(), "版本名称", 64)
+                : DortmundFieldValidator.optionalText(version.getVersionName(), "版本名称", 64));
+        version.setSimMode(DortmundFieldValidator.validateEnum(
+                version.getSimMode(), "模拟模式", creating, "full", "half"));
+        version.setInitialValue(DortmundFieldValidator.validateDecimalText(
+                version.getInitialValue(), "初始数值", creating, false, 20, 2, 23,
+                null, BigDecimal.ZERO, null));
+        version.setCoefficient(DortmundFieldValidator.validateDecimalText(
+                version.getCoefficient(), "每轮系数", creating, false, 20, 2, 23,
+                null, BigDecimal.ONE, null));
+        version.setTargetValue(DortmundFieldValidator.validateDecimalText(
+                version.getTargetValue(), "目标数值", creating, false, 20, 2, 23,
+                null, BigDecimal.ZERO, null));
+        if (version.getDelFlag() != null) {
+            version.setDelFlag(DortmundFieldValidator.validateEnum(
+                    version.getDelFlag(), "版本启用状态", true, "0", "2"));
+        }
+    }
+
+    /**
+     * 校验版本存在性与数据范围，返回数据库中的原版本用于后续状态判断
+     *
+     * @param versionId 版本主键
+     * @return 原版本记录
+     */
+    private Fx67llDortmundExtraSimulateVersion checkVersionAccess(Long versionId) {
+        if (versionId == null) {
+            throw new ServiceException("数值模拟版本主键不能为空！");
+        }
+        Fx67llDortmundExtraSimulateVersion version = fx67llDortmundExtraSimulateVersionMapper
+                .selectFx67llDortmundExtraSimulateVersionById(versionId);
+        if (version == null) {
+            throw new ServiceException("数值模拟版本不存在或已被删除，请刷新后重试！");
+        }
+        if (!hasAllDataScope() && !SecurityUtils.getUserId().equals(version.getUserId())) {
+            throw new ServiceException("没有权限操作该数值模拟版本！");
+        }
+        return version;
+    }
+
+    /**
+     * 判断当前用户是否拥有全部数据权限
+     *
+     * @return 是否全部数据权限
+     */
+    private boolean hasAllDataScope() {
+        List<SysRole> roles = SecurityUtils.getLoginUser().getUser().getRoles();
+        if (roles != null) {
+            for (SysRole role : roles) {
+                if ("1".equals(role.getDataScope())) {
+                    return true;
+                }
+            }
+        }
+        return false;
     }
 }

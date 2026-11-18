@@ -5,6 +5,10 @@ import java.util.List;
 import com.ruoyi.fx67ll.dortmund.domain.Fx67llDortmundReturnCombination;
 import com.ruoyi.fx67ll.dortmund.domain.Fx67llDortmundReturnGenerateRequest;
 import com.ruoyi.fx67ll.dortmund.domain.Fx67llDortmundReturnGeneration;
+import com.ruoyi.fx67ll.dortmund.domain.Fx67llDortmundReturnManualImportRequest;
+import com.ruoyi.fx67ll.dortmund.domain.Fx67llDortmundReturnManualImportResult;
+import com.ruoyi.fx67ll.dortmund.domain.Fx67llDortmundReturnManualTask;
+import com.ruoyi.fx67ll.dortmund.domain.Fx67llDortmundReturnManualTemplate;
 import com.ruoyi.fx67ll.dortmund.domain.Fx67llDortmundReturnImage;
 import com.ruoyi.fx67ll.dortmund.domain.Fx67llDortmundReturnImageCleanupResult;
 import org.springframework.web.multipart.MultipartFile;
@@ -25,9 +29,42 @@ public interface IFx67llDortmundReturnCombinationService {
     public Fx67llDortmundReturnGeneration generate(Fx67llDortmundReturnGenerateRequest request);
 
     /**
+     * 创建人工AI处理批次并冻结业务输入快照。
+     *
+     * @param request 回报组合生成请求
+     * @return 可下载并交给第三方AI的标准任务
+     */
+    public Fx67llDortmundReturnManualTask createManualTask(Fx67llDortmundReturnGenerateRequest request);
+
+    /**
      * 执行一次异步批次调度扫描，由定时器和运维手动触发共用。
      */
     public void dispatchPendingGenerations();
+
+    /**
+     * 为待人工导入或遗留失败批次构建人工第三方AI处理任务。
+     *
+     * @param generationId 生成批次主键
+     * @return 可下载并交给第三方AI的标准任务
+     */
+    public Fx67llDortmundReturnManualTask buildManualTask(Long generationId);
+
+    /**
+     * 构建人工AI标准交换模板，供前端复制给第三方AI。
+     *
+     * @return 任务模板与标准化结果模板
+     */
+    public Fx67llDortmundReturnManualTemplate buildManualTemplate();
+
+    /**
+     * 导入第三方AI标准化结果并完成人工处理批次。
+     *
+     * @param generationId 生成批次主键
+     * @param request      标准化结果正文
+     * @return 导入结果
+     */
+    public Fx67llDortmundReturnManualImportResult importManualResult(Long generationId,
+            Fx67llDortmundReturnManualImportRequest request);
 
     /**
      * 查询回报组合生成批次列表

@@ -22,6 +22,9 @@ public class Fx67llDortmundReturnGenerateRequest {
     /** 比赛主键集合 */
     private List<Long> matchIds;
 
+    /** 用户临时补充的业务目标；后端预定义目标由服务端生成，二者独立保存 */
+    private List<String> supplementaryObjectives;
+
     /** 客户端幂等请求号，同一用户重复提交时返回同一批次 */
     private String clientRequestId;
 
@@ -55,6 +58,14 @@ public class Fx67llDortmundReturnGenerateRequest {
 
     public void setMatchIds(List<Long> matchIds) {
         this.matchIds = matchIds;
+    }
+
+    public List<String> getSupplementaryObjectives() {
+        return supplementaryObjectives;
+    }
+
+    public void setSupplementaryObjectives(List<String> supplementaryObjectives) {
+        this.supplementaryObjectives = supplementaryObjectives;
     }
 
     public String getClientRequestId() {

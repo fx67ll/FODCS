@@ -1,5 +1,6 @@
 package com.ruoyi.fx67ll.dortmund.service.impl;
 
+import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -16,6 +17,7 @@ import com.ruoyi.fx67ll.dortmund.mapper.Fx67llDortmundRoundPlanRelMapper;
 import com.ruoyi.fx67ll.dortmund.service.IFx67llDortmundExtraSimulateService;
 import com.ruoyi.fx67ll.dortmund.service.IFx67llDortmundExtraSimulateVersionService;
 import com.ruoyi.fx67ll.dortmund.service.IFx67llDortmundPlanService;
+import com.ruoyi.fx67ll.dortmund.support.DortmundFieldValidator;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.dao.DuplicateKeyException;
 import org.springframework.stereotype.Service;
@@ -124,9 +126,10 @@ public class Fx67llDortmundExtraSimulateServiceImpl implements IFx67llDortmundEx
         if (version == null || !SecurityUtils.getUserId().equals(version.getUserId())) {
             throw new ServiceException("数值模拟版本不存在或没有访问权限！");
         }
-        if ("1".equals(version.getInvalidFlag())) {
-            throw new ServiceException("数值模拟版本已作废，不能继续新增轮次！");
+        if ("1".equals(version.getInvalidFlag()) || "2".equals(version.getDelFlag())) {
+            throw new ServiceException("数值模拟版本已作废或已停用，不能继续新增轮次！");
         }
+        validateSimulateFields(fx67llDortmundExtraSimulate);
         List<Long> planIds = resolveRequestPlanIds(fx67llDortmundExtraSimulate);
         fx67llDortmundExtraSimulate.setUserId(SecurityUtils.getUserId());
         fx67llDortmundExtraSimulate.setCreateBy(SecurityUtils.getUsername());
@@ -162,6 +165,18 @@ public class Fx67llDortmundExtraSimulateServiceImpl implements IFx67llDortmundEx
     @Override
     @Transactional(rollbackFor = Exception.class)
     public int deleteFx67llDortmundExtraSimulateBySimId(Long simId) {
+        if (simId == null) {
+            throw new ServiceException("数值模拟轮次主键不能为空！");
+        }
+        Fx67llDortmundExtraSimulate simulate = fx67llDortmundExtraSimulateMapper
+                .selectFx67llDortmundExtraSimulateBySimId(simId);
+        if (simulate == null) {
+            throw new ServiceException("数值模拟轮次记录不存在，请刷新后重试！");
+        }
+        if (!hasAllDataScope() && !SecurityUtils.getUserId().equals(simulate.getUserId())) {
+            throw new ServiceException("没有权限删除该数值模拟轮次！");
+        }
+        // 先确认轮次存在且归属当前用户，再清理关系行，避免无效请求破坏关联数据
         fx67llDortmundRoundPlanRelMapper.deleteFx67llDortmundRoundPlanRelByRoundId(simId);
         return fx67llDortmundExtraSimulateMapper.deleteFx67llDortmundExtraSimulateBySimId(simId);
     }
@@ -183,6 +198,41 @@ public class Fx67llDortmundExtraSimulateServiceImpl implements IFx67llDortmundEx
                 }
             }
         }
+    }
+
+    /**
+     * 校验数值模拟轮次字段，规则与前端表单和 fx67ll_dortmund_extra_simulate 表保持一致
+     *
+     * @param simulate 数值模拟轮次记录
+     */
+    private void validateSimulateFields(Fx67llDortmundExtraSimulate simulate) {
+        simulate.setSimMode(DortmundFieldValidator.validateEnum(
+                simulate.getSimMode(), "模拟模式", true, "full", "half"));
+        DortmundFieldValidator.validateLong(
+                simulate.getRoundNo(), "本轮轮次", Integer.MIN_VALUE, Integer.MAX_VALUE, true);
+        if (simulate.getRoundNo() == 0) {
+            throw new ServiceException("本轮轮次不能为0！");
+        }
+        simulate.setStartValue(DortmundFieldValidator.validateDecimalText(
+                simulate.getStartValue(), "本轮开始数值", true, false, 20, 2, 23,
+                null, BigDecimal.ZERO, null));
+        simulate.setJoinValue(DortmundFieldValidator.validateDecimalText(
+                simulate.getJoinValue(), "本轮参与数值", true, false, 20, 2, 23,
+                BigDecimal.ZERO, null, null));
+        simulate.setReturnValue(DortmundFieldValidator.validateDecimalText(
+                simulate.getReturnValue(), "本轮实际回收数值", true, false, 20, 2, 23,
+                BigDecimal.ZERO, null, null));
+        simulate.setEndValue(DortmundFieldValidator.validateDecimalText(
+                simulate.getEndValue(), "本轮结束数值", true, false, 20, 2, 23,
+                BigDecimal.ZERO, null, null));
+        simulate.setRoundChange(DortmundFieldValidator.validateDecimalText(
+                simulate.getRoundChange(), "本轮数值变动倍数", true, false, 20, 2, 23,
+                BigDecimal.ZERO, null, null));
+        simulate.setCoefficient(DortmundFieldValidator.validateDecimalText(
+                simulate.getCoefficient(), "本轮使用系数", true, false, 20, 2, 23,
+                null, BigDecimal.ONE, null));
+        simulate.setIsHit(DortmundFieldValidator.validateEnum(
+                simulate.getIsHit(), "本轮是否达成", true, "Y", "N"));
     }
 
     /**

@@ -71,6 +71,51 @@ public class Fx67llDortmundReturnGeneration extends BaseEntity {
     /** 下次可重试时间 */
     private Date nextRetryTime;
 
+    /** 结果来源（A-自动AI，M-人工AI处理） */
+    private String resultSource;
+
+    /** 人工导入操作人 */
+    private String manualImportBy;
+
+    /** 人工导入完成时间 */
+    private Date manualImportTime;
+
+    /** 业务快照数据截止时间（受理批次时冻结） */
+    private Date dataAsOf;
+
+    /** 【通用AI接入点】通用AI场景编码；场景编码稳定，不随供应商、模型或模板变化 */
+    private String aiSceneCode;
+
+    /** 【通用AI接入点】AI标准化响应契约版本 */
+    private String aiContractVersion;
+
+    /** 【通用AI接入点】证据规划调用的供应商无关引用，不建外键 */
+    private String aiPlanRunRef;
+
+    /** 【通用AI接入点】最终分析调用的供应商无关引用，不建外键 */
+    private String aiAnalysisRunRef;
+
+    /** 【通用AI接入点】证据规划调用的业务输入快照，仅含业务数据 */
+    private String aiPlanInputSnapshot;
+
+    /** 【通用AI接入点】最终分析调用的业务输入快照，仅含业务数据 */
+    private String aiAnalysisInputSnapshot;
+
+    /** 【通用AI接入点】供应商无关的调用阶段审计数组（阶段、场景、契约版本、请求号与耗时） */
+    private String aiCallRefs;
+
+    /** 【通用AI接入点】标准化AI结果快照（仅business内容，不含供应商治理元数据） */
+    private String aiResultSnapshot;
+
+    /** 自动AI证据流程状态（N-不适用，P-规划或检索中，R-检索完成，S-证据已固化，F-失败） */
+    private String aiEvidenceStatus;
+
+    /** 自动AI证据检索计划快照，仅供审计与后续通用AI模块复用 */
+    private String aiEvidencePlan;
+
+    /** 自动AI证据规划或检索的受控错误摘要 */
+    private String aiEvidenceError;
+
     /** 回报组合集合 */
     private List<Fx67llDortmundReturnCombination> combinations;
 
@@ -224,6 +269,126 @@ public class Fx67llDortmundReturnGeneration extends BaseEntity {
         this.nextRetryTime = nextRetryTime;
     }
 
+    public String getResultSource() {
+        return resultSource;
+    }
+
+    public void setResultSource(String resultSource) {
+        this.resultSource = resultSource;
+    }
+
+    public String getManualImportBy() {
+        return manualImportBy;
+    }
+
+    public void setManualImportBy(String manualImportBy) {
+        this.manualImportBy = manualImportBy;
+    }
+
+    public Date getManualImportTime() {
+        return manualImportTime;
+    }
+
+    public void setManualImportTime(Date manualImportTime) {
+        this.manualImportTime = manualImportTime;
+    }
+
+    public Date getDataAsOf() {
+        return dataAsOf;
+    }
+
+    public void setDataAsOf(Date dataAsOf) {
+        this.dataAsOf = dataAsOf;
+    }
+
+    public String getAiSceneCode() {
+        return aiSceneCode;
+    }
+
+    public void setAiSceneCode(String aiSceneCode) {
+        this.aiSceneCode = aiSceneCode;
+    }
+
+    public String getAiContractVersion() {
+        return aiContractVersion;
+    }
+
+    public void setAiContractVersion(String aiContractVersion) {
+        this.aiContractVersion = aiContractVersion;
+    }
+
+    public String getAiPlanRunRef() {
+        return aiPlanRunRef;
+    }
+
+    public void setAiPlanRunRef(String aiPlanRunRef) {
+        this.aiPlanRunRef = aiPlanRunRef;
+    }
+
+    public String getAiAnalysisRunRef() {
+        return aiAnalysisRunRef;
+    }
+
+    public void setAiAnalysisRunRef(String aiAnalysisRunRef) {
+        this.aiAnalysisRunRef = aiAnalysisRunRef;
+    }
+
+    public String getAiPlanInputSnapshot() {
+        return aiPlanInputSnapshot;
+    }
+
+    public void setAiPlanInputSnapshot(String aiPlanInputSnapshot) {
+        this.aiPlanInputSnapshot = aiPlanInputSnapshot;
+    }
+
+    public String getAiAnalysisInputSnapshot() {
+        return aiAnalysisInputSnapshot;
+    }
+
+    public void setAiAnalysisInputSnapshot(String aiAnalysisInputSnapshot) {
+        this.aiAnalysisInputSnapshot = aiAnalysisInputSnapshot;
+    }
+
+    public String getAiCallRefs() {
+        return aiCallRefs;
+    }
+
+    public void setAiCallRefs(String aiCallRefs) {
+        this.aiCallRefs = aiCallRefs;
+    }
+
+    public String getAiResultSnapshot() {
+        return aiResultSnapshot;
+    }
+
+    public void setAiResultSnapshot(String aiResultSnapshot) {
+        this.aiResultSnapshot = aiResultSnapshot;
+    }
+
+    public String getAiEvidenceStatus() {
+        return aiEvidenceStatus;
+    }
+
+    public void setAiEvidenceStatus(String aiEvidenceStatus) {
+        this.aiEvidenceStatus = aiEvidenceStatus;
+    }
+
+    public String getAiEvidencePlan() {
+        return aiEvidencePlan;
+    }
+
+    public void setAiEvidencePlan(String aiEvidencePlan) {
+        this.aiEvidencePlan = aiEvidencePlan;
+    }
+
+    public String getAiEvidenceError() {
+        return aiEvidenceError;
+    }
+
+    public void setAiEvidenceError(String aiEvidenceError) {
+        this.aiEvidenceError = aiEvidenceError;
+    }
+
     public List<Fx67llDortmundReturnCombination> getCombinations() {
         return combinations;
     }
@@ -268,6 +433,17 @@ public class Fx67llDortmundReturnGeneration extends BaseEntity {
                 .append("attemptCount", getAttemptCount())
                 .append("maxAttempts", getMaxAttempts())
                 .append("nextRetryTime", getNextRetryTime())
+                .append("resultSource", getResultSource())
+                .append("manualImportBy", getManualImportBy())
+                .append("manualImportTime", getManualImportTime())
+                .append("dataAsOf", getDataAsOf())
+                .append("aiSceneCode", getAiSceneCode())
+                .append("aiContractVersion", getAiContractVersion())
+                .append("aiPlanRunRef", getAiPlanRunRef())
+                .append("aiAnalysisRunRef", getAiAnalysisRunRef())
+                .append("aiCallRefs", getAiCallRefs())
+                .append("aiEvidenceStatus", getAiEvidenceStatus())
+                .append("aiEvidenceError", getAiEvidenceError())
                 .append("createBy", getCreateBy())
                 .append("createTime", getCreateTime())
                 .append("updateBy", getUpdateBy())

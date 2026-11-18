@@ -25,4 +25,12 @@ public interface Fx67llDortmundReturnCombinationMapper {
     public int updateAdoptedFlag(Fx67llDortmundReturnCombination fx67llDortmundReturnCombination);
 
     public int countPlanRelationsByCombinationId(Long combinationId);
+
+    /**
+     * 统计批次下已落库的回报组合数量。
+     *
+     * @param generationId 生成批次主键
+     * @return 组合数量
+     */
+    public int countByGenerationId(Long generationId);
 }

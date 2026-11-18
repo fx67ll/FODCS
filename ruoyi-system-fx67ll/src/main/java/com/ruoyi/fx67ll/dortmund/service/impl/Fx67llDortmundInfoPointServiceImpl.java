@@ -21,6 +21,7 @@ import com.ruoyi.fx67ll.dortmund.mapper.Fx67llDortmundInfoPointTeamRelMapper;
 import com.ruoyi.fx67ll.dortmund.service.IFx67llDortmundBasicSeasonService;
 import com.ruoyi.fx67ll.dortmund.service.IFx67llDortmundBasicTeamService;
 import com.ruoyi.fx67ll.dortmund.service.IFx67llDortmundInfoPointService;
+import com.ruoyi.fx67ll.dortmund.support.DortmundFieldValidator;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -361,15 +362,16 @@ public class Fx67llDortmundInfoPointServiceImpl implements IFx67llDortmundInfoPo
      * @param fx67llDortmundInfoPoint 统一信息点
      */
     private void checkInfoPointFields(Fx67llDortmundInfoPoint fx67llDortmundInfoPoint) {
-        if (fx67llDortmundInfoPoint.getPointTitle() == null || fx67llDortmundInfoPoint.getPointTitle().trim().isEmpty()) {
-            throw new ServiceException("信息点标题不能为空！");
-        }
-        if (fx67llDortmundInfoPoint.getPointContent() == null || fx67llDortmundInfoPoint.getPointContent().trim().isEmpty()) {
-            throw new ServiceException("信息点内容不能为空！");
-        }
-        if (fx67llDortmundInfoPoint.getSourceName() == null || fx67llDortmundInfoPoint.getSourceName().trim().isEmpty()) {
-            throw new ServiceException("信息来源名称不能为空！");
-        }
+        fx67llDortmundInfoPoint.setPointTitle(DortmundFieldValidator.requireText(
+                fx67llDortmundInfoPoint.getPointTitle(), "信息点标题", 233));
+        fx67llDortmundInfoPoint.setPointContent(DortmundFieldValidator.requireText(
+                fx67llDortmundInfoPoint.getPointContent(), "信息点内容", 1023));
+        fx67llDortmundInfoPoint.setSourceName(DortmundFieldValidator.requireText(
+                fx67llDortmundInfoPoint.getSourceName(), "信息来源名称", 233));
+        fx67llDortmundInfoPoint.setSourceUrl(DortmundFieldValidator.optionalText(
+                fx67llDortmundInfoPoint.getSourceUrl(), "来源地址", 1023));
+        fx67llDortmundInfoPoint.setPointRemark(DortmundFieldValidator.optionalText(
+                fx67llDortmundInfoPoint.getPointRemark(), "信息点备注", 1023));
         if (fx67llDortmundInfoPoint.getCollectTime() == null) {
             throw new ServiceException("采集或录入时间不能为空！");
         }
@@ -377,10 +379,8 @@ public class Fx67llDortmundInfoPointServiceImpl implements IFx67llDortmundInfoPo
                 && fx67llDortmundInfoPoint.getEffectiveStartTime().after(fx67llDortmundInfoPoint.getEffectiveEndTime())) {
             throw new ServiceException("信息点生效时间不得晚于失效时间！");
         }
-        if (fx67llDortmundInfoPoint.getAllowPublic() != null && !"0".equals(fx67llDortmundInfoPoint.getAllowPublic())
-                && !"1".equals(fx67llDortmundInfoPoint.getAllowPublic())) {
-            throw new ServiceException("是否可公开只能为不可公开或可公开！");
-        }
+        fx67llDortmundInfoPoint.setAllowPublic(DortmundFieldValidator.validateEnum(
+                fx67llDortmundInfoPoint.getAllowPublic(), "是否可公开", true, "0", "1"));
     }
 
     /**

@@ -19,6 +19,7 @@ import com.ruoyi.fx67ll.dortmund.domain.Fx67llDortmundExtraPlanRel;
 import com.ruoyi.fx67ll.dortmund.domain.Fx67llDortmundPlan;
 import com.ruoyi.fx67ll.dortmund.mapper.Fx67llDortmundExtraPlanRelMapper;
 import com.ruoyi.fx67ll.dortmund.service.IFx67llDortmundPlanService;
+import com.ruoyi.fx67ll.dortmund.support.DortmundFieldValidator;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -113,6 +114,7 @@ public class Fx67llDortmundExtraServiceImpl implements IFx67llDortmundExtraServi
     @Override
     @Transactional(rollbackFor = Exception.class)
     public int insertFx67llDortmundExtra(Fx67llDortmundExtra fx67llDortmundExtra) {
+        validateExtraFields(fx67llDortmundExtra);
         checkPlanFieldsInRequest(fx67llDortmundExtra);
         List<Long> planIds = resolveRequestPlanIds(fx67llDortmundExtra);
         fx67llDortmundExtra.setUserId(SecurityUtils.getUserId());
@@ -144,6 +146,7 @@ public class Fx67llDortmundExtraServiceImpl implements IFx67llDortmundExtraServi
         if (oldExtra == null) {
             throw new ServiceException("外快盈亏记录不存在或已被删除，请刷新后重试！");
         }
+        validateExtraFields(fx67llDortmundExtra);
         checkPlanFieldsInRequest(fx67llDortmundExtra);
         List<Long> planIds = resolveRequestPlanIds(fx67llDortmundExtra);
         fx67llDortmundExtra.setUpdateBy(SecurityUtils.getUsername());
@@ -240,13 +243,8 @@ public class Fx67llDortmundExtraServiceImpl implements IFx67llDortmundExtraServi
             throw new ServiceException("请至少选择两条不同的记录进行合并！");
         }
         // 合并备注由前端合并确认弹窗录入：去除首尾空格，未填写则不保留备注，超长直接拒绝
-        String mergedRemark = extraRemark == null ? null : extraRemark.trim();
-        if (mergedRemark != null && mergedRemark.isEmpty()) {
-            mergedRemark = null;
-        }
-        if (mergedRemark != null && mergedRemark.length() > REMARK_MAX_LENGTH) {
-            throw new ServiceException("合并后的备注长度不能超过" + REMARK_MAX_LENGTH + "个字符！");
-        }
+        String mergedRemark = DortmundFieldValidator.optionalText(
+                extraRemark, "合并后的备注", REMARK_MAX_LENGTH);
 
         // ---------- 2. 加载并校验被合并记录 ----------
         List<Fx67llDortmundExtra> extraList = new ArrayList<>();
@@ -299,7 +297,7 @@ public class Fx67llDortmundExtraServiceImpl implements IFx67llDortmundExtraServi
         // 盈亏金额取所选记录盈亏金额之和（字段为字符串，需解析为金额求和后保留两位小数）
         BigDecimal totalWinMoney = BigDecimal.ZERO;
         for (Fx67llDortmundExtra extra : extraList) {
-            totalWinMoney = totalWinMoney.add(parseMoney(extra.getWinMoney()));
+            totalWinMoney = totalWinMoney.add(parseMoney(extra.getWinMoney(), extra.getExtraId(), "盈亏金额"));
         }
         BigDecimal mergedWinMoney = totalWinMoney.setScale(2, RoundingMode.HALF_UP);
 
@@ -322,6 +320,8 @@ public class Fx67llDortmundExtraServiceImpl implements IFx67llDortmundExtraServi
         // 更新时间取合并操作的当前时间，更新人取当前操作人
         mergedExtra.setUpdateBy(SecurityUtils.getUsername());
         mergedExtra.setUpdateTime(DateUtils.getNowDate());
+        // 合并结果重新按当前规则校验，避免历史异常金额或超长备注继续写入新记录
+        validateExtraFields(mergedExtra);
 
         // 直接走 Mapper 新增，手动设好全部字段（不调用 insertFx67llDortmundExtra，
         // 因为它会强制覆盖 userId/createBy/createTime 为当前用户与当前时间，不符合"创建时间取最后一条原值"的要求）
@@ -549,15 +549,46 @@ public class Fx67llDortmundExtraServiceImpl implements IFx67llDortmundExtraServi
 
     /**
      * 解析金额字符串为 BigDecimal，空值按 0 处理，格式异常抛业务异常避免静默丢数
+     *
+     * @param money      金额文本
+     * @param extraId    外快记录主键，用于定位异常数据
+     * @param fieldLabel 字段名称
+     * @return 解析后的金额，空值返回 0
      */
-    private BigDecimal parseMoney(String money) {
+    private BigDecimal parseMoney(String money, Long extraId, String fieldLabel) {
         if (money == null || money.trim().isEmpty()) {
             return BigDecimal.ZERO;
         }
         try {
             return new BigDecimal(money.trim());
         } catch (NumberFormatException e) {
-            throw new ServiceException("待合并记录的金额字段格式异常，无法合并！");
+            throw new ServiceException("外快记录ID " + extraId + " 的" + fieldLabel
+                    + "格式异常，无法合并；请先修正原记录后重试！");
         }
+    }
+
+    /**
+     * 校验外快盈亏金额文本与枚举字段，规则与 fx67ll_dortmund_extra 表及前端表单保持一致
+     *
+     * @param extra 外快盈亏记录
+     */
+    private void validateExtraFields(Fx67llDortmundExtra extra) {
+        extra.setExtraMoney(DortmundFieldValidator.validateDecimalText(
+                extra.getExtraMoney(), "当前总金额", true, false, 20, 2, 23,
+                BigDecimal.ZERO, null, null));
+        extra.setWinMoney(DortmundFieldValidator.validateDecimalText(
+                extra.getWinMoney(), "盈亏金额", true, true, 19, 2, 23,
+                null, null, null));
+        extra.setSeedMoney(DortmundFieldValidator.validateDecimalText(
+                extra.getSeedMoney(), "当前本金", true, false, 20, 2, 23,
+                BigDecimal.ZERO, null, null));
+        extra.setSaveMoney(DortmundFieldValidator.validateDecimalText(
+                extra.getSaveMoney(), "落袋金额", true, false, 20, 2, 23,
+                BigDecimal.ZERO, null, null));
+        extra.setTargetMoney(DortmundFieldValidator.validateDecimalText(
+                extra.getTargetMoney(), "目标金额", true, false, 20, 2, 23,
+                BigDecimal.ZERO, null, null));
+        extra.setIsWin(DortmundFieldValidator.validateEnum(extra.getIsWin(), "盈亏状态", true, "Y", "N"));
+        extra.setExtraRemark(DortmundFieldValidator.optionalText(extra.getExtraRemark(), "记录说明", 1023));
     }
 }

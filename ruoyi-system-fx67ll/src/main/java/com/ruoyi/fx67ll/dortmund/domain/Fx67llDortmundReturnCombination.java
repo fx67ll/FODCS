@@ -74,6 +74,15 @@ public class Fx67llDortmundReturnCombination extends BaseEntity {
     /** AI分析业务输出 */
     private String combinationRemark;
 
+    /** 候选完整证据链JSON，仅用于自动AI复核，不参与金额计算 */
+    private String evidenceChain;
+
+    /** 候选置信度（0-100），仅用于复核和排序，不参与金额计算 */
+    private Integer aiConfidence;
+
+    /** 候选风险说明，仅用于复核 */
+    private String riskNotes;
+
     /** 数据归属用户主键 */
     private Long userId;
 
@@ -247,6 +256,30 @@ public class Fx67llDortmundReturnCombination extends BaseEntity {
         this.combinationRemark = combinationRemark;
     }
 
+    public String getEvidenceChain() {
+        return evidenceChain;
+    }
+
+    public void setEvidenceChain(String evidenceChain) {
+        this.evidenceChain = evidenceChain;
+    }
+
+    public Integer getAiConfidence() {
+        return aiConfidence;
+    }
+
+    public void setAiConfidence(Integer aiConfidence) {
+        this.aiConfidence = aiConfidence;
+    }
+
+    public String getRiskNotes() {
+        return riskNotes;
+    }
+
+    public void setRiskNotes(String riskNotes) {
+        this.riskNotes = riskNotes;
+    }
+
     public Long getUserId() {
         return userId;
     }
@@ -324,6 +357,9 @@ public class Fx67llDortmundReturnCombination extends BaseEntity {
                 .append("reviewTime", getReviewTime())
                 .append("images", getImages())
                 .append("planLinked", getPlanLinked())
+                .append("evidenceChain", getEvidenceChain())
+                .append("aiConfidence", getAiConfidence())
+                .append("riskNotes", getRiskNotes())
                 .append("userId", getUserId())
                 .append("createBy", getCreateBy())
                 .append("createTime", getCreateTime())

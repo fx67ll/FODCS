@@ -13,6 +13,8 @@ import com.ruoyi.fx67ll.dortmund.domain.Fx67llDortmundOdds;
 import com.ruoyi.fx67ll.dortmund.mapper.Fx67llDortmundOddsMapper;
 import com.ruoyi.fx67ll.dortmund.service.IFx67llDortmundBasicMatchService;
 import com.ruoyi.fx67ll.dortmund.service.IFx67llDortmundOddsService;
+import com.ruoyi.fx67ll.dortmund.support.DortmundFieldValidator;
+import com.ruoyi.fx67ll.dortmund.support.DortmundWeightCodec;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.dao.DuplicateKeyException;
 import org.springframework.stereotype.Service;
@@ -26,8 +28,6 @@ import org.springframework.transaction.annotation.Transactional;
  */
 @Service
 public class Fx67llDortmundOddsServiceImpl implements IFx67llDortmundOddsService {
-    private static final BigDecimal MAX_WEIGHT = new BigDecimal("100");
-
     private static final int ODDS_REMARK_MAX_LENGTH = 1023;
 
     private static final String YES = "Y";
@@ -110,6 +110,8 @@ public class Fx67llDortmundOddsServiceImpl implements IFx67llDortmundOddsService
         if (fx67llDortmundOdds == null) {
             throw new ServiceException("倍率记录不能为空！");
         }
+        // 先校验倍率自身字段，避免当场新建比赛成功后才发现倍率内容不合法
+        checkOddsRequestFields(fx67llDortmundOdds);
         if (fx67llDortmundOdds.getNewMatch() != null) {
             if (fx67llDortmundOdds.getMatchId() != null) {
                 throw new ServiceException("已有比赛和新比赛不能同时提交！");
@@ -219,24 +221,31 @@ public class Fx67llDortmundOddsServiceImpl implements IFx67llDortmundOddsService
      * @param fx67llDortmundOdds 倍率记录
      */
     private void checkOddsFields(Fx67llDortmundOdds fx67llDortmundOdds) {
+        checkOddsRequestFields(fx67llDortmundOdds);
         if (fx67llDortmundOdds.getMatchId() == null) {
             throw new ServiceException("比赛不能为空！");
         }
-        if (fx67llDortmundOdds.getOddsCode() == null || fx67llDortmundOdds.getOddsCode().trim().isEmpty()
-                || fx67llDortmundOdds.getOddsCode().trim().length() > 23) {
-            throw new ServiceException("倍率记录编码不能为空且不能超过23个字符！");
+    }
+
+    /**
+     * 校验倍率自身字段，长度和精度与 fx67ll_dortmund_odds 表结构保持一致
+     *
+     * @param fx67llDortmundOdds 倍率记录
+     */
+    private void checkOddsRequestFields(Fx67llDortmundOdds fx67llDortmundOdds) {
+        fx67llDortmundOdds.setOddsCode(DortmundFieldValidator.requireText(
+                fx67llDortmundOdds.getOddsCode(), "倍率记录编码", 23));
+        if (fx67llDortmundOdds.getSourceTime() == null) {
+            throw new ServiceException("倍率来源时间不能为空！");
         }
-        if (fx67llDortmundOdds.getSourceTime() == null || fx67llDortmundOdds.getHandicapValue() == null) {
-            throw new ServiceException("倍率来源时间和让分值不能为空！");
-        }
+        DortmundFieldValidator.validateDecimal(fx67llDortmundOdds.getHandicapValue(), "让分值",
+                true, true, null, null, new BigDecimal("999999.99"), 6, 2);
         if (fx67llDortmundOdds.getActiveFlag() != null && !YES.equals(fx67llDortmundOdds.getActiveFlag())
                 && !NO.equals(fx67llDortmundOdds.getActiveFlag())) {
             throw new ServiceException("倍率有效状态不正确！");
         }
-        if (fx67llDortmundOdds.getOddsRemark() != null
-                && fx67llDortmundOdds.getOddsRemark().length() > ODDS_REMARK_MAX_LENGTH) {
-            throw new ServiceException("倍率记录说明不能超过1023个字符！");
-        }
+        fx67llDortmundOdds.setOddsRemark(DortmundFieldValidator.optionalText(
+                fx67llDortmundOdds.getOddsRemark(), "倍率记录说明", ODDS_REMARK_MAX_LENGTH));
         checkOddsValue(fx67llDortmundOdds.getHomeWinOdds(), "主胜倍率");
         checkOddsValue(fx67llDortmundOdds.getDrawOdds(), "平局倍率");
         checkOddsValue(fx67llDortmundOdds.getAwayWinOdds(), "客胜倍率");
@@ -255,11 +264,13 @@ public class Fx67llDortmundOddsServiceImpl implements IFx67llDortmundOddsService
         if (value == null || value.signum() <= 0) {
             throw new ServiceException(fieldName + "必须大于0！");
         }
+        DortmundFieldValidator.validateDecimal(value, fieldName, true, false, null, BigDecimal.ZERO,
+                new BigDecimal("999999.9999"), 6, 4);
     }
 
     private void checkWeight(BigDecimal value, String fieldName) {
-        if (value != null && (value.signum() < 0 || value.compareTo(MAX_WEIGHT) > 0)) {
-            throw new ServiceException(fieldName + "必须在0到100之间！");
+        if (value != null) {
+            DortmundWeightCodec.toUnits(value, fieldName);
         }
     }
 

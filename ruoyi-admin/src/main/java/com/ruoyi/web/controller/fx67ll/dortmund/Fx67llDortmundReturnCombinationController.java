@@ -29,6 +29,9 @@ import com.ruoyi.fx67ll.dortmund.domain.Fx67llDortmundReturnGenerateRequest;
 import com.ruoyi.fx67ll.dortmund.domain.Fx67llDortmundReturnGeneration;
 import com.ruoyi.fx67ll.dortmund.domain.Fx67llDortmundReturnGenerationExportResponse;
 import com.ruoyi.fx67ll.dortmund.domain.Fx67llDortmundReturnImage;
+import com.ruoyi.fx67ll.dortmund.domain.Fx67llDortmundReturnManualImportRequest;
+import com.ruoyi.fx67ll.dortmund.domain.Fx67llDortmundReturnManualTask;
+import com.ruoyi.fx67ll.dortmund.domain.Fx67llDortmundReturnManualTemplate;
 import com.ruoyi.fx67ll.dortmund.service.IFx67llDortmundReturnCombinationService;
 
 /**
@@ -55,6 +58,17 @@ public class Fx67llDortmundReturnCombinationController extends BaseController {
     }
 
     /**
+     * 创建人工AI处理任务；任务创建即冻结业务快照，不进入自动AI调度队列。
+     */
+    @PreAuthorize("@ss.hasPermi('dortmund:return:generate')")
+    @Log(title = "Dortmund回报组合人工任务", businessType = BusinessType.INSERT)
+    @RepeatSubmit
+    @PostMapping("/manual-task")
+    public AjaxResult createManualTask(@RequestBody Fx67llDortmundReturnGenerateRequest request) {
+        return success(fx67llDortmundReturnCombinationService.createManualTask(request));
+    }
+
+    /**
      * 查询回报组合生成批次列表
      */
     @PreAuthorize("@ss.hasPermi('dortmund:return:list')")
@@ -74,6 +88,40 @@ public class Fx67llDortmundReturnCombinationController extends BaseController {
             @RequestParam(value = "sortOrder", required = false) String sortOrder) {
         return success(fx67llDortmundReturnCombinationService.selectGenerationById(
                 generationId, sortField, sortOrder));
+    }
+
+    /**
+     * 查询待人工导入或遗留失败批次的人工AI处理任务。
+     */
+    @PreAuthorize("@ss.hasPermi('dortmund:return:generate')")
+    @GetMapping("/generation/{generationId}/manual-task")
+    public AjaxResult manualTask(@PathVariable("generationId") Long generationId) {
+        Fx67llDortmundReturnManualTask task =
+                fx67llDortmundReturnCombinationService.buildManualTask(generationId);
+        return success(task);
+    }
+
+    /**
+     * 获取可复制的人工AI任务与标准化结果模板。
+     */
+    @PreAuthorize("@ss.hasPermi('dortmund:return:generate')")
+    @GetMapping("/manual-template")
+    public AjaxResult manualTemplate() {
+        Fx67llDortmundReturnManualTemplate template =
+                fx67llDortmundReturnCombinationService.buildManualTemplate();
+        return success(template);
+    }
+
+    /**
+     * 导入第三方AI标准化结果并完成人工AI处理批次。
+     */
+    @PreAuthorize("@ss.hasPermi('dortmund:return:generate')")
+    @Log(title = "Dortmund回报组合人工AI结果导入", businessType = BusinessType.INSERT)
+    @RepeatSubmit
+    @PostMapping("/generation/{generationId}/manual-import")
+    public AjaxResult importManualResult(@PathVariable("generationId") Long generationId,
+            @RequestBody Fx67llDortmundReturnManualImportRequest request) {
+        return success(fx67llDortmundReturnCombinationService.importManualResult(generationId, request));
     }
 
     /**

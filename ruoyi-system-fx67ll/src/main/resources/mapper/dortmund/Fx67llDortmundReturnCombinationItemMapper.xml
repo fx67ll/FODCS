@@ -16,6 +16,9 @@
         <!-- appliedWeight仅为AI评估权重，不参与任何金额计算。 -->
         <result property="appliedWeight" column="applied_weight"/>
         <result property="selectionReason" column="selection_reason"/>
+        <result property="weightRationale" column="weight_rationale"/>
+        <result property="evidenceRefs" column="evidence_refs"/>
+        <result property="counterEvidenceRefs" column="counter_evidence_refs"/>
         <result property="itemSort" column="item_sort"/>
         <result property="matchSummary" column="match_summary"/>
         <result property="createBy" column="create_by"/>
@@ -30,9 +33,12 @@
                m.match_code,
                i.selection_type,
                i.odds_value_snapshot,
-               i.manual_weight_snapshot,
-               i.applied_weight,
+               round(i.manual_weight_snapshot / 10000, 4) as manual_weight_snapshot,
+               round(i.applied_weight / 10000, 4) as applied_weight,
                i.selection_reason,
+               i.weight_rationale,
+               i.evidence_refs,
+               i.counter_evidence_refs,
                i.item_sort,
                concat(coalesce(ht.team_name, ''), ' vs ', coalesce(at.team_name, ''), ' ',
                       date_format(m.match_time, '%Y-%m-%d %H:%i')) as match_summary,
@@ -50,9 +56,12 @@
             parameterType="Fx67llDortmundReturnCombinationItem" useGeneratedKeys="true" keyProperty="itemId">
         insert into fx67ll_dortmund_return_combination_item
         (combination_id, match_id, odds_id, selection_type, odds_value_snapshot, manual_weight_snapshot,
-         applied_weight, selection_reason, item_sort, create_by, create_time)
+         applied_weight, selection_reason, weight_rationale, evidence_refs, counter_evidence_refs,
+         item_sort, create_by, create_time)
         values
         (#{combinationId}, #{matchId}, #{oddsId}, #{selectionType}, #{oddsValueSnapshot},
-         #{manualWeightSnapshot}, #{appliedWeight}, #{selectionReason}, #{itemSort}, #{createBy}, #{createTime})
+         round(#{manualWeightSnapshot} * 10000), round(#{appliedWeight} * 10000),
+         #{selectionReason}, #{weightRationale}, #{evidenceRefs}, #{counterEvidenceRefs},
+         #{itemSort}, #{createBy}, #{createTime})
     </insert>
 </mapper>

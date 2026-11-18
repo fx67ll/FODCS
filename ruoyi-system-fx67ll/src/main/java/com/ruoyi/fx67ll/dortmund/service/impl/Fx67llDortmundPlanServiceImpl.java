@@ -40,6 +40,7 @@ import com.ruoyi.fx67ll.dortmund.mapper.Fx67llDortmundPlanReturnRelMapper;
 import com.ruoyi.fx67ll.dortmund.mapper.Fx67llDortmundReturnCombinationMapper;
 import com.ruoyi.fx67ll.dortmund.mapper.Fx67llDortmundReturnGenerationMapper;
 import com.ruoyi.fx67ll.dortmund.service.IFx67llDortmundReturnCombinationService;
+import com.ruoyi.fx67ll.dortmund.support.DortmundFieldValidator;
 
 /**
  * 方案计划Service业务层处理
@@ -287,15 +288,10 @@ public class Fx67llDortmundPlanServiceImpl implements IFx67llDortmundPlanService
      * @param fx67llDortmundPlan 方案计划
      */
     private void checkPlanFields(Fx67llDortmundPlan fx67llDortmundPlan) {
-        if (fx67llDortmundPlan.getPlanContent() == null || fx67llDortmundPlan.getPlanContent().trim().isEmpty()) {
-            throw new ServiceException("方案计划正文不能为空！");
-        }
-        if (fx67llDortmundPlan.getPlanContent().length() > CONTENT_MAX_LENGTH) {
-            throw new ServiceException("方案计划正文不能超过1023个字符！");
-        }
-        if (fx67llDortmundPlan.getPlanRemark() != null && fx67llDortmundPlan.getPlanRemark().length() > REMARK_MAX_LENGTH) {
-            throw new ServiceException("方案计划说明不能超过1023个字符！");
-        }
+        fx67llDortmundPlan.setPlanContent(DortmundFieldValidator.requireText(
+                fx67llDortmundPlan.getPlanContent(), "方案计划正文", CONTENT_MAX_LENGTH));
+        fx67llDortmundPlan.setPlanRemark(DortmundFieldValidator.optionalText(
+                fx67llDortmundPlan.getPlanRemark(), "方案计划说明", REMARK_MAX_LENGTH));
         if (fx67llDortmundPlan.getPlanRate() != null && fx67llDortmundPlan.getPlanRate().compareTo(BigDecimal.ZERO) <= 0) {
             throw new ServiceException("方案计划倍率有值时必须大于0！");
         }
@@ -555,17 +551,13 @@ public class Fx67llDortmundPlanServiceImpl implements IFx67llDortmundPlanService
     }
 
     private void validatePlanRate(BigDecimal value, String label) {
-        if (value != null && (value.compareTo(MAX_PLAN_RATE) > 0
-                || value.stripTrailingZeros().scale() > 6)) {
-            throw new ServiceException(label + "超出数据库允许范围，最多18位整数和6位小数！");
-        }
+        DortmundFieldValidator.validateDecimal(value, label, false, false, null, BigDecimal.ZERO,
+                MAX_PLAN_RATE, 18, 6);
     }
 
     private void validatePlanAmount(BigDecimal value, String label) {
-        if (value != null && (value.compareTo(MAX_PLAN_AMOUNT) > 0
-                || value.stripTrailingZeros().scale() > 2)) {
-            throw new ServiceException(label + "超出数据库允许范围，最多22位整数和2位小数！");
-        }
+        DortmundFieldValidator.validateDecimal(value, label, false, false, BigDecimal.ZERO, null,
+                MAX_PLAN_AMOUNT, 22, 2);
     }
 
     private static class PlanCombinationStats {
