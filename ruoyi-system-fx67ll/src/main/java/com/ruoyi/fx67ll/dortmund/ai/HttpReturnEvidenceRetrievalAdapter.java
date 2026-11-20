@@ -8,8 +8,11 @@ import com.alibaba.fastjson2.JSON;
 import com.alibaba.fastjson2.JSONArray;
 import com.alibaba.fastjson2.JSONObject;
 import com.ruoyi.common.exception.ServiceException;
+import com.ruoyi.fx67ll.dortmund.config.DortmundModuleConfig;
+import com.ruoyi.fx67ll.dortmund.config.DortmundRuntimeProperties;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
@@ -35,28 +38,15 @@ import org.springframework.web.client.RestTemplate;
 public class HttpReturnEvidenceRetrievalAdapter implements ReturnEvidenceRetrievalPort {
     private static final Logger log = LoggerFactory.getLogger(HttpReturnEvidenceRetrievalAdapter.class);
 
-    /** 检索网关连接超时，避免DNS或握手异常长期占用生成worker。 */
-    private static final int CONNECT_TIMEOUT_SECONDS = 10;
-    /** 检索网关响应上限，覆盖多条正文并阻止异常超大响应。 */
-    private static final int MAX_RESPONSE_CHARS = 4 * 1024 * 1024;
-    /** 部署未配置时的结果条数兜底，与业务服务默认值保持一致。 */
-    private static final int DEFAULT_MAX_RESULTS = 6;
-    /** 部署未配置时的读取超时，覆盖检索网关排队和网络抖动。 */
-    private static final int DEFAULT_READ_TIMEOUT_SECONDS = 30;
-    /** 读取超时下限，避免误配过小值中断正常检索。 */
-    private static final int MIN_READ_TIMEOUT_SECONDS = 10;
-
     @Value("${dortmund.ai.retrieval.url:}")
     private String retrievalUrl;
 
     @Value("${dortmund.ai.retrieval.api-key:}")
     private String retrievalApiKey;
 
-    @Value("${dortmund.ai.retrieval.max-results:6}")
-    private int configuredMaxResults;
-
-    @Value("${dortmund.ai.retrieval.timeout-seconds:30}")
-    private int configuredTimeoutSeconds;
+    /** 检索数值边界统一从模块类型化配置读取。 */
+    @Autowired
+    private DortmundRuntimeProperties dortmundRuntimeProperties;
 
     @Override
     public boolean isConfigured() {
@@ -73,7 +63,7 @@ public class HttpReturnEvidenceRetrievalAdapter implements ReturnEvidenceRetriev
             throw new ServiceException("证据检索查询不能为空！");
         }
         int boundedResults = Math.max(1, Math.min(maxResults,
-                configuredMaxResults > 0 ? configuredMaxResults : DEFAULT_MAX_RESULTS));
+                dortmundRuntimeProperties.getAi().getRetrieval().getMaxResults()));
         JSONObject request = new JSONObject();
         request.put("query", query.getQuery());
         request.put("maxResults", boundedResults);
@@ -119,7 +109,7 @@ public class HttpReturnEvidenceRetrievalAdapter implements ReturnEvidenceRetriev
         if (isBlank(rawResponse)) {
             throw new ServiceException("证据检索服务未返回内容！");
         }
-        if (rawResponse.length() > MAX_RESPONSE_CHARS) {
+        if (rawResponse.length() > DortmundModuleConfig.Retrieval.MAX_RESPONSE_CHARS) {
             throw new ServiceException("证据检索响应超过允许大小！");
         }
         JSONObject body;
@@ -157,9 +147,11 @@ public class HttpReturnEvidenceRetrievalAdapter implements ReturnEvidenceRetriev
 
     private RestTemplate createRestTemplate() {
         SimpleClientHttpRequestFactory factory = new SimpleClientHttpRequestFactory();
-        factory.setConnectTimeout((int) Duration.ofSeconds(CONNECT_TIMEOUT_SECONDS).toMillis());
-        int readTimeout = configuredTimeoutSeconds > 0 ? configuredTimeoutSeconds : DEFAULT_READ_TIMEOUT_SECONDS;
-        factory.setReadTimeout((int) Duration.ofSeconds(Math.max(readTimeout, MIN_READ_TIMEOUT_SECONDS)).toMillis());
+        factory.setConnectTimeout((int) Duration.ofSeconds(
+                DortmundModuleConfig.Retrieval.CONNECT_TIMEOUT_SECONDS).toMillis());
+        int readTimeout = dortmundRuntimeProperties.getAi().getRetrieval().getTimeoutSeconds();
+        factory.setReadTimeout((int) Duration.ofSeconds(
+                Math.max(readTimeout, DortmundModuleConfig.Retrieval.MIN_TIMEOUT_SECONDS)).toMillis());
         return new RestTemplate(factory);
     }
 
@@ -179,7 +171,8 @@ public class HttpReturnEvidenceRetrievalAdapter implements ReturnEvidenceRetriev
         if (isBlank(value)) {
             return "";
         }
-        return value.length() > 500 ? value.substring(0, 500) : value;
+        return value.length() > DortmundModuleConfig.Ai.MAX_LOG_RESPONSE_CHARS
+                ? value.substring(0, DortmundModuleConfig.Ai.MAX_LOG_RESPONSE_CHARS) : value;
     }
 
     private boolean isBlank(String value) {

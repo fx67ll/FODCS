@@ -81,15 +81,22 @@
                 #{endUpdateTime}
             </if>
         </where>
-        <!-- 动态排序：如果 isNeedSort == 'Y'，则按 sort 排序，否则按 create_time 排序 -->
-        <choose>
-            <when test="isNeedSort != null and isNeedSort == 'Y'.toString()">
-                order by team_sort
-            </when>
-            <otherwise>
-                order by STR_TO_DATE(create_time, "%Y-%m-%d %H:%i:%s") desc
-            </otherwise>
-        </choose>
+        <!--
+          统一展示顺序：NULL 或 0 视为未设置并置于末尾；已设置排序值时按升序排列；
+          相同排序值按创建时间倒序，最后以主键倒序保证分页稳定。
+        -->
+        order by case when team_sort is null or team_sort = 0 then 1 else 0 end asc,
+                 case when team_sort is null or team_sort = 0 then 0 else team_sort end asc,
+                 STR_TO_DATE(create_time, "%Y-%m-%d %H:%i:%s") desc,
+                 team_id desc
+    </select>
+
+    <!-- 选项接口只读取两个文本字段；去重和分隔符拆分在服务层完成，兼容第三方导入数据。 -->
+    <select id="selectDistinctTeamVenueAndTag" resultMap="Fx67llDortmundBasicTeamResult">
+        select distinct team_venue, team_tag
+        from fx67ll_dortmund_team
+        where (team_venue is not null and trim(team_venue) &lt;&gt; '')
+           or (team_tag is not null and trim(team_tag) &lt;&gt; '')
     </select>
 
     <select id="selectFx67llDortmundBasicTeamByTeamId" parameterType="Long" resultMap="Fx67llDortmundBasicTeamResult">

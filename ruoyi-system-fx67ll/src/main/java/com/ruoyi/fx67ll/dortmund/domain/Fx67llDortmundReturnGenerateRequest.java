@@ -19,8 +19,14 @@ public class Fx67llDortmundReturnGenerateRequest {
     /** 目标金额 */
     private BigDecimal targetAmount;
 
-    /** 当前版本参与AI分析并可供组合选择的同一比赛池，限1-8场；16场分析池与8场采用池的拆分尚未实现。 */
+    /** 参与AI分析的比赛池，限1-23场；每条候选仍最多8场。 */
     private List<Long> matchIds;
+
+    /** 用户偏好编码；只作为AI候选结构提示，不参与金额、赔率或偏差计算。 */
+    private String preferenceCode;
+
+    /** 受控偏好维度；可省略并由预设编码补全，四项必须同时提供或同时省略。 */
+    private Fx67llDortmundReturnPreferenceDimensions preferenceDimensions;
 
     /** 用户临时补充的业务目标；后端预定义目标由服务端生成，二者独立保存 */
     private List<String> supplementaryObjectives;
@@ -58,6 +64,22 @@ public class Fx67llDortmundReturnGenerateRequest {
 
     public void setMatchIds(List<Long> matchIds) {
         this.matchIds = matchIds;
+    }
+
+    public String getPreferenceCode() {
+        return preferenceCode;
+    }
+
+    public void setPreferenceCode(String preferenceCode) {
+        this.preferenceCode = preferenceCode;
+    }
+
+    public Fx67llDortmundReturnPreferenceDimensions getPreferenceDimensions() {
+        return preferenceDimensions;
+    }
+
+    public void setPreferenceDimensions(Fx67llDortmundReturnPreferenceDimensions preferenceDimensions) {
+        this.preferenceDimensions = preferenceDimensions;
     }
 
     public List<String> getSupplementaryObjectives() {

@@ -7,6 +7,7 @@ import com.ruoyi.common.core.domain.entity.SysRole;
 import com.ruoyi.common.exception.ServiceException;
 import com.ruoyi.common.utils.DateUtils;
 import com.ruoyi.common.utils.SecurityUtils;
+import com.ruoyi.fx67ll.dortmund.config.DortmundModuleConfig;
 import com.ruoyi.fx67ll.dortmund.support.DortmundFieldValidator;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.dao.DuplicateKeyException;
@@ -71,8 +72,8 @@ public class Fx67llDortmundExtraSimulateVersionServiceImpl implements IFx67llDor
         fx67llDortmundExtraSimulateVersion.setUserId(userId);
         fx67llDortmundExtraSimulateVersion.setCreateBy(SecurityUtils.getUsername());
         fx67llDortmundExtraSimulateVersion.setCreateTime(DateUtils.getNowDate());
-        // 版本号在用户维度固定递增；最多重试3次，避免并发冲突无限循环。
-        for (int attempt = 0; attempt < 3; attempt++) {
+        // 版本号在用户维度固定递增；冲突重试有固定上限，避免并发争用形成无限循环。
+        for (int attempt = 0; attempt < DortmundModuleConfig.Simulation.MAX_VERSION_CREATE_ATTEMPTS; attempt++) {
             Long maxVersionNo = fx67llDortmundExtraSimulateVersionMapper
                     .selectMaxVersionNoByUserIdForUpdate(userId);
             fx67llDortmundExtraSimulateVersion.setVersionNo(
@@ -81,13 +82,13 @@ public class Fx67llDortmundExtraSimulateVersionServiceImpl implements IFx67llDor
                 return fx67llDortmundExtraSimulateVersionMapper
                         .insertFx67llDortmundExtraSimulateVersion(fx67llDortmundExtraSimulateVersion);
             } catch (DuplicateKeyException e) {
-                if (attempt == 2) {
-                    throw new com.ruoyi.common.exception.ServiceException(
+                if (attempt == DortmundModuleConfig.Simulation.MAX_VERSION_CREATE_ATTEMPTS - 1) {
+                    throw new ServiceException(
                             "版本序号生成发生并发冲突，请重新提交！");
                 }
             }
         }
-        throw new com.ruoyi.common.exception.ServiceException("版本序号生成失败，请重新提交！");
+        throw new ServiceException("版本序号生成失败，请重新提交！");
     }
 
     /**
@@ -146,7 +147,7 @@ public class Fx67llDortmundExtraSimulateVersionServiceImpl implements IFx67llDor
     /**
      * 校验版本字段，新增时全部必填，修改时只校验请求中实际携带的字段
      * <p>
-     * 数值文本规则与前端数值模拟表单一致：普通十进制、最多20位整数和2位小数、总长度不超过23个字符；
+     * 数值文本规则与前端数值模拟表单一致：普通十进制、集中配置的整数位/小数位/总长度；
      * 初始数值和目标数值必须大于0，每轮系数必须大于1。
      *
      * @param version  版本记录
@@ -154,19 +155,30 @@ public class Fx67llDortmundExtraSimulateVersionServiceImpl implements IFx67llDor
      */
     private void validateVersionFields(Fx67llDortmundExtraSimulateVersion version, boolean creating) {
         version.setVersionName(creating
-                ? DortmundFieldValidator.requireText(version.getVersionName(), "版本名称", 64)
-                : DortmundFieldValidator.optionalText(version.getVersionName(), "版本名称", 64));
+                ? DortmundFieldValidator.requireText(version.getVersionName(), "版本名称",
+                        DortmundModuleConfig.Field.SIMULATE_VERSION_NAME)
+                : DortmundFieldValidator.optionalText(version.getVersionName(), "版本名称",
+                        DortmundModuleConfig.Field.SIMULATE_VERSION_NAME));
         version.setSimMode(DortmundFieldValidator.validateEnum(
                 version.getSimMode(), "模拟模式", creating, "full", "half"));
         version.setInitialValue(DortmundFieldValidator.validateDecimalText(
-                version.getInitialValue(), "初始数值", creating, false, 20, 2, 23,
-                null, BigDecimal.ZERO, null));
+                version.getInitialValue(), "初始数值", creating, false,
+                DortmundModuleConfig.Numeric.SIMULATION_INTEGER_DIGITS,
+                DortmundModuleConfig.Numeric.SIMULATION_FRACTION_DIGITS,
+                DortmundModuleConfig.Numeric.SIMULATION_TEXT_LENGTH,
+                DortmundModuleConfig.Simulation.MIN_VALUE, null, null));
         version.setCoefficient(DortmundFieldValidator.validateDecimalText(
-                version.getCoefficient(), "每轮系数", creating, false, 20, 2, 23,
-                null, BigDecimal.ONE, null));
+                version.getCoefficient(), "每轮系数", creating, false,
+                DortmundModuleConfig.Numeric.SIMULATION_INTEGER_DIGITS,
+                DortmundModuleConfig.Numeric.SIMULATION_FRACTION_DIGITS,
+                DortmundModuleConfig.Numeric.SIMULATION_TEXT_LENGTH,
+                null, DortmundModuleConfig.Simulation.COEFFICIENT_EXCLUSIVE_MIN, null));
         version.setTargetValue(DortmundFieldValidator.validateDecimalText(
-                version.getTargetValue(), "目标数值", creating, false, 20, 2, 23,
-                null, BigDecimal.ZERO, null));
+                version.getTargetValue(), "目标数值", creating, false,
+                DortmundModuleConfig.Numeric.SIMULATION_INTEGER_DIGITS,
+                DortmundModuleConfig.Numeric.SIMULATION_FRACTION_DIGITS,
+                DortmundModuleConfig.Numeric.SIMULATION_TEXT_LENGTH,
+                DortmundModuleConfig.Simulation.MIN_VALUE, null, null));
         if (version.getDelFlag() != null) {
             version.setDelFlag(DortmundFieldValidator.validateEnum(
                     version.getDelFlag(), "版本启用状态", true, "0", "2"));

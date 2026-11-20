@@ -8,6 +8,7 @@ import com.ruoyi.common.core.domain.entity.SysRole;
 import com.ruoyi.common.exception.ServiceException;
 import com.ruoyi.common.utils.DateUtils;
 import com.ruoyi.common.utils.SecurityUtils;
+import com.ruoyi.fx67ll.dortmund.config.DortmundModuleConfig;
 import com.ruoyi.fx67ll.dortmund.domain.Fx67llDortmundBasicMatch;
 import com.ruoyi.fx67ll.dortmund.domain.Fx67llDortmundOdds;
 import com.ruoyi.fx67ll.dortmund.mapper.Fx67llDortmundOddsMapper;
@@ -31,11 +32,11 @@ import org.springframework.transaction.annotation.Transactional;
  */
 @Service
 public class Fx67llDortmundOddsServiceImpl implements IFx67llDortmundOddsService {
-    private static final int ODDS_REMARK_MAX_LENGTH = 1023;
+    private static final int ODDS_REMARK_MAX_LENGTH = DortmundModuleConfig.Field.ODDS_REMARK;
 
-    private static final String YES = "Y";
+    private static final String YES = DortmundModuleConfig.Contract.YES;
 
-    private static final String NO = "N";
+    private static final String NO = DortmundModuleConfig.Contract.NO;
 
     @Autowired
     private Fx67llDortmundOddsMapper fx67llDortmundOddsMapper;
@@ -242,12 +243,14 @@ public class Fx67llDortmundOddsServiceImpl implements IFx67llDortmundOddsService
      */
     private void checkOddsRequestFields(Fx67llDortmundOdds fx67llDortmundOdds) {
         fx67llDortmundOdds.setOddsCode(DortmundFieldValidator.requireText(
-                fx67llDortmundOdds.getOddsCode(), "倍率记录编码", 23));
+                fx67llDortmundOdds.getOddsCode(), "倍率记录编码", DortmundModuleConfig.Field.ODDS_CODE));
         if (fx67llDortmundOdds.getSourceTime() == null) {
             throw new ServiceException("倍率来源时间不能为空！");
         }
         DortmundFieldValidator.validateDecimal(fx67llDortmundOdds.getHandicapValue(), "让分值",
-                true, true, null, null, new BigDecimal("999999.99"), 6, 2);
+                true, true, null, null, DortmundModuleConfig.Numeric.MAX_HANDICAP_VALUE,
+                DortmundModuleConfig.Numeric.HANDICAP_INTEGER_DIGITS,
+                DortmundModuleConfig.Numeric.HANDICAP_FRACTION_DIGITS);
         if (fx67llDortmundOdds.getActiveFlag() != null && !YES.equals(fx67llDortmundOdds.getActiveFlag())
                 && !NO.equals(fx67llDortmundOdds.getActiveFlag())) {
             throw new ServiceException("倍率有效状态不正确！");
@@ -273,7 +276,9 @@ public class Fx67llDortmundOddsServiceImpl implements IFx67llDortmundOddsService
             throw new ServiceException(fieldName + "必须大于0！");
         }
         DortmundFieldValidator.validateDecimal(value, fieldName, true, false, null, BigDecimal.ZERO,
-                new BigDecimal("999999.9999"), 6, 4);
+                DortmundModuleConfig.Numeric.MAX_ODDS_VALUE,
+                DortmundModuleConfig.Numeric.ODDS_INTEGER_DIGITS,
+                DortmundModuleConfig.Numeric.ODDS_FRACTION_DIGITS);
     }
 
     private void checkWeight(BigDecimal value, String fieldName) {

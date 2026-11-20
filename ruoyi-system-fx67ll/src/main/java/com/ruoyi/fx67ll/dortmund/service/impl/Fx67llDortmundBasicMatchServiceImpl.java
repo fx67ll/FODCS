@@ -7,6 +7,7 @@ import java.util.Objects;
 import com.ruoyi.common.exception.ServiceException;
 import com.ruoyi.common.utils.DateUtils;
 import com.ruoyi.common.utils.SecurityUtils;
+import com.ruoyi.fx67ll.dortmund.config.DortmundModuleConfig;
 import com.ruoyi.fx67ll.dortmund.domain.Fx67llDortmundBasicMatch;
 import com.ruoyi.fx67ll.dortmund.domain.Fx67llDortmundBasicSeason;
 import com.ruoyi.fx67ll.dortmund.domain.Fx67llDortmundBasicTeam;
@@ -289,15 +290,15 @@ public class Fx67llDortmundBasicMatchServiceImpl implements IFx67llDortmundBasic
      */
     private void checkMatchScalarFields(Fx67llDortmundBasicMatch fx67llDortmundBasicMatch) {
         fx67llDortmundBasicMatch.setMatchCode(DortmundFieldValidator.requireText(
-                fx67llDortmundBasicMatch.getMatchCode(), "比赛编码", 23));
+                fx67llDortmundBasicMatch.getMatchCode(), "比赛编码", DortmundModuleConfig.Field.MATCH_CODE));
         fx67llDortmundBasicMatch.setMatchVenue(DortmundFieldValidator.optionalText(
-                fx67llDortmundBasicMatch.getMatchVenue(), "比赛场地", 233));
+                fx67llDortmundBasicMatch.getMatchVenue(), "比赛场地", DortmundModuleConfig.Field.MATCH_VENUE));
         fx67llDortmundBasicMatch.setMatchStatus(DortmundFieldValidator.validateEnum(
                 fx67llDortmundBasicMatch.getMatchStatus(), "比赛状态", true, "0", "1"));
         fx67llDortmundBasicMatch.setMatchResult(DortmundFieldValidator.validateEnum(
                 fx67llDortmundBasicMatch.getMatchResult(), "比赛结果", false, "0", "1", "2"));
         fx67llDortmundBasicMatch.setMatchRemark(DortmundFieldValidator.optionalText(
-                fx67llDortmundBasicMatch.getMatchRemark(), "比赛备注", 1023));
+                fx67llDortmundBasicMatch.getMatchRemark(), "比赛备注", DortmundModuleConfig.Field.MATCH_REMARK));
         if (fx67llDortmundBasicMatch.getMatchTime() == null) {
             throw new ServiceException("比赛开球时间不能为空！");
         }
@@ -350,12 +351,14 @@ public class Fx67llDortmundBasicMatchServiceImpl implements IFx67llDortmundBasic
 
     private void checkInitialOddsFields(Fx67llDortmundOdds fx67llDortmundOdds) {
         fx67llDortmundOdds.setOddsCode(DortmundFieldValidator.requireText(
-                fx67llDortmundOdds.getOddsCode(), "倍率记录编码", 23));
+                fx67llDortmundOdds.getOddsCode(), "倍率记录编码", DortmundModuleConfig.Field.ODDS_CODE));
         if (fx67llDortmundOdds.getSourceTime() == null) {
             throw new ServiceException("倍率来源时间不能为空！");
         }
         DortmundFieldValidator.validateDecimal(fx67llDortmundOdds.getHandicapValue(), "让分值",
-                true, true, null, null, new BigDecimal("999999.99"), 6, 2);
+                true, true, null, null, DortmundModuleConfig.Numeric.MAX_HANDICAP_VALUE,
+                DortmundModuleConfig.Numeric.HANDICAP_INTEGER_DIGITS,
+                DortmundModuleConfig.Numeric.HANDICAP_FRACTION_DIGITS);
         checkOddsValue(fx67llDortmundOdds.getHomeWinOdds(), "主胜倍率");
         checkOddsValue(fx67llDortmundOdds.getDrawOdds(), "平局倍率");
         checkOddsValue(fx67llDortmundOdds.getAwayWinOdds(), "客胜倍率");
@@ -369,7 +372,8 @@ public class Fx67llDortmundBasicMatchServiceImpl implements IFx67llDortmundBasic
         checkWeight(fx67llDortmundOdds.getHandicapDrawWeight(), "让分平局权重");
         checkWeight(fx67llDortmundOdds.getHandicapAwayWinWeight(), "让分客胜权重");
         fx67llDortmundOdds.setOddsRemark(DortmundFieldValidator.optionalText(
-                fx67llDortmundOdds.getOddsRemark(), "倍率记录说明", 1023));
+                fx67llDortmundOdds.getOddsRemark(), "倍率记录说明",
+                DortmundModuleConfig.Field.ODDS_REMARK));
     }
 
     private void checkOddsValue(BigDecimal value, String label) {
@@ -377,7 +381,9 @@ public class Fx67llDortmundBasicMatchServiceImpl implements IFx67llDortmundBasic
             throw new ServiceException(label + "必须大于0！");
         }
         DortmundFieldValidator.validateDecimal(value, label, true, false, null, BigDecimal.ZERO,
-                new BigDecimal("999999.9999"), 6, 4);
+                DortmundModuleConfig.Numeric.MAX_ODDS_VALUE,
+                DortmundModuleConfig.Numeric.ODDS_INTEGER_DIGITS,
+                DortmundModuleConfig.Numeric.ODDS_FRACTION_DIGITS);
     }
 
     private void checkWeight(BigDecimal value, String label) {

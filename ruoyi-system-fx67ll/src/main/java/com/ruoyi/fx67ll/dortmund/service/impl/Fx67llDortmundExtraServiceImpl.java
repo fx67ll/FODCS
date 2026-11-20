@@ -14,6 +14,7 @@ import com.ruoyi.common.core.domain.entity.SysRole;
 import com.ruoyi.common.exception.ServiceException;
 import com.ruoyi.common.utils.DateUtils;
 import com.ruoyi.common.utils.SecurityUtils;
+import com.ruoyi.fx67ll.dortmund.config.DortmundModuleConfig;
 import com.ruoyi.fx67ll.dortmund.domain.Fx67llDortmundExtra;
 import com.ruoyi.fx67ll.dortmund.domain.Fx67llDortmundExtraPlanRel;
 import com.ruoyi.fx67ll.dortmund.domain.Fx67llDortmundPlan;
@@ -49,12 +50,15 @@ public class Fx67llDortmundExtraServiceImpl implements IFx67llDortmundExtraServi
     /**
      * 单次合并允许传入的最大记录数量，限制 N+1 查询规模
      */
-    private static final int MERGE_MAX_INPUT_COUNT = 23;
+    private static final int MERGE_MAX_INPUT_COUNT = DortmundModuleConfig.Content.MAX_EXTRA_MERGE_INPUT_COUNT;
+
+    /** 合并至少需要两条记录，避免生成没有合并意义的快照。 */
+    private static final int MERGE_MIN_INPUT_COUNT = DortmundModuleConfig.Content.MIN_EXTRA_MERGE_COUNT;
 
     /**
      * 合并后备注字段的最大长度限制（数据库 extra_remark 为 varchar(1023)）
      */
-    private static final int REMARK_MAX_LENGTH = 1023;
+    private static final int REMARK_MAX_LENGTH = DortmundModuleConfig.Field.EXTRA_REMARK;
 
     /**
      * 查询外快盈亏记录
@@ -234,7 +238,7 @@ public class Fx67llDortmundExtraServiceImpl implements IFx67llDortmundExtraServi
      */
     private Long doMergeFx67llDortmundExtras(Long[] extraIds, String extraRemark, Long currentUserId) {
         // ---------- 1. 入参基础校验 ----------
-        if (extraIds == null || extraIds.length < 2) {
+        if (extraIds == null || extraIds.length < MERGE_MIN_INPUT_COUNT) {
             throw new ServiceException("请至少选择两条记录进行合并！");
         }
         // 限制单次合并数量上限，防止恶意传入超大数组造成 N+1 查询与超长字符串拼接
@@ -243,7 +247,7 @@ public class Fx67llDortmundExtraServiceImpl implements IFx67llDortmundExtraServi
         }
         // 对入参主键去重，避免同一 ID 重复传入导致逻辑异常
         Set<Long> idSet = new LinkedHashSet<>(Arrays.asList(extraIds));
-        if (idSet.size() < 2) {
+        if (idSet.size() < MERGE_MIN_INPUT_COUNT) {
             throw new ServiceException("请至少选择两条不同的记录进行合并！");
         }
         // 合并备注由前端合并确认弹窗录入：去除首尾空格，未填写则不保留备注，超长直接拒绝
@@ -303,7 +307,8 @@ public class Fx67llDortmundExtraServiceImpl implements IFx67llDortmundExtraServi
         for (Fx67llDortmundExtra extra : extraList) {
             totalWinMoney = totalWinMoney.add(parseMoney(extra.getWinMoney(), extra.getExtraId(), "盈亏金额"));
         }
-        BigDecimal mergedWinMoney = totalWinMoney.setScale(2, RoundingMode.HALF_UP);
+        BigDecimal mergedWinMoney = totalWinMoney.setScale(
+                DortmundModuleConfig.Numeric.EXTRA_FRACTION_DIGITS, RoundingMode.HALF_UP);
 
         Fx67llDortmundExtra mergedExtra = new Fx67llDortmundExtra();
         // 快照类字段（总金额、当前本金、落袋金额、目标金额）取最后一条原值，保证与其后记录的盈亏计算基准衔接
@@ -578,21 +583,37 @@ public class Fx67llDortmundExtraServiceImpl implements IFx67llDortmundExtraServi
      */
     private void validateExtraFields(Fx67llDortmundExtra extra) {
         extra.setExtraMoney(DortmundFieldValidator.validateDecimalText(
-                extra.getExtraMoney(), "当前总金额", true, false, 20, 2, 23,
+                extra.getExtraMoney(), "当前总金额", true, false,
+                DortmundModuleConfig.Numeric.EXTRA_UNSIGNED_INTEGER_DIGITS,
+                DortmundModuleConfig.Numeric.EXTRA_FRACTION_DIGITS,
+                DortmundModuleConfig.Field.EXTRA_MONEY,
                 BigDecimal.ZERO, null, null));
         extra.setWinMoney(DortmundFieldValidator.validateDecimalText(
-                extra.getWinMoney(), "盈亏金额", true, true, 19, 2, 23,
+                extra.getWinMoney(), "盈亏金额", true, true,
+                DortmundModuleConfig.Numeric.EXTRA_SIGNED_INTEGER_DIGITS,
+                DortmundModuleConfig.Numeric.EXTRA_FRACTION_DIGITS,
+                DortmundModuleConfig.Field.EXTRA_MONEY,
                 null, null, null));
         extra.setSeedMoney(DortmundFieldValidator.validateDecimalText(
-                extra.getSeedMoney(), "当前本金", true, false, 20, 2, 23,
+                extra.getSeedMoney(), "当前本金", true, false,
+                DortmundModuleConfig.Numeric.EXTRA_UNSIGNED_INTEGER_DIGITS,
+                DortmundModuleConfig.Numeric.EXTRA_FRACTION_DIGITS,
+                DortmundModuleConfig.Field.EXTRA_MONEY,
                 BigDecimal.ZERO, null, null));
         extra.setSaveMoney(DortmundFieldValidator.validateDecimalText(
-                extra.getSaveMoney(), "落袋金额", true, false, 20, 2, 23,
+                extra.getSaveMoney(), "落袋金额", true, false,
+                DortmundModuleConfig.Numeric.EXTRA_UNSIGNED_INTEGER_DIGITS,
+                DortmundModuleConfig.Numeric.EXTRA_FRACTION_DIGITS,
+                DortmundModuleConfig.Field.EXTRA_MONEY,
                 BigDecimal.ZERO, null, null));
         extra.setTargetMoney(DortmundFieldValidator.validateDecimalText(
-                extra.getTargetMoney(), "目标金额", true, false, 20, 2, 23,
+                extra.getTargetMoney(), "目标金额", true, false,
+                DortmundModuleConfig.Numeric.EXTRA_UNSIGNED_INTEGER_DIGITS,
+                DortmundModuleConfig.Numeric.EXTRA_FRACTION_DIGITS,
+                DortmundModuleConfig.Field.EXTRA_MONEY,
                 BigDecimal.ZERO, null, null));
         extra.setIsWin(DortmundFieldValidator.validateEnum(extra.getIsWin(), "盈亏状态", true, "Y", "N"));
-        extra.setExtraRemark(DortmundFieldValidator.optionalText(extra.getExtraRemark(), "记录说明", 1023));
+        extra.setExtraRemark(DortmundFieldValidator.optionalText(
+                extra.getExtraRemark(), "记录说明", REMARK_MAX_LENGTH));
     }
 }

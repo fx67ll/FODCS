@@ -12,6 +12,13 @@ import com.ruoyi.fx67ll.dortmund.domain.Fx67llDortmundBasicTeam;
 public interface Fx67llDortmundBasicTeamMapper 
 {
     /**
+     * 查询球队表中非空的主场和标签原始值，用于生成去重选项。
+     *
+     * @return 仅包含 teamVenue 与 teamTag 的球队记录
+     */
+    public List<Fx67llDortmundBasicTeam> selectDistinctTeamVenueAndTag();
+
+    /**
      * 查询球队管理
      * 
      * @param teamId 球队管理主键

@@ -68,15 +68,11 @@
                 #{endUpdateTime}
             </if>
         </where>
-        <!-- 动态排序：如果 isNeedSort == 'Y'，则按 sort 排序，否则按 create_time 排序 -->
-        <choose>
-            <when test="isNeedSort != null and isNeedSort == 'Y'.toString()">
-                order by season_sort
-            </when>
-            <otherwise>
-                order by STR_TO_DATE(create_time, "%Y-%m-%d %H:%i:%s") desc
-            </otherwise>
-        </choose>
+        <!-- 统一展示顺序：NULL 或 0 视为未设置并置后；有值时升序；同值按创建时间倒序，主键倒序稳定分页。 -->
+        order by case when season_sort is null or season_sort = 0 then 1 else 0 end asc,
+                 case when season_sort is null or season_sort = 0 then 0 else season_sort end asc,
+                 STR_TO_DATE(create_time, "%Y-%m-%d %H:%i:%s") desc,
+                 season_id desc
     </select>
 
     <select id="selectFx67llDortmundBasicSeasonBySeasonId" parameterType="Long"

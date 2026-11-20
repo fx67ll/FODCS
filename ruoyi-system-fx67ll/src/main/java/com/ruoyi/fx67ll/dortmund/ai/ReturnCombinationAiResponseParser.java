@@ -7,6 +7,7 @@ import com.alibaba.fastjson2.JSON;
 import com.alibaba.fastjson2.JSONArray;
 import com.alibaba.fastjson2.JSONObject;
 import com.ruoyi.common.exception.ServiceException;
+import com.ruoyi.fx67ll.dortmund.config.DortmundModuleConfig;
 import org.springframework.stereotype.Component;
 
 /**
@@ -38,11 +39,8 @@ public class ReturnCombinationAiResponseParser {
     /** 自动AI、人工交换任务共用的任务类型 */
     public static final String TASK_TYPE = "DORTMUND_RETURN_COMBINATION";
 
-    /** 自动契约候选上限；业务层校验后仅保留偏差最小的前10条，防止模型输出无限膨胀。 */
-    private static final int MAX_CANDIDATES = 50;
-
-    /** 人工交换任务限定的候选上限，与导出契约保持一致 */
-    public static final int MAX_MANUAL_CANDIDATES = 10;
+    /** 人工交换任务限定的候选上限，与导出契约和模块配置保持一致。 */
+    public static final int MAX_MANUAL_CANDIDATES = DortmundModuleConfig.Return.MAX_MANUAL_CANDIDATES;
 
     /**
      * 解析自动AI正文。
@@ -165,8 +163,11 @@ public class ReturnCombinationAiResponseParser {
         if (candidateArray == null || candidateArray.isEmpty()) {
             throw new ServiceException("AI未返回候选组合内容！");
         }
-        if (candidateArray.size() > MAX_CANDIDATES) {
-            throw new ServiceException("AI返回候选组合超过" + MAX_CANDIDATES + "条限制！");
+        int maxCandidates = automatic
+                ? DortmundModuleConfig.Return.MAX_AUTO_PARSED_CANDIDATES
+                : DortmundModuleConfig.Return.MAX_MANUAL_CANDIDATES;
+        if (candidateArray.size() > maxCandidates) {
+            throw new ServiceException("AI返回候选组合超过" + maxCandidates + "条限制！");
         }
         ReturnCombinationAiAnalysisPort.ReturnCombinationAiOutput output =
                 new ReturnCombinationAiAnalysisPort.ReturnCombinationAiOutput();

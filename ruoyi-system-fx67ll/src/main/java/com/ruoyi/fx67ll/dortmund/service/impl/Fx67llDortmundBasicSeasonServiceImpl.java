@@ -15,6 +15,13 @@ import com.ruoyi.fx67ll.dortmund.domain.Fx67llDortmundBasicSeason;
 import com.ruoyi.fx67ll.dortmund.service.IFx67llDortmundBasicSeasonService;
 import com.ruoyi.fx67ll.dortmund.support.DortmundFieldValidator;
 
+import static com.ruoyi.fx67ll.dortmund.config.DortmundModuleConfig.Field.SEASON_CODE;
+import static com.ruoyi.fx67ll.dortmund.config.DortmundModuleConfig.Field.SEASON_NAME;
+import static com.ruoyi.fx67ll.dortmund.config.DortmundModuleConfig.Field.SEASON_REMARK;
+import static com.ruoyi.fx67ll.dortmund.config.DortmundModuleConfig.Season.SORT_DEFAULT;
+import static com.ruoyi.fx67ll.dortmund.config.DortmundModuleConfig.Season.SORT_MAX;
+import static com.ruoyi.fx67ll.dortmund.config.DortmundModuleConfig.Season.SORT_MIN;
+
 /**
  * 赛季管理Service业务层处理
  * <p>
@@ -140,18 +147,18 @@ public class Fx67llDortmundBasicSeasonServiceImpl implements IFx67llDortmundBasi
      */
     private void validateSeasonFields(Fx67llDortmundBasicSeason fx67llDortmundBasicSeason) {
         fx67llDortmundBasicSeason.setSeasonCode(DortmundFieldValidator.requireText(
-                fx67llDortmundBasicSeason.getSeasonCode(), "赛季编码", 23));
+                fx67llDortmundBasicSeason.getSeasonCode(), "赛季编码", SEASON_CODE));
         fx67llDortmundBasicSeason.setSeasonName(DortmundFieldValidator.requireText(
-                fx67llDortmundBasicSeason.getSeasonName(), "赛季名称", 233));
+                fx67llDortmundBasicSeason.getSeasonName(), "赛季名称", SEASON_NAME));
         fx67llDortmundBasicSeason.setSeasonStatus(DortmundFieldValidator.validateEnum(
                 fx67llDortmundBasicSeason.getSeasonStatus(), "赛季状态", true, "0", "1", "2"));
         if (fx67llDortmundBasicSeason.getSeasonSort() == null) {
-            fx67llDortmundBasicSeason.setSeasonSort(0);
+            fx67llDortmundBasicSeason.setSeasonSort(SORT_DEFAULT);
         }
         DortmundFieldValidator.validateInteger(fx67llDortmundBasicSeason.getSeasonSort(),
-                "赛季排序", 0, 1023, false);
+                "赛季排序", SORT_MIN, SORT_MAX, false);
         fx67llDortmundBasicSeason.setSeasonRemark(DortmundFieldValidator.optionalText(
-                fx67llDortmundBasicSeason.getSeasonRemark(), "赛季备注", 1023));
+                fx67llDortmundBasicSeason.getSeasonRemark(), "赛季备注", SEASON_REMARK));
         if (fx67llDortmundBasicSeason.getSeasonStartDate() == null
                 || fx67llDortmundBasicSeason.getSeasonEndDate() == null) {
             throw new ServiceException("赛季开始日期和结束日期不能为空！");

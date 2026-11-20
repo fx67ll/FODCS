@@ -15,6 +15,7 @@ import com.ruoyi.common.core.domain.entity.SysRole;
 import com.ruoyi.common.exception.ServiceException;
 import com.ruoyi.common.utils.DateUtils;
 import com.ruoyi.common.utils.SecurityUtils;
+import com.ruoyi.fx67ll.dortmund.config.DortmundModuleConfig;
 import com.ruoyi.fx67ll.dortmund.domain.Fx67llDortmundBasicMatch;
 import com.ruoyi.fx67ll.dortmund.domain.Fx67llDortmundExtraPlanRel;
 import com.ruoyi.fx67ll.dortmund.domain.Fx67llDortmundPlan;
@@ -56,16 +57,16 @@ public class Fx67llDortmundPlanServiceImpl implements IFx67llDortmundPlanService
     /**
      * 正文最大长度
      */
-    private static final int CONTENT_MAX_LENGTH = 1023;
+    private static final int CONTENT_MAX_LENGTH = DortmundModuleConfig.Field.PLAN_CONTENT;
 
     /**
      * 说明最大长度
      */
-    private static final int REMARK_MAX_LENGTH = 1023;
+    private static final int REMARK_MAX_LENGTH = DortmundModuleConfig.Field.PLAN_REMARK;
 
-    private static final BigDecimal MAX_PLAN_RATE = new BigDecimal("999999999999999999.999999");
+    private static final BigDecimal MAX_PLAN_RATE = DortmundModuleConfig.Content.MAX_PLAN_RATE;
 
-    private static final BigDecimal MAX_PLAN_AMOUNT = new BigDecimal("9999999999999999999999.99");
+    private static final BigDecimal MAX_PLAN_AMOUNT = DortmundModuleConfig.Content.MAX_PLAN_AMOUNT;
 
     @Autowired
     private Fx67llDortmundPlanMapper fx67llDortmundPlanMapper;
@@ -418,9 +419,13 @@ public class Fx67llDortmundPlanServiceImpl implements IFx67llDortmundPlanService
                 }
             }
         }
-        stats.amount = totalReturn.setScale(2, RoundingMode.HALF_UP);
+        stats.amount = totalReturn.setScale(
+                DortmundModuleConfig.Numeric.PLAN_AMOUNT_FRACTION_DIGITS, RoundingMode.HALF_UP);
         if (totalInput.signum() > 0) {
-            stats.rate = totalReturn.divide(totalInput, 4, RoundingMode.HALF_UP);
+            stats.rate = totalReturn.divide(
+                    totalInput,
+                    DortmundModuleConfig.Numeric.CALCULATED_RATE_FRACTION_DIGITS,
+                    RoundingMode.HALF_UP);
         }
         return stats;
     }
@@ -579,12 +584,16 @@ public class Fx67llDortmundPlanServiceImpl implements IFx67llDortmundPlanService
 
     private void validatePlanRate(BigDecimal value, String label) {
         DortmundFieldValidator.validateDecimal(value, label, false, false, null, BigDecimal.ZERO,
-                MAX_PLAN_RATE, 18, 6);
+                MAX_PLAN_RATE,
+                DortmundModuleConfig.Numeric.PLAN_RATE_INTEGER_DIGITS,
+                DortmundModuleConfig.Numeric.PLAN_RATE_FRACTION_DIGITS);
     }
 
     private void validatePlanAmount(BigDecimal value, String label) {
         DortmundFieldValidator.validateDecimal(value, label, false, false, BigDecimal.ZERO, null,
-                MAX_PLAN_AMOUNT, 22, 2);
+                MAX_PLAN_AMOUNT,
+                DortmundModuleConfig.Numeric.PLAN_AMOUNT_INTEGER_DIGITS,
+                DortmundModuleConfig.Numeric.PLAN_AMOUNT_FRACTION_DIGITS);
     }
 
     private static class PlanCombinationStats {

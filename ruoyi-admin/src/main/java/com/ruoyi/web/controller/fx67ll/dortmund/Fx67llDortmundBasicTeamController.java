@@ -65,6 +65,16 @@ public class Fx67llDortmundBasicTeamController extends BaseController {
     }
 
     /**
+     * 获取球队主场和标签选项。
+     * <p>返回值已合并内置目录与球队表实际值，前端接口失败时回退本地目录。</p>
+     */
+    @PreAuthorize("@ss.hasPermi('dortmund:team:list')")
+    @GetMapping("/options")
+    public AjaxResult options() {
+        return success(fx67llDortmundBasicTeamService.selectFx67llDortmundTeamOptions());
+    }
+
+    /**
      * 获取球队管理详细信息
      */
     @PreAuthorize("@ss.hasPermi('dortmund:team:query')")

@@ -49,7 +49,11 @@
                  left join fx67ll_dortmund_team ht on ht.team_id = m.home_team_id
                  left join fx67ll_dortmund_team at on at.team_id = m.away_team_id
         where i.combination_id = #{combinationId}
-        order by i.item_sort, i.item_id
+        <!-- 组合明细中 NULL 或 0 视为未设置并置后；有值时升序；同值以创建时间倒序，保证刷新与分页稳定。 -->
+        order by case when i.item_sort is null or i.item_sort = 0 then 1 else 0 end asc,
+                 case when i.item_sort is null or i.item_sort = 0 then 0 else i.item_sort end asc,
+                 STR_TO_DATE(i.create_time, "%Y-%m-%d %H:%i:%s") desc,
+                 i.item_id desc
     </select>
 
     <insert id="insertFx67llDortmundReturnCombinationItem"

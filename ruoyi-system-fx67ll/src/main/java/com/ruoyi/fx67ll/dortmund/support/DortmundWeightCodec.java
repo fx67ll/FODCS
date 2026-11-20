@@ -4,6 +4,7 @@ import java.math.BigDecimal;
 import java.math.RoundingMode;
 
 import com.ruoyi.common.exception.ServiceException;
+import com.ruoyi.fx67ll.dortmund.config.DortmundModuleConfig;
 
 /**
  * Dortmund 权重换算边界。
@@ -15,23 +16,23 @@ import com.ruoyi.common.exception.ServiceException;
  * @author fx67ll
  */
 public final class DortmundWeightCodec {
-    /** 权重小数位 */
-    public static final int SCALE = 4;
+    /** 权重小数位，统一引用模块配置，避免编解码与 AI 契约各自漂移。 */
+    public static final int SCALE = DortmundModuleConfig.Weight.SCALE;
 
-    /** 权重 1.0000 对应的整数单位 */
-    public static final int UNITS_PER_ONE = 10000;
+    /** 权重 1.0000 对应的整数单位。 */
+    public static final int UNITS_PER_ONE = DortmundModuleConfig.Weight.UNITS_PER_ONE;
 
-    /** 最小权重单位 */
-    public static final int MIN_UNITS = 0;
+    /** 最小权重单位。 */
+    public static final int MIN_UNITS = DortmundModuleConfig.Weight.MIN_UNITS;
 
-    /** 最大权重单位 */
-    public static final int MAX_UNITS = UNITS_PER_ONE;
+    /** 最大权重单位。 */
+    public static final int MAX_UNITS = DortmundModuleConfig.Weight.MAX_UNITS;
 
-    /** 权重最小值 */
-    public static final BigDecimal MIN_WEIGHT = new BigDecimal("0.0000");
+    /** 权重最小值。 */
+    public static final BigDecimal MIN_WEIGHT = DortmundModuleConfig.Weight.MIN_WEIGHT;
 
-    /** 空权重参与业务计算时的默认值 */
-    public static final BigDecimal DEFAULT_WEIGHT = new BigDecimal("1.0000");
+    /** 空权重参与业务计算时的默认值。 */
+    public static final BigDecimal DEFAULT_WEIGHT = DortmundModuleConfig.Weight.DEFAULT_WEIGHT;
 
     private DortmundWeightCodec() {
     }

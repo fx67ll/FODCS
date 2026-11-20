@@ -8,6 +8,7 @@ import com.ruoyi.common.core.domain.entity.SysRole;
 import com.ruoyi.common.exception.ServiceException;
 import com.ruoyi.common.utils.DateUtils;
 import com.ruoyi.common.utils.SecurityUtils;
+import com.ruoyi.fx67ll.dortmund.config.DortmundModuleConfig;
 import com.ruoyi.fx67ll.dortmund.mapper.Fx67llDortmundExtraSimulateMapper;
 import com.ruoyi.fx67ll.dortmund.domain.Fx67llDortmundExtraSimulate;
 import com.ruoyi.fx67ll.dortmund.domain.Fx67llDortmundExtraSimulateVersion;
@@ -212,28 +213,49 @@ public class Fx67llDortmundExtraSimulateServiceImpl implements IFx67llDortmundEx
         simulate.setSimMode(DortmundFieldValidator.validateEnum(
                 simulate.getSimMode(), "模拟模式", true, "full", "half"));
         DortmundFieldValidator.validateLong(
-                simulate.getRoundNo(), "本轮轮次", Integer.MIN_VALUE, Integer.MAX_VALUE, true);
+                simulate.getRoundNo(), "本轮轮次",
+                DortmundModuleConfig.Simulation.MIN_ROUND_NO,
+                DortmundModuleConfig.Simulation.MAX_ROUND_NO,
+                true);
         if (simulate.getRoundNo() == 0) {
             throw new ServiceException("本轮轮次不能为0！");
         }
         simulate.setStartValue(DortmundFieldValidator.validateDecimalText(
-                simulate.getStartValue(), "本轮开始数值", true, false, 20, 2, 23,
+                simulate.getStartValue(), "本轮开始数值", true, false,
+                DortmundModuleConfig.Numeric.SIMULATION_INTEGER_DIGITS,
+                DortmundModuleConfig.Numeric.SIMULATION_FRACTION_DIGITS,
+                DortmundModuleConfig.Numeric.SIMULATION_TEXT_LENGTH,
                 null, BigDecimal.ZERO, null));
         simulate.setJoinValue(DortmundFieldValidator.validateDecimalText(
-                simulate.getJoinValue(), "本轮参与数值", true, false, 20, 2, 23,
+                simulate.getJoinValue(), "本轮参与数值", true, false,
+                DortmundModuleConfig.Numeric.SIMULATION_INTEGER_DIGITS,
+                DortmundModuleConfig.Numeric.SIMULATION_FRACTION_DIGITS,
+                DortmundModuleConfig.Numeric.SIMULATION_TEXT_LENGTH,
                 BigDecimal.ZERO, null, null));
         simulate.setReturnValue(DortmundFieldValidator.validateDecimalText(
-                simulate.getReturnValue(), "本轮实际回收数值", true, false, 20, 2, 23,
+                simulate.getReturnValue(), "本轮实际回收数值", true, false,
+                DortmundModuleConfig.Numeric.SIMULATION_INTEGER_DIGITS,
+                DortmundModuleConfig.Numeric.SIMULATION_FRACTION_DIGITS,
+                DortmundModuleConfig.Numeric.SIMULATION_TEXT_LENGTH,
                 BigDecimal.ZERO, null, null));
         simulate.setEndValue(DortmundFieldValidator.validateDecimalText(
-                simulate.getEndValue(), "本轮结束数值", true, false, 20, 2, 23,
+                simulate.getEndValue(), "本轮结束数值", true, false,
+                DortmundModuleConfig.Numeric.SIMULATION_INTEGER_DIGITS,
+                DortmundModuleConfig.Numeric.SIMULATION_FRACTION_DIGITS,
+                DortmundModuleConfig.Numeric.SIMULATION_TEXT_LENGTH,
                 BigDecimal.ZERO, null, null));
         simulate.setRoundChange(DortmundFieldValidator.validateDecimalText(
-                simulate.getRoundChange(), "本轮数值变动倍数", true, false, 20, 2, 23,
+                simulate.getRoundChange(), "本轮数值变动倍数", true, false,
+                DortmundModuleConfig.Numeric.SIMULATION_INTEGER_DIGITS,
+                DortmundModuleConfig.Numeric.SIMULATION_FRACTION_DIGITS,
+                DortmundModuleConfig.Numeric.SIMULATION_TEXT_LENGTH,
                 BigDecimal.ZERO, null, null));
         simulate.setCoefficient(DortmundFieldValidator.validateDecimalText(
-                simulate.getCoefficient(), "本轮使用系数", true, false, 20, 2, 23,
-                null, BigDecimal.ONE, null));
+                simulate.getCoefficient(), "本轮使用系数", true, false,
+                DortmundModuleConfig.Numeric.SIMULATION_INTEGER_DIGITS,
+                DortmundModuleConfig.Numeric.SIMULATION_FRACTION_DIGITS,
+                DortmundModuleConfig.Numeric.SIMULATION_TEXT_LENGTH,
+                null, DortmundModuleConfig.Simulation.COEFFICIENT_EXCLUSIVE_MIN, null));
         simulate.setIsHit(DortmundFieldValidator.validateEnum(
                 simulate.getIsHit(), "本轮是否达成", true, "Y", "N"));
     }

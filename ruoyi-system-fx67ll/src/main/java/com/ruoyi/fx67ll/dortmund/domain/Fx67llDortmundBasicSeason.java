@@ -90,7 +90,8 @@ public class Fx67llDortmundBasicSeason extends BaseEntity {
     private Long userId;
 
     /**
-     * 是否需要排序标志（Y-按sort排序，其他情况按create_time倒序）
+     * 旧版排序开关兼容字段。
+     * <p>赛季列表现已统一按排序值升序、空值置后、同值按创建时间倒序，本字段不再参与查询。</p>
      */
     private String isNeedSort;
 

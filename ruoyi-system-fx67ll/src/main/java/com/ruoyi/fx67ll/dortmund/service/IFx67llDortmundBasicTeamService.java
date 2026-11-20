@@ -2,6 +2,7 @@ package com.ruoyi.fx67ll.dortmund.service;
 
 import java.util.List;
 import com.ruoyi.fx67ll.dortmund.domain.Fx67llDortmundBasicTeam;
+import com.ruoyi.fx67ll.dortmund.domain.Fx67llDortmundTeamOptions;
 
 /**
  * 球队管理Service接口
@@ -11,6 +12,14 @@ import com.ruoyi.fx67ll.dortmund.domain.Fx67llDortmundBasicTeam;
  */
 public interface IFx67llDortmundBasicTeamService 
 {
+    /**
+     * 获取球队主场与标签选项。
+     * <p>球队表去重值会与内置目录合并，供前端编辑器和选择器使用。</p>
+     *
+     * @return 合并后的选项
+     */
+    public Fx67llDortmundTeamOptions selectFx67llDortmundTeamOptions();
+
     /**
      * 查询球队管理
      * 

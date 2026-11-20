@@ -4,6 +4,7 @@ import java.math.BigDecimal;
 import java.util.List;
 
 import com.ruoyi.fx67ll.dortmund.domain.Fx67llDortmundOdds;
+import com.ruoyi.fx67ll.dortmund.domain.Fx67llDortmundReturnPreferenceDimensions;
 
 /**
  * Dortmund回报组合AI分析业务边界
@@ -175,6 +176,12 @@ public interface ReturnCombinationAiAnalysisPort {
     class ReturnCombinationAiInput {
         private String generationMode;
 
+        /** 偏好编码只影响候选结构和解释，不参与金额、赔率或偏差公式。 */
+        private String preferenceCode;
+
+        /** 已由后端归一化的受控偏好维度；与偏好编码一起仅作为候选策略提示。 */
+        private Fx67llDortmundReturnPreferenceDimensions preferenceDimensions;
+
         /** 业务快照数据截止时间 */
         private String dataAsOf;
 
@@ -205,6 +212,22 @@ public interface ReturnCombinationAiAnalysisPort {
 
         public void setGenerationMode(String generationMode) {
             this.generationMode = generationMode;
+        }
+
+        public String getPreferenceCode() {
+            return preferenceCode;
+        }
+
+        public void setPreferenceCode(String preferenceCode) {
+            this.preferenceCode = preferenceCode;
+        }
+
+        public Fx67llDortmundReturnPreferenceDimensions getPreferenceDimensions() {
+            return preferenceDimensions;
+        }
+
+        public void setPreferenceDimensions(Fx67llDortmundReturnPreferenceDimensions preferenceDimensions) {
+            this.preferenceDimensions = preferenceDimensions;
         }
 
         public String getDataAsOf() {

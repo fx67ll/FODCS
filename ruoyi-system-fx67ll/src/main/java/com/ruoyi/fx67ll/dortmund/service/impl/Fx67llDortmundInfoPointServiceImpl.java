@@ -26,6 +26,12 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import static com.ruoyi.fx67ll.dortmund.config.DortmundModuleConfig.Field.INFO_CONTENT;
+import static com.ruoyi.fx67ll.dortmund.config.DortmundModuleConfig.Field.INFO_REMARK;
+import static com.ruoyi.fx67ll.dortmund.config.DortmundModuleConfig.Field.INFO_SOURCE_NAME;
+import static com.ruoyi.fx67ll.dortmund.config.DortmundModuleConfig.Field.INFO_SOURCE_URL;
+import static com.ruoyi.fx67ll.dortmund.config.DortmundModuleConfig.Field.INFO_TITLE;
+
 /**
  * 统一信息点Service业务层处理
  * <p>
@@ -365,15 +371,15 @@ public class Fx67llDortmundInfoPointServiceImpl implements IFx67llDortmundInfoPo
      */
     private void checkInfoPointFields(Fx67llDortmundInfoPoint fx67llDortmundInfoPoint) {
         fx67llDortmundInfoPoint.setPointTitle(DortmundFieldValidator.requireText(
-                fx67llDortmundInfoPoint.getPointTitle(), "信息点标题", 233));
+                fx67llDortmundInfoPoint.getPointTitle(), "信息点标题", INFO_TITLE));
         fx67llDortmundInfoPoint.setPointContent(DortmundFieldValidator.requireText(
-                fx67llDortmundInfoPoint.getPointContent(), "信息点内容", 1023));
+                fx67llDortmundInfoPoint.getPointContent(), "信息点内容", INFO_CONTENT));
         fx67llDortmundInfoPoint.setSourceName(DortmundFieldValidator.requireText(
-                fx67llDortmundInfoPoint.getSourceName(), "信息来源名称", 233));
+                fx67llDortmundInfoPoint.getSourceName(), "信息来源名称", INFO_SOURCE_NAME));
         fx67llDortmundInfoPoint.setSourceUrl(DortmundFieldValidator.optionalText(
-                fx67llDortmundInfoPoint.getSourceUrl(), "来源地址", 1023));
+                fx67llDortmundInfoPoint.getSourceUrl(), "来源地址", INFO_SOURCE_URL));
         fx67llDortmundInfoPoint.setPointRemark(DortmundFieldValidator.optionalText(
-                fx67llDortmundInfoPoint.getPointRemark(), "信息点备注", 1023));
+                fx67llDortmundInfoPoint.getPointRemark(), "信息点备注", INFO_REMARK));
         if (fx67llDortmundInfoPoint.getCollectTime() == null) {
             throw new ServiceException("采集或录入时间不能为空！");
         }

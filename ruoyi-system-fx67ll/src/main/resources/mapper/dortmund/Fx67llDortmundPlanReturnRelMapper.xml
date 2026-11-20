@@ -26,7 +26,11 @@
                update_time
         from fx67ll_dortmund_plan_return_rel
         where plan_id = #{planId}
-        order by rel_sort, rel_id
+        <!-- 方案内展示沿用统一排序：NULL 或 0 视为未设置并置后，有值时升序，同值按创建时间倒序。 -->
+        order by case when rel_sort is null or rel_sort = 0 then 1 else 0 end asc,
+                 case when rel_sort is null or rel_sort = 0 then 0 else rel_sort end asc,
+                 STR_TO_DATE(create_time, "%Y-%m-%d %H:%i:%s") desc,
+                 rel_id desc
     </select>
 
     <select id="selectPlanIdByCombinationId" resultType="Long">
@@ -49,7 +53,12 @@
         <foreach item="planId" collection="planIds" open="(" separator="," close=")">
             #{planId}
         </foreach>
-        order by plan_id, rel_sort, rel_id
+        <!-- 多方案批量查询先按方案分组，再应用同一套组内展示顺序。 -->
+        order by plan_id,
+                 case when rel_sort is null or rel_sort = 0 then 1 else 0 end asc,
+                 case when rel_sort is null or rel_sort = 0 then 0 else rel_sort end asc,
+                 STR_TO_DATE(create_time, "%Y-%m-%d %H:%i:%s") desc,
+                 rel_id desc
     </select>
 
     <insert id="insertFx67llDortmundPlanReturnRel" parameterType="Fx67llDortmundPlanReturnRel"

@@ -13,6 +13,8 @@ import com.alibaba.fastjson2.JSON;
 import com.alibaba.fastjson2.JSONArray;
 import com.alibaba.fastjson2.JSONObject;
 import com.ruoyi.common.exception.ServiceException;
+import com.ruoyi.fx67ll.dortmund.config.DortmundModuleConfig;
+import com.ruoyi.fx67ll.dortmund.config.DortmundRuntimeProperties;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -52,37 +54,12 @@ public class DeepSeekReturnCombinationAnalyzer implements ReturnCombinationAiAna
     @Value("${dortmund.ai.deepseek.model:}")
     private String deepSeekModel;
 
-    @Value("${dortmund.ai.deepseek.max-tokens:24576}")
-    private int deepSeekMaxTokens;
-
-    @Value("${dortmund.ai.deepseek.connect-timeout-seconds:10}")
-    private int deepSeekConnectTimeoutSeconds;
-
-    @Value("${dortmund.ai.deepseek.read-timeout-seconds:240}")
-    private int deepSeekReadTimeoutSeconds;
-
     @Autowired
     private ReturnCombinationAiResponseParser responseParser;
 
-    /** 最终分析默认输出预算，为完整证据链和多候选解释留足空间。 */
-    private static final int DEFAULT_MAX_TOKENS = 24576;
-    /** 证据规划默认输出预算，远小于最终分析但仍覆盖全量查询。 */
-    private static final int DEFAULT_PLANNER_MAX_TOKENS = 8192;
-    /** 连接阶段默认超时，避免不可达网关长期占用worker。 */
-    private static final int DEFAULT_CONNECT_TIMEOUT_SECONDS = 10;
-    /** 未传入阶段预算时的默认读取超时。 */
-    private static final int DEFAULT_READ_TIMEOUT_SECONDS = 240;
-
-    /** 最终分析温度，低温度保证契约稳定与证据解释可复核。 */
-    private static final double ANALYSIS_TEMPERATURE = 0.2D;
-    /** 证据规划温度，进一步降低查询漂移。 */
-    private static final double PLANNER_TEMPERATURE = 0.1D;
-    /** 按读取超时缓存的客户端上限，避免动态预算导致无界对象增长。 */
-    private static final int MAX_CACHED_REST_TEMPLATES = 8;
-    /** 单次调用引用最大长度，与ai_*_run_ref varchar(128)对齐。 */
-    private static final int MAX_AI_RUN_REF_LENGTH = 128;
-    /** 异常响应写入日志的最大长度，避免日志被大包正文撑爆。 */
-    private static final int MAX_LOG_RESPONSE_CHARS = 500;
+    /** 模块类型化配置是 Token、超时和温度的单一来源；本适配器只保留供应商接入字段。 */
+    @Autowired
+    private DortmundRuntimeProperties dortmundRuntimeProperties;
 
     private final Map<Integer, RestTemplate> restTemplateCache =
             new LinkedHashMap<Integer, RestTemplate>(4, 0.75f, true);
@@ -100,8 +77,9 @@ public class DeepSeekReturnCombinationAnalyzer implements ReturnCombinationAiAna
             ReturnCombinationAiInvocation invocation) {
         ensureConfigured();
         // 【通用AI接入点】迁移后保留本方法入参、出参与最大输出预算语义，只替换模型调用实现。
-        int maxTokens = deepSeekMaxTokens > 0 ? deepSeekMaxTokens : DEFAULT_MAX_TOKENS;
-        String rawResponse = postCompletion(buildAnalysisMessages(input), maxTokens, ANALYSIS_TEMPERATURE, invocation);
+        int maxTokens = resolveAnalysisMaxTokens();
+        String rawResponse = postCompletion(buildAnalysisMessages(input), maxTokens,
+                DortmundModuleConfig.Ai.ANALYSIS_TEMPERATURE, invocation);
         ReturnCombinationAiOutput output = parseAnalysisResponse(rawResponse);
         output.setAiRunRef(extractRunRef(rawResponse));
         return output;
@@ -113,8 +91,9 @@ public class DeepSeekReturnCombinationAnalyzer implements ReturnCombinationAiAna
             ReturnCombinationAiInvocation invocation) {
         ensureConfigured();
         // 【通用AI接入点】通用AI模块接管规划时，仍须返回有界queries，由业务层做覆盖与格式校验。
-        int plannerTokens = Math.min(deepSeekMaxTokens > 0 ? deepSeekMaxTokens : DEFAULT_MAX_TOKENS, DEFAULT_PLANNER_MAX_TOKENS);
-        String rawResponse = postCompletion(buildPlanMessages(input), plannerTokens, PLANNER_TEMPERATURE, invocation);
+        int plannerTokens = resolvePlannerMaxTokens();
+        String rawResponse = postCompletion(buildPlanMessages(input), plannerTokens,
+                DortmundModuleConfig.Ai.PLANNER_TEMPERATURE, invocation);
         ReturnCombinationEvidencePlan plan = parsePlanResponse(rawResponse);
         plan.setAiRunRef(extractRunRef(rawResponse));
         return plan;
@@ -124,6 +103,18 @@ public class DeepSeekReturnCombinationAnalyzer implements ReturnCombinationAiAna
         if (isBlank(deepSeekEndpoint) || isBlank(deepSeekApiKey) || isBlank(deepSeekModel)) {
             throw new ServiceException("DeepSeek分析配置不完整！");
         }
+    }
+
+    /** 最终分析 Token 预算；类型化配置已在启动时完成兜底，这里仍保留零值保护以兼容测试注入。 */
+    private int resolveAnalysisMaxTokens() {
+        int configured = dortmundRuntimeProperties.getAi().getDeepseek().getMaxTokens();
+        return configured > 0 ? configured : DortmundModuleConfig.Ai.ANALYSIS_MAX_TOKENS;
+    }
+
+    /** 规划 Token 预算独立配置，避免长分析预算挤占证据规划阶段。 */
+    private int resolvePlannerMaxTokens() {
+        int configured = dortmundRuntimeProperties.getAi().getDeepseek().getPlannerMaxTokens();
+        return configured > 0 ? configured : DortmundModuleConfig.Ai.PLANNER_MAX_TOKENS;
     }
 
     /** 发送单次模型请求；阶段预算优先于部署默认读取超时，超时统一映射为可重试业务错误。 */
@@ -185,7 +176,9 @@ public class DeepSeekReturnCombinationAnalyzer implements ReturnCombinationAiAna
                 "Autonomously decide which external facts are missing and materially required to justify selection weights.",
                 "Do not merely repeat or verify information already present in businessContext or evidenceCatalog. Identify new evidence gaps.",
                 "If a supplied fact is relevant but its current impact is unclear, search for newer corroborating or contradicting context rather than re-verifying the same statement.",
-                "Plan at least one focused query for every match you may consider; maximum 8 queries total, at most one per match, each <=260 Chinese characters.",
+                "Plan at least one focused query for every match you may consider; maximum "
+                        + DortmundModuleConfig.Retrieval.MAX_QUERIES
+                        + " queries total, at most one per match, each <=260 Chinese characters.",
                 "matchId must come from input.odds. purpose is a short factor category such as INJURY, LINEUP, FORM, SCHEDULE, MOTIVATION, VENUE or WEATHER.",
                 "Queries must be concrete, time-bounded and team-specific when appropriate. Do not return URLs, search results, candidates, odds or calculated amounts.",
                 "dataAsOf is the frozen business snapshot time. Prefer current, near-kickoff evidence and do not treat stale information as current fact.",
@@ -204,7 +197,10 @@ public class DeepSeekReturnCombinationAnalyzer implements ReturnCombinationAiAna
         systemMessage.put("content", String.join("\n",
                 "You are a football parlay risk analyst. Return strict JSON only and no markdown.",
                 "Required top level: {schemaVersion:'2.1',taskType:'DORTMUND_RETURN_COMBINATION',analysisContent,candidates}.",
-                "Each candidate: {title,reason,confidence,riskNotes,evidenceChain:[factors],selections:[selections]}. title, reason, confidence and riskNotes are required. Generate 1 to 10 candidates, each with 1 to 8 unique matches.",
+                "Each candidate: {title,reason,confidence,riskNotes,evidenceChain:[factors],selections:[selections]}. title, reason, confidence and riskNotes are required. Generate 1 to "
+                        + DortmundModuleConfig.Return.MAX_PERSISTED_CANDIDATES + " candidates, each with "
+                        + DortmundModuleConfig.Return.MIN_COMBINATION_MATCHES + " to "
+                        + DortmundModuleConfig.Return.MAX_COMBINATION_MATCHES + " unique matches.",
                 "selectionType is HW, DR, AW, HH, HD or HA. matchId and selectionType must come from input.odds. Never invent matches, teams, tags, info points, evidence, URLs or facts.",
                 "Each evidence factor: {factorCode,matchId,factorType,sourceType,sourceRef,observation,impact,conflictGroup,weightImpact,confidence}.",
                 "Do not provide sourceTier or freshnessClass for evidence factors; the backend derives them from frozen evidence and ignores model-supplied values.",
@@ -224,6 +220,7 @@ public class DeepSeekReturnCombinationAnalyzer implements ReturnCombinationAiAna
                 "Use dataAsOf to judge evidence freshness. Evidence carries freshnessClass CURRENT/RECENT/STALE/UNKNOWN and sourceTier OFFICIAL/MAJOR_MEDIA/SPECIALIST/AGGREGATOR/UNKNOWN. A low-tier or stale source may only be supporting evidence and must not alone justify a high weight.",
                 "conflictGroup groups supporting and opposing factors that address the same issue. Do not hide opposing evidence merely because it weakens the preferred candidate.",
                 "Treat every businessObjectives and supplementaryObjectives item as mandatory. Supplementary objectives add constraints and never replace predefined objectives.",
+                "preferenceCode is a quick-fill preset label; preferenceDimensions is the normalized authoritative strategy hint. Honor all four dimensions together (riskLevel, structure, stakeIntent, returnIntent) for candidate structure and explanation. CUSTOM is valid. Never let preferences change hard limits, frozen odds, evidence validity, return, deviation or any amount calculation; inputAmount remains the only stake.",
                 "Do not return combined odds, estimated return, deviation or any calculated amount. appliedWeight is explanatory metadata only and never enters monetary calculations."));
         messages.add(systemMessage);
         messages.add(userMessage(input));
@@ -274,7 +271,9 @@ public class DeepSeekReturnCombinationAnalyzer implements ReturnCombinationAiAna
         try {
             JSONObject responseEnvelope = JSON.parseObject(rawResponse);
             String runRef = responseEnvelope == null ? null : responseEnvelope.getString("id");
-            return isBlank(runRef) ? null : (runRef.length() > MAX_AI_RUN_REF_LENGTH ? runRef.substring(0, MAX_AI_RUN_REF_LENGTH) : runRef);
+            return isBlank(runRef) ? null
+                    : (runRef.length() > DortmundModuleConfig.Ai.MAX_AI_RUN_REF_LENGTH
+                            ? runRef.substring(0, DortmundModuleConfig.Ai.MAX_AI_RUN_REF_LENGTH) : runRef);
         } catch (Exception e) {
             return null;
         }
@@ -287,7 +286,7 @@ public class DeepSeekReturnCombinationAnalyzer implements ReturnCombinationAiAna
         if (cached != null) {
             return cached;
         }
-        if (restTemplateCache.size() >= MAX_CACHED_REST_TEMPLATES) {
+        if (restTemplateCache.size() >= DortmundModuleConfig.Ai.MAX_CACHED_REST_TEMPLATES) {
             Integer eldestTimeout = restTemplateCache.keySet().iterator().next();
             restTemplateCache.remove(eldestTimeout);
         }
@@ -298,7 +297,7 @@ public class DeepSeekReturnCombinationAnalyzer implements ReturnCombinationAiAna
 
     /** 创建只由本适配器持有的HTTP客户端；连接和读取超时均取部署配置或安全默认值。 */
     private RestTemplate createRestTemplate(long readTimeoutMillis) {
-        int connectTimeoutSeconds = deepSeekConnectTimeoutSeconds > 0 ? deepSeekConnectTimeoutSeconds : DEFAULT_CONNECT_TIMEOUT_SECONDS;
+        int connectTimeoutSeconds = dortmundRuntimeProperties.getAi().getDeepseek().getConnectTimeoutSeconds();
         SimpleClientHttpRequestFactory factory = new SimpleClientHttpRequestFactory();
         // 【通用AI接入点】阶段调用给出的超时预算优先，缺省时才使用部署配置的读取超时。
         factory.setConnectTimeout((int) Duration.ofSeconds(connectTimeoutSeconds).toMillis());
@@ -314,8 +313,7 @@ public class DeepSeekReturnCombinationAnalyzer implements ReturnCombinationAiAna
     }
 
     private long resolveConfiguredReadTimeoutMillis() {
-        int readTimeoutSeconds = deepSeekReadTimeoutSeconds > 0
-                ? deepSeekReadTimeoutSeconds : DEFAULT_READ_TIMEOUT_SECONDS;
+        int readTimeoutSeconds = dortmundRuntimeProperties.getAi().getDeepseek().getReadTimeoutSeconds();
         return Duration.ofSeconds(readTimeoutSeconds).toMillis();
     }
 
@@ -349,7 +347,8 @@ public class DeepSeekReturnCombinationAnalyzer implements ReturnCombinationAiAna
         if (isBlank(value)) {
             return "";
         }
-        return value.length() > MAX_LOG_RESPONSE_CHARS ? value.substring(0, MAX_LOG_RESPONSE_CHARS) : value;
+        return value.length() > DortmundModuleConfig.Ai.MAX_LOG_RESPONSE_CHARS
+                ? value.substring(0, DortmundModuleConfig.Ai.MAX_LOG_RESPONSE_CHARS) : value;
     }
 
     private boolean isBlank(String value) {
