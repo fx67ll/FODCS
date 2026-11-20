@@ -509,6 +509,7 @@ public class Fx67llDortmundReturnCombinationServiceImpl implements IFx67llDortmu
                 + "人工任务不执行平台内证据检索，第三方AI如需扩展信息请在平台外自行处理，"
                 + "但不得把未经核实的扩展信息伪装为input中的业务事实。"
                 + "不得虚构比赛、球队、标签、信息点、赔率或选择类型；不得返回供应商、模型、Token或费用信息。");
+        task.setExportPrompt(buildManualExportPrompt());
         task.setResponseContract(buildManualResponseContract(generation, snapshot));
         return task;
     }
@@ -529,7 +530,7 @@ public class Fx67llDortmundReturnCombinationServiceImpl implements IFx67llDortmu
                 + "并确保analysisContent、candidates和selections均为真实分析结果。");
         template.setWorkflowSteps(Arrays.asList(
                 "步骤1：在当前批次导出处理任务JSON，业务快照在导出前已冻结。",
-                "步骤2：把任务JSON与“第三方AI处理提示词”一起交给外部AI，由外部AI完成信息补充、比赛选择和权重判断。",
+                "步骤2：把任务JSON交给外部AI；完整处理提示词已内嵌在exportPrompt字段，由外部AI完成信息补充、比赛选择和权重判断。",
                 "步骤3：只把符合1.0结果契约的单个JSON对象粘贴或上传回系统，平台重新校验、复算、去重并落库。"));
 
         JSONObject resultExample = new JSONObject();
@@ -578,6 +579,7 @@ public class Fx67llDortmundReturnCombinationServiceImpl implements IFx67llDortmu
         task.put("input", input);
         task.put("instruction", "将{{taskId}}替换为当前批次编码；以input为唯一业务事实源，"
                 + "严格按responseContract返回单个JSON对象，不得返回供应商、模型、Token或费用信息。");
+        task.put("exportPrompt", buildManualExportPrompt());
         JSONObject responseContract = new JSONObject();
         responseContract.put("schemaVersion", MANUAL_AI_CONTRACT_VERSION);
         responseContract.put("taskType", ReturnCombinationAiResponseParser.TASK_TYPE);
@@ -625,7 +627,9 @@ public class Fx67llDortmundReturnCombinationServiceImpl implements IFx67llDortmu
         addManualField(fields, "任务头", "input", "业务输入", "object", true,
                 "冻结的业务输入快照，是第三方AI唯一可信的业务事实源。", "见input字段说明");
         addManualField(fields, "任务头", "instruction", "任务说明", "string", true,
-                "后端生成的处理约束摘要，与第三方AI提示词共同使用。", "以input为唯一业务事实源...");
+                "后端生成的处理约束摘要，便于快速阅读；完整执行规则见exportPrompt。", "以input为唯一业务事实源...");
+        addManualField(fields, "任务头", "exportPrompt", "完整处理提示词", "string", true,
+                "后端生成的完整第三方AI提示词，包含数据边界、分析要求和输出格式；下载任务时随JSON一并导出。", "你是FODCS Dortmund回报组合的第三方分析助手...");
         addManualField(fields, "任务头", "responseContract", "响应契约", "object", true,
                 "规定结果必须满足的顶层字段、候选规则、选择类型和示例。", "见responseContract字段说明");
 

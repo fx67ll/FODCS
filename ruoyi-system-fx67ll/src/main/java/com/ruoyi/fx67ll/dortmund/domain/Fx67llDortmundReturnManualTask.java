@@ -8,8 +8,8 @@ import com.ruoyi.fx67ll.dortmund.ai.ReturnCombinationAiAnalysisPort;
 /**
  * 回报组合人工AI处理任务。
  * <p>
- * 该对象只包含业务输入和标准输出契约，不包含供应商、模型、Prompt、Token、
- * 费用或调用链路等治理元数据。
+ * 该对象只包含业务输入、业务处理提示词和标准输出契约，不包含供应商、模型、
+ * Token、费用或调用链路等治理元数据。
  *
  * @author fx67ll
  * @date 2026-11-16
@@ -38,6 +38,9 @@ public class Fx67llDortmundReturnManualTask {
 
     /** 给第三方AI的操作说明 */
     private String instruction;
+
+    /** 给第三方AI的完整处理提示词，随任务一同导出 */
+    private String exportPrompt;
 
     /** 标准响应契约与示例 */
     private JSONObject responseContract;
@@ -104,6 +107,14 @@ public class Fx67llDortmundReturnManualTask {
 
     public void setInstruction(String instruction) {
         this.instruction = instruction;
+    }
+
+    public String getExportPrompt() {
+        return exportPrompt;
+    }
+
+    public void setExportPrompt(String exportPrompt) {
+        this.exportPrompt = exportPrompt;
     }
 
     public JSONObject getResponseContract() {
