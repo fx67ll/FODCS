@@ -19,6 +19,9 @@ import com.ruoyi.fx67ll.dortmund.service.IFx67llDortmundExtraSimulateVersionServ
 
 /**
  * 外快盈亏数值模拟版本记录Service业务层处理
+ * <p>
+ * 版本号按用户维度单调递增；并发插入由唯一索引兜底，冲突后重读最大值重试。
+ * 作废是不可逆业务状态：先清理该版本全部轮次的计划关系，再更新版本状态，避免关系残留。
  *
  * @author fx67ll
  * @date 2026-09-11
@@ -68,6 +71,7 @@ public class Fx67llDortmundExtraSimulateVersionServiceImpl implements IFx67llDor
         fx67llDortmundExtraSimulateVersion.setUserId(userId);
         fx67llDortmundExtraSimulateVersion.setCreateBy(SecurityUtils.getUsername());
         fx67llDortmundExtraSimulateVersion.setCreateTime(DateUtils.getNowDate());
+        // 版本号在用户维度固定递增；最多重试3次，避免并发冲突无限循环。
         for (int attempt = 0; attempt < 3; attempt++) {
             Long maxVersionNo = fx67llDortmundExtraSimulateVersionMapper
                     .selectMaxVersionNoByUserIdForUpdate(userId);

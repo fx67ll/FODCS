@@ -28,6 +28,9 @@ import com.ruoyi.fx67ll.dortmund.service.IFx67llDortmundExtraService;
 
 /**
  * 外快盈亏记录Service业务层处理
+ * <p>
+ * 记录按时间序列维护本金快照与盈亏；合并只允许连续历史，新记录快照取最后一条、盈亏取所选之和。
+ * 方案计划关系随记录在同一事务内写入或替换；编辑时只替换当前用户可见的关联，不可见关联保持不变。
  *
  * @author fx67ll
  * @date 2023-08-17
@@ -153,6 +156,7 @@ public class Fx67llDortmundExtraServiceImpl implements IFx67llDortmundExtraServi
         fx67llDortmundExtra.setUpdateTime(DateUtils.getNowDate());
         int rows = fx67llDortmundExtraMapper.updateFx67llDortmundExtra(fx67llDortmundExtra);
         if (rows > 0 && (fx67llDortmundExtra.getPlanIds() != null || fx67llDortmundExtra.getNewPlans() != null)) {
+            // 只替换当前用户可见的关系；不可见关联保持原样，避免越权删除他人计划关联。
             replaceVisibleExtraPlanRels(fx67llDortmundExtra.getExtraId(), planIds);
         }
         return rows;

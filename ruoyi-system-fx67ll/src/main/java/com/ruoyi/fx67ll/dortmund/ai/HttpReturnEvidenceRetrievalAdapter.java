@@ -35,9 +35,16 @@ import org.springframework.web.client.RestTemplate;
 public class HttpReturnEvidenceRetrievalAdapter implements ReturnEvidenceRetrievalPort {
     private static final Logger log = LoggerFactory.getLogger(HttpReturnEvidenceRetrievalAdapter.class);
 
-    private static final int CONNECT_TIMEOUT_SECONDS = 8;
-
-    private static final int MAX_RESPONSE_CHARS = 2 * 1024 * 1024;
+    /** 检索网关连接超时，避免DNS或握手异常长期占用生成worker。 */
+    private static final int CONNECT_TIMEOUT_SECONDS = 10;
+    /** 检索网关响应上限，覆盖多条正文并阻止异常超大响应。 */
+    private static final int MAX_RESPONSE_CHARS = 4 * 1024 * 1024;
+    /** 部署未配置时的结果条数兜底，与业务服务默认值保持一致。 */
+    private static final int DEFAULT_MAX_RESULTS = 6;
+    /** 部署未配置时的读取超时，覆盖检索网关排队和网络抖动。 */
+    private static final int DEFAULT_READ_TIMEOUT_SECONDS = 30;
+    /** 读取超时下限，避免误配过小值中断正常检索。 */
+    private static final int MIN_READ_TIMEOUT_SECONDS = 10;
 
     @Value("${dortmund.ai.retrieval.url:}")
     private String retrievalUrl;
@@ -48,7 +55,7 @@ public class HttpReturnEvidenceRetrievalAdapter implements ReturnEvidenceRetriev
     @Value("${dortmund.ai.retrieval.max-results:6}")
     private int configuredMaxResults;
 
-    @Value("${dortmund.ai.retrieval.timeout-seconds:20}")
+    @Value("${dortmund.ai.retrieval.timeout-seconds:30}")
     private int configuredTimeoutSeconds;
 
     @Override
@@ -56,6 +63,7 @@ public class HttpReturnEvidenceRetrievalAdapter implements ReturnEvidenceRetriev
         return !isBlank(retrievalUrl);
     }
 
+    /** 执行单条有界检索；查询由业务层预先校验，本方法只负责传输和受控解析。 */
     @Override
     public List<RetrievalResult> retrieve(ReturnCombinationAiAnalysisPort.EvidenceQuery query, int maxResults) {
         if (!isConfigured()) {
@@ -65,7 +73,7 @@ public class HttpReturnEvidenceRetrievalAdapter implements ReturnEvidenceRetriev
             throw new ServiceException("证据检索查询不能为空！");
         }
         int boundedResults = Math.max(1, Math.min(maxResults,
-                configuredMaxResults > 0 ? configuredMaxResults : 6));
+                configuredMaxResults > 0 ? configuredMaxResults : DEFAULT_MAX_RESULTS));
         JSONObject request = new JSONObject();
         request.put("query", query.getQuery());
         request.put("maxResults", boundedResults);
@@ -106,6 +114,7 @@ public class HttpReturnEvidenceRetrievalAdapter implements ReturnEvidenceRetriev
         }
     }
 
+    /** 解析供应商无关结果并截断到上限；来源层级始终由平台重新分类。 */
     private List<RetrievalResult> parseResponse(String rawResponse, int maxResults) {
         if (isBlank(rawResponse)) {
             throw new ServiceException("证据检索服务未返回内容！");
@@ -139,10 +148,8 @@ public class HttpReturnEvidenceRetrievalAdapter implements ReturnEvidenceRetriev
             result.setSnippet(firstNonBlank(item.getString("snippet"), item.getString("content")));
             result.setSourceName(firstNonBlank(item.getString("sourceName"), item.getString("source")));
             result.setPublishedAt(firstNonBlank(item.getString("publishedAt"), item.getString("publishedTime")));
-            String providedTier = item.getString("sourceTier");
-            result.setSourceTier(EvidenceSourceTaxonomy.isValidTier(providedTier)
-                    ? EvidenceSourceTaxonomy.normalizeTier(providedTier)
-                    : EvidenceSourceTaxonomy.classifySourceTier(result.getUrl(), result.getSourceName()));
+            // 供应商返回的sourceTier只视为普通外部数据，来源层级始终由平台按URL和来源名称重新分类。
+            result.setSourceTier(EvidenceSourceTaxonomy.classifySourceTier(result.getUrl(), result.getSourceName()));
             results.add(result);
         }
         return results;
@@ -151,8 +158,8 @@ public class HttpReturnEvidenceRetrievalAdapter implements ReturnEvidenceRetriev
     private RestTemplate createRestTemplate() {
         SimpleClientHttpRequestFactory factory = new SimpleClientHttpRequestFactory();
         factory.setConnectTimeout((int) Duration.ofSeconds(CONNECT_TIMEOUT_SECONDS).toMillis());
-        int readTimeout = configuredTimeoutSeconds > 0 ? configuredTimeoutSeconds : 20;
-        factory.setReadTimeout((int) Duration.ofSeconds(Math.max(readTimeout, 5)).toMillis());
+        int readTimeout = configuredTimeoutSeconds > 0 ? configuredTimeoutSeconds : DEFAULT_READ_TIMEOUT_SECONDS;
+        factory.setReadTimeout((int) Duration.ofSeconds(Math.max(readTimeout, MIN_READ_TIMEOUT_SECONDS)).toMillis());
         return new RestTemplate(factory);
     }
 

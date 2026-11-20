@@ -43,7 +43,7 @@ public interface ReturnEvidenceRetrievalPort {
 
         private String publishedAt;
 
-        /** 检索网关提供的供应商无关来源层级，可为空 */
+        /** 兼容检索网关返回结构的来源层级；该字段不可信，业务层只保留传输占位并统一重新分类。 */
         private String sourceTier;
 
         public String getTitle() {

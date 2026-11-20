@@ -31,6 +31,9 @@ import org.springframework.transaction.annotation.Transactional;
 
 /**
  * 比赛记录Service业务层处理
+ * <p>
+ * 比赛是赛季、主客队、信息点和赔率的聚合根。新增可在同一事务内创建赛季/球队/首条有效赔率/信息点；
+ * 修改禁止改变比赛编码或嵌套新建，赛果变化会使关联方案摘要失效。
  *
  * @author ruoyi
  * @date 2026-03-03

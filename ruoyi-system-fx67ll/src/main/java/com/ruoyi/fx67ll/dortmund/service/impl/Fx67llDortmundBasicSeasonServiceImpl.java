@@ -17,6 +17,8 @@ import com.ruoyi.fx67ll.dortmund.support.DortmundFieldValidator;
 
 /**
  * 赛季管理Service业务层处理
+ * <p>
+ * 删除赛季前必须确认没有被比赛或信息点引用；赛季编码在用户内唯一。
  *
  * @author ruoyi
  * @date 2026-03-03

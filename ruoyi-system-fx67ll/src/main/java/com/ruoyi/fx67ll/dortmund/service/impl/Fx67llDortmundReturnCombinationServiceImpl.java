@@ -22,6 +22,8 @@ import java.util.UUID;
 import java.time.LocalDate;
 import java.time.temporal.ChronoUnit;
 
+import javax.annotation.PostConstruct;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -82,6 +84,10 @@ import com.ruoyi.fx67ll.dortmund.support.DortmundWeightCodec;
 
 /**
  * Dortmund回报组合Service业务层处理
+ * <p>
+ * 自动链路按受理并冻结快照、异步规划检索、最终分析、服务端复算、事务落库执行；人工链路复用同一校验、复算、去重与落库内核。
+ * 核心不变量：AI只提供候选、理由和解释性权重，组合倍率、预计回报、偏差与金额全部由后端基于冻结odds重算，任何模型输出都不能直接改写金额。
+ * 当前单次业务上限为8场，单候选最多8场；批次领取、重试和完成写入均以租约和事务内二次校验为边界。
  *
  * @author fx67ll
  * @date 2026-11-09
@@ -89,6 +95,18 @@ import com.ruoyi.fx67ll.dortmund.support.DortmundWeightCodec;
 @Service
 public class Fx67llDortmundReturnCombinationServiceImpl implements IFx67llDortmundReturnCombinationService {
     private static final Logger log = LoggerFactory.getLogger(Fx67llDortmundReturnCombinationServiceImpl.class);
+    /** 组合标题最大长度，与 combination_title varchar(233) 对齐。 */
+    private static final int MAX_COMBINATION_TITLE_LENGTH = 233;
+    /** 组合理由最大长度，与 combination_reason varchar(2047) 对齐。 */
+    private static final int MAX_COMBINATION_REASON_LENGTH = 2047;
+    /** 逐场选择理由最大长度，与 selection_reason varchar(1023) 对齐。 */
+    private static final int MAX_SELECTION_REASON_LENGTH = 1023;
+    /** 证据来源名称最大长度，与 source_name varchar(233) 对齐。 */
+    private static final int MAX_EVIDENCE_SOURCE_NAME_LENGTH = 233;
+    /** 证据来源地址最大长度，与 source_url varchar(1023) 对齐。 */
+    private static final int MAX_EVIDENCE_SOURCE_URL_LENGTH = 1023;
+    /** 批次受控备注与证据错误摘要上限，与对应 varchar(1023) 字段对齐。 */
+    private static final int MAX_GENERATION_MESSAGE_LENGTH = 1023;
 
     private static final String STATUS_PROCESSING = "0";
     private static final String STATUS_SUCCESS = "1";
@@ -115,22 +133,47 @@ public class Fx67llDortmundReturnCombinationServiceImpl implements IFx67llDortmu
     private static final String EVIDENCE_SOURCE_SUPPLIED = "SUPPLIED";
     private static final String EVIDENCE_SOURCE_RETRIEVAL = "RETRIEVAL";
     private static final String EVIDENCE_SOURCE_MANUAL_WEIGHT = "MANUAL_WEIGHT";
+    /** 当前请求可提交的比赛池上限；本版本该池同时承担AI分析与组合腿选择。 */
+    private static final int MAX_REQUEST_MATCHES = 8;
+    /** 单条串关最多覆盖的比赛场次，对应八串一业务限制。 */
+    private static final int MAX_COMBINATION_MATCHES = 8;
+    /** 单个批次最终保留的候选组合数，按目标偏差绝对值排序后裁剪。 */
+    private static final int MAX_PERSISTED_COMBINATIONS = 10;
+    /** 证据规划最多覆盖的比赛数，与当前请求比赛池保持一致。 */
     private static final int MAX_RETRIEVAL_QUERIES = 8;
-    private static final int MAX_RETRIEVAL_RESULTS_PER_QUERY = 4;
-    private static final int MAX_EVIDENCE_FACTORS = 20;
-    private static final int MAX_EVIDENCE_OBSERVATION_LENGTH = 1000;
-    private static final int MAX_WEIGHT_RATIONALE_LENGTH = 4000;
+    /** 单条检索最多保留的结果数；为重复、空正文和低质量来源预留筛选余量。 */
+    private static final int MAX_RETRIEVAL_RESULTS_PER_QUERY = 6;
+    /** 部署未配置时的单条检索超时，覆盖搜索网关排队和网络抖动。 */
+    private static final int DEFAULT_RETRIEVAL_TIMEOUT_SECONDS = 30;
+    /** 租约在AI与检索预算外预留的落库、状态写入和时钟偏差余量。 */
+    private static final int GENERATION_LEASE_MARGIN_SECONDS = 180;
+    /** 单个自动候选允许引用的证据因子上限，给多源交叉验证保留空间。 */
+    private static final int MAX_EVIDENCE_FACTORS = 40;
+    /** 单条检索证据正文上限；content为mediumtext，截断只用于控制Prompt预算。 */
+    private static final int MAX_EVIDENCE_CONTENT_LENGTH = 4000;
+    /** 单个证据观察文本上限，避免关键事实在入库前被过度截断。 */
+    private static final int MAX_EVIDENCE_OBSERVATION_LENGTH = 2000;
+    /** 单场选择权重推导文本上限，要求覆盖逐项证据而非一句结论。 */
+    private static final int MAX_WEIGHT_RATIONALE_LENGTH = 8000;
     private static final int MAX_CONFLICT_GROUP_LENGTH = 64;
+    /** 候选风险提示文本上限；risk_notes为varchar(2047)，保留少量余量避免超长写入被数据库拒绝。 */
     private static final int MAX_RISK_NOTES_LENGTH = 2000;
-    private static final int MAX_COUNTER_EVIDENCE_REFS = 20;
-    private static final long AI_PLAN_TIMEOUT_MILLIS = 60_000L;
-    private static final long AI_ANALYSIS_TIMEOUT_MILLIS = 180_000L;
+    /** 单场选择允许引用的反向证据上限，与支持因子上限保持对称。 */
+    private static final int MAX_COUNTER_EVIDENCE_REFS = 40;
+    /** 证据规划阶段超时预算，覆盖较长系统提示词和多查询规划输出。 */
+    private static final long AI_PLAN_TIMEOUT_MILLIS = 90_000L;
+    /** 最终分析阶段超时预算，覆盖大证据目录和完整候选解释输出。 */
+    private static final long AI_ANALYSIS_TIMEOUT_MILLIS = 240_000L;
     private static final String AI_OPERATION_PLAN = "PLAN";
     private static final String AI_OPERATION_ANALYZE = "ANALYZE";
-    private static final int MAX_SUPPLEMENTARY_OBJECTIVES = 5;
-    private static final int MAX_SUPPLEMENTARY_OBJECTIVE_LENGTH = 200;
-    private static final int MAX_SUPPLEMENTARY_OBJECTIVES_TOTAL_LENGTH = 1000;
-    private static final int MAX_MANUAL_RESPONSE_BYTES = 2 * 1024 * 1024;
+    /** 补充业务目标条数上限，与前端表单约束一致。 */
+    private static final int MAX_SUPPLEMENTARY_OBJECTIVES = 8;
+    /** 单条补充业务目标长度上限。 */
+    private static final int MAX_SUPPLEMENTARY_OBJECTIVE_LENGTH = 240;
+    /** 补充业务目标合计长度上限，避免挤占证据和业务上下文预算。 */
+    private static final int MAX_SUPPLEMENTARY_OBJECTIVES_TOTAL_LENGTH = 1600;
+    /** 人工AI结果上传上限，为完整证据说明和十个候选预留空间。 */
+    private static final int MAX_MANUAL_RESPONSE_BYTES = 8 * 1024 * 1024;
     private static final BigDecimal MAX_BUSINESS_AMOUNT = new BigDecimal("999999999999.99");
     private static final BigDecimal MAX_COMBINATION_ODDS = new BigDecimal("999999999999.999999");
     private static final Set<String> SORT_FIELDS = new HashSet<>();
@@ -185,7 +228,10 @@ public class Fx67llDortmundReturnCombinationServiceImpl implements IFx67llDortmu
     @Autowired
     private PlatformTransactionManager transactionManager;
 
-    @Value("${dortmund.return.generation.lease-seconds:300}")
+    @Value("${dortmund.ai.retrieval.timeout-seconds:30}")
+    private int retrievalTimeoutSeconds;
+
+    @Value("${dortmund.return.generation.lease-seconds:900}")
     private int generationLeaseSeconds;
 
     @Value("${dortmund.return.generation.max-attempts:3}")
@@ -207,6 +253,15 @@ public class Fx67llDortmundReturnCombinationServiceImpl implements IFx67llDortmu
     private int imageDeleteRetryLimit;
 
     private final String workerId = "return-" + UUID.randomUUID().toString().replace("-", "").substring(0, 12);
+
+    @PostConstruct
+    public void initGenerationLeaseGuard() {
+        int minimumLeaseSeconds = minimumGenerationLeaseSeconds();
+        if (generationLeaseSeconds < minimumLeaseSeconds) {
+            log.warn("回报组合生成租约配置{}秒低于链路最小预算{}秒，运行时将使用最小预算。",
+                    generationLeaseSeconds, minimumLeaseSeconds);
+        }
+    }
 
     /**
      * 生成回报组合
@@ -348,6 +403,20 @@ public class Fx67llDortmundReturnCombinationServiceImpl implements IFx67llDortmu
     }
 
     /**
+     * 计算批次租约的最小安全值。
+     * 预算由规划、逐场检索、最终分析和落库余量组成；部署配置更低时运行时仍按本值领取。
+     */
+    private int minimumGenerationLeaseSeconds() {
+        int retrievalSeconds = retrievalTimeoutSeconds > 0
+                ? retrievalTimeoutSeconds : DEFAULT_RETRIEVAL_TIMEOUT_SECONDS;
+        long budgetSeconds = AI_PLAN_TIMEOUT_MILLIS / 1000L
+                + (long) MAX_RETRIEVAL_QUERIES * retrievalSeconds
+                + AI_ANALYSIS_TIMEOUT_MILLIS / 1000L
+                + GENERATION_LEASE_MARGIN_SECONDS;
+        return budgetSeconds > Integer.MAX_VALUE ? Integer.MAX_VALUE : (int) budgetSeconds;
+    }
+
+    /**
      * 异步生成调度器。
      * <p>
      * MySQL 5.7没有SKIP LOCKED，因此先查候选再以条件UPDATE原子领取；多节点同时扫描时，
@@ -368,7 +437,8 @@ public class Fx67llDortmundReturnCombinationServiceImpl implements IFx67llDortmu
         for (Long generationId : pendingIds) {
             try {
                 int claimed = fx67llDortmundReturnGenerationMapper.claimGeneration(generationId, workerId,
-                        Math.max(generationLeaseSeconds, 30), Math.max(generationMaxAttempts, 1));
+                        Math.max(generationLeaseSeconds, minimumGenerationLeaseSeconds()),
+                        Math.max(generationMaxAttempts, 1));
                 if (claimed == 1) {
                     processClaimedGeneration(generationId);
                 } else {
@@ -763,8 +833,8 @@ public class Fx67llDortmundReturnCombinationServiceImpl implements IFx67llDortmu
                 + "三、输出格式\n"
                 + "只返回一个 JSON 对象，不要 Markdown 代码围栏、不要解释文字、不要供应商/模型/Token/费用信息。"
                 + "顶层字段必须为 schemaVersion=1.0、taskType=DORTMUND_RETURN_COMBINATION、taskId=导出任务中的 taskId、analysisContent、candidates。"
-                + "candidates 每项包含 title、reason、可选 confidence（0-100）、可选 riskNotes、selections；"
-                + "selections 每项包含 matchId、selectionType、appliedWeight、reason。"
+                + "candidates 每项必须包含 title、reason、selections；confidence（0-100）与 riskNotes 可选，但提供时按规则校验。"
+                + "selections 每项必须包含 matchId、selectionType、appliedWeight、reason。"
                 + "不得返回组合倍率、预计回报、偏差金额或任何自行计算的金额字段。";
     }
 
@@ -822,7 +892,7 @@ public class Fx67llDortmundReturnCombinationServiceImpl implements IFx67llDortmu
         manualInput.setBusinessObjectives(buildManualBusinessObjectives(snapshot.request));
         String manualInputSnapshot = JSON.toJSONString(manualInput);
         List<PreparedCombination> prepared = prepareCombinations(
-                output, snapshot.request, snapshot.odds, null, false);
+                output, snapshot.request, snapshot.odds, null, false, locked.getDataAsOf());
         if (prepared.isEmpty()) {
             throw new ServiceException("人工AI结果未生成可用回报组合，请检查格式、比赛和选择类型！");
         }
@@ -894,6 +964,10 @@ public class Fx67llDortmundReturnCombinationServiceImpl implements IFx67llDortmu
         }
     }
 
+    /**
+     * 执行一次已领取的自动生成批次。
+     * A模式先规划并逐场检索，S模式跳过检索；两者最终都进入同一分析、候选装配和事务落库内核。
+     */
     private void processClaimedGeneration(Long generationId) {
         Fx67llDortmundReturnGeneration generation = fx67llDortmundReturnGenerationMapper
                 .selectFx67llDortmundReturnGenerationByGenerationId(generationId);
@@ -966,7 +1040,7 @@ public class Fx67llDortmundReturnCombinationServiceImpl implements IFx67llDortmu
             callTraces.add(buildAiCallTrace(analysisInvocation, "SUCCESS", analysisDuration,
                     output == null ? null : output.getAiRunRef()));
             List<PreparedCombination> prepared = prepareCombinations(
-                    output, request, oddsList, evidenceBundle, true);
+                    output, request, oddsList, evidenceBundle, true, generation.getDataAsOf());
             if (prepared.isEmpty()) {
                 throw new ServiceException("AI未生成可用的回报组合！");
             }
@@ -1155,11 +1229,12 @@ public class Fx67llDortmundReturnCombinationServiceImpl implements IFx67llDortmu
     private JSONArray buildManualCandidateRules() {
         JSONArray candidateRules = new JSONArray();
         candidateRules.add("candidates必须为1至" + ReturnCombinationAiResponseParser.MAX_MANUAL_CANDIDATES
-                + "条，每条包含title、reason和selections。");
+                + "条，每条必须包含title、reason和selections。");
         candidateRules.add("必须同时满足input.businessObjectives和input.supplementaryObjectives，补充目标不得覆盖预定义目标。");
         candidateRules.add("businessContext中的球队标签为原始标签列表，不得假定固定标签体系；信息点与来源事实不得虚构。");
         candidateRules.add("selections必须为1至8条，同一候选内matchId不得重复。");
         candidateRules.add("matchId必须来自input.odds，selectionType只能为HW、DR、AW、HH、HD或HA。");
+        candidateRules.add("candidate.reason与selection.reason均为必填，缺少任一理由时该候选无效。");
         candidateRules.add("appliedWeight取值范围为0至1，最多四位小数；AI Mode必填，Subjective Mode仅作参考且不参与金额计算。");
         candidateRules.add("confidence与riskNotes为可选复核字段；confidence如填写必须为0至100整数，riskNotes用于说明信息缺口与冲突，不参与金额计算。");
         candidateRules.add("不得返回组合倍率、预计回报、偏差金额或任何自行计算的金额字段。");
@@ -1203,6 +1278,7 @@ public class Fx67llDortmundReturnCombinationServiceImpl implements IFx67llDortmu
         return null;
     }
 
+    /** 按尝试次数写回失败状态；未耗尽时释放租约并延迟重试，耗尽后结束批次并保留受控原因。 */
     private void handleGenerationFailure(Fx67llDortmundReturnGeneration generation, Exception error) {
         String message = error == null || blank(error.getMessage())
                 ? "回报组合异步生成失败，请稍后重试！" : limit(error.getMessage(), 900);
@@ -1211,17 +1287,17 @@ public class Fx67llDortmundReturnCombinationServiceImpl implements IFx67llDortmu
         try {
             if ("A".equals(generation.getGenerationMode())) {
                 fx67llDortmundReturnGenerationMapper.updateEvidenceStatus(generation.getGenerationId(), workerId,
-                        EVIDENCE_STATUS_FAILED, limit(message, 1023));
+                        EVIDENCE_STATUS_FAILED, limit(message, MAX_GENERATION_MESSAGE_LENGTH));
             }
             if (attempt < maxAttempts) {
                 String remark = "第" + attempt + "次执行失败，系统将自动重试：" + message;
                 fx67llDortmundReturnGenerationMapper.releaseGenerationForRetry(generation.getGenerationId(), workerId,
-                        limit(remark, 1023), Math.max(generationRetryDelaySeconds, 1), generation.getCreateBy());
+                        limit(remark, MAX_GENERATION_MESSAGE_LENGTH), Math.max(generationRetryDelaySeconds, 1), generation.getCreateBy());
                 return;
             }
             String remark = "异步生成最终失败，已保留受控原因：" + message;
             fx67llDortmundReturnGenerationMapper.failGeneration(generation.getGenerationId(), workerId,
-                    limit(remark, 1023), generation.getCreateBy());
+                    limit(remark, MAX_GENERATION_MESSAGE_LENGTH), generation.getCreateBy());
             log.error("回报组合异步生成最终失败，生成批次ID：{}，尝试次数：{}", generation.getGenerationId(), attempt,
                     error);
         } catch (Exception updateError) {
@@ -1757,10 +1833,14 @@ public class Fx67llDortmundReturnCombinationServiceImpl implements IFx67llDortmu
         }
     }
 
+    /**
+     * 将AI返回的整组候选物化为可落库组合。
+     * 本方法不做排列枚举或拆分投注，只校验AI给出的整组选择，按比赛和选择类型去重，再按目标偏差绝对值和候选上限裁剪。
+     */
     private List<PreparedCombination> prepareCombinations(
             ReturnCombinationAiAnalysisPort.ReturnCombinationAiOutput output,
             Fx67llDortmundReturnGenerateRequest request, List<Fx67llDortmundOdds> oddsList,
-            EvidenceBundle evidenceBundle, boolean evidenceRequired) {
+            EvidenceBundle evidenceBundle, boolean evidenceRequired, Date dataAsOf) {
         if (output == null || output.getCandidates() == null) {
             return Collections.emptyList();
         }
@@ -1770,22 +1850,28 @@ public class Fx67llDortmundReturnCombinationServiceImpl implements IFx67llDortmu
         }
         Map<String, PreparedCombination> unique = new LinkedHashMap<>();
         for (ReturnCombinationAiAnalysisPort.Candidate candidate : output.getCandidates()) {
-            PreparedCombination prepared = prepareOne(candidate, request, oddsMap, evidenceBundle, evidenceRequired);
+            PreparedCombination prepared = prepareOne(
+                    candidate, request, oddsMap, evidenceBundle, evidenceRequired, dataAsOf);
             if (prepared != null) {
                 unique.putIfAbsent(prepared.signature, prepared);
             }
         }
         List<PreparedCombination> result = new ArrayList<>(unique.values());
         result.sort(Comparator.comparing(value -> value.combination.getDeviationAmount().abs()));
-        return result.size() > 10 ? new ArrayList<>(result.subList(0, 10)) : result;
+        return result.size() > MAX_PERSISTED_COMBINATIONS ? new ArrayList<>(result.subList(0, MAX_PERSISTED_COMBINATIONS)) : result;
     }
 
+    /**
+     * 校验并复算单个候选组合。
+     * 每场只能出现一次，组合倍率为各场原始odds之积；预计回报为基础金额乘以组合倍率，偏差为预计回报减目标金额。
+     */
     private PreparedCombination prepareOne(ReturnCombinationAiAnalysisPort.Candidate candidate,
             Fx67llDortmundReturnGenerateRequest request, Map<Long, Fx67llDortmundOdds> oddsMap,
-            EvidenceBundle evidenceBundle, boolean evidenceRequired) {
-        if (candidate == null || blank(candidate.getTitle()) || candidate.getTitle().length() > 233
+            EvidenceBundle evidenceBundle, boolean evidenceRequired, Date dataAsOf) {
+        if (candidate == null || blank(candidate.getTitle()) || candidate.getTitle().length() > MAX_COMBINATION_TITLE_LENGTH
+                || blank(candidate.getReason()) || candidate.getReason().length() > MAX_COMBINATION_REASON_LENGTH
                 || candidate.getSelections() == null || candidate.getSelections().isEmpty()
-                || candidate.getSelections().size() > 8
+                || candidate.getSelections().size() > MAX_COMBINATION_MATCHES
                 || (candidate.getConfidence() != null
                 && (candidate.getConfidence() < 0 || candidate.getConfidence() > 100))
                 || (evidenceRequired && candidate.getConfidence() == null)
@@ -1795,7 +1881,7 @@ public class Fx67llDortmundReturnCombinationServiceImpl implements IFx67llDortmu
             return null;
         }
         Map<String, ReturnCombinationAiAnalysisPort.EvidenceFactor> evidenceFactors = evidenceRequired
-                ? validateEvidenceChain(candidate, oddsMap, evidenceBundle) : Collections.emptyMap();
+                ? validateEvidenceChain(candidate, oddsMap, evidenceBundle, dataAsOf) : Collections.emptyMap();
         if (evidenceRequired && evidenceFactors == null) {
             return null;
         }
@@ -1807,7 +1893,8 @@ public class Fx67llDortmundReturnCombinationServiceImpl implements IFx67llDortmu
         for (ReturnCombinationAiAnalysisPort.Selection selection : candidate.getSelections()) {
             if (selection == null || selection.getMatchId() == null || !seenMatches.add(selection.getMatchId())
                     || !oddsMap.containsKey(selection.getMatchId())
-                    || !SELECTION_TYPES.contains(selection.getSelectionType())) {
+                    || !SELECTION_TYPES.contains(selection.getSelectionType())
+                    || blank(selection.getReason()) || selection.getReason().length() > MAX_SELECTION_REASON_LENGTH) {
                 return null;
             }
             Fx67llDortmundOdds odds = oddsMap.get(selection.getMatchId());
@@ -1828,8 +1915,14 @@ public class Fx67llDortmundReturnCombinationServiceImpl implements IFx67llDortmu
                 // Subjective Mode由后端保证主观权重不被AI改写；契约值也必须是同一冻结权重。
                 return null;
             }
-            if (evidenceRequired && !validateSelectionEvidence(selection, request.getGenerationMode(), evidenceFactors)) {
-                return null;
+            if (evidenceRequired) {
+                String evidenceViolation = validateSelectionEvidence(
+                        selection, request.getGenerationMode(), evidenceFactors);
+                if (evidenceViolation != null) {
+                    log.warn("AI候选选择证据校验失败，类别：{}，比赛：{}，选择：{}",
+                            evidenceViolation, selection.getMatchId(), selection.getSelectionType());
+                    return null;
+                }
             }
             BigDecimal oddsValue = oddsValue(odds, selection.getSelectionType());
             combined = combined.multiply(oddsValue);
@@ -1844,7 +1937,7 @@ public class Fx67llDortmundReturnCombinationServiceImpl implements IFx67llDortmu
             item.setAppliedWeight(appliedWeight);
             item.setItemSort(sort++);
             // 逐场选择理由快照仅用于复核，不参与任何金额计算。
-            item.setSelectionReason(limit(selection.getReason(), 1023));
+            item.setSelectionReason(limit(selection.getReason(), MAX_SELECTION_REASON_LENGTH));
             if (evidenceRequired) {
                 item.setWeightRationale(limit(selection.getWeightRationale(), MAX_WEIGHT_RATIONALE_LENGTH));
                 item.setEvidenceRefs(JSON.toJSONString(selection.getEvidenceRefs()));
@@ -1863,6 +1956,7 @@ public class Fx67llDortmundReturnCombinationServiceImpl implements IFx67llDortmu
             }
         }
         Collections.sort(signatureParts);
+        // 金额公式固定为基础金额乘以各场原始odds连乘；appliedWeight和手工权重只用于解释与审计，不进入该公式。
         BigDecimal estimated = request.getInputAmount().multiply(combined).setScale(2, RoundingMode.HALF_UP);
         if (combined.compareTo(MAX_COMBINATION_ODDS) > 0) {
             throw new ServiceException("组合倍率超出可计算范围，请减少比赛场次或调整赔率！");
@@ -1873,7 +1967,7 @@ public class Fx67llDortmundReturnCombinationServiceImpl implements IFx67llDortmu
         Fx67llDortmundReturnCombination combination = new Fx67llDortmundReturnCombination();
         combination.setCombinationCode(createCode("C"));
         combination.setCombinationTitle(candidate.getTitle().trim());
-        combination.setCombinationReason(limit(candidate.getReason(), 2047));
+        combination.setCombinationReason(limit(candidate.getReason(), MAX_COMBINATION_REASON_LENGTH));
         combination.setCombinationRemark(candidate.getAnalysisContent());
         combination.setAiConfidence(candidate.getConfidence());
         combination.setRiskNotes(limit(candidate.getRiskNotes(), MAX_RISK_NOTES_LENGTH));
@@ -1897,7 +1991,7 @@ public class Fx67llDortmundReturnCombinationServiceImpl implements IFx67llDortmu
      */
     private Map<String, ReturnCombinationAiAnalysisPort.EvidenceFactor> validateEvidenceChain(
             ReturnCombinationAiAnalysisPort.Candidate candidate, Map<Long, Fx67llDortmundOdds> oddsMap,
-            EvidenceBundle evidenceBundle) {
+            EvidenceBundle evidenceBundle, Date dataAsOf) {
         List<ReturnCombinationAiAnalysisPort.EvidenceFactor> factors = candidate.getEvidenceChain();
         if (evidenceBundle == null || factors == null || factors.isEmpty()
                 || factors.size() > MAX_EVIDENCE_FACTORS) {
@@ -1935,6 +2029,11 @@ public class Fx67llDortmundReturnCombinationServiceImpl implements IFx67llDortmu
             if (evidence == null || !factor.getMatchId().equals(evidence.getMatchId())) {
                 return null;
             }
+            // 证据质量字段只由后端根据冻结证据生成，覆盖模型可能携带的同名字段。
+            factor.setSourceTier(EvidenceSourceTaxonomy.classifySourceTier(
+                    evidence.getSourceUrl(), evidence.getSourceName()));
+            factor.setFreshnessClass(EvidenceSourceTaxonomy.classifyFreshness(
+                    evidence.getPublishedTime(), evidence.getRetrievedTime(), dataAsOf));
             boolean retrieval = EVIDENCE_SOURCE_RETRIEVAL.equals(factor.getSourceType());
             if (retrieval && !EVIDENCE_ORIGIN_RETRIEVED.equals(evidence.getEvidenceOrigin())) {
                 return null;
@@ -1952,33 +2051,32 @@ public class Fx67llDortmundReturnCombinationServiceImpl implements IFx67llDortmu
 
     /**
      * 校验选择级证据引用。主观模式禁止仅凭权重论证；AI模式每个选择必须有同场检索证据。
+     *
+     * @return null表示通过；否则返回可区分的受控校验类别
      */
-    private boolean validateSelectionEvidence(ReturnCombinationAiAnalysisPort.Selection selection,
+    private String validateSelectionEvidence(ReturnCombinationAiAnalysisPort.Selection selection,
             String generationMode, Map<String, ReturnCombinationAiAnalysisPort.EvidenceFactor> factorMap) {
         if (blank(selection.getWeightRationale()) || selection.getWeightRationale().length() < 20
                 || selection.getWeightRationale().length() > MAX_WEIGHT_RATIONALE_LENGTH
                 || selection.getEvidenceRefs() == null || selection.getEvidenceRefs().isEmpty()
                 || selection.getEvidenceRefs().size() > MAX_EVIDENCE_FACTORS) {
-            return false;
+            return "INVALID_SELECTION_EVIDENCE";
         }
-        if (selection.getCounterEvidenceRefs() != null) {
-            if (selection.getCounterEvidenceRefs().size() > MAX_COUNTER_EVIDENCE_REFS) {
-                return false;
-            }
-            Set<String> counterRefs = new HashSet<>();
-            for (String counterRef : selection.getCounterEvidenceRefs()) {
-                ReturnCombinationAiAnalysisPort.EvidenceFactor factor = factorMap.get(counterRef);
-                if (factor == null || !selection.getMatchId().equals(factor.getMatchId())
-                        || !counterRefs.add(counterRef)) {
-                    return false;
-                }
-            }
-        }
+        Set<String> supportRefs = new HashSet<>();
         boolean hasRequiredEvidence = false;
         for (String evidenceRef : selection.getEvidenceRefs()) {
+            if (blank(evidenceRef)) {
+                return "INVALID_SUPPORT_REF";
+            }
+            if (!supportRefs.add(evidenceRef)) {
+                return "DUPLICATE_SUPPORT_REF";
+            }
             ReturnCombinationAiAnalysisPort.EvidenceFactor factor = factorMap.get(evidenceRef);
-            if (factor == null || !selection.getMatchId().equals(factor.getMatchId())) {
-                return false;
+            if (factor == null) {
+                return "UNKNOWN_SUPPORT_REF";
+            }
+            if (!selection.getMatchId().equals(factor.getMatchId())) {
+                return "CROSS_MATCH_SUPPORT_REF";
             }
             if ("A".equals(generationMode)
                     && EVIDENCE_SOURCE_RETRIEVAL.equals(factor.getSourceType())) {
@@ -1989,14 +2087,38 @@ public class Fx67llDortmundReturnCombinationServiceImpl implements IFx67llDortmu
                 hasRequiredEvidence = true;
             }
         }
-        return hasRequiredEvidence;
+        if (selection.getCounterEvidenceRefs() != null) {
+            if (selection.getCounterEvidenceRefs().size() > MAX_COUNTER_EVIDENCE_REFS) {
+                return "TOO_MANY_COUNTER_REFS";
+            }
+            Set<String> counterRefs = new HashSet<>();
+            for (String counterRef : selection.getCounterEvidenceRefs()) {
+                if (blank(counterRef)) {
+                    return "INVALID_COUNTER_REF";
+                }
+                if (!counterRefs.add(counterRef)) {
+                    return "DUPLICATE_COUNTER_REF";
+                }
+                if (supportRefs.contains(counterRef)) {
+                    return "SUPPORT_COUNTER_OVERLAP";
+                }
+                ReturnCombinationAiAnalysisPort.EvidenceFactor factor = factorMap.get(counterRef);
+                if (factor == null) {
+                    return "UNKNOWN_COUNTER_REF";
+                }
+                if (!selection.getMatchId().equals(factor.getMatchId())) {
+                    return "CROSS_MATCH_COUNTER_REF";
+                }
+            }
+        }
+        return hasRequiredEvidence ? null : "MISSING_REQUIRED_EVIDENCE";
     }
 
     /**
-     * 固化异步生成结果。
+     * 构造供应商无关的AI阶段调用契约。
      * <p>
-     * worker不依赖SecurityUtils：审计用户取自批次创建人；事务内锁定批次并再次校验worker/status，
-     * 防止租约过期后新旧worker同时写入。批次固化不读取、绑定或修改任何组合图片。
+     * 调用预算、业务键和工具策略均由后端生成，适配器只消费该契约，不得反向修改业务上限。
+     * 该契约只承载阶段、场景、业务键、超时和检索工具策略，不写入供应商模型或费用字段。
      */
     private ReturnCombinationAiAnalysisPort.ReturnCombinationAiInvocation buildAiInvocation(
             Fx67llDortmundReturnGeneration generation, String operation, long timeoutMillis,
@@ -2047,6 +2169,11 @@ public class Fx67llDortmundReturnCombinationServiceImpl implements IFx67llDortmu
         return trace;
     }
 
+    /**
+     * 固化异步生成结果。
+     * worker不依赖SecurityUtils，审计用户取自批次创建人；事务内锁定批次并再次校验worker与status，防止租约过期后新旧worker同时写入。
+     * 批次固化不读取、绑定或修改任何组合图片。
+     */
     private void persistSuccess(Fx67llDortmundReturnGeneration generation, List<PreparedCombination> prepared,
             ReturnCombinationAiAnalysisPort.ReturnCombinationAiOutput output, EvidenceBundle evidenceBundle,
             String analysisInputSnapshot, String aiCallRefs) {
@@ -2112,6 +2239,7 @@ public class Fx67llDortmundReturnCombinationServiceImpl implements IFx67llDortmu
         return selectCombinationList(query);
     }
 
+    /** 加载所选比赛当前唯一有效odds并校验数据范围；生成链路不得使用历史、停用或跨用户赔率。 */
     private List<Fx67llDortmundOdds> loadRequestOdds(List<Long> matchIds) {
         List<Fx67llDortmundOdds> result = new ArrayList<>();
         for (Long matchId : new LinkedHashSet<>(matchIds)) {
@@ -2132,6 +2260,7 @@ public class Fx67llDortmundReturnCombinationServiceImpl implements IFx67llDortmu
         return result;
     }
 
+    /** 校验模式、金额精度、1至8场去重比赛和补充目标长度；AI候选与采用操作都不得突破该业务池。 */
     private void validateRequest(Fx67llDortmundReturnGenerateRequest request) {
         if (request == null || (!"S".equals(request.getGenerationMode())
                 && !"A".equals(request.getGenerationMode()))) {
@@ -2148,9 +2277,9 @@ public class Fx67llDortmundReturnCombinationServiceImpl implements IFx67llDortmu
             throw new ServiceException("基础金额和目标金额最多保留两位小数且不能超过999999999999.99！");
         }
         if (request.getMatchIds() == null || request.getMatchIds().size() < 1
-                || request.getMatchIds().size() > 8 || request.getMatchIds().contains(null)
+                || request.getMatchIds().size() > MAX_REQUEST_MATCHES || request.getMatchIds().contains(null)
                 || new HashSet<>(request.getMatchIds()).size() != request.getMatchIds().size()) {
-            throw new ServiceException("比赛列表必须包含1至8场不重复的比赛！");
+            throw new ServiceException("比赛列表必须包含1至" + MAX_REQUEST_MATCHES + "场不重复的比赛！");
         }
         request.setSupplementaryObjectives(normalizeSupplementaryObjectives(request.getSupplementaryObjectives()));
     }
@@ -2245,6 +2374,7 @@ public class Fx67llDortmundReturnCombinationServiceImpl implements IFx67llDortmu
         return value;
     }
 
+    /** 冻结本次请求的业务目标、上下文和odds快照；后续AI调用与复算只读该快照，避免主数据在请求期间变化污染结果。 */
     private String buildSnapshot(Fx67llDortmundReturnGenerateRequest request, List<Fx67llDortmundOdds> odds,
             ReturnCombinationAiBusinessContext businessContext, Date dataAsOf) {
         JSONObject value = new JSONObject();
@@ -2513,9 +2643,9 @@ public class Fx67llDortmundReturnCombinationServiceImpl implements IFx67llDortmu
         evidence.setEvidenceType(evidenceType);
         evidence.setSourceRefId(sourceRefId);
         evidence.setTitle(limit(sanitizeEvidenceText(title, 512), 512));
-        evidence.setContent(limit(sanitizeEvidenceText(content, 4000), 4000));
-        evidence.setSourceName(limit(sourceName, 233));
-        evidence.setSourceUrl(limit(sourceUrl, 1023));
+        evidence.setContent(limit(sanitizeEvidenceText(content, MAX_EVIDENCE_CONTENT_LENGTH), MAX_EVIDENCE_CONTENT_LENGTH));
+        evidence.setSourceName(limit(sourceName, MAX_EVIDENCE_SOURCE_NAME_LENGTH));
+        evidence.setSourceUrl(limit(sourceUrl, MAX_EVIDENCE_SOURCE_URL_LENGTH));
         evidence.setPublishedTime(publishedTime);
         evidence.setSourceTier(EvidenceSourceTaxonomy.classifySourceTier(sourceUrl, sourceName));
         evidence.setContentHash(sha256(evidence.getTitle() + "\n" + evidence.getContent()
@@ -2544,9 +2674,8 @@ public class Fx67llDortmundReturnCombinationServiceImpl implements IFx67llDortmu
             context.setSourceUrl(evidence.getSourceUrl());
             context.setPublishedTime(formatContextTime(evidence.getPublishedTime()));
             context.setQuery(evidence.getPlanQuery());
-            String sourceTier = EvidenceSourceTaxonomy.isValidTier(evidence.getSourceTier())
-                    ? EvidenceSourceTaxonomy.normalizeTier(evidence.getSourceTier())
-                    : EvidenceSourceTaxonomy.classifySourceTier(evidence.getSourceUrl(), evidence.getSourceName());
+            String sourceTier = EvidenceSourceTaxonomy.classifySourceTier(
+                    evidence.getSourceUrl(), evidence.getSourceName());
             context.setSourceTier(sourceTier);
             context.setFreshnessClass(EvidenceSourceTaxonomy.classifyFreshness(
                     evidence.getPublishedTime(), evidence.getRetrievedTime(), dataAsOf));
@@ -2658,7 +2787,7 @@ public class Fx67llDortmundReturnCombinationServiceImpl implements IFx67llDortmu
                         continue;
                     }
                     String title = sanitizeEvidenceText(raw.getTitle(), 512);
-                    String snippet = sanitizeEvidenceText(raw.getSnippet(), 4000);
+                    String snippet = sanitizeEvidenceText(raw.getSnippet(), MAX_EVIDENCE_CONTENT_LENGTH);
                     if (blank(title) && blank(snippet)) {
                         continue;
                     }
@@ -2669,10 +2798,9 @@ public class Fx67llDortmundReturnCombinationServiceImpl implements IFx67llDortmu
                         title = limit(content, 512);
                     }
                     String sourceUrl = normalizeEvidenceUrl(raw.getUrl());
-                    String rawSourceName = limit(sanitizeEvidenceText(raw.getSourceName(), 233), 233);
-                    String sourceTier = EvidenceSourceTaxonomy.isValidTier(raw.getSourceTier())
-                            ? EvidenceSourceTaxonomy.normalizeTier(raw.getSourceTier())
-                            : EvidenceSourceTaxonomy.classifySourceTier(sourceUrl, rawSourceName);
+                    String rawSourceName = limit(sanitizeEvidenceText(raw.getSourceName(), MAX_EVIDENCE_SOURCE_NAME_LENGTH), MAX_EVIDENCE_SOURCE_NAME_LENGTH);
+                    // 检索供应商给出的来源层级不作为事实源，统一由平台重新分类。
+                    String sourceTier = EvidenceSourceTaxonomy.classifySourceTier(sourceUrl, rawSourceName);
                     String contentHash = sha256(title + "\n" + content + "\n"
                             + (sourceUrl == null ? "" : sourceUrl));
                     if (!contentHashes.add(contentHash)) {
@@ -2815,6 +2943,7 @@ public class Fx67llDortmundReturnCombinationServiceImpl implements IFx67llDortmu
         return result;
     }
 
+    /** S模式空权重按1.0000参与解释；A模式保留空值，避免把未提供权重伪装成用户输入。 */
     private BigDecimal effectiveAiWeight(BigDecimal weight, String generationMode) {
         if (weight == null) {
             return "S".equals(generationMode) ? DortmundWeightCodec.DEFAULT_WEIGHT : null;
@@ -2979,7 +3108,7 @@ public class Fx67llDortmundReturnCombinationServiceImpl implements IFx67llDortmu
                 return null;
             }
             String normalized = uri.toString();
-            return normalized.length() > 1023 ? null : normalized;
+            return normalized.length() > MAX_EVIDENCE_SOURCE_URL_LENGTH ? null : normalized;
         } catch (Exception e) {
             return null;
         }

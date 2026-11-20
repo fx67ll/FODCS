@@ -22,6 +22,8 @@ import org.springframework.transaction.annotation.Transactional;
 
 /**
  * 球队管理Service业务层处理
+ * <p>
+ * 删除球队前必须确认没有被比赛或信息点关系引用；新增时可在同一事务内创建球队信息点。
  *
  * @author ruoyi
  * @date 2026-03-03

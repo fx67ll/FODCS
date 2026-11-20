@@ -44,6 +44,9 @@ import com.ruoyi.fx67ll.dortmund.support.DortmundFieldValidator;
 
 /**
  * 方案计划Service业务层处理
+ * <p>
+ * 第1.5阶段方案以“已采用回报组合”为唯一输入：自动倍率与自动金额由组合预计回报和批次基础金额派生，不采信前端提交的派生值。
+ * 组合关系变化会清空手工倍率/金额并使摘要失效；关系替换、摘要刷新和删除均在同一事务内完成。
  *
  * @author fx67ll
  * @date 2026-10-29
@@ -237,6 +240,7 @@ public class Fx67llDortmundPlanServiceImpl implements IFx67llDortmundPlanService
         if (!checkPlanDataScope(oldPlan.getUserId())) {
             throw new ServiceException("没有权限删除该方案计划！");
         }
+        // 先确认没有被外快盈亏或数值轮次引用，避免删除后留下孤儿关系。
         checkPlanDeleteReference(planId);
         Fx67llDortmundPlan plan = new Fx67llDortmundPlan();
         plan.setPlanId(planId);
@@ -274,6 +278,7 @@ public class Fx67llDortmundPlanServiceImpl implements IFx67llDortmundPlanService
         Fx67llDortmundPlan plan = loadPlanForPhase15(planId, true);
         String content = formatPlanSummary(plan, loadPlanCombinations(planId));
         plan.setSummaryContent(content);
+        // 摘要刷新成功后才置N；材料字段变化会由更新流程重新置Y。
         plan.setSummaryUpdateFlag("N");
         plan.setSummaryUpdateTime(DateUtils.getNowDate());
         plan.setUpdateBy(SecurityUtils.getUsername());
@@ -302,6 +307,9 @@ public class Fx67llDortmundPlanServiceImpl implements IFx67llDortmundPlanService
         validatePlanAmount(fx67llDortmundPlan.getPlanAmount(), "方案计划金额");
     }
 
+    /**
+     * 新增第1.5阶段方案：组合集合是唯一事实源，自动倍率和金额写回计划，比赛关系由组合明细派生。
+     */
     private int insertPhase15Plan(Fx67llDortmundPlan plan) {
         checkPlanFields(plan);
         PlanCombinationStats stats = collectCombinationStats(plan.getCombinationIds(), null);
@@ -310,10 +318,12 @@ public class Fx67llDortmundPlanServiceImpl implements IFx67llDortmundPlanService
         plan.setCreateBy(SecurityUtils.getUsername());
         plan.setCreateTime(now);
         plan.setDelFlag("0");
+        // 派生值只由组合统计写入；同名请求字段不会参与落库。
         plan.setCalculatedPlanRate(stats.rate);
         plan.setCalculatedPlanAmount(stats.amount);
         validatePlanRate(plan.getCalculatedPlanRate(), "方案自动倍率");
         validatePlanAmount(plan.getCalculatedPlanAmount(), "方案自动金额");
+        // 新方案还没有摘要正文，标记为Y等待用户刷新。
         plan.setSummaryUpdateFlag("Y");
         int rows = fx67llDortmundPlanMapper.insertFx67llDortmundPlan(plan);
         if (rows > 0) {
@@ -322,6 +332,9 @@ public class Fx67llDortmundPlanServiceImpl implements IFx67llDortmundPlanService
         return rows;
     }
 
+    /**
+     * 修改第1.5阶段方案：先锁定计划行；组合集合变化时清空手工倍率/金额，并强制摘要重新生成。
+     */
     private int updatePhase15Plan(Fx67llDortmundPlan plan) {
         if (plan.getPlanId() == null) {
             throw new ServiceException("方案计划主键不能为空！");
@@ -334,13 +347,16 @@ public class Fx67llDortmundPlanServiceImpl implements IFx67llDortmundPlanService
         PlanCombinationStats stats = collectCombinationStats(plan.getCombinationIds(), plan.getPlanId());
         List<Long> oldCombinationIds = selectPlanCombinationIds(plan.getPlanId());
         if (!sameIds(oldCombinationIds, plan.getCombinationIds())) {
+            // 组合集合已变化，原手工倍率/金额不再对应同一组组合，先清空再由服务端重新派生。
             plan.setPlanRate(null);
             plan.setPlanAmount(null);
         }
+        // 派生值只由组合统计写入；同名请求字段不会参与落库。
         plan.setCalculatedPlanRate(stats.rate);
         plan.setCalculatedPlanAmount(stats.amount);
         validatePlanRate(plan.getCalculatedPlanRate(), "方案自动倍率");
         validatePlanAmount(plan.getCalculatedPlanAmount(), "方案自动金额");
+        // 只有摘要正文仍与材料字段一致时才允许保留N，否则强制Y。
         plan.setSummaryUpdateFlag(resolveSummaryFlag(plan, oldPlan, oldCombinationIds));
         plan.setUpdateBy(SecurityUtils.getUsername());
         plan.setUpdateTime(DateUtils.getNowDate());
@@ -351,6 +367,12 @@ public class Fx67llDortmundPlanServiceImpl implements IFx67llDortmundPlanService
         return rows;
     }
 
+    /**
+     * 汇总方案关联组合的派生指标。
+     * <p>
+     * 自动金额=全部组合预计回报之和；自动倍率=自动金额/各组合所属批次基础金额之和，保留4位小数。
+     * 组合按主键升序加行锁，避免并发关联时死锁；只允许当前用户可见、已采用且未被其他计划引用的组合。
+     */
     private PlanCombinationStats collectCombinationStats(List<Long> combinationIds, Long planId) {
         PlanCombinationStats stats = new PlanCombinationStats();
         if (combinationIds == null || combinationIds.isEmpty()) {
@@ -403,6 +425,9 @@ public class Fx67llDortmundPlanServiceImpl implements IFx67llDortmundPlanService
         return stats;
     }
 
+    /**
+     * 按提交顺序重建计划-组合和计划-比赛关系；比赛关系取组合明细并集，调用方负责保证事务。
+     */
     private void replacePhase15Relations(Long planId, List<Long> combinationIds, LinkedHashSet<Long> matchIds) {
         fx67llDortmundPlanReturnRelMapper.deleteByPlanId(planId);
         fx67llDortmundPlanMatchRelMapper.deleteFx67llDortmundPlanMatchRelByPlanId(planId);
@@ -467,7 +492,9 @@ public class Fx67llDortmundPlanServiceImpl implements IFx67llDortmundPlanService
     }
 
     private void fillPhase15Fields(Fx67llDortmundPlan plan) {
+        // 回读真实关系，避免前端提交的组合集合与数据库当前状态不一致。
         plan.setCombinationIds(selectPlanCombinationIds(plan.getPlanId()));
+        // 手工倍率/金额非空表示用户明确覆盖，空值才回退到服务端派生值。
         plan.setEffectivePlanRate(plan.getPlanRate() == null ? plan.getCalculatedPlanRate() : plan.getPlanRate());
         plan.setEffectivePlanAmount(plan.getPlanAmount() == null ? plan.getCalculatedPlanAmount() : plan.getPlanAmount());
     }
@@ -764,7 +791,8 @@ public class Fx67llDortmundPlanServiceImpl implements IFx67llDortmundPlanService
             plan.setMatchCount(matches == null ? 0 : matches.size());
             List<Long> combinationIds = combinationIdsByPlan.get(plan.getPlanId());
             plan.setCombinationIds(combinationIds == null ? new ArrayList<>() : combinationIds);
-            plan.setEffectivePlanRate(plan.getPlanRate() == null ? plan.getCalculatedPlanRate() : plan.getPlanRate());
+            // 手工倍率/金额非空表示用户明确覆盖，空值才回退到服务端派生值。
+        plan.setEffectivePlanRate(plan.getPlanRate() == null ? plan.getCalculatedPlanRate() : plan.getPlanRate());
             plan.setEffectivePlanAmount(plan.getPlanAmount() == null ? plan.getCalculatedPlanAmount() : plan.getPlanAmount());
         }
     }

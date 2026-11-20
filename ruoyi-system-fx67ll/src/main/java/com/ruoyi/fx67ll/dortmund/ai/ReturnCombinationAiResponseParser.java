@@ -38,6 +38,7 @@ public class ReturnCombinationAiResponseParser {
     /** 自动AI、人工交换任务共用的任务类型 */
     public static final String TASK_TYPE = "DORTMUND_RETURN_COMBINATION";
 
+    /** 自动契约候选上限；业务层校验后仅保留偏差最小的前10条，防止模型输出无限膨胀。 */
     private static final int MAX_CANDIDATES = 50;
 
     /** 人工交换任务限定的候选上限，与导出契约保持一致 */

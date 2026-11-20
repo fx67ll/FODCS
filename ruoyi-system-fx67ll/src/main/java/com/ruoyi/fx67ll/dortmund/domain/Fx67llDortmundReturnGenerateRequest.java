@@ -19,7 +19,7 @@ public class Fx67llDortmundReturnGenerateRequest {
     /** 目标金额 */
     private BigDecimal targetAmount;
 
-    /** 比赛主键集合 */
+    /** 当前版本参与AI分析并可供组合选择的同一比赛池，限1-8场；16场分析池与8场采用池的拆分尚未实现。 */
     private List<Long> matchIds;
 
     /** 用户临时补充的业务目标；后端预定义目标由服务端生成，二者独立保存 */

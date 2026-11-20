@@ -657,6 +657,12 @@ public interface ReturnCombinationAiAnalysisPort {
         /** 冲突组编码，同一组内允许同时出现支持与反对因子 */
         private String conflictGroup;
 
+        /** 来源层级，仅由后端根据冻结证据填充，模型返回值不采信 */
+        private String sourceTier;
+
+        /** 证据新鲜度，仅由后端根据冻结证据与dataAsOf计算，模型返回值不采信 */
+        private String freshnessClass;
+
         private BigDecimal weightImpact;
 
         private Integer confidence;
@@ -723,6 +729,22 @@ public interface ReturnCombinationAiAnalysisPort {
 
         public void setConflictGroup(String conflictGroup) {
             this.conflictGroup = conflictGroup;
+        }
+
+        public String getSourceTier() {
+            return sourceTier;
+        }
+
+        public void setSourceTier(String sourceTier) {
+            this.sourceTier = sourceTier;
+        }
+
+        public String getFreshnessClass() {
+            return freshnessClass;
+        }
+
+        public void setFreshnessClass(String freshnessClass) {
+            this.freshnessClass = freshnessClass;
         }
 
         public BigDecimal getWeightImpact() {

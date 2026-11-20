@@ -28,6 +28,8 @@ import org.springframework.transaction.annotation.Transactional;
 
 /**
  * 统一信息点Service业务层处理
+ * <p>
+ * 信息点分球队/赛季(T)与比赛(M)两类，字段组合互斥；球队关系按差量启停，删除时同步清理关系行。
  *
  * @author fx67ll
  * @date 2026-10-29

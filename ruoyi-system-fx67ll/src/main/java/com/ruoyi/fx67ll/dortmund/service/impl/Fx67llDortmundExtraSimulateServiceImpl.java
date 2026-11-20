@@ -25,6 +25,9 @@ import org.springframework.transaction.annotation.Transactional;
 
 /**
  * 外快盈亏数值模拟轮次记录Service业务层处理
+ * <p>
+ * 每个轮次属于一个可作废版本；负轮次是“强制作废所属版本”的业务信号，会清理版本下全部计划关系。
+ * 版本、轮次和关系写入均在同一事务内完成，轮次唯一性由数据库唯一索引兜底。
  *
  * @author fx67ll
  * @date 2026-09-10
