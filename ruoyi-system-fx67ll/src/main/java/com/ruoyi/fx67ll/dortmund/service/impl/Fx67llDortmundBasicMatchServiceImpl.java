@@ -19,10 +19,12 @@ import com.ruoyi.fx67ll.dortmund.mapper.Fx67llDortmundInfoPointMapper;
 import com.ruoyi.fx67ll.dortmund.mapper.Fx67llDortmundOddsMapper;
 import com.ruoyi.fx67ll.dortmund.mapper.Fx67llDortmundPlanMapper;
 import com.ruoyi.fx67ll.dortmund.mapper.Fx67llDortmundPlanMatchRelMapper;
+import com.ruoyi.fx67ll.dortmund.mapper.Fx67llDortmundReturnCombinationMapper;
 import com.ruoyi.fx67ll.dortmund.service.IFx67llDortmundBasicMatchService;
 import com.ruoyi.fx67ll.dortmund.service.IFx67llDortmundBasicSeasonService;
 import com.ruoyi.fx67ll.dortmund.service.IFx67llDortmundBasicTeamService;
 import com.ruoyi.fx67ll.dortmund.service.IFx67llDortmundInfoPointService;
+import com.ruoyi.fx67ll.dortmund.support.DortmundDataScope;
 import com.ruoyi.fx67ll.dortmund.support.DortmundFieldValidator;
 import com.ruoyi.fx67ll.dortmund.support.DortmundWeightCodec;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -65,6 +67,9 @@ public class Fx67llDortmundBasicMatchServiceImpl implements IFx67llDortmundBasic
     @Autowired
     private Fx67llDortmundPlanMapper fx67llDortmundPlanMapper;
 
+    @Autowired
+    private Fx67llDortmundReturnCombinationMapper fx67llDortmundReturnCombinationMapper;
+
     /**
      * 查询比赛记录
      *
@@ -74,6 +79,18 @@ public class Fx67llDortmundBasicMatchServiceImpl implements IFx67llDortmundBasic
     @Override
     public Fx67llDortmundBasicMatch selectFx67llDortmundBasicMatchByMatchId(Long matchId) {
         return fx67llDortmundBasicMatchMapper.selectFx67llDortmundBasicMatchByMatchId(matchId);
+    }
+
+    /**
+     * 按当前用户数据范围查询比赛详情。
+     * <p>对象不存在和无权访问统一返回受控提示，避免通过详情接口推断其他用户的数据。</p>
+     *
+     * @param matchId 比赛记录主键
+     * @return 当前用户可访问的比赛
+     */
+    @Override
+    public Fx67llDortmundBasicMatch selectFx67llDortmundBasicMatchDetailForCurrentUser(Long matchId) {
+        return requireMatchAccessible(matchId);
     }
 
     /**
@@ -88,14 +105,19 @@ public class Fx67llDortmundBasicMatchServiceImpl implements IFx67llDortmundBasic
     }
 
     /**
-     * 通过 UserId 查询比赛记录列表
+     * 按当前用户数据范围查询比赛记录列表。
+     * <p>普通用户强制按本人 user_id 过滤，全部数据权限角色保留其显式筛选条件。</p>
      *
      * @param fx67llDortmundBasicMatch 比赛记录
-     * @return 比赛记录
+     * @return 当前用户可访问的比赛集合
      */
     @Override
-    public List<Fx67llDortmundBasicMatch> selectFx67llDortmundBasicMatchListByUserId(Fx67llDortmundBasicMatch fx67llDortmundBasicMatch) {
-        fx67llDortmundBasicMatch.setUserId(SecurityUtils.getUserId());
+    public List<Fx67llDortmundBasicMatch> selectFx67llDortmundBasicMatchListForCurrentUser(
+            Fx67llDortmundBasicMatch fx67llDortmundBasicMatch) {
+        Long ownerUserId = DortmundDataScope.ownerFilterForCurrentUser();
+        if (ownerUserId != null) {
+            fx67llDortmundBasicMatch.setUserId(ownerUserId);
+        }
         return fx67llDortmundBasicMatchMapper.selectFx67llDortmundBasicMatchList(fx67llDortmundBasicMatch);
     }
 
@@ -123,6 +145,7 @@ public class Fx67llDortmundBasicMatchServiceImpl implements IFx67llDortmundBasic
         fx67llDortmundBasicMatch.setUserId(SecurityUtils.getUserId());
         fx67llDortmundBasicMatch.setCreateBy(SecurityUtils.getUsername());
         fx67llDortmundBasicMatch.setCreateTime(DateUtils.getNowDate());
+        fx67llDortmundBasicMatch.setDelFlag("0");
         try {
             int rows = fx67llDortmundBasicMatchMapper.insertFx67llDortmundBasicMatch(fx67llDortmundBasicMatch);
             if (rows > 0) {
@@ -133,7 +156,7 @@ public class Fx67llDortmundBasicMatchServiceImpl implements IFx67llDortmundBasic
             }
             return rows;
         } catch (DuplicateKeyException e) {
-            throw new ServiceException("比赛编码或该赛季、主队、客队和开赛时间已存在对应比赛，请改选已有比赛！");
+            throw new ServiceException("比赛编码已存在，或该赛季、主队、客队和开赛时间已存在对应比赛，请改选已有比赛！");
         }
     }
 
@@ -161,8 +184,9 @@ public class Fx67llDortmundBasicMatchServiceImpl implements IFx67llDortmundBasic
         Fx67llDortmundBasicMatch oldMatch = fx67llDortmundBasicMatchMapper
                 .selectFx67llDortmundBasicMatchByMatchId(fx67llDortmundBasicMatch.getMatchId());
         if (oldMatch == null) {
-            throw new ServiceException("比赛记录不存在！");
+            throw new ServiceException("比赛记录不存在或没有访问权限！");
         }
+        DortmundDataScope.requireAccessible(oldMatch.getUserId(), "比赛记录不存在或没有访问权限！");
         String matchCode = fx67llDortmundBasicMatch.getMatchCode();
         if (matchCode == null || matchCode.trim().isEmpty()) {
             fx67llDortmundBasicMatch.setMatchCode(oldMatch.getMatchCode());
@@ -174,12 +198,20 @@ public class Fx67llDortmundBasicMatchServiceImpl implements IFx67llDortmundBasic
         checkMatchFields(fx67llDortmundBasicMatch);
         boolean matchResultChanged = !Objects.equals(oldMatch.getMatchResult(), fx67llDortmundBasicMatch.getMatchResult());
         fx67llDortmundBasicMatch.setAnalysisCount(null);
+        // 归属与创建审计只允许由服务端维护，防止客户端通过修改请求转移数据或篡改创建信息。
+        fx67llDortmundBasicMatch.setUserId(oldMatch.getUserId());
+        fx67llDortmundBasicMatch.setCreateBy(oldMatch.getCreateBy());
+        fx67llDortmundBasicMatch.setCreateTime(oldMatch.getCreateTime());
+        fx67llDortmundBasicMatch.setDelFlag(oldMatch.getDelFlag());
         fx67llDortmundBasicMatch.setUpdateBy(SecurityUtils.getUsername());
         fx67llDortmundBasicMatch.setUpdateTime(DateUtils.getNowDate());
         try {
             int rows = fx67llDortmundBasicMatchMapper.updateFx67llDortmundBasicMatch(fx67llDortmundBasicMatch);
             if (rows > 0 && matchResultChanged) {
                 fx67llDortmundPlanMapper.markSummaryUpdateByMatchId(fx67llDortmundBasicMatch.getMatchId());
+                // 赛果被补录或修正后，引用该比赛的历史核验结论不再可信，统一回到未核验等待人工复核。
+                fx67llDortmundReturnCombinationMapper.resetVerificationByMatchId(
+                        fx67llDortmundBasicMatch.getMatchId(), SecurityUtils.getUsername());
             }
             return rows;
         } catch (DuplicateKeyException e) {
@@ -198,6 +230,10 @@ public class Fx67llDortmundBasicMatchServiceImpl implements IFx67llDortmundBasic
         if (matchIds == null || matchIds.length == 0) {
             return 0;
         }
+        // 先校验整批归属，再检查引用，确保任一无权记录都不会触发部分删除。
+        for (Long matchId : matchIds) {
+            requireMatchAccessible(matchId);
+        }
         for (Long matchId : matchIds) {
             checkMatchReferenceBeforeDelete(matchId);
         }
@@ -212,8 +248,25 @@ public class Fx67llDortmundBasicMatchServiceImpl implements IFx67llDortmundBasic
      */
     @Override
     public int deleteFx67llDortmundBasicMatchByMatchId(Long matchId) {
+        requireMatchAccessible(matchId);
         checkMatchReferenceBeforeDelete(matchId);
         return fx67llDortmundBasicMatchMapper.deleteFx67llDortmundBasicMatchByMatchId(matchId);
+    }
+
+    /**
+     * 读取并校验比赛归属。
+     *
+     * @param matchId 比赛记录主键
+     * @return 当前用户可维护的比赛
+     */
+    private Fx67llDortmundBasicMatch requireMatchAccessible(Long matchId) {
+        Fx67llDortmundBasicMatch match = fx67llDortmundBasicMatchMapper
+                .selectFx67llDortmundBasicMatchByMatchId(matchId);
+        if (match == null) {
+            throw new ServiceException("比赛记录不存在或没有访问权限！");
+        }
+        DortmundDataScope.requireAccessible(match.getUserId(), "比赛记录不存在或没有访问权限！");
+        return match;
     }
 
     /**
@@ -267,18 +320,24 @@ public class Fx67llDortmundBasicMatchServiceImpl implements IFx67llDortmundBasic
         if (fx67llDortmundBasicMatch.getMatchTime() == null) {
             throw new ServiceException("比赛开球时间不能为空！");
         }
-        if (fx67llDortmundBasicSeasonService.selectFx67llDortmundBasicSeasonBySeasonId(
-                fx67llDortmundBasicMatch.getSeasonId()) == null) {
+        Fx67llDortmundBasicSeason season = fx67llDortmundBasicSeasonService.selectFx67llDortmundBasicSeasonBySeasonId(
+                fx67llDortmundBasicMatch.getSeasonId());
+        if (season == null) {
             throw new ServiceException("所选赛季不存在，请重新选择！");
         }
-        if (fx67llDortmundBasicTeamService.selectFx67llDortmundBasicTeamByTeamId(
-                fx67llDortmundBasicMatch.getHomeTeamId()) == null) {
+        DortmundDataScope.requireAccessible(season.getUserId(), "所选赛季不存在或没有访问权限，请重新选择！");
+        Fx67llDortmundBasicTeam homeTeam = fx67llDortmundBasicTeamService.selectFx67llDortmundBasicTeamByTeamId(
+                fx67llDortmundBasicMatch.getHomeTeamId());
+        if (homeTeam == null) {
             throw new ServiceException("所选主队不存在，请重新选择！");
         }
-        if (fx67llDortmundBasicTeamService.selectFx67llDortmundBasicTeamByTeamId(
-                fx67llDortmundBasicMatch.getAwayTeamId()) == null) {
+        DortmundDataScope.requireAccessible(homeTeam.getUserId(), "所选主队不存在或没有访问权限，请重新选择！");
+        Fx67llDortmundBasicTeam awayTeam = fx67llDortmundBasicTeamService.selectFx67llDortmundBasicTeamByTeamId(
+                fx67llDortmundBasicMatch.getAwayTeamId());
+        if (awayTeam == null) {
             throw new ServiceException("所选客队不存在，请重新选择！");
         }
+        DortmundDataScope.requireAccessible(awayTeam.getUserId(), "所选客队不存在或没有访问权限，请重新选择！");
     }
 
     /**
@@ -295,8 +354,10 @@ public class Fx67llDortmundBasicMatchServiceImpl implements IFx67llDortmundBasic
                 fx67llDortmundBasicMatch.getMatchVenue(), "比赛场地", DortmundModuleConfig.Field.MATCH_VENUE));
         fx67llDortmundBasicMatch.setMatchStatus(DortmundFieldValidator.validateEnum(
                 fx67llDortmundBasicMatch.getMatchStatus(), "比赛状态", true, "0", "1"));
+        // 0/1/2 为常规胜平负，3/4/5 为让球胜平负；让球值不写比赛表，由倍率记录保存。
         fx67llDortmundBasicMatch.setMatchResult(DortmundFieldValidator.validateEnum(
-                fx67llDortmundBasicMatch.getMatchResult(), "比赛结果", false, "0", "1", "2"));
+                fx67llDortmundBasicMatch.getMatchResult(), "比赛结果", false,
+                "0", "1", "2", "3", "4", "5"));
         fx67llDortmundBasicMatch.setMatchRemark(DortmundFieldValidator.optionalText(
                 fx67llDortmundBasicMatch.getMatchRemark(), "比赛备注", DortmundModuleConfig.Field.MATCH_REMARK));
         if (fx67llDortmundBasicMatch.getMatchTime() == null) {

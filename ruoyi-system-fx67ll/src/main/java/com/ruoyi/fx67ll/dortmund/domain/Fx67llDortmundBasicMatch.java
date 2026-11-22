@@ -109,8 +109,8 @@ public class Fx67llDortmundBasicMatch extends BaseEntity {
     /** 引用该比赛的已采用回报组合数（展示字段，非表列） */
     private Integer adoptedCombinationCount;
 
-    /** 比赛结果（字典码：0-主队胜，1-平局，2-客队胜） */
-    @Excel(name = "比赛结果", readConverterExp = "字=典码：0-主队胜，1-平局，2-客队胜")
+    /** 比赛结果（字典码：0-主队胜，1-平局，2-客队胜，3-让球胜，4-让球平，5-让球负） */
+    @Excel(name = "比赛结果", readConverterExp = "字=典码：0-主队胜，1-平局，2-客队胜，3-让球胜，4-让球平，5-让球负")
     private String matchResult;
 
     /**

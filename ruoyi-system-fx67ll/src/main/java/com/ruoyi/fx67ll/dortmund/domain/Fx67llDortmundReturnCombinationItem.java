@@ -1,7 +1,9 @@
 package com.ruoyi.fx67ll.dortmund.domain;
 
 import java.math.BigDecimal;
+import java.util.Date;
 
+import com.fasterxml.jackson.annotation.JsonFormat;
 import com.ruoyi.common.core.domain.BaseEntity;
 import org.apache.commons.lang3.builder.ToStringBuilder;
 import org.apache.commons.lang3.builder.ToStringStyle;
@@ -64,6 +66,22 @@ public class Fx67llDortmundReturnCombinationItem extends BaseEntity {
 
     /** 比赛摘要 */
     private String matchSummary;
+
+    /** 主队名称（非表字段，由组合明细联表补齐，供方案预览直接展示） */
+    private String homeTeamName;
+
+    /** 客队名称（非表字段，由组合明细联表补齐，供方案预览直接展示） */
+    private String awayTeamName;
+
+    /** 比赛开球时间（非表字段，由组合明细联表补齐） */
+    @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
+    private Date matchTime;
+
+    /** 人工登记的比赛结果（非表字段，由组合明细联表补齐，用于赛果核验） */
+    private String matchResult;
+
+    /** 球队主场（非表字段，由组合明细联表补齐） */
+    private String matchVenue;
 
     public Long getItemId() {
         return itemId;
@@ -191,6 +209,46 @@ public class Fx67llDortmundReturnCombinationItem extends BaseEntity {
         this.matchSummary = matchSummary;
     }
 
+    public String getHomeTeamName() {
+        return homeTeamName;
+    }
+
+    public void setHomeTeamName(String homeTeamName) {
+        this.homeTeamName = homeTeamName;
+    }
+
+    public String getAwayTeamName() {
+        return awayTeamName;
+    }
+
+    public void setAwayTeamName(String awayTeamName) {
+        this.awayTeamName = awayTeamName;
+    }
+
+    public Date getMatchTime() {
+        return matchTime;
+    }
+
+    public void setMatchTime(Date matchTime) {
+        this.matchTime = matchTime;
+    }
+
+    public String getMatchResult() {
+        return matchResult;
+    }
+
+    public void setMatchResult(String matchResult) {
+        this.matchResult = matchResult;
+    }
+
+    public String getMatchVenue() {
+        return matchVenue;
+    }
+
+    public void setMatchVenue(String matchVenue) {
+        this.matchVenue = matchVenue;
+    }
+
     @Override
     public String toString() {
         return new ToStringBuilder(this, ToStringStyle.MULTI_LINE_STYLE)
@@ -209,6 +267,11 @@ public class Fx67llDortmundReturnCombinationItem extends BaseEntity {
                 .append("weightRationale", getWeightRationale())
                 .append("evidenceRefs", getEvidenceRefs())
                 .append("counterEvidenceRefs", getCounterEvidenceRefs())
+                .append("homeTeamName", getHomeTeamName())
+                .append("awayTeamName", getAwayTeamName())
+                .append("matchTime", getMatchTime())
+                .append("matchResult", getMatchResult())
+                .append("matchVenue", getMatchVenue())
                 .append("createBy", getCreateBy())
                 .append("createTime", getCreateTime())
                 .toString();

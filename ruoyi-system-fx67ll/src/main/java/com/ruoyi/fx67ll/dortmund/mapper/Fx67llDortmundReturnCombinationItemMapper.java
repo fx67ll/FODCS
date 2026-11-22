@@ -15,4 +15,7 @@ public interface Fx67llDortmundReturnCombinationItemMapper {
 
     public int insertFx67llDortmundReturnCombinationItem(
             Fx67llDortmundReturnCombinationItem fx67llDortmundReturnCombinationItem);
+
+    /** 覆盖导入时按批次删除组合明细，必须先于组合主表删除。 */
+    public int deleteByGenerationId(Long generationId);
 }

@@ -3,8 +3,6 @@ package com.ruoyi.web.controller.fx67ll.dortmund;
 import java.util.List;
 import javax.servlet.http.HttpServletResponse;
 
-import com.ruoyi.common.utils.SecurityUtils;
-import com.ruoyi.fx67ll.ai.domain.Fx67llAiPromptBasicGroup;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -43,13 +41,9 @@ public class Fx67llDortmundBasicMatchController extends BaseController {
     @GetMapping("/list")
     public TableDataInfo list(Fx67llDortmundBasicMatch fx67llDortmundBasicMatch) {
         startPage();
-        if (SecurityUtils.getUsername().equals("fx67ll") ) {
-            List<Fx67llDortmundBasicMatch> list = fx67llDortmundBasicMatchService.selectFx67llDortmundBasicMatchList(fx67llDortmundBasicMatch);
-            return getDataTable(list);
-        } else {
-            List<Fx67llDortmundBasicMatch> list = fx67llDortmundBasicMatchService.selectFx67llDortmundBasicMatchListByUserId(fx67llDortmundBasicMatch);
-            return getDataTable(list);
-        }
+        List<Fx67llDortmundBasicMatch> list = fx67llDortmundBasicMatchService
+                .selectFx67llDortmundBasicMatchListForCurrentUser(fx67llDortmundBasicMatch);
+        return getDataTable(list);
     }
 
     /**
@@ -59,7 +53,8 @@ public class Fx67llDortmundBasicMatchController extends BaseController {
     @Log(title = "比赛记录", businessType = BusinessType.EXPORT)
     @PostMapping("/export")
     public void export(HttpServletResponse response, Fx67llDortmundBasicMatch fx67llDortmundBasicMatch) {
-        List<Fx67llDortmundBasicMatch> list = fx67llDortmundBasicMatchService.selectFx67llDortmundBasicMatchList(fx67llDortmundBasicMatch);
+        List<Fx67llDortmundBasicMatch> list = fx67llDortmundBasicMatchService
+                .selectFx67llDortmundBasicMatchListForCurrentUser(fx67llDortmundBasicMatch);
         ExcelUtil<Fx67llDortmundBasicMatch> util = new ExcelUtil<Fx67llDortmundBasicMatch>(Fx67llDortmundBasicMatch.class);
         util.exportExcel(response, list, "比赛记录数据");
     }
@@ -70,7 +65,7 @@ public class Fx67llDortmundBasicMatchController extends BaseController {
     @PreAuthorize("@ss.hasPermi('dortmund:match:query')")
     @GetMapping(value = "/{matchId}")
     public AjaxResult getInfo(@PathVariable("matchId") Long matchId) {
-        return success(fx67llDortmundBasicMatchService.selectFx67llDortmundBasicMatchByMatchId(matchId));
+        return success(fx67llDortmundBasicMatchService.selectFx67llDortmundBasicMatchDetailForCurrentUser(matchId));
     }
 
     /**

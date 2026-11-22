@@ -11,6 +11,7 @@ import com.ruoyi.fx67ll.dortmund.domain.Fx67llDortmundReturnManualTask;
 import com.ruoyi.fx67ll.dortmund.domain.Fx67llDortmundReturnManualTemplate;
 import com.ruoyi.fx67ll.dortmund.domain.Fx67llDortmundReturnImage;
 import com.ruoyi.fx67ll.dortmund.domain.Fx67llDortmundReturnImageCleanupResult;
+import com.ruoyi.fx67ll.dortmund.domain.Fx67llDortmundReturnVerificationResult;
 import org.springframework.web.multipart.MultipartFile;
 
 /**
@@ -20,6 +21,15 @@ import org.springframework.web.multipart.MultipartFile;
  * @date 2026-11-09
  */
 public interface IFx67llDortmundReturnCombinationService {
+    /**
+     * 查询后端当前生效的预定义业务目标。
+     * <p>返回值只包含所有批次共享的固定约束，不包含用户补充目标、组合偏好或模式派生规则；
+     * 前端据此展示只读约束说明，接口异常时使用模块公共配置兜底。</p>
+     *
+     * @return 预定义业务目标快照副本
+     */
+    public List<String> getPredefinedBusinessObjectives();
+
     /**
      * 生成回报组合
      *
@@ -118,6 +128,23 @@ public interface IFx67llDortmundReturnCombinationService {
      * @return 实际更新条数
      */
     public int batchAdopt(List<Long> combinationIds);
+
+    /**
+     * 按人工登记的比赛结果核验一条已采用回报组合。
+     * <p>任一比赛缺少赛果时状态保持 null；全部一致为 Y；存在不一致为 N。</p>
+     *
+     * @param combinationId 回报组合主键
+     * @return 单条核验结果
+     */
+    public Fx67llDortmundReturnVerificationResult verifyCombination(Long combinationId);
+
+    /**
+     * 批量核验已采用回报组合。
+     *
+     * @param combinationIds 回报组合主键集合
+     * @return 成功、失败、未核验与跳过的汇总计数
+     */
+    public Fx67llDortmundReturnVerificationResult batchVerify(List<Long> combinationIds);
 
     /**
      * 为已采用回报组合上传图片。

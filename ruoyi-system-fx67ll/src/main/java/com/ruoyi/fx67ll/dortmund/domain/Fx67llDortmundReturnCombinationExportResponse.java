@@ -45,6 +45,9 @@ public class Fx67llDortmundReturnCombinationExportResponse {
     @Excel(name = "审核时间", width = 20, dateFormat = "yyyy-MM-dd HH:mm:ss")
     private Date reviewTime;
 
+    @Excel(name = "核验状态")
+    private String verificationStatus;
+
     @Excel(name = "创建时间", width = 20, dateFormat = "yyyy-MM-dd HH:mm:ss")
     private Date createTime;
 
@@ -60,6 +63,17 @@ public class Fx67llDortmundReturnCombinationExportResponse {
         this.matchCount = source.getMatchCount();
         this.reviewBy = source.getReviewBy();
         this.reviewTime = source.getReviewTime();
+        this.verificationStatus = toVerificationStatusLabel(source.getVerificationStatus());
         this.createTime = source.getCreateTime();
+    }
+
+    private String toVerificationStatusLabel(String status) {
+        if ("Y".equals(status)) {
+            return "核验成功";
+        }
+        if ("N".equals(status)) {
+            return "核验失败";
+        }
+        return "未核验";
     }
 }

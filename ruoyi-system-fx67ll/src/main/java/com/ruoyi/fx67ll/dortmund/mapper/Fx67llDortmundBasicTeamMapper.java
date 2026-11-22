@@ -2,6 +2,7 @@ package com.ruoyi.fx67ll.dortmund.mapper;
 
 import java.util.List;
 import com.ruoyi.fx67ll.dortmund.domain.Fx67llDortmundBasicTeam;
+import org.apache.ibatis.annotations.Param;
 
 /**
  * 球队管理Mapper接口
@@ -12,11 +13,13 @@ import com.ruoyi.fx67ll.dortmund.domain.Fx67llDortmundBasicTeam;
 public interface Fx67llDortmundBasicTeamMapper 
 {
     /**
-     * 查询球队表中非空的主场和标签原始值，用于生成去重选项。
+     * 查询未删除球队的名称、主场、地区/联赛和标签原始值。
+     * <p>服务层负责按选项值聚合关联球队名称并去重，避免 SQL 层拼接导致排序和字符集差异。</p>
      *
-     * @return 仅包含 teamVenue 与 teamTag 的球队记录
+     * @param userId 归属用户过滤值；为 null 时读取全量球队
+     * @return 用于生成球队选项的轻量球队记录
      */
-    public List<Fx67llDortmundBasicTeam> selectDistinctTeamVenueAndTag();
+    public List<Fx67llDortmundBasicTeam> selectTeamOptionSourceRows(@Param("userId") Long userId);
 
     /**
      * 查询球队管理

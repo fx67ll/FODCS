@@ -78,13 +78,13 @@
             <if test="createBy != null  and createBy != ''">and analysis.create_by like concat('%',
                 #{createBy}, '%')
             </if>
-            <if test="beginCreateTime != null and endCreateTime != ''">and analysis.create_time between #{beginCreateTime} and
+            <if test="beginCreateTime != null and beginCreateTime != '' and endCreateTime != null and endCreateTime != ''">and analysis.create_time between #{beginCreateTime} and
                 #{endCreateTime}
             </if>
             <if test="updateBy != null  and updateBy != ''">and analysis.update_by like concat('%',
                 #{updateBy}, '%')
             </if>
-            <if test="beginUpdateTime != null and endUpdateTime != ''">and analysis.update_time between #{beginUpdateTime} and
+            <if test="beginUpdateTime != null and beginUpdateTime != '' and endUpdateTime != null and endUpdateTime != ''">and analysis.update_time between #{beginUpdateTime} and
                 #{endUpdateTime}
             </if>
         </where>

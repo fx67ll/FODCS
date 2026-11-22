@@ -66,9 +66,10 @@ public class Fx67llDortmundInfoPointServiceImpl implements IFx67llDortmundInfoPo
     @Override
     public Fx67llDortmundInfoPoint selectFx67llDortmundInfoPointByInfoPointId(Long infoPointId) {
         Fx67llDortmundInfoPoint infoPoint = fx67llDortmundInfoPointMapper.selectFx67llDortmundInfoPointByInfoPointId(infoPointId);
-        if (infoPoint != null) {
-            fillTeamRels(infoPoint);
+        if (infoPoint == null || !checkInfoPointDataScope(infoPoint.getUserId())) {
+            throw new ServiceException("信息点不存在或没有访问权限！");
         }
+        fillTeamRels(infoPoint);
         return infoPoint;
     }
 

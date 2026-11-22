@@ -3,8 +3,6 @@ package com.ruoyi.web.controller.fx67ll.dortmund;
 import java.util.List;
 import javax.servlet.http.HttpServletResponse;
 
-import com.ruoyi.common.utils.SecurityUtils;
-import com.ruoyi.fx67ll.ai.domain.Fx67llAiPromptBasicGroup;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -43,13 +41,9 @@ public class Fx67llDortmundBasicSeasonController extends BaseController {
     @GetMapping("/list")
     public TableDataInfo list(Fx67llDortmundBasicSeason fx67llDortmundBasicSeason) {
         startPage();
-        if (SecurityUtils.getUsername().equals("fx67ll") ) {
-            List<Fx67llDortmundBasicSeason> list = fx67llDortmundBasicSeasonService.selectFx67llDortmundBasicSeasonList(fx67llDortmundBasicSeason);
-            return getDataTable(list);
-        } else {
-            List<Fx67llDortmundBasicSeason> list = fx67llDortmundBasicSeasonService.selectFx67llDortmundBasicSeasonListByUserId(fx67llDortmundBasicSeason);
-            return getDataTable(list);
-        }
+        List<Fx67llDortmundBasicSeason> list = fx67llDortmundBasicSeasonService
+                .selectFx67llDortmundBasicSeasonListForCurrentUser(fx67llDortmundBasicSeason);
+        return getDataTable(list);
     }
 
     /**
@@ -59,7 +53,8 @@ public class Fx67llDortmundBasicSeasonController extends BaseController {
     @Log(title = "赛季管理", businessType = BusinessType.EXPORT)
     @PostMapping("/export")
     public void export(HttpServletResponse response, Fx67llDortmundBasicSeason fx67llDortmundBasicSeason) {
-        List<Fx67llDortmundBasicSeason> list = fx67llDortmundBasicSeasonService.selectFx67llDortmundBasicSeasonList(fx67llDortmundBasicSeason);
+        List<Fx67llDortmundBasicSeason> list = fx67llDortmundBasicSeasonService
+                .selectFx67llDortmundBasicSeasonListForCurrentUser(fx67llDortmundBasicSeason);
         ExcelUtil<Fx67llDortmundBasicSeason> util = new ExcelUtil<Fx67llDortmundBasicSeason>(Fx67llDortmundBasicSeason.class);
         util.exportExcel(response, list, "赛季管理数据");
     }
@@ -70,7 +65,7 @@ public class Fx67llDortmundBasicSeasonController extends BaseController {
     @PreAuthorize("@ss.hasPermi('dortmund:season:query')")
     @GetMapping(value = "/{seasonId}")
     public AjaxResult getInfo(@PathVariable("seasonId") Long seasonId) {
-        return success(fx67llDortmundBasicSeasonService.selectFx67llDortmundBasicSeasonBySeasonId(seasonId));
+        return success(fx67llDortmundBasicSeasonService.selectFx67llDortmundBasicSeasonDetailForCurrentUser(seasonId));
     }
 
     /**

@@ -43,7 +43,7 @@ DROP TABLE IF EXISTS `fx67ll_dortmund_season`;
 -- ----------------------------
 CREATE TABLE `fx67ll_dortmund_season` (
   `season_id` bigint(20) NOT NULL AUTO_INCREMENT COMMENT '赛季唯一标识（主键）',
-  `season_code` varchar(23) NOT NULL COMMENT '赛季业务编码（唯一，如2025-2026_Bundesliga）',
+  `season_code` varchar(23) NOT NULL COMMENT '赛季业务编码（全局唯一，不按用户拆分，如2025-2026_Bundesliga）',
   `season_name` varchar(233) NOT NULL COMMENT '赛季业务名称（如2025-2026赛季德甲联赛）',
   `season_start_date` date NOT NULL COMMENT '赛季开始日期',
   `season_end_date` date NOT NULL COMMENT '赛季结束日期',
@@ -57,7 +57,7 @@ CREATE TABLE `fx67ll_dortmund_season` (
   `update_time` datetime DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '记录最后更新时间',
   `del_flag` char(1) DEFAULT '0' COMMENT '逻辑删除标志（字典码：0-存在，2-已删除）',
   PRIMARY KEY (`season_id`),
-  UNIQUE KEY `uk_season_code` (`season_code`) COMMENT '赛季编码唯一索引（防止业务编码重复）',
+  UNIQUE KEY `uk_season_code` (`season_code`) COMMENT '赛季编码全局唯一索引（不参与 user_id 隔离）',
   KEY `idx_season_status` (`season_status`) COMMENT '赛季状态索引（加速筛选进行中/已结束赛季）',
   KEY `idx_season_sort` (`season_sort`) COMMENT '赛季排序索引（加速前端展示排序）',
   KEY `idx_user_id_status` (`user_id`, `season_status`) COMMENT '用户+状态组合索引（优化按用户筛选进行中赛季）'
@@ -68,7 +68,7 @@ CREATE TABLE `fx67ll_dortmund_season` (
 -- ----------------------------
 CREATE TABLE `fx67ll_dortmund_team` (
   `team_id` bigint(20) NOT NULL AUTO_INCREMENT COMMENT '球队唯一标识（主键）',
-  `team_code` varchar(23) NOT NULL COMMENT '球队业务编码（唯一，如DORTMUND、BAYERN）',
+  `team_code` varchar(23) NOT NULL COMMENT '球队业务编码（全局唯一，不按用户拆分，如DORTMUND、BAYERN）',
   `team_name` varchar(233) NOT NULL COMMENT '球队全称（如多特蒙德足球俱乐部）',
   `team_name_short` varchar(10) NOT NULL COMMENT '球队简称或昵称（如我横、大黄蜂）',
   `team_name_en` varchar(233) NOT NULL COMMENT '球队英文全称（如Borussia Dortmund）',
@@ -86,7 +86,7 @@ CREATE TABLE `fx67ll_dortmund_team` (
   `update_time` datetime DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '记录最后更新时间',
   `del_flag` char(1) DEFAULT '0' COMMENT '逻辑删除标志（字典码：0-存在，2-已删除）',
   PRIMARY KEY (`team_id`),
-  UNIQUE KEY `uk_team_code` (`team_code`) COMMENT '球队编码唯一索引（防止业务编码重复）',
+  UNIQUE KEY `uk_team_code` (`team_code`) COMMENT '球队编码全局唯一索引（不参与 user_id 隔离）',
   KEY `idx_team_status` (`team_status`) COMMENT '球队状态索引（加速筛选启用/停用球队）',
   KEY `idx_team_sort` (`team_sort`) COMMENT '球队排序索引（加速前端展示排序）',
   KEY `idx_team_country` (`team_country`) COMMENT '球队国家索引（加速按国家筛选球队）',
@@ -98,15 +98,15 @@ CREATE TABLE `fx67ll_dortmund_team` (
 -- ----------------------------
 CREATE TABLE `fx67ll_dortmund_match` (
   `match_id` bigint(20) NOT NULL AUTO_INCREMENT COMMENT '比赛唯一标识（主键）',
-  `match_code` varchar(23) NOT NULL COMMENT '官方比赛标识（创建后不可修改）',
+  `match_code` varchar(23) NOT NULL COMMENT '官方比赛标识（全局唯一，不按用户拆分，创建后不可修改）',
   `season_id` bigint(20) NOT NULL COMMENT '所属赛季ID（外键，关联fx67ll_dortmund_season.season_id）',
   `home_team_id` bigint(20) NOT NULL COMMENT '主队球队ID（外键，关联fx67ll_dortmund_team.team_id）',
   `away_team_id` bigint(20) NOT NULL COMMENT '客队球队ID（外键，关联fx67ll_dortmund_team.team_id）',
   `match_time` datetime NOT NULL COMMENT '比赛开球时间',
-  `match_venue` varchar(233) DEFAULT '' COMMENT '比赛举办场地名称',
+  `match_venue` varchar(233) DEFAULT '' COMMENT '球队主场名称（随主队主场维护，用于比赛场地展示与筛选）',
   `match_status` char(1) NOT NULL DEFAULT '0' COMMENT '比赛状态（字典码：0-正常，1-关闭，沿用sys_notice_status，表示资料状态；默认0）',
   `analysis_count` int(11) unsigned NOT NULL DEFAULT 0 COMMENT 'AI分析次数（统计该比赛已生成的分析报告数量，只由服务端维护）',
-  `match_result` char(1) DEFAULT NULL COMMENT '比赛结果（字典码：0-主队胜，1-平局，2-客队胜；未产生赛果时为空）',
+  `match_result` char(1) DEFAULT NULL COMMENT '比赛结果（字典码：0-主队胜，1-平局，2-客队胜，3-让球胜，4-让球平，5-让球负；未产生赛果时为空）',
   `match_remark` varchar(1023) DEFAULT '' COMMENT '比赛业务备注（如轮次、特殊说明）',
   `user_id` bigint(20) NOT NULL COMMENT '用户ID',
   `create_by` varchar(64) DEFAULT '' COMMENT '记录创建者用户名',
@@ -115,7 +115,7 @@ CREATE TABLE `fx67ll_dortmund_match` (
   `update_time` datetime DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '记录最后更新时间',
   `del_flag` char(1) DEFAULT '0' COMMENT '逻辑删除标志（字典码：0-存在，2-已删除）',
   PRIMARY KEY (`match_id`),
-  UNIQUE KEY `uk_match_code` (`match_code`) COMMENT '官方比赛标识唯一索引',
+  UNIQUE KEY `uk_match_code` (`match_code`) COMMENT '官方比赛标识全局唯一索引（不参与 user_id 隔离）',
   UNIQUE KEY `uk_season_home_away_time` (`season_id`, `home_team_id`, `away_team_id`, `match_time`) COMMENT '赛季+主队+客队+开赛时间唯一索引（重复时改选已有比赛；前缀同时覆盖按赛季查询和赛季外键）',
   KEY `idx_home_team_id` (`home_team_id`) COMMENT '主队ID索引（主队外键和主队搜索）',
   KEY `idx_away_team_id` (`away_team_id`) COMMENT '客队ID索引（客队外键和客队搜索）',
@@ -318,6 +318,9 @@ CREATE TABLE `fx67ll_dortmund_return_combination` (
   `adopted_flag` char(1) NOT NULL DEFAULT 'N' COMMENT '是否采用（复用sys_yes_no）',
   `review_by` varchar(64) DEFAULT NULL COMMENT '最近决定采用状态的用户名',
   `review_time` datetime DEFAULT NULL COMMENT '最近决定采用状态的时间',
+  `verification_status` char(1) DEFAULT NULL COMMENT '赛果核验状态（复用sys_yes_no：Y-核验成功，N-核验失败，空-未核验）',
+  `verify_by` varchar(64) DEFAULT NULL COMMENT '最近执行赛果核验的用户名',
+  `verify_time` datetime DEFAULT NULL COMMENT '最近执行赛果核验的时间',
   `combination_remark` mediumtext COMMENT '完整业务分析内容及组合处理备注（不含AI治理元数据）',
   `evidence_chain` mediumtext COMMENT '候选完整证据链JSON，仅用于自动AI复核，不参与任何金额计算',
   `ai_confidence` int(11) DEFAULT NULL COMMENT '候选置信度（0-100），仅用于复核与排序，不参与任何金额计算',
@@ -331,6 +334,7 @@ CREATE TABLE `fx67ll_dortmund_return_combination` (
   UNIQUE KEY `uk_combination_user_code` (`user_id`, `combination_code`) COMMENT '用户+组合编码唯一索引',
   KEY `idx_combination_generation` (`generation_id`) COMMENT '按生成批次查询组合',
   KEY `idx_combination_user_adopted_time` (`user_id`, `adopted_flag`, `create_time`) COMMENT '用户+采用状态+创建时间索引',
+  KEY `idx_combination_verification` (`verification_status`, `verify_time`) COMMENT '赛果核验状态+核验时间索引',
   FOREIGN KEY (`generation_id`) REFERENCES `fx67ll_dortmund_return_generation` (`generation_id`) ON DELETE RESTRICT
 ) ENGINE=innodb DEFAULT CHARSET=utf8mb4 COMMENT='回报组合主表';
 
@@ -397,10 +401,15 @@ CREATE TABLE `fx67ll_dortmund_return_image` (
 CREATE TABLE `fx67ll_dortmund_plan` (
   `plan_id` bigint(20) NOT NULL AUTO_INCREMENT COMMENT '方案计划唯一标识（主键）',
   `plan_content` varchar(1023) NOT NULL COMMENT '正文',
-  `plan_rate` decimal(24,6) DEFAULT NULL COMMENT '手工调整倍率（空表示使用自动倍率，最多18位整数与6位小数）',
-  `plan_amount` decimal(24,2) DEFAULT NULL COMMENT '手工调整金额（空表示使用自动金额，最多22位整数与2位小数）',
-  `calculated_plan_rate` decimal(24,6) DEFAULT NULL COMMENT '按关联组合自动计算的倍率，写入前校验上限',
-  `calculated_plan_amount` decimal(24,2) DEFAULT NULL COMMENT '按关联组合自动计算的金额，写入前校验上限',
+  `plan_expected_principal` decimal(24,2) DEFAULT NULL COMMENT '方案预计本金（手工修正值；空表示使用关联组合自动汇总的预计本金，最多22位整数与2位小数）',
+  `plan_expected_odds` decimal(24,6) DEFAULT NULL COMMENT '方案预计倍率（手工覆盖值；空表示使用自动预计倍率，最多18位整数与6位小数）',
+  `plan_expected_return` decimal(24,2) DEFAULT NULL COMMENT '方案预计回报（手工覆盖值；空表示使用自动预计回报，最多22位整数与2位小数）',
+  `plan_actual_principal` decimal(24,2) NOT NULL COMMENT '方案实际本金（仅手工填写，必填，最多22位整数与2位小数）',
+  `plan_actual_return` decimal(24,2) NOT NULL COMMENT '方案实际回报（仅手工填写，必填，允许为0，最多22位整数与2位小数）',
+  `plan_actual_odds` decimal(24,6) NOT NULL COMMENT '方案实际倍率（仅手工填写，必填，允许为0，最多18位整数与6位小数）',
+  `calculated_expected_principal` decimal(24,2) DEFAULT NULL COMMENT '按关联组合自动计算的预计本金，写入前校验上限',
+  `calculated_expected_odds` decimal(24,6) DEFAULT NULL COMMENT '按关联组合自动计算的预计倍率，写入前校验上限',
+  `calculated_expected_return` decimal(24,2) DEFAULT NULL COMMENT '按关联组合自动计算的预计回报，写入前校验上限',
   `summary_content` mediumtext COMMENT '最近一次成功保存的方案计划摘要正文',
   `summary_update_flag` char(1) NOT NULL DEFAULT 'Y' COMMENT '摘要更新标记（Y-需要刷新，N-与当前数据一致）',
   `summary_update_time` datetime DEFAULT NULL COMMENT '最近一次成功保存摘要正文的时间',
@@ -588,6 +597,9 @@ insert into sys_dict_type values(24, 'AI分析统一状态',       'fx67ll_ai_an
 insert into sys_dict_data values(56, 1,  '胜',       '0',       'fx67ll_match_result',         '',   '',     'N', '0', 'admin', sysdate(), '', null, '胜');
 insert into sys_dict_data values(57, 2,  '平',       '1',       'fx67ll_match_result',         '',   '',     'N', '0', 'admin', sysdate(), '', null, '平');
 insert into sys_dict_data values(58, 3,  '负',       '2',       'fx67ll_match_result',         '',   '',     'N', '0', 'admin', sysdate(), '', null, '负');
+insert into sys_dict_data values(78, 4,  '让球胜',   '3',       'fx67ll_match_result',         '',   '',     'N', '0', 'admin', sysdate(), '', null, '让球胜');
+insert into sys_dict_data values(79, 5,  '让球平',   '4',       'fx67ll_match_result',         '',   '',     'N', '0', 'admin', sysdate(), '', null, '让球平');
+insert into sys_dict_data values(80, 6,  '让球负',   '5',       'fx67ll_match_result',         '',   '',     'N', '0', 'admin', sysdate(), '', null, '让球负');
 
 -- 比赛/赛季等通用管理枚举项插入值
 insert into sys_dict_data values(59, 1,  '进行中',   '0',       'fx67ll_dortmund_status',         '',   '',     'N', '0', 'admin', sysdate(), '', null, '进行中');

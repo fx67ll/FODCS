@@ -18,6 +18,21 @@ public class Fx67llDortmundReturnManualImportResult {
     /** 本次写入组合数 */
     private Integer generatedCount;
 
+    /** 本次实际新增组合数 */
+    private Integer importedCount;
+
+    /** 本次因组合签名重复而跳过的数量 */
+    private Integer duplicateCount;
+
+    /** 覆盖模式下被清理的旧组合数 */
+    private Integer replacedCount;
+
+    /** 导入完成后的批次候选总数 */
+    private Integer totalCount;
+
+    /** 导入模式（REPLACE/APPEND） */
+    private String importMode;
+
     /** 结果来源（A-自动AI，M-人工AI处理） */
     private String resultSource;
 
@@ -46,6 +61,46 @@ public class Fx67llDortmundReturnManualImportResult {
 
     public void setGeneratedCount(Integer generatedCount) {
         this.generatedCount = generatedCount;
+    }
+
+    public Integer getImportedCount() {
+        return importedCount;
+    }
+
+    public void setImportedCount(Integer importedCount) {
+        this.importedCount = importedCount;
+    }
+
+    public Integer getDuplicateCount() {
+        return duplicateCount;
+    }
+
+    public void setDuplicateCount(Integer duplicateCount) {
+        this.duplicateCount = duplicateCount;
+    }
+
+    public Integer getReplacedCount() {
+        return replacedCount;
+    }
+
+    public void setReplacedCount(Integer replacedCount) {
+        this.replacedCount = replacedCount;
+    }
+
+    public Integer getTotalCount() {
+        return totalCount;
+    }
+
+    public void setTotalCount(Integer totalCount) {
+        this.totalCount = totalCount;
+    }
+
+    public String getImportMode() {
+        return importMode;
+    }
+
+    public void setImportMode(String importMode) {
+        this.importMode = importMode;
     }
 
     public String getResultSource() {

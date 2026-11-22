@@ -1,5 +1,6 @@
 package com.ruoyi.fx67ll.dortmund.service.impl;
 
+import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -14,6 +15,7 @@ import com.ruoyi.fx67ll.dortmund.domain.Fx67llDortmundInfoPointTeamRel;
 import com.ruoyi.fx67ll.dortmund.mapper.Fx67llDortmundBasicMatchMapper;
 import com.ruoyi.fx67ll.dortmund.mapper.Fx67llDortmundInfoPointTeamRelMapper;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.dao.DuplicateKeyException;
 import org.springframework.stereotype.Service;
 import com.ruoyi.fx67ll.dortmund.mapper.Fx67llDortmundBasicTeamMapper;
 import com.ruoyi.fx67ll.dortmund.domain.Fx67llDortmundBasicTeam;
@@ -21,6 +23,7 @@ import com.ruoyi.fx67ll.dortmund.domain.Fx67llDortmundTeamOptions;
 import com.ruoyi.fx67ll.dortmund.config.DortmundModuleConfig;
 import com.ruoyi.fx67ll.dortmund.service.IFx67llDortmundInfoPointService;
 import com.ruoyi.fx67ll.dortmund.service.IFx67llDortmundBasicTeamService;
+import com.ruoyi.fx67ll.dortmund.support.DortmundDataScope;
 import com.ruoyi.fx67ll.dortmund.support.DortmundFieldValidator;
 
 import static com.ruoyi.fx67ll.dortmund.config.DortmundModuleConfig.Field.TEAM_CODE;
@@ -71,6 +74,18 @@ public class Fx67llDortmundBasicTeamServiceImpl implements IFx67llDortmundBasicT
     }
 
     /**
+     * 按当前用户数据范围查询球队详情。
+     * <p>对象不存在和无权访问统一返回受控提示，避免通过详情接口推断其他用户的数据。</p>
+     *
+     * @param teamId 球队管理主键
+     * @return 当前用户可访问的球队
+     */
+    @Override
+    public Fx67llDortmundBasicTeam selectFx67llDortmundBasicTeamDetailForCurrentUser(Long teamId) {
+        return requireTeamAccessible(teamId);
+    }
+
+    /**
      * 查询球队管理列表
      *
      * @param fx67llDortmundBasicTeam 球队管理
@@ -82,67 +97,134 @@ public class Fx67llDortmundBasicTeamServiceImpl implements IFx67llDortmundBasicT
     }
 
     /**
-     * 通过 UserId 查询球队管理列表
+     * 按当前用户数据范围查询球队管理列表。
+     * <p>普通用户强制按本人 user_id 过滤，全部数据权限角色保留其显式筛选条件。</p>
      *
      * @param fx67llDortmundBasicTeam 球队管理
-     * @return 球队管理
+     * @return 当前用户可访问的球队集合
      */
     @Override
-    public List<Fx67llDortmundBasicTeam> selectFx67llDortmundBasicTeamListByUserId(Fx67llDortmundBasicTeam fx67llDortmundBasicTeam) {
-        fx67llDortmundBasicTeam.setUserId(SecurityUtils.getUserId());
+    public List<Fx67llDortmundBasicTeam> selectFx67llDortmundBasicTeamListForCurrentUser(
+            Fx67llDortmundBasicTeam fx67llDortmundBasicTeam) {
+        Long ownerUserId = DortmundDataScope.ownerFilterForCurrentUser();
+        if (ownerUserId != null) {
+            fx67llDortmundBasicTeam.setUserId(ownerUserId);
+        }
         return fx67llDortmundBasicTeamMapper.selectFx67llDortmundBasicTeamList(fx67llDortmundBasicTeam);
     }
 
     /**
-     * 汇总球队主场与标签选项。
+     * 汇总球队主场、地区/联赛与标签选项。
      * <p>
-     * 先放入内置目录，再追加球队表去重值；标签字段兼容英文逗号和中文逗号分隔。
-     * 这样第三方导入的自定义值可见，同时接口异常时前端仍有稳定兜底。
+     * 球队表实际值优先，内置目录仅作为去重后的兜底项追加；主场和地区/联赛按选项值聚合关联球队名称，
+     * 供前端同时按球队名称和选项名称检索。标签字段兼容英文逗号和中文逗号分隔。
+     * 这样第三方导入值不会被内置目录压到列表后方，同时接口异常时前端仍有稳定兜底。
      */
     @Override
     public Fx67llDortmundTeamOptions selectFx67llDortmundTeamOptions() {
         Map<String, Fx67llDortmundTeamOptions.Option> venueOptions = new LinkedHashMap<>();
+        Map<String, Fx67llDortmundTeamOptions.Option> countryOptions = new LinkedHashMap<>();
         Map<String, Fx67llDortmundTeamOptions.Option> tagOptions = new LinkedHashMap<>();
-        for (String[] item : DortmundModuleConfig.TeamCatalog.VENUE_OPTIONS) {
-            addOption(venueOptions, item[0], item[1], "info");
-        }
-        for (String[] item : DortmundModuleConfig.TeamCatalog.TAG_OPTIONS) {
-            addOption(tagOptions, item[0], item[1], item[2]);
-        }
-        List<Fx67llDortmundBasicTeam> rows = fx67llDortmundBasicTeamMapper.selectDistinctTeamVenueAndTag();
+        // 选项目录也遵守归属范围，避免普通用户从选择器看到其他用户的球队名称和自定义选项。
+        List<Fx67llDortmundBasicTeam> rows = fx67llDortmundBasicTeamMapper
+                .selectTeamOptionSourceRows(DortmundDataScope.ownerFilterForCurrentUser());
         if (rows != null) {
             for (Fx67llDortmundBasicTeam row : rows) {
-                String venue = row == null ? null : row.getTeamVenue();
-                if (venue != null && !venue.trim().isEmpty()) {
-                    addOption(venueOptions, venue.trim(), venue.trim(), "info");
+                if (row == null) {
+                    continue;
                 }
-                String tags = row == null ? null : row.getTeamTag();
+                String teamName = trimToNull(row.getTeamName());
+                String venue = trimToNull(row.getTeamVenue());
+                if (venue != null && !venue.trim().isEmpty()) {
+                    addOption(venueOptions, venue, venue, "info", teamName);
+                }
+                String country = trimToNull(row.getTeamCountry());
+                if (country != null) {
+                    addOption(countryOptions, country, country, "info", teamName);
+                }
+                String tags = row.getTeamTag();
                 if (tags == null) {
                     continue;
                 }
                 for (String tag : tags.split(DortmundModuleConfig.Team.TAG_SPLIT_REGEX)) {
                     String normalized = tag == null ? "" : tag.trim();
                     if (!normalized.isEmpty()) {
-                        addOption(tagOptions, normalized, normalized, "info");
+                        addOption(tagOptions, normalized, normalized, "info", teamName);
                     }
                 }
             }
         }
+        // 球队实际值先占用 LinkedHashMap 的插入顺序；内置目录只补齐缺失值，重复值保留已有顺序并补全标签配色。
+        for (String[] item : DortmundModuleConfig.TeamCatalog.VENUE_OPTIONS) {
+            mergeCatalogOption(venueOptions, item[0], item[1], "info");
+        }
+        for (String[] item : DortmundModuleConfig.TeamCatalog.COUNTRY_OPTIONS) {
+            mergeCatalogOption(countryOptions, item[0], item[1], "info");
+        }
+        for (String[] item : DortmundModuleConfig.TeamCatalog.TAG_OPTIONS) {
+            mergeCatalogOption(tagOptions, item[0], item[1], item[2]);
+        }
         Fx67llDortmundTeamOptions result = new Fx67llDortmundTeamOptions();
         result.getTeamVenueOptions().addAll(venueOptions.values());
+        result.getTeamCountryOptions().addAll(countryOptions.values());
         result.getTeamTagOptions().addAll(tagOptions.values());
         return result;
     }
 
-    /** 以 value 去重，保留首次出现的 label 和颜色。 */
-    private void addOption(Map<String, Fx67llDortmundTeamOptions.Option> options,
+    /**
+     * 追加内置目录项。
+     * <p>
+     * 若球队数据已产生同值选项，则保持其原先的排序位置，只用内置目录补全展示文本和标签颜色；
+     * 若不存在，才把内置项追加到实际值之后。
+     */
+    private void mergeCatalogOption(Map<String, Fx67llDortmundTeamOptions.Option> options,
             String label, String value, String type) {
-        if (value == null || value.trim().isEmpty() || options.containsKey(value.trim())) {
+        String normalizedValue = trimToNull(value);
+        if (normalizedValue == null) {
             return;
         }
-        options.put(value.trim(), new Fx67llDortmundTeamOptions.Option(
-                label == null || label.trim().isEmpty() ? value.trim() : label.trim(),
-                value.trim(), type));
+        Fx67llDortmundTeamOptions.Option option = options.get(normalizedValue);
+        if (option == null) {
+            addOption(options, label, normalizedValue, type, null);
+            return;
+        }
+        String normalizedLabel = trimToNull(label);
+        if (normalizedLabel != null) {
+            option.setLabel(normalizedLabel);
+        }
+        String normalizedType = trimToNull(type);
+        if (normalizedType != null) {
+            option.setType(normalizedType);
+        }
+    }
+
+    /** 以 value 去重，保留首次出现的 label 和颜色，并累加关联球队名称。 */
+    private void addOption(Map<String, Fx67llDortmundTeamOptions.Option> options,
+            String label, String value, String type, String teamName) {
+        String normalizedValue = trimToNull(value);
+        if (normalizedValue == null) {
+            return;
+        }
+        Fx67llDortmundTeamOptions.Option option = options.get(normalizedValue);
+        if (option == null) {
+            option = new Fx67llDortmundTeamOptions.Option(
+                    trimToNull(label) == null ? normalizedValue : label.trim(), normalizedValue, type);
+            option.setTeamNames(new ArrayList<>());
+            options.put(normalizedValue, option);
+        }
+        String normalizedTeamName = trimToNull(teamName);
+        if (normalizedTeamName != null && !option.getTeamNames().contains(normalizedTeamName)) {
+            option.getTeamNames().add(normalizedTeamName);
+        }
+    }
+
+    /** 统一处理第三方导入文本的空值与首尾空格。 */
+    private String trimToNull(String value) {
+        if (value == null) {
+            return null;
+        }
+        String normalized = value.trim();
+        return normalized.isEmpty() ? null : normalized;
     }
 
     /**
@@ -158,7 +240,14 @@ public class Fx67llDortmundBasicTeamServiceImpl implements IFx67llDortmundBasicT
         fx67llDortmundBasicTeam.setUserId(SecurityUtils.getUserId());
         fx67llDortmundBasicTeam.setCreateBy(SecurityUtils.getUsername());
         fx67llDortmundBasicTeam.setCreateTime(DateUtils.getNowDate());
-        int rows = fx67llDortmundBasicTeamMapper.insertFx67llDortmundBasicTeam(fx67llDortmundBasicTeam);
+        fx67llDortmundBasicTeam.setDelFlag("0");
+        int rows;
+        try {
+            rows = fx67llDortmundBasicTeamMapper.insertFx67llDortmundBasicTeam(fx67llDortmundBasicTeam);
+        } catch (DuplicateKeyException e) {
+            // 球队编码由数据库全局唯一索引约束，不随用户归属拆分。
+            throw new ServiceException("球队编码已存在，请重新输入！");
+        }
         insertNewInfoPoints(fx67llDortmundBasicTeam);
         return rows;
     }
@@ -174,11 +263,13 @@ public class Fx67llDortmundBasicTeamServiceImpl implements IFx67llDortmundBasicT
         if (fx67llDortmundBasicTeam.getTeamId() == null) {
             throw new ServiceException("球队主键不能为空！");
         }
-        if (fx67llDortmundBasicTeamMapper.selectFx67llDortmundBasicTeamByTeamId(
-                fx67llDortmundBasicTeam.getTeamId()) == null) {
-            throw new ServiceException("球队不存在或已被删除，请刷新后重试！");
-        }
+        Fx67llDortmundBasicTeam oldTeam = requireTeamAccessible(fx67llDortmundBasicTeam.getTeamId());
         validateTeamFields(fx67llDortmundBasicTeam);
+        // 归属与创建审计只允许由服务端维护，防止客户端通过修改请求转移数据或篡改创建信息。
+        fx67llDortmundBasicTeam.setUserId(oldTeam.getUserId());
+        fx67llDortmundBasicTeam.setCreateBy(oldTeam.getCreateBy());
+        fx67llDortmundBasicTeam.setCreateTime(oldTeam.getCreateTime());
+        fx67llDortmundBasicTeam.setDelFlag(oldTeam.getDelFlag());
         fx67llDortmundBasicTeam.setUpdateBy(SecurityUtils.getUsername());
         fx67llDortmundBasicTeam.setUpdateTime(DateUtils.getNowDate());
         return fx67llDortmundBasicTeamMapper.updateFx67llDortmundBasicTeam(fx67llDortmundBasicTeam);
@@ -195,6 +286,10 @@ public class Fx67llDortmundBasicTeamServiceImpl implements IFx67llDortmundBasicT
         if (teamIds == null || teamIds.length == 0) {
             return 0;
         }
+        // 先校验整批归属，再检查引用，确保任一无权记录都不会触发部分删除。
+        for (Long teamId : teamIds) {
+            requireTeamAccessible(teamId);
+        }
         for (Long teamId : teamIds) {
             checkTeamReferenceBeforeDelete(teamId);
         }
@@ -209,8 +304,25 @@ public class Fx67llDortmundBasicTeamServiceImpl implements IFx67llDortmundBasicT
      */
     @Override
     public int deleteFx67llDortmundBasicTeamByTeamId(Long teamId) {
+        requireTeamAccessible(teamId);
         checkTeamReferenceBeforeDelete(teamId);
         return fx67llDortmundBasicTeamMapper.deleteFx67llDortmundBasicTeamByTeamId(teamId);
+    }
+
+    /**
+     * 读取并校验球队归属。
+     *
+     * @param teamId 球队管理主键
+     * @return 当前用户可维护的球队
+     */
+    private Fx67llDortmundBasicTeam requireTeamAccessible(Long teamId) {
+        Fx67llDortmundBasicTeam team = fx67llDortmundBasicTeamMapper
+                .selectFx67llDortmundBasicTeamByTeamId(teamId);
+        if (team == null) {
+            throw new ServiceException("球队不存在或没有访问权限！");
+        }
+        DortmundDataScope.requireAccessible(team.getUserId(), "球队不存在或没有访问权限！");
+        return team;
     }
 
     /**

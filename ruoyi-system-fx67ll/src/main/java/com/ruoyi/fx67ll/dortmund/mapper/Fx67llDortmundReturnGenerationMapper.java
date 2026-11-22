@@ -57,7 +57,7 @@ public interface Fx67llDortmundReturnGenerationMapper {
             @Param("aiCallRefs") String aiCallRefs);
 
     /**
-     * 人工导入成功完成批次；只允许从待人工导入或遗留失败状态进入成功状态，防止覆盖已有结果。
+     * 人工导入成功完成批次；允许从待人工导入、遗留失败或已完成的人工来源批次更新，防止自动成功结果被覆盖。
      */
     public int completeManualGenerationSuccess(@Param("generationId") Long generationId,
             @Param("generatedCount") int generatedCount, @Param("remark") String remark,

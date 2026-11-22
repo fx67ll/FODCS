@@ -112,14 +112,14 @@
             <if test="delFlag != null  and delFlag != ''">and m.del_flag = #{delFlag}</if>
             <if test="userId != null ">and m.user_id = #{userId}</if>
             <if test="createBy != null  and createBy != ''">and m.create_by like concat('%', #{createBy}, '%')</if>
-            <if test="beginCreateTime != null and endCreateTime != ''">and m.create_time between #{beginCreateTime} and
+            <if test="beginCreateTime != null and beginCreateTime != '' and endCreateTime != null and endCreateTime != ''">and m.create_time between #{beginCreateTime} and
                 #{endCreateTime}
             </if>
             <if test="updateBy != null  and updateBy != ''">and m.update_by like concat('%', #{updateBy}, '%')</if>
-            <if test="beginUpdateTime != null and endUpdateTime != ''">and m.update_time between #{beginUpdateTime} and
+            <if test="beginUpdateTime != null and beginUpdateTime != '' and endUpdateTime != null and endUpdateTime != ''">and m.update_time between #{beginUpdateTime} and
                 #{endUpdateTime}
             </if>
-            <if test="beginMatchTime != null and endMatchTime != ''">and m.match_time between #{beginMatchTime} and
+            <if test="beginMatchTime != null and beginMatchTime != '' and endMatchTime != null and endMatchTime != ''">and m.match_time between #{beginMatchTime} and
                 #{endMatchTime}
             </if>
         </where>
@@ -190,11 +190,12 @@
             <if test="homeTeamId != null">home_team_id = #{homeTeamId},</if>
             <if test="awayTeamId != null">away_team_id = #{awayTeamId},</if>
             <if test="matchTime != null">match_time = #{matchTime},</if>
-            <if test="matchVenue != null">match_venue = #{matchVenue},</if>
+            <!-- 主场、赛果和备注均为可清空字段；编辑接口提交完整表单，空值必须显式落库。 -->
+            match_venue = #{matchVenue},
             <if test="matchStatus != null">match_status = #{matchStatus},</if>
             <if test="analysisCount != null">analysis_count = #{analysisCount},</if>
-            <if test="matchResult != null">match_result = #{matchResult},</if>
-            <if test="matchRemark != null">match_remark = #{matchRemark},</if>
+            match_result = #{matchResult},
+            match_remark = #{matchRemark},
             <if test="createBy != null">create_by = #{createBy},</if>
             <if test="createTime != null">create_time = #{createTime},</if>
             <if test="updateBy != null">update_by = #{updateBy},</if>

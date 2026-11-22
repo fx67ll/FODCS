@@ -10,6 +10,7 @@
         <result property="generationCode" column="generation_code"/>
         <result property="generationMode" column="generation_mode"/>
         <result property="generationStatus" column="generation_status"/>
+        <result property="resultSource" column="result_source"/>
         <result property="combinationCode" column="combination_code"/>
         <result property="combinationTitle" column="combination_title"/>
         <result property="combinationReason" column="combination_reason"/>
@@ -19,6 +20,9 @@
         <result property="adoptedFlag" column="adopted_flag"/>
         <result property="reviewBy" column="review_by"/>
         <result property="reviewTime" column="review_time"/>
+        <result property="verificationStatus" column="verification_status"/>
+        <result property="verifyBy" column="verify_by"/>
+        <result property="verifyTime" column="verify_time"/>
         <result property="combinationRemark" column="combination_remark"/>
         <result property="evidenceChain" column="evidence_chain"/>
         <result property="aiConfidence" column="ai_confidence"/>
@@ -37,6 +41,7 @@
                g.generation_code,
                g.generation_mode,
                g.generation_status,
+               g.result_source,
                c.combination_code,
                c.combination_title,
                c.combined_odds,
@@ -45,6 +50,9 @@
                c.adopted_flag,
                c.review_by,
                c.review_time,
+               c.verification_status,
+               c.verify_by,
+               c.verify_time,
                c.ai_confidence,
                c.risk_notes,
                c.user_id,
@@ -65,6 +73,7 @@
                g.generation_code,
                g.generation_mode,
                g.generation_status,
+               g.result_source,
                (select count(1)
                 from fx67ll_dortmund_return_combination_item i
                 where i.combination_id = c.combination_id) as match_count
@@ -79,6 +88,7 @@
                g.generation_code,
                g.generation_mode,
                g.generation_status,
+               g.result_source,
                (select count(1)
                 from fx67ll_dortmund_return_combination_item i
                 where i.combination_id = c.combination_id) as match_count
@@ -112,6 +122,10 @@
             </if>
             <if test="beginCreateTime != null and beginCreateTime != '' and endCreateTime != null and endCreateTime != ''">
                 and c.create_time between #{beginCreateTime} and #{endCreateTime}
+            </if>
+            <!-- 审核时间与创建时间使用相同闭区间语义；前端传时分秒时不再截断到自然日。 -->
+            <if test="beginReviewTime != null and beginReviewTime != '' and endReviewTime != null and endReviewTime != ''">
+                and c.review_time between #{beginReviewTime} and #{endReviewTime}
             </if>
         </where>
         <choose>
@@ -170,10 +184,46 @@
         set adopted_flag = #{adoptedFlag},
             review_by = #{reviewBy},
             review_time = #{reviewTime},
+            <!-- 未核验使用 NULL，因此核验字段必须无条件写入，不能按非空条件跳过。 -->
+            verification_status = #{verificationStatus},
+            verify_by = #{verifyBy},
+            verify_time = #{verifyTime},
             update_by = #{updateBy},
             update_time = #{updateTime}
         where combination_id = #{combinationId}
     </update>
+
+    <update id="updateVerificationResult" parameterType="Fx67llDortmundReturnCombination">
+        update fx67ll_dortmund_return_combination
+        set verification_status = #{verificationStatus},
+            verify_by = #{verifyBy},
+            verify_time = #{verifyTime},
+            update_by = #{updateBy},
+            update_time = #{updateTime}
+        where combination_id = #{combinationId}
+    </update>
+
+    <!-- 赛果或让球赛果被人工修正后，旧核验结论立即失效，必须由用户重新核验。 -->
+    <update id="resetVerificationByMatchId">
+        update fx67ll_dortmund_return_combination c
+            join fx67ll_dortmund_return_combination_item i on i.combination_id = c.combination_id
+        set c.verification_status = null,
+            c.verify_by = null,
+            c.verify_time = null,
+            c.update_by = #{updateBy},
+            c.update_time = now()
+        where i.match_id = #{matchId}
+          and c.verification_status is not null
+    </update>
+
+    <select id="selectVerificationStatusesByIds" resultMap="Fx67llDortmundReturnCombinationResult">
+        select combination_id, verification_status
+        from fx67ll_dortmund_return_combination
+        where combination_id in
+        <foreach collection="combinationIds" item="combinationId" open="(" separator="," close=")">
+            #{combinationId}
+        </foreach>
+    </select>
 
     <select id="countPlanRelationsByCombinationId" resultType="int">
         select count(1)
@@ -186,4 +236,53 @@
         from fx67ll_dortmund_return_combination
         where generation_id = #{generationId}
     </select>
+
+    <select id="selectByGenerationId" resultMap="Fx67llDortmundReturnCombinationResult">
+        select combination_id, generation_id, combination_code, combination_title, combination_reason,
+               combined_odds, estimated_return, deviation_amount, adopted_flag, review_by, review_time,
+               verification_status, verify_by, verify_time,
+               combination_remark, evidence_chain, ai_confidence, risk_notes, user_id, create_by,
+               create_time, update_by, update_time
+        from fx67ll_dortmund_return_combination
+        where generation_id = #{generationId}
+        order by combination_id asc
+    </select>
+
+    <select id="selectByGenerationIdForUpdate" resultMap="Fx67llDortmundReturnCombinationResult">
+        select combination_id, generation_id, combination_code, combination_title, combination_reason,
+               combined_odds, estimated_return, deviation_amount, adopted_flag, review_by, review_time,
+               verification_status, verify_by, verify_time,
+               combination_remark, evidence_chain, ai_confidence, risk_notes, user_id, create_by,
+               create_time, update_by, update_time
+        from fx67ll_dortmund_return_combination
+        where generation_id = #{generationId}
+        order by combination_id asc
+        for update
+    </select>
+
+    <select id="countAdoptedByGenerationId" resultType="int">
+        select count(1)
+        from fx67ll_dortmund_return_combination
+        where generation_id = #{generationId}
+          and adopted_flag = 'Y'
+    </select>
+
+    <select id="countPlanRelationsByGenerationId" resultType="int">
+        select count(1)
+        from fx67ll_dortmund_plan_return_rel r
+                 join fx67ll_dortmund_return_combination c on c.combination_id = r.combination_id
+        where c.generation_id = #{generationId}
+    </select>
+
+    <select id="countImagesByGenerationId" resultType="int">
+        select count(1)
+        from fx67ll_dortmund_return_image i
+                 join fx67ll_dortmund_return_combination c on c.combination_id = i.combination_id
+        where c.generation_id = #{generationId}
+    </select>
+
+    <delete id="deleteByGenerationId">
+        delete from fx67ll_dortmund_return_combination
+        where generation_id = #{generationId}
+    </delete>
 </mapper>

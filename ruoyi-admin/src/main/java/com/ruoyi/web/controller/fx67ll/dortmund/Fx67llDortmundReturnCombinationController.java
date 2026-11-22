@@ -23,6 +23,7 @@ import com.ruoyi.common.enums.BusinessType;
 import com.ruoyi.common.utils.DateUtils;
 import com.ruoyi.common.utils.poi.ExcelUtil;
 import com.ruoyi.fx67ll.dortmund.domain.Fx67llDortmundReturnBatchAdoptRequest;
+import com.ruoyi.fx67ll.dortmund.domain.Fx67llDortmundReturnBatchVerifyRequest;
 import com.ruoyi.fx67ll.dortmund.domain.Fx67llDortmundReturnCombination;
 import com.ruoyi.fx67ll.dortmund.domain.Fx67llDortmundReturnCombinationExportResponse;
 import com.ruoyi.fx67ll.dortmund.domain.Fx67llDortmundReturnGenerateRequest;
@@ -45,6 +46,15 @@ import com.ruoyi.fx67ll.dortmund.service.IFx67llDortmundReturnCombinationService
 public class Fx67llDortmundReturnCombinationController extends BaseController {
     @Autowired
     private IFx67llDortmundReturnCombinationService fx67llDortmundReturnCombinationService;
+
+    /**
+     * 查询后端当前生效的预定义业务目标，供分析页展示只读固定约束。
+     */
+    @PreAuthorize("@ss.hasPermi('dortmund:return:generate')")
+    @GetMapping("/business-objectives")
+    public AjaxResult businessObjectives() {
+        return success(fx67llDortmundReturnCombinationService.getPredefinedBusinessObjectives());
+    }
 
     /**
      * 生成回报组合
@@ -82,7 +92,7 @@ public class Fx67llDortmundReturnCombinationController extends BaseController {
      * 获取回报组合生成批次详情
      */
     @PreAuthorize("@ss.hasPermi('dortmund:return:query')")
-    @GetMapping("/generation/{generationId}")
+    @GetMapping("/generation/{generationId:\\d+}")
     public AjaxResult generationInfo(@PathVariable("generationId") Long generationId,
             @RequestParam(value = "sortField", required = false) String sortField,
             @RequestParam(value = "sortOrder", required = false) String sortOrder) {
@@ -94,7 +104,7 @@ public class Fx67llDortmundReturnCombinationController extends BaseController {
      * 查询待人工导入或遗留失败批次的人工AI处理任务。
      */
     @PreAuthorize("@ss.hasPermi('dortmund:return:generate')")
-    @GetMapping("/generation/{generationId}/manual-task")
+    @GetMapping("/generation/{generationId:\\d+}/manual-task")
     public AjaxResult manualTask(@PathVariable("generationId") Long generationId) {
         Fx67llDortmundReturnManualTask task =
                 fx67llDortmundReturnCombinationService.buildManualTask(generationId);
@@ -117,8 +127,7 @@ public class Fx67llDortmundReturnCombinationController extends BaseController {
      */
     @PreAuthorize("@ss.hasPermi('dortmund:return:generate')")
     @Log(title = "Dortmund回报组合人工AI结果导入", businessType = BusinessType.INSERT)
-    @RepeatSubmit
-    @PostMapping("/generation/{generationId}/manual-import")
+    @PostMapping("/generation/{generationId:\\d+}/manual-import")
     public AjaxResult importManualResult(@PathVariable("generationId") Long generationId,
             @RequestBody Fx67llDortmundReturnManualImportRequest request) {
         return success(fx67llDortmundReturnCombinationService.importManualResult(generationId, request));
@@ -138,7 +147,7 @@ public class Fx67llDortmundReturnCombinationController extends BaseController {
      * 获取回报组合详情
      */
     @PreAuthorize("@ss.hasPermi('dortmund:return:query')")
-    @GetMapping("/{combinationId}")
+    @GetMapping("/{combinationId:\\d+}")
     public AjaxResult getInfo(@PathVariable("combinationId") Long combinationId) {
         return success(fx67llDortmundReturnCombinationService.selectCombinationById(combinationId));
     }
@@ -149,7 +158,7 @@ public class Fx67llDortmundReturnCombinationController extends BaseController {
     @PreAuthorize("@ss.hasPermi('dortmund:return:review')")
     @Log(title = "Dortmund回报组合审核", businessType = BusinessType.UPDATE)
     @RepeatSubmit
-    @PostMapping("/{combinationId}/adopt")
+    @PostMapping("/{combinationId:\\d+}/adopt")
     public AjaxResult adopt(@PathVariable("combinationId") Long combinationId) {
         return toAjax(fx67llDortmundReturnCombinationService.updateAdoptedFlag(combinationId, "Y"));
     }
@@ -160,7 +169,7 @@ public class Fx67llDortmundReturnCombinationController extends BaseController {
     @PreAuthorize("@ss.hasPermi('dortmund:return:review')")
     @Log(title = "Dortmund回报组合审核", businessType = BusinessType.UPDATE)
     @RepeatSubmit
-    @PostMapping("/{combinationId}/reject")
+    @PostMapping("/{combinationId:\\d+}/reject")
     public AjaxResult reject(@PathVariable("combinationId") Long combinationId) {
         return toAjax(fx67llDortmundReturnCombinationService.updateAdoptedFlag(combinationId, "N"));
     }
@@ -178,12 +187,35 @@ public class Fx67llDortmundReturnCombinationController extends BaseController {
     }
 
     /**
+     * 按人工登记的比赛结果核验一条已采用回报组合
+     */
+    @PreAuthorize("@ss.hasPermi('dortmund:return:review')")
+    @Log(title = "Dortmund回报组合赛果核验", businessType = BusinessType.UPDATE)
+    @RepeatSubmit
+    @PostMapping("/{combinationId:\\d+}/verify")
+    public AjaxResult verify(@PathVariable("combinationId") Long combinationId) {
+        return success(fx67llDortmundReturnCombinationService.verifyCombination(combinationId));
+    }
+
+    /**
+     * 批量核验已采用回报组合的赛果
+     */
+    @PreAuthorize("@ss.hasPermi('dortmund:return:review')")
+    @Log(title = "Dortmund回报组合批量赛果核验", businessType = BusinessType.UPDATE)
+    @RepeatSubmit
+    @PostMapping("/batch/verify")
+    public AjaxResult batchVerify(@RequestBody Fx67llDortmundReturnBatchVerifyRequest request) {
+        return success(fx67llDortmundReturnCombinationService.batchVerify(
+                request == null ? null : request.getCombinationIds()));
+    }
+
+    /**
      * 为已采用回报组合上传图片
      */
     @PreAuthorize("@ss.hasPermi('dortmund:return:image:upload')")
     @Log(title = "Dortmund回报组合图片", businessType = BusinessType.INSERT)
     @RepeatSubmit
-    @PostMapping("/{combinationId}/image")
+    @PostMapping("/{combinationId:\\d+}/image")
     public AjaxResult uploadImage(@PathVariable("combinationId") Long combinationId,
             @RequestParam("file") MultipartFile file) throws Exception {
         return success(fx67llDortmundReturnCombinationService.uploadCombinationImage(combinationId, file));
@@ -194,7 +226,7 @@ public class Fx67llDortmundReturnCombinationController extends BaseController {
      */
     @PreAuthorize("@ss.hasPermi('dortmund:return:image:remove')")
     @Log(title = "Dortmund回报组合图片", businessType = BusinessType.DELETE)
-    @DeleteMapping("/{combinationId}/image/{imageId}")
+    @DeleteMapping("/{combinationId:\\d+}/image/{imageId:\\d+}")
     public AjaxResult removeImage(@PathVariable("combinationId") Long combinationId,
             @PathVariable("imageId") Long imageId) {
         return toAjax(fx67llDortmundReturnCombinationService.removeCombinationImage(combinationId, imageId));

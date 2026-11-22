@@ -326,7 +326,8 @@
             update_by = #{updateBy},
             update_time = now()
         where generation_id = #{generationId}
-          and generation_status in ('2', '3')
+          and (generation_status in ('2', '3')
+               or (generation_status = '1' and result_source = 'M'))
     </update>
 
     <update id="failGeneration">

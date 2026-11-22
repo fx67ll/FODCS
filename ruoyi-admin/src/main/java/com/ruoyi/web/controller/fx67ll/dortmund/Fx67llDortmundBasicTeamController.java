@@ -3,8 +3,6 @@ package com.ruoyi.web.controller.fx67ll.dortmund;
 import java.util.List;
 import javax.servlet.http.HttpServletResponse;
 
-import com.ruoyi.common.utils.SecurityUtils;
-import com.ruoyi.fx67ll.ai.domain.Fx67llAiPromptBasicGroup;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -43,13 +41,9 @@ public class Fx67llDortmundBasicTeamController extends BaseController {
     @GetMapping("/list")
     public TableDataInfo list(Fx67llDortmundBasicTeam fx67llDortmundBasicTeam) {
         startPage();
-        if (SecurityUtils.getUsername().equals("fx67ll") ) {
-            List<Fx67llDortmundBasicTeam> list = fx67llDortmundBasicTeamService.selectFx67llDortmundBasicTeamList(fx67llDortmundBasicTeam);
-            return getDataTable(list);
-        } else {
-            List<Fx67llDortmundBasicTeam> list = fx67llDortmundBasicTeamService.selectFx67llDortmundBasicTeamListByUserId(fx67llDortmundBasicTeam);
-            return getDataTable(list);
-        }
+        List<Fx67llDortmundBasicTeam> list = fx67llDortmundBasicTeamService
+                .selectFx67llDortmundBasicTeamListForCurrentUser(fx67llDortmundBasicTeam);
+        return getDataTable(list);
     }
 
     /**
@@ -59,16 +53,19 @@ public class Fx67llDortmundBasicTeamController extends BaseController {
     @Log(title = "球队管理", businessType = BusinessType.EXPORT)
     @PostMapping("/export")
     public void export(HttpServletResponse response, Fx67llDortmundBasicTeam fx67llDortmundBasicTeam) {
-        List<Fx67llDortmundBasicTeam> list = fx67llDortmundBasicTeamService.selectFx67llDortmundBasicTeamList(fx67llDortmundBasicTeam);
+        List<Fx67llDortmundBasicTeam> list = fx67llDortmundBasicTeamService
+                .selectFx67llDortmundBasicTeamListForCurrentUser(fx67llDortmundBasicTeam);
         ExcelUtil<Fx67llDortmundBasicTeam> util = new ExcelUtil<Fx67llDortmundBasicTeam>(Fx67llDortmundBasicTeam.class);
         util.exportExcel(response, list, "球队管理数据");
     }
 
     /**
-     * 获取球队主场和标签选项。
-     * <p>返回值已合并内置目录与球队表实际值，前端接口失败时回退本地目录。</p>
+     * 获取球队主场、地区/联赛和标签选项。
+     * <p>选项目录同时服务球队页和比赛页的共享选择器，因此只要具备任一相关查看或维护权限即可读取；
+     * 返回值已合并内置目录与球队表实际值，前端接口失败时回退本地目录。</p>
      */
-    @PreAuthorize("@ss.hasPermi('dortmund:team:list')")
+    @PreAuthorize("@ss.hasAnyPermi('dortmund:team:list,dortmund:team:query,dortmund:team:add,dortmund:team:edit,"
+            + "dortmund:match:list,dortmund:match:query,dortmund:match:add,dortmund:match:edit')")
     @GetMapping("/options")
     public AjaxResult options() {
         return success(fx67llDortmundBasicTeamService.selectFx67llDortmundTeamOptions());
@@ -80,7 +77,7 @@ public class Fx67llDortmundBasicTeamController extends BaseController {
     @PreAuthorize("@ss.hasPermi('dortmund:team:query')")
     @GetMapping(value = "/{teamId}")
     public AjaxResult getInfo(@PathVariable("teamId") Long teamId) {
-        return success(fx67llDortmundBasicTeamService.selectFx67llDortmundBasicTeamByTeamId(teamId));
+        return success(fx67llDortmundBasicTeamService.selectFx67llDortmundBasicTeamDetailForCurrentUser(teamId));
     }
 
     /**

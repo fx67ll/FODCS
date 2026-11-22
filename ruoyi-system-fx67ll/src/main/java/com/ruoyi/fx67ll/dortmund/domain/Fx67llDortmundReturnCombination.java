@@ -32,6 +32,9 @@ public class Fx67llDortmundReturnCombination extends BaseEntity {
     /** 生成批次状态 */
     private String generationStatus;
 
+    /** 生成批次结果来源（A 自动AI，M 人工AI），用于详情页选择对应展示模板 */
+    private String resultSource;
+
     /** 查询关键字：组合编码或标题（非表列） */
     private String keyword;
 
@@ -65,6 +68,15 @@ public class Fx67llDortmundReturnCombination extends BaseEntity {
     /** 最近审核时间 */
     private Date reviewTime;
 
+    /** 赛果核验状态（复用 sys_yes_no：Y 核验成功，N 核验失败，null 未核验） */
+    private String verificationStatus;
+
+    /** 最近执行赛果核验的用户名 */
+    private String verifyBy;
+
+    /** 最近执行赛果核验的时间 */
+    private Date verifyTime;
+
     /** 组合有效图片集合（非表字段，仅详情返回） */
     private List<Fx67llDortmundReturnImage> images;
 
@@ -97,6 +109,12 @@ public class Fx67llDortmundReturnCombination extends BaseEntity {
 
     /** 创建结束时间 */
     private String endCreateTime;
+
+    /** 审核开始时间（非表列，按 review_time 做闭区间筛选） */
+    private String beginReviewTime;
+
+    /** 审核结束时间（非表列，按 review_time 做闭区间筛选） */
+    private String endReviewTime;
 
     /** 列表排序字段，服务端白名单校验（非表列） */
     private String sortField;
@@ -142,6 +160,14 @@ public class Fx67llDortmundReturnCombination extends BaseEntity {
 
     public void setGenerationStatus(String generationStatus) {
         this.generationStatus = generationStatus;
+    }
+
+    public String getResultSource() {
+        return resultSource;
+    }
+
+    public void setResultSource(String resultSource) {
+        this.resultSource = resultSource;
     }
 
     public String getKeyword() {
@@ -232,6 +258,30 @@ public class Fx67llDortmundReturnCombination extends BaseEntity {
         this.reviewTime = reviewTime;
     }
 
+    public String getVerificationStatus() {
+        return verificationStatus;
+    }
+
+    public void setVerificationStatus(String verificationStatus) {
+        this.verificationStatus = verificationStatus;
+    }
+
+    public String getVerifyBy() {
+        return verifyBy;
+    }
+
+    public void setVerifyBy(String verifyBy) {
+        this.verifyBy = verifyBy;
+    }
+
+    public Date getVerifyTime() {
+        return verifyTime;
+    }
+
+    public void setVerifyTime(Date verifyTime) {
+        this.verifyTime = verifyTime;
+    }
+
     public List<Fx67llDortmundReturnImage> getImages() {
         return images;
     }
@@ -320,6 +370,22 @@ public class Fx67llDortmundReturnCombination extends BaseEntity {
         this.endCreateTime = endCreateTime;
     }
 
+    public String getBeginReviewTime() {
+        return beginReviewTime;
+    }
+
+    public void setBeginReviewTime(String beginReviewTime) {
+        this.beginReviewTime = beginReviewTime;
+    }
+
+    public String getEndReviewTime() {
+        return endReviewTime;
+    }
+
+    public void setEndReviewTime(String endReviewTime) {
+        this.endReviewTime = endReviewTime;
+    }
+
     public String getSortField() {
         return sortField;
     }
@@ -344,6 +410,7 @@ public class Fx67llDortmundReturnCombination extends BaseEntity {
                 .append("generationCode", getGenerationCode())
                 .append("generationMode", getGenerationMode())
                 .append("generationStatus", getGenerationStatus())
+                .append("resultSource", getResultSource())
                 .append("keyword", getKeyword())
                 .append("matchId", getMatchId())
                 .append("combinationCode", getCombinationCode())
@@ -355,6 +422,11 @@ public class Fx67llDortmundReturnCombination extends BaseEntity {
                 .append("adoptedFlag", getAdoptedFlag())
                 .append("reviewBy", getReviewBy())
                 .append("reviewTime", getReviewTime())
+                .append("verificationStatus", getVerificationStatus())
+                .append("verifyBy", getVerifyBy())
+                .append("verifyTime", getVerifyTime())
+                .append("beginReviewTime", getBeginReviewTime())
+                .append("endReviewTime", getEndReviewTime())
                 .append("images", getImages())
                 .append("planLinked", getPlanLinked())
                 .append("evidenceChain", getEvidenceChain())

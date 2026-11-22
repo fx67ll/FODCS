@@ -31,16 +31,40 @@ public class Fx67llDortmundPlan extends BaseEntity {
     private String planContent;
 
     /**
-     * 录入倍率（空表示凭证没有该项；有值时必须大于0）
+     * 方案预计本金（手工修正值；空表示使用关联组合自动汇总的预计本金）
      */
-    @Excel(name = "录入倍率")
-    private BigDecimal planRate;
+    @Excel(name = "方案预计本金")
+    private BigDecimal planExpectedPrincipal;
 
     /**
-     * 录入金额（空表示凭证没有该项；有值时必须大于等于0）
+     * 方案预计倍率（空表示使用自动计算值；有值时必须大于0）
      */
-    @Excel(name = "录入金额")
-    private BigDecimal planAmount;
+    @Excel(name = "方案预计倍率")
+    private BigDecimal planExpectedOdds;
+
+    /**
+     * 方案预计回报（空表示使用自动计算值；有值时必须大于等于0）
+     */
+    @Excel(name = "方案预计回报")
+    private BigDecimal planExpectedReturn;
+
+    /**
+     * 方案实际回报（仅由用户手工登记，必填；允许为0）
+     */
+    @Excel(name = "方案实际回报")
+    private BigDecimal planActualReturn;
+
+    /**
+     * 方案实际倍率（仅由用户手工登记，必填；允许为0）
+     */
+    @Excel(name = "方案实际倍率")
+    private BigDecimal planActualOdds;
+
+    /**
+     * 方案实际本金（仅由用户手工登记，必填；服务端不按关联组合派生）
+     */
+    @Excel(name = "方案实际本金")
+    private BigDecimal planActualPrincipal;
 
     /**
      * 已选择的采用回报组合主键集合（非表字段）
@@ -48,16 +72,27 @@ public class Fx67llDortmundPlan extends BaseEntity {
     private List<Long> combinationIds;
 
     /**
-     * 按关联组合自动计算的倍率
+     * 关联回报组合的赛果核验汇总状态（Y 全部成功，N 存在失败，null 未核验，非表字段）
      */
-    @Excel(name = "自动倍率")
-    private BigDecimal calculatedPlanRate;
+    private String combinationVerificationStatus;
 
     /**
-     * 按关联组合自动计算的金额
+     * 按关联组合自动计算的预计本金
      */
-    @Excel(name = "自动金额")
-    private BigDecimal calculatedPlanAmount;
+    @Excel(name = "自动预计本金")
+    private BigDecimal calculatedExpectedPrincipal;
+
+    /**
+     * 按关联组合自动计算的预计倍率
+     */
+    @Excel(name = "自动预计倍率")
+    private BigDecimal calculatedExpectedOdds;
+
+    /**
+     * 按关联组合自动计算的预计回报
+     */
+    @Excel(name = "自动预计回报")
+    private BigDecimal calculatedExpectedReturn;
 
     /**
      * 最近一次成功保存的方案计划摘要正文
@@ -76,16 +111,22 @@ public class Fx67llDortmundPlan extends BaseEntity {
     private Date summaryUpdateTime;
 
     /**
-     * 有效倍率（非表字段，手工倍率优先）
+     * 有效预计本金（非表字段，手工预计本金优先）
      */
-    @Excel(name = "有效倍率")
-    private BigDecimal effectivePlanRate;
+    @Excel(name = "有效预计本金")
+    private BigDecimal effectiveExpectedPrincipal;
 
     /**
-     * 有效金额（非表字段，手工金额优先）
+     * 有效预计倍率（非表字段，手工预计倍率优先）
      */
-    @Excel(name = "有效金额")
-    private BigDecimal effectivePlanAmount;
+    @Excel(name = "有效预计倍率")
+    private BigDecimal effectiveExpectedOdds;
+
+    /**
+     * 有效预计回报（非表字段，手工预计回报优先）
+     */
+    @Excel(name = "有效预计回报")
+    private BigDecimal effectiveExpectedReturn;
 
     /**
      * 其他说明
@@ -170,20 +211,52 @@ public class Fx67llDortmundPlan extends BaseEntity {
         return planContent;
     }
 
-    public void setPlanRate(BigDecimal planRate) {
-        this.planRate = planRate;
+    public void setPlanExpectedPrincipal(BigDecimal planExpectedPrincipal) {
+        this.planExpectedPrincipal = planExpectedPrincipal;
     }
 
-    public BigDecimal getPlanRate() {
-        return planRate;
+    public BigDecimal getPlanExpectedPrincipal() {
+        return planExpectedPrincipal;
     }
 
-    public void setPlanAmount(BigDecimal planAmount) {
-        this.planAmount = planAmount;
+    public void setPlanExpectedOdds(BigDecimal planExpectedOdds) {
+        this.planExpectedOdds = planExpectedOdds;
     }
 
-    public BigDecimal getPlanAmount() {
-        return planAmount;
+    public BigDecimal getPlanExpectedOdds() {
+        return planExpectedOdds;
+    }
+
+    public void setPlanExpectedReturn(BigDecimal planExpectedReturn) {
+        this.planExpectedReturn = planExpectedReturn;
+    }
+
+    public BigDecimal getPlanExpectedReturn() {
+        return planExpectedReturn;
+    }
+
+    public void setPlanActualReturn(BigDecimal planActualReturn) {
+        this.planActualReturn = planActualReturn;
+    }
+
+    public BigDecimal getPlanActualReturn() {
+        return planActualReturn;
+    }
+
+    public void setPlanActualOdds(BigDecimal planActualOdds) {
+        this.planActualOdds = planActualOdds;
+    }
+
+    public BigDecimal getPlanActualOdds() {
+        return planActualOdds;
+    }
+
+    public void setPlanActualPrincipal(BigDecimal planActualPrincipal) {
+        this.planActualPrincipal = planActualPrincipal;
+    }
+
+    public BigDecimal getPlanActualPrincipal() {
+        return planActualPrincipal;
     }
 
     public List<Long> getCombinationIds() {
@@ -194,20 +267,44 @@ public class Fx67llDortmundPlan extends BaseEntity {
         this.combinationIds = combinationIds;
     }
 
-    public BigDecimal getCalculatedPlanRate() {
-        return calculatedPlanRate;
+    public String getCombinationVerificationStatus() {
+        return combinationVerificationStatus;
     }
 
-    public void setCalculatedPlanRate(BigDecimal calculatedPlanRate) {
-        this.calculatedPlanRate = calculatedPlanRate;
+    public void setCombinationVerificationStatus(String combinationVerificationStatus) {
+        this.combinationVerificationStatus = combinationVerificationStatus;
     }
 
-    public BigDecimal getCalculatedPlanAmount() {
-        return calculatedPlanAmount;
+    public BigDecimal getCalculatedExpectedPrincipal() {
+        return calculatedExpectedPrincipal;
     }
 
-    public void setCalculatedPlanAmount(BigDecimal calculatedPlanAmount) {
-        this.calculatedPlanAmount = calculatedPlanAmount;
+    public void setCalculatedExpectedPrincipal(BigDecimal calculatedExpectedPrincipal) {
+        this.calculatedExpectedPrincipal = calculatedExpectedPrincipal;
+    }
+
+    public BigDecimal getCalculatedExpectedOdds() {
+        return calculatedExpectedOdds;
+    }
+
+    public void setCalculatedExpectedOdds(BigDecimal calculatedExpectedOdds) {
+        this.calculatedExpectedOdds = calculatedExpectedOdds;
+    }
+
+    public BigDecimal getCalculatedExpectedReturn() {
+        return calculatedExpectedReturn;
+    }
+
+    public void setCalculatedExpectedReturn(BigDecimal calculatedExpectedReturn) {
+        this.calculatedExpectedReturn = calculatedExpectedReturn;
+    }
+
+    public BigDecimal getEffectiveExpectedPrincipal() {
+        return effectiveExpectedPrincipal;
+    }
+
+    public void setEffectiveExpectedPrincipal(BigDecimal effectiveExpectedPrincipal) {
+        this.effectiveExpectedPrincipal = effectiveExpectedPrincipal;
     }
 
     public String getSummaryContent() {
@@ -234,20 +331,20 @@ public class Fx67llDortmundPlan extends BaseEntity {
         this.summaryUpdateTime = summaryUpdateTime;
     }
 
-    public BigDecimal getEffectivePlanRate() {
-        return effectivePlanRate;
+    public BigDecimal getEffectiveExpectedOdds() {
+        return effectiveExpectedOdds;
     }
 
-    public void setEffectivePlanRate(BigDecimal effectivePlanRate) {
-        this.effectivePlanRate = effectivePlanRate;
+    public void setEffectiveExpectedOdds(BigDecimal effectiveExpectedOdds) {
+        this.effectiveExpectedOdds = effectiveExpectedOdds;
     }
 
-    public BigDecimal getEffectivePlanAmount() {
-        return effectivePlanAmount;
+    public BigDecimal getEffectiveExpectedReturn() {
+        return effectiveExpectedReturn;
     }
 
-    public void setEffectivePlanAmount(BigDecimal effectivePlanAmount) {
-        this.effectivePlanAmount = effectivePlanAmount;
+    public void setEffectiveExpectedReturn(BigDecimal effectiveExpectedReturn) {
+        this.effectiveExpectedReturn = effectiveExpectedReturn;
     }
 
     public void setPlanRemark(String planRemark) {
@@ -359,16 +456,23 @@ public class Fx67llDortmundPlan extends BaseEntity {
         return new ToStringBuilder(this, ToStringStyle.MULTI_LINE_STYLE)
                 .append("planId", getPlanId())
                 .append("planContent", getPlanContent())
-                .append("planRate", getPlanRate())
-                .append("planAmount", getPlanAmount())
+                .append("planExpectedPrincipal", getPlanExpectedPrincipal())
+                .append("planExpectedOdds", getPlanExpectedOdds())
+                .append("planExpectedReturn", getPlanExpectedReturn())
+                .append("planActualReturn", getPlanActualReturn())
+                .append("planActualOdds", getPlanActualOdds())
+                .append("planActualPrincipal", getPlanActualPrincipal())
                 .append("combinationIds", getCombinationIds())
-                .append("calculatedPlanRate", getCalculatedPlanRate())
-                .append("calculatedPlanAmount", getCalculatedPlanAmount())
+                .append("combinationVerificationStatus", getCombinationVerificationStatus())
+                .append("calculatedExpectedPrincipal", getCalculatedExpectedPrincipal())
+                .append("calculatedExpectedOdds", getCalculatedExpectedOdds())
+                .append("calculatedExpectedReturn", getCalculatedExpectedReturn())
                 .append("summaryContent", getSummaryContent())
                 .append("summaryUpdateFlag", getSummaryUpdateFlag())
                 .append("summaryUpdateTime", getSummaryUpdateTime())
-                .append("effectivePlanRate", getEffectivePlanRate())
-                .append("effectivePlanAmount", getEffectivePlanAmount())
+                .append("effectiveExpectedPrincipal", getEffectiveExpectedPrincipal())
+                .append("effectiveExpectedOdds", getEffectiveExpectedOdds())
+                .append("effectiveExpectedReturn", getEffectiveExpectedReturn())
                 .append("planRemark", getPlanRemark())
                 .append("matchIds", getMatchIds())
                 .append("newMatches", getNewMatches())

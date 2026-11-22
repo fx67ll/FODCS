@@ -62,7 +62,11 @@
             <if test="teamLogoUrl != null  and teamLogoUrl != ''">and team_logo_url = #{teamLogoUrl}</if>
             <if test="teamVenue != null  and teamVenue != ''">and team_venue = #{teamVenue}</if>
             <if test="teamCountry != null  and teamCountry != ''">and team_country = #{teamCountry}</if>
-            <if test="teamTag != null  and teamTag != ''">and team_tag = #{teamTag}</if>
+            <!-- 球队标签按逗号分隔存储；检索单个标签时必须按集合成员匹配，不能比较完整标签串。 -->
+            <if test="teamTag != null  and teamTag != ''">
+                and find_in_set(replace(#{teamTag}, ' ', ''),
+                replace(replace(team_tag, '，', ','), ' ', '')) &gt; 0
+            </if>
             <if test="teamStatus != null  and teamStatus != ''">and team_status = #{teamStatus}</if>
             <if test="teamSort != null ">and team_sort = #{teamSort}</if>
             <if test="teamRemark != null  and teamRemark != ''">and team_remark = #{teamRemark}</if>
@@ -71,13 +75,13 @@
             <if test="createBy != null  and createBy != ''">and create_by like concat('%',
                 #{createBy}, '%')
             </if>
-            <if test="beginCreateTime != null and endCreateTime != ''">and create_time between #{beginCreateTime} and
+            <if test="beginCreateTime != null and beginCreateTime != '' and endCreateTime != null and endCreateTime != ''">and create_time between #{beginCreateTime} and
                 #{endCreateTime}
             </if>
             <if test="updateBy != null  and updateBy != ''">and update_by like concat('%',
                 #{updateBy}, '%')
             </if>
-            <if test="beginUpdateTime != null and endUpdateTime != ''">and update_time between #{beginUpdateTime} and
+            <if test="beginUpdateTime != null and beginUpdateTime != '' and endUpdateTime != null and endUpdateTime != ''">and update_time between #{beginUpdateTime} and
                 #{endUpdateTime}
             </if>
         </where>
@@ -91,12 +95,17 @@
                  team_id desc
     </select>
 
-    <!-- 选项接口只读取两个文本字段；去重和分隔符拆分在服务层完成，兼容第三方导入数据。 -->
-    <select id="selectDistinctTeamVenueAndTag" resultMap="Fx67llDortmundBasicTeamResult">
-        select distinct team_venue, team_tag
+    <!-- 选项接口读取未删除球队的轻量字段；按选项聚合并保留关联球队名称由服务层完成。 -->
+    <select id="selectTeamOptionSourceRows" resultMap="Fx67llDortmundBasicTeamResult">
+        select team_name, team_venue, team_country, team_tag
         from fx67ll_dortmund_team
-        where (team_venue is not null and trim(team_venue) &lt;&gt; '')
-           or (team_tag is not null and trim(team_tag) &lt;&gt; '')
+        where del_flag = '0'
+        <if test="userId != null">and user_id = #{userId}</if>
+          and (team_name is not null and trim(team_name) &lt;&gt; '')
+        order by case when team_sort is null or team_sort = 0 then 1 else 0 end asc,
+                 case when team_sort is null or team_sort = 0 then 0 else team_sort end asc,
+                 STR_TO_DATE(create_time, "%Y-%m-%d %H:%i:%s") desc,
+                 team_id desc
     </select>
 
     <select id="selectFx67llDortmundBasicTeamByTeamId" parameterType="Long" resultMap="Fx67llDortmundBasicTeamResult">

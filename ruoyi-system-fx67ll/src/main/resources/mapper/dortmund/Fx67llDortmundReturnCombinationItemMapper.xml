@@ -21,6 +21,11 @@
         <result property="counterEvidenceRefs" column="counter_evidence_refs"/>
         <result property="itemSort" column="item_sort"/>
         <result property="matchSummary" column="match_summary"/>
+        <result property="homeTeamName" column="home_team_name"/>
+        <result property="awayTeamName" column="away_team_name"/>
+        <result property="matchTime" column="match_time"/>
+        <result property="matchResult" column="match_result"/>
+        <result property="matchVenue" column="match_venue"/>
         <result property="createBy" column="create_by"/>
         <result property="createTime" column="create_time"/>
     </resultMap>
@@ -40,8 +45,13 @@
                i.evidence_refs,
                i.counter_evidence_refs,
                i.item_sort,
+               ht.team_name as home_team_name,
+               at.team_name as away_team_name,
+               m.match_time,
+               m.match_result,
+               m.match_venue,
                concat(coalesce(ht.team_name, ''), ' vs ', coalesce(at.team_name, ''), ' ',
-                      date_format(m.match_time, '%Y-%m-%d %H:%i')) as match_summary,
+                      date_format(m.match_time, '%Y-%m-%d %H:%i:%s')) as match_summary,
                i.create_by,
                i.create_time
         from fx67ll_dortmund_return_combination_item i
@@ -68,4 +78,11 @@
          #{selectionReason}, #{weightRationale}, #{evidenceRefs}, #{counterEvidenceRefs},
          #{itemSort}, #{createBy}, #{createTime})
     </insert>
+
+    <delete id="deleteByGenerationId">
+        delete i
+        from fx67ll_dortmund_return_combination_item i
+                 join fx67ll_dortmund_return_combination c on c.combination_id = i.combination_id
+        where c.generation_id = #{generationId}
+    </delete>
 </mapper>

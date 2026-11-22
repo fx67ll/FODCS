@@ -29,6 +29,15 @@ public interface IFx67llDortmundBasicTeamService
     public Fx67llDortmundBasicTeam selectFx67llDortmundBasicTeamByTeamId(Long teamId);
 
     /**
+     * 按当前用户数据范围查询球队详情。
+     * <p>普通用户仅能读取本人球队；全部数据权限角色可读取全量球队。</p>
+     *
+     * @param teamId 球队管理主键
+     * @return 当前用户可访问的球队详情
+     */
+    public Fx67llDortmundBasicTeam selectFx67llDortmundBasicTeamDetailForCurrentUser(Long teamId);
+
+    /**
      * 查询球队管理列表
      * 
      * @param fx67llDortmundBasicTeam 球队管理
@@ -37,12 +46,13 @@ public interface IFx67llDortmundBasicTeamService
     public List<Fx67llDortmundBasicTeam> selectFx67llDortmundBasicTeamList(Fx67llDortmundBasicTeam fx67llDortmundBasicTeam);
 
     /**
-     * 通过 UserId 查询球队管理列表
+     * 按当前用户数据范围查询球队管理列表。
+     * <p>普通用户强制按本人 user_id 过滤；全部数据权限角色不强行收窄归属范围。</p>
      *
      * @param fx67llDortmundBasicTeam 球队管理
-     * @return 球队管理集合
+     * @return 当前用户可访问的球队管理集合
      */
-    public List<Fx67llDortmundBasicTeam> selectFx67llDortmundBasicTeamListByUserId(Fx67llDortmundBasicTeam fx67llDortmundBasicTeam);
+    public List<Fx67llDortmundBasicTeam> selectFx67llDortmundBasicTeamListForCurrentUser(Fx67llDortmundBasicTeam fx67llDortmundBasicTeam);
 
     /**
      * 新增球队管理

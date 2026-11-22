@@ -217,6 +217,9 @@ public class Fx67llDortmundOddsServiceImpl implements IFx67llDortmundOddsService
         }
         for (Long oddsId : oddsIds) {
             Fx67llDortmundOdds odds = checkOddsDataScope(oddsId);
+            if (YES.equals(odds.getActiveFlag())) {
+                throw new ServiceException("当前有效倍率不能直接删除，请先启用同场比赛的其他倍率！");
+            }
             if (fx67llDortmundOddsMapper.countCombinationItemsByOddsId(oddsId) > 0) {
                 throw new ServiceException("倍率记录已被回报组合引用，不能删除！");
             }
