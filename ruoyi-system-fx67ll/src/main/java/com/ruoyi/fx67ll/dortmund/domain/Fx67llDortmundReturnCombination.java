@@ -68,7 +68,7 @@ public class Fx67llDortmundReturnCombination extends BaseEntity {
     /** 最近审核时间 */
     private Date reviewTime;
 
-    /** 赛果核验状态（复用 sys_yes_no：Y 核验成功，N 核验失败，null 未核验） */
+    /** 赛果核验状态（复用 sys_yes_no：Y 已达成，N 未达成，null 未核验） */
     private String verificationStatus;
 
     /** 最近执行赛果核验的用户名 */
@@ -121,6 +121,9 @@ public class Fx67llDortmundReturnCombination extends BaseEntity {
 
     /** 列表排序方向，asc/desc（非表列） */
     private String sortOrder;
+
+    /** 仅查询未核验组合（非表列；与 adoptedFlag 组合形成工作台默认有效数据口径） */
+    private Boolean unverifiedOnly;
 
     public Long getCombinationId() {
         return combinationId;
@@ -402,6 +405,14 @@ public class Fx67llDortmundReturnCombination extends BaseEntity {
         this.sortOrder = sortOrder;
     }
 
+    public Boolean getUnverifiedOnly() {
+        return unverifiedOnly;
+    }
+
+    public void setUnverifiedOnly(Boolean unverifiedOnly) {
+        this.unverifiedOnly = unverifiedOnly;
+    }
+
     @Override
     public String toString() {
         return new ToStringBuilder(this, ToStringStyle.MULTI_LINE_STYLE)
@@ -427,6 +438,7 @@ public class Fx67llDortmundReturnCombination extends BaseEntity {
                 .append("verifyTime", getVerifyTime())
                 .append("beginReviewTime", getBeginReviewTime())
                 .append("endReviewTime", getEndReviewTime())
+                .append("unverifiedOnly", getUnverifiedOnly())
                 .append("images", getImages())
                 .append("planLinked", getPlanLinked())
                 .append("evidenceChain", getEvidenceChain())

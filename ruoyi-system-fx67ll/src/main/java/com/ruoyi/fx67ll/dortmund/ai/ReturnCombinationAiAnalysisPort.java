@@ -3,7 +3,6 @@ package com.ruoyi.fx67ll.dortmund.ai;
 import java.math.BigDecimal;
 import java.util.List;
 
-import com.ruoyi.fx67ll.dortmund.domain.Fx67llDortmundOdds;
 import com.ruoyi.fx67ll.dortmund.domain.Fx67llDortmundReturnPreferenceDimensions;
 
 /**
@@ -176,7 +175,7 @@ public interface ReturnCombinationAiAnalysisPort {
     class ReturnCombinationAiInput {
         private String generationMode;
 
-        /** 偏好编码只影响候选结构和解释，不参与金额、赔率或偏差公式。 */
+        /** 偏好编码只影响候选结构和解释，不参与金额、倍率或偏差公式。 */
         private String preferenceCode;
 
         /** 已由后端归一化的受控偏好维度；与偏好编码一起仅作为候选策略提示。 */
@@ -189,7 +188,11 @@ public interface ReturnCombinationAiAnalysisPort {
 
         private BigDecimal targetAmount;
 
-        private List<Fx67llDortmundOdds> odds;
+        /** 是否隐藏真实倍率；null 或 true 表示占位文本，false 表示真实倍率。 */
+        private Boolean hideOdds;
+
+        /** AI可见倍率视图；隐藏模式下为占位文本，关闭隐藏后为真实数值，真实值始终以冻结快照为准。 */
+        private List<ReturnCombinationAiOdds> odds;
 
         /** 本次调用的显式业务目标，供未来通用AI编排复用 */
         private List<String> businessObjectives;
@@ -254,11 +257,19 @@ public interface ReturnCombinationAiAnalysisPort {
             this.targetAmount = targetAmount;
         }
 
-        public List<Fx67llDortmundOdds> getOdds() {
+        public Boolean getHideOdds() {
+            return hideOdds;
+        }
+
+        public void setHideOdds(Boolean hideOdds) {
+            this.hideOdds = hideOdds;
+        }
+
+        public List<ReturnCombinationAiOdds> getOdds() {
             return odds;
         }
 
-        public void setOdds(List<Fx67llDortmundOdds> odds) {
+        public void setOdds(List<ReturnCombinationAiOdds> odds) {
             this.odds = odds;
         }
 

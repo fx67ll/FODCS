@@ -61,6 +61,12 @@ public class Fx67llDortmundBasicMatch extends BaseEntity {
     @Excel(name = "主队名称")
     private String homeTeamName;
 
+    /** 主队所属地区/联赛（关联球队表查询，用于前端联赛主题，不落比赛表）。 */
+    private String homeTeamCountry;
+
+    /** 主队编码（关联球队表查询，用于精确区分同一地区下的 J1/J2 球队）。 */
+    private String homeTeamCode;
+
     /**
      * 客队球队ID（外键，关联fx67ll_dortmund_team.team_id）
      */
@@ -72,6 +78,12 @@ public class Fx67llDortmundBasicMatch extends BaseEntity {
      */
     @Excel(name = "客队名称")
     private String awayTeamName;
+
+    /** 客队所属地区/联赛（关联球队表查询，用于前端联赛主题，不落比赛表）。 */
+    private String awayTeamCountry;
+
+    /** 客队编码（关联球队表查询，用于精确区分同一地区下的 J1/J2 球队）。 */
+    private String awayTeamCode;
 
     /**
      * 对阵球队名称（查询字段，主客队任一匹配）
@@ -109,9 +121,13 @@ public class Fx67llDortmundBasicMatch extends BaseEntity {
     /** 引用该比赛的已采用回报组合数（展示字段，非表列） */
     private Integer adoptedCombinationCount;
 
-    /** 比赛结果（字典码：0-主队胜，1-平局，2-客队胜，3-让球胜，4-让球平，5-让球负） */
-    @Excel(name = "比赛结果", readConverterExp = "字=典码：0-主队胜，1-平局，2-客队胜，3-让球胜，4-让球平，5-让球负")
+    /** 比赛结果（字典码：0-主队胜，1-平局，2-客队胜） */
+    @Excel(name = "比赛结果", readConverterExp = "字=典码：0-主队胜，1-平局，2-客队胜")
     private String matchResult;
+
+    /** 倍率赛果（逗号分隔的倍率类型编码：HW/DR/AW/HH/HD/HA，可多选） */
+    @Excel(name = "倍率赛果")
+    private String oddsResult;
 
     /**
      * 比赛业务备注（如轮次、特殊说明）
@@ -238,6 +254,22 @@ public class Fx67llDortmundBasicMatch extends BaseEntity {
         this.homeTeamName = homeTeamName;
     }
 
+    public String getHomeTeamCountry() {
+        return homeTeamCountry;
+    }
+
+    public void setHomeTeamCountry(String homeTeamCountry) {
+        this.homeTeamCountry = homeTeamCountry;
+    }
+
+    public String getHomeTeamCode() {
+        return homeTeamCode;
+    }
+
+    public void setHomeTeamCode(String homeTeamCode) {
+        this.homeTeamCode = homeTeamCode;
+    }
+
     public void setAwayTeamId(Long awayTeamId) {
         this.awayTeamId = awayTeamId;
     }
@@ -252,6 +284,22 @@ public class Fx67llDortmundBasicMatch extends BaseEntity {
 
     public void setAwayTeamName(String awayTeamName) {
         this.awayTeamName = awayTeamName;
+    }
+
+    public String getAwayTeamCountry() {
+        return awayTeamCountry;
+    }
+
+    public void setAwayTeamCountry(String awayTeamCountry) {
+        this.awayTeamCountry = awayTeamCountry;
+    }
+
+    public String getAwayTeamCode() {
+        return awayTeamCode;
+    }
+
+    public void setAwayTeamCode(String awayTeamCode) {
+        this.awayTeamCode = awayTeamCode;
     }
 
     public String getTeamName() {
@@ -318,6 +366,14 @@ public class Fx67llDortmundBasicMatch extends BaseEntity {
     public String getMatchResult()
     {
         return matchResult;
+    }
+
+    public void setOddsResult(String oddsResult) {
+        this.oddsResult = oddsResult;
+    }
+
+    public String getOddsResult() {
+        return oddsResult;
     }
 
     public void setMatchRemark(String matchRemark) {
@@ -434,8 +490,12 @@ public class Fx67llDortmundBasicMatch extends BaseEntity {
                 .append("seasonName", getSeasonName())
                 .append("homeTeamId", getHomeTeamId())
                 .append("homeTeamName", getHomeTeamName())
+                .append("homeTeamCountry", getHomeTeamCountry())
+                .append("homeTeamCode", getHomeTeamCode())
                 .append("awayTeamId", getAwayTeamId())
                 .append("awayTeamName", getAwayTeamName())
+                .append("awayTeamCountry", getAwayTeamCountry())
+                .append("awayTeamCode", getAwayTeamCode())
                 .append("teamName", getTeamName())
                 .append("matchTime", getMatchTime())
                 .append("matchVenue", getMatchVenue())
@@ -444,6 +504,7 @@ public class Fx67llDortmundBasicMatch extends BaseEntity {
                 .append("hasActiveOdds", getHasActiveOdds())
                 .append("adoptedCombinationCount", getAdoptedCombinationCount())
                 .append("matchResult", getMatchResult())
+                .append("oddsResult", getOddsResult())
                 .append("matchRemark", getMatchRemark())
                 .append("newSeason", getNewSeason())
                 .append("newHomeTeam", getNewHomeTeam())

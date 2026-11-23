@@ -11,8 +11,12 @@
         <result property="seasonName" column="season_name"/>
         <result property="homeTeamId" column="home_team_id"/>
         <result property="homeTeamName" column="home_team_name"/>
+        <result property="homeTeamCountry" column="home_team_country"/>
+        <result property="homeTeamCode" column="home_team_code"/>
         <result property="awayTeamId" column="away_team_id"/>
         <result property="awayTeamName" column="away_team_name"/>
+        <result property="awayTeamCountry" column="away_team_country"/>
+        <result property="awayTeamCode" column="away_team_code"/>
         <result property="matchTime" column="match_time"/>
         <result property="matchVenue" column="match_venue"/>
         <result property="matchStatus" column="match_status"/>
@@ -20,6 +24,7 @@
         <result property="hasActiveOdds" column="has_active_odds"/>
         <result property="adoptedCombinationCount" column="adopted_combination_count"/>
         <result property="matchResult" column="match_result"/>
+        <result property="oddsResult" column="odds_result"/>
         <result property="matchRemark" column="match_remark"/>
         <result property="userId" column="user_id"/>
         <result property="createBy" column="create_by"/>
@@ -36,13 +41,18 @@
                s.season_name as season_name,
                m.home_team_id,
                ht.team_name  as home_team_name,
+               ht.team_country as home_team_country,
+               ht.team_code as home_team_code,
                m.away_team_id,
                at.team_name  as away_team_name,
+               at.team_country as away_team_country,
+               at.team_code as away_team_code,
                m.match_time,
                m.match_venue,
                m.match_status,
                m.analysis_count,
                m.match_result,
+               m.odds_result,
                m.match_remark,
                m.user_id,
                m.create_by,
@@ -108,6 +118,7 @@
             </if>
             <if test="analysisCount != null ">and m.analysis_count = #{analysisCount}</if>
             <if test="matchResult != null  and matchResult != ''"> and match_result = #{matchResult}</if>
+            <if test="oddsResult != null  and oddsResult != ''"> and odds_result = #{oddsResult}</if>
             <if test="matchRemark != null  and matchRemark != ''"> and match_remark = #{matchRemark}</if>
             <if test="delFlag != null  and delFlag != ''">and m.del_flag = #{delFlag}</if>
             <if test="userId != null ">and m.user_id = #{userId}</if>
@@ -155,6 +166,7 @@
             <if test="matchStatus != null">match_status,</if>
             <if test="analysisCount != null">analysis_count,</if>
             <if test="matchResult != null">match_result,</if>
+            <if test="oddsResult != null">odds_result,</if>
             <if test="matchRemark != null">match_remark,</if>
             <if test="createBy != null">create_by,</if>
             <if test="createTime != null">create_time,</if>
@@ -173,6 +185,7 @@
             <if test="matchStatus != null">#{matchStatus},</if>
             <if test="analysisCount != null">#{analysisCount},</if>
             <if test="matchResult != null">#{matchResult},</if>
+            <if test="oddsResult != null">#{oddsResult},</if>
             <if test="matchRemark != null">#{matchRemark},</if>
             <if test="createBy != null">#{createBy},</if>
             <if test="createTime != null">#{createTime},</if>
@@ -190,11 +203,12 @@
             <if test="homeTeamId != null">home_team_id = #{homeTeamId},</if>
             <if test="awayTeamId != null">away_team_id = #{awayTeamId},</if>
             <if test="matchTime != null">match_time = #{matchTime},</if>
-            <!-- 主场、赛果和备注均为可清空字段；编辑接口提交完整表单，空值必须显式落库。 -->
+            <!-- 主场、常规赛果、倍率赛果和备注均为可清空字段；编辑接口提交完整表单，空值必须显式落库。 -->
             match_venue = #{matchVenue},
             <if test="matchStatus != null">match_status = #{matchStatus},</if>
             <if test="analysisCount != null">analysis_count = #{analysisCount},</if>
             match_result = #{matchResult},
+            odds_result = #{oddsResult},
             match_remark = #{matchRemark},
             <if test="createBy != null">create_by = #{createBy},</if>
             <if test="createTime != null">create_time = #{createTime},</if>

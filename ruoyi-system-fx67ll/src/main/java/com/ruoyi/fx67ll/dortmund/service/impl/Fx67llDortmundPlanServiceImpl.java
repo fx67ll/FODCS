@@ -47,8 +47,8 @@ import com.ruoyi.fx67ll.dortmund.support.DortmundFieldValidator;
  * 方案计划Service业务层处理
  * <p>
  * 第1.5阶段方案以“已采用回报组合”为材料来源：自动预计本金取各组合所属生成批次基础金额之和，
- * 自动预计回报取组合预计回报之和，自动预计倍率按自动预计回报除以自动预计本金派生。
- * 预计本金、预计倍率与预计回报均可手工修正，留空时回退到服务端自动值。
+ * 自动预计回报取组合预计回报之和。
+ * 预计本金与预计回报可手工修正，留空时回退到服务端自动值；预计倍率只接受手工输入。
  * 实际本金、实际倍率与实际回报只接受用户手工输入且为必填项，服务端不会按组合派生或覆盖。
  * 组合关系变化会清空三项手工预计值并强制摘要失效；关系替换、摘要刷新和删除均在同一事务内完成。
  *
@@ -317,7 +317,7 @@ public class Fx67llDortmundPlanServiceImpl implements IFx67llDortmundPlanService
     }
 
     /**
-     * 新增第1.5阶段方案：组合集合是自动预计值的事实源，自动预计本金、预计回报和预计倍率写回计划，
+     * 新增第1.5阶段方案：组合集合是自动预计值的事实源，自动预计本金和预计回报写回计划，
      * 三项实际字段保留请求中的手工值，比赛关系由组合明细派生。
      */
     private int insertPhase15Plan(Fx67llDortmundPlan plan) {
@@ -330,10 +330,8 @@ public class Fx67llDortmundPlanServiceImpl implements IFx67llDortmundPlanService
         plan.setDelFlag("0");
         // 自动预计值只由组合统计写入；实际本金、实际回报与实际倍率始终采用用户手工输入值。
         plan.setCalculatedExpectedPrincipal(stats.expectedPrincipal);
-        plan.setCalculatedExpectedOdds(stats.expectedRate);
         plan.setCalculatedExpectedReturn(stats.expectedReturn);
         validatePlanAmount(plan.getCalculatedExpectedPrincipal(), "方案自动预计本金");
-        validatePlanRate(plan.getCalculatedExpectedOdds(), "方案自动预计倍率");
         validatePlanAmount(plan.getCalculatedExpectedReturn(), "方案自动预计回报");
         // 新方案还没有摘要正文，标记为Y等待用户刷新。
         plan.setSummaryUpdateFlag("Y");
@@ -368,10 +366,8 @@ public class Fx67llDortmundPlanServiceImpl implements IFx67llDortmundPlanService
         }
         // 自动预计值只由组合统计写入；实际本金、实际回报与实际倍率始终保存用户手工输入值。
         plan.setCalculatedExpectedPrincipal(stats.expectedPrincipal);
-        plan.setCalculatedExpectedOdds(stats.expectedRate);
         plan.setCalculatedExpectedReturn(stats.expectedReturn);
         validatePlanAmount(plan.getCalculatedExpectedPrincipal(), "方案自动预计本金");
-        validatePlanRate(plan.getCalculatedExpectedOdds(), "方案自动预计倍率");
         validatePlanAmount(plan.getCalculatedExpectedReturn(), "方案自动预计回报");
         // 只有摘要正文仍与材料字段一致时才允许保留N，否则强制Y。
         plan.setSummaryUpdateFlag(resolveSummaryFlag(plan, oldPlan, oldCombinationIds));
@@ -388,7 +384,6 @@ public class Fx67llDortmundPlanServiceImpl implements IFx67llDortmundPlanService
      * 汇总方案关联组合的派生指标。
      * <p>
      * 自动预计本金=各组合所属生成批次基础金额之和；自动预计回报=全部组合预计回报之和；
-     * 自动预计倍率=自动预计回报/自动预计本金，保留配置的小数位。
      * 组合按主键升序加行锁，避免并发关联时死锁；只允许当前用户可见、已采用且未被其他计划引用的组合。
      */
     private PlanCombinationStats collectCombinationStats(List<Long> combinationIds, Long planId) {
@@ -440,12 +435,6 @@ public class Fx67llDortmundPlanServiceImpl implements IFx67llDortmundPlanService
                 DortmundModuleConfig.Numeric.PLAN_AMOUNT_FRACTION_DIGITS, RoundingMode.HALF_UP);
         stats.expectedReturn = totalReturn.setScale(
                 DortmundModuleConfig.Numeric.PLAN_AMOUNT_FRACTION_DIGITS, RoundingMode.HALF_UP);
-        if (totalInput.signum() > 0) {
-            stats.expectedRate = totalReturn.divide(
-                    totalInput,
-                    DortmundModuleConfig.Numeric.CALCULATED_RATE_FRACTION_DIGITS,
-                    RoundingMode.HALF_UP);
-        }
         return stats;
     }
 
@@ -522,11 +511,10 @@ public class Fx67llDortmundPlanServiceImpl implements IFx67llDortmundPlanService
         plan.setCombinationIds(combinationIds);
         plan.setCombinationVerificationStatus(resolvePlanVerificationStatus(combinationIds,
                 loadCombinationVerificationStatuses(combinationIds)));
-        // 手工预计本金/倍率/回报非空表示用户明确覆盖，空值才回退到服务端派生值。
+        // 预计倍率由用户手工填写；手工预计本金/回报为空时回退到组合派生值。
         plan.setEffectiveExpectedPrincipal(plan.getPlanExpectedPrincipal() == null
                 ? plan.getCalculatedExpectedPrincipal() : plan.getPlanExpectedPrincipal());
-        plan.setEffectiveExpectedOdds(plan.getPlanExpectedOdds() == null
-                ? plan.getCalculatedExpectedOdds() : plan.getPlanExpectedOdds());
+        plan.setEffectiveExpectedOdds(plan.getPlanExpectedOdds());
         plan.setEffectiveExpectedReturn(plan.getPlanExpectedReturn() == null
                 ? plan.getCalculatedExpectedReturn() : plan.getPlanExpectedReturn());
     }
@@ -656,8 +644,6 @@ public class Fx67llDortmundPlanServiceImpl implements IFx67llDortmundPlanService
         private BigDecimal expectedPrincipal;
         /** 关联组合预计回报之和，即自动预计回报。 */
         private BigDecimal expectedReturn;
-        /** 自动预计回报除以自动预计本金得到的自动预计倍率。 */
-        private BigDecimal expectedRate;
         private final LinkedHashSet<Long> matchIds = new LinkedHashSet<>();
     }
 
@@ -867,11 +853,10 @@ public class Fx67llDortmundPlanServiceImpl implements IFx67llDortmundPlanService
             plan.setCombinationIds(combinationIds == null ? new ArrayList<>() : combinationIds);
             plan.setCombinationVerificationStatus(resolvePlanVerificationStatus(combinationIds,
                     verificationStatusByCombination));
-            // 手工预计本金/倍率/回报非空表示用户明确覆盖，空值才回退到服务端派生值。
+            // 预计倍率由用户手工填写；手工预计本金/回报为空时回退到组合派生值。
             plan.setEffectiveExpectedPrincipal(plan.getPlanExpectedPrincipal() == null
                     ? plan.getCalculatedExpectedPrincipal() : plan.getPlanExpectedPrincipal());
-            plan.setEffectiveExpectedOdds(plan.getPlanExpectedOdds() == null
-                    ? plan.getCalculatedExpectedOdds() : plan.getPlanExpectedOdds());
+            plan.setEffectiveExpectedOdds(plan.getPlanExpectedOdds());
             plan.setEffectiveExpectedReturn(plan.getPlanExpectedReturn() == null
                     ? plan.getCalculatedExpectedReturn() : plan.getPlanExpectedReturn());
         }

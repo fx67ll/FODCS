@@ -15,8 +15,7 @@
         <result property="planActualPrincipal" column="plan_actual_principal"/>
         <result property="planRemark" column="plan_remark"/>
         <result property="calculatedExpectedPrincipal" column="calculated_expected_principal"/>
-        <result property="calculatedExpectedOdds" column="calculated_expected_odds"/>
-        <result property="calculatedExpectedReturn" column="calculated_expected_return"/>
+       <result property="calculatedExpectedReturn" column="calculated_expected_return"/>
         <result property="summaryContent" column="summary_content"/>
         <result property="summaryUpdateFlag" column="summary_update_flag"/>
         <result property="summaryUpdateTime" column="summary_update_time"/>
@@ -39,8 +38,7 @@
                plan_actual_principal,
                plan_remark,
                calculated_expected_principal,
-               calculated_expected_odds,
-               calculated_expected_return,
+              calculated_expected_return,
                summary_content,
                summary_update_flag,
                summary_update_time,
@@ -106,8 +104,7 @@
             <if test="planActualPrincipal != null">plan_actual_principal,</if>
             <if test="planRemark != null">plan_remark,</if>
             <if test="calculatedExpectedPrincipal != null">calculated_expected_principal,</if>
-            <if test="calculatedExpectedOdds != null">calculated_expected_odds,</if>
-            <if test="calculatedExpectedReturn != null">calculated_expected_return,</if>
+           <if test="calculatedExpectedReturn != null">calculated_expected_return,</if>
             <if test="summaryContent != null">summary_content,</if>
             <if test="summaryUpdateFlag != null">summary_update_flag,</if>
             <if test="summaryUpdateTime != null">summary_update_time,</if>
@@ -128,8 +125,7 @@
             <if test="planActualPrincipal != null">#{planActualPrincipal},</if>
             <if test="planRemark != null">#{planRemark},</if>
             <if test="calculatedExpectedPrincipal != null">#{calculatedExpectedPrincipal},</if>
-            <if test="calculatedExpectedOdds != null">#{calculatedExpectedOdds},</if>
-            <if test="calculatedExpectedReturn != null">#{calculatedExpectedReturn},</if>
+           <if test="calculatedExpectedReturn != null">#{calculatedExpectedReturn},</if>
             <if test="summaryContent != null">#{summaryContent},</if>
             <if test="summaryUpdateFlag != null">#{summaryUpdateFlag},</if>
             <if test="summaryUpdateTime != null">#{summaryUpdateTime},</if>
@@ -154,8 +150,7 @@
             <if test="planActualPrincipal != null">plan_actual_principal = #{planActualPrincipal},</if>
             <if test="planRemark != null">plan_remark = #{planRemark},</if>
             <if test="calculatedExpectedPrincipal != null">calculated_expected_principal = #{calculatedExpectedPrincipal},</if>
-            <if test="calculatedExpectedOdds != null">calculated_expected_odds = #{calculatedExpectedOdds},</if>
-            <if test="calculatedExpectedReturn != null">calculated_expected_return = #{calculatedExpectedReturn},</if>
+           <if test="calculatedExpectedReturn != null">calculated_expected_return = #{calculatedExpectedReturn},</if>
             <if test="summaryContent != null">summary_content = #{summaryContent},</if>
             <if test="summaryUpdateFlag != null">summary_update_flag = #{summaryUpdateFlag},</if>
             <if test="summaryUpdateTime != null">summary_update_time = #{summaryUpdateTime},</if>
@@ -177,8 +172,7 @@
             plan_actual_principal = #{planActualPrincipal},
             plan_remark = #{planRemark},
             calculated_expected_principal = #{calculatedExpectedPrincipal},
-            calculated_expected_odds = #{calculatedExpectedOdds},
-            calculated_expected_return = #{calculatedExpectedReturn},
+           calculated_expected_return = #{calculatedExpectedReturn},
             summary_update_flag = #{summaryUpdateFlag},
             update_by = #{updateBy},
             update_time = #{updateTime}

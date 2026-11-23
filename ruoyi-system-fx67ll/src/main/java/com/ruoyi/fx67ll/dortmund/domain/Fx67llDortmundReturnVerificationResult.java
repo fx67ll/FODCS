@@ -19,10 +19,10 @@ public class Fx67llDortmundReturnVerificationResult {
     /** 本次请求涉及的组合数量 */
     private int requestedCount;
 
-    /** 核验成功数量 */
+    /** 核验为已达成的数量 */
     private int successCount;
 
-    /** 核验失败数量 */
+    /** 核验为未达成的数量 */
     private int failedCount;
 
     /** 因组合内比赛缺少赛果而保持未核验的数量 */

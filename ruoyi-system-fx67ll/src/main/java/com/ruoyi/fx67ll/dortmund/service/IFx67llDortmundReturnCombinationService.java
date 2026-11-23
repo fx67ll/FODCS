@@ -130,7 +130,7 @@ public interface IFx67llDortmundReturnCombinationService {
     public int batchAdopt(List<Long> combinationIds);
 
     /**
-     * 按人工登记的比赛结果核验一条已采用回报组合。
+     * 按人工登记的倍率赛果核验一条已采用回报组合。
      * <p>任一比赛缺少赛果时状态保持 null；全部一致为 Y；存在不一致为 N。</p>
      *
      * @param combinationId 回报组合主键

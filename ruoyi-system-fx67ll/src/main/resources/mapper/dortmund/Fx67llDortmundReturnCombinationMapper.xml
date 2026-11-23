@@ -107,6 +107,7 @@
             <if test="generationMode != null and generationMode != ''">and g.generation_mode = #{generationMode}</if>
             <if test="generationStatus != null and generationStatus != ''">and g.generation_status = #{generationStatus}</if>
             <if test="adoptedFlag != null and adoptedFlag != ''">and c.adopted_flag = #{adoptedFlag}</if>
+            <if test="unverifiedOnly != null and unverifiedOnly">and c.verification_status is null</if>
             <if test="userId != null">and c.user_id = #{userId}</if>
             <if test="matchId != null">
                 and exists (
@@ -203,7 +204,7 @@
         where combination_id = #{combinationId}
     </update>
 
-    <!-- 赛果或让球赛果被人工修正后，旧核验结论立即失效，必须由用户重新核验。 -->
+    <!-- 常规赛果或倍率赛果被人工修正后，旧核验结论立即失效，必须由用户重新核验。 -->
     <update id="resetVerificationByMatchId">
         update fx67ll_dortmund_return_combination c
             join fx67ll_dortmund_return_combination_item i on i.combination_id = c.combination_id

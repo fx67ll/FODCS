@@ -88,7 +88,7 @@ public class Fx67llDortmundOddsServiceImpl implements IFx67llDortmundOddsService
         if (matchId == null) {
             throw new ServiceException("比赛主键不能为空！");
         }
-        // 有效赔率必须唯一：0条无法生成，多条则无法确定冻结哪一条。
+        // 有效倍率必须唯一：0条无法生成，多条则无法确定冻结哪一条。
         int activeCount = fx67llDortmundOddsMapper.countActiveOddsByMatchId(matchId);
         if (activeCount == 0) {
             throw new ServiceException("该比赛没有有效倍率记录，请先在倍率管理中启用一条有效倍率！");
@@ -165,14 +165,14 @@ public class Fx67llDortmundOddsServiceImpl implements IFx67llDortmundOddsService
             throw new ServiceException("倍率记录不能为空！");
         }
         Fx67llDortmundOdds oldOdds = checkOddsDataScope(fx67llDortmundOdds.getOddsId());
-        // 有效记录不可原地修改：生成链路可能已引用其赔率快照，只能新增版本后切换。
+        // 有效记录不可原地修改：生成链路可能已引用其倍率快照，只能新增版本后切换。
         if (YES.equals(oldOdds.getActiveFlag())) {
             throw new ServiceException("当前有效倍率记录已冻结，请新增倍率版本！");
         }
         if (fx67llDortmundOddsMapper.countCombinationItemsByOddsId(oldOdds.getOddsId()) > 0) {
             throw new ServiceException("倍率记录已被回报组合引用，不能修改！");
         }
-        // 比赛归属、编码和有效状态以原记录为准，客户端只能修改赔率内容字段。
+        // 比赛归属、编码和有效状态以原记录为准，客户端只能修改倍率内容字段。
         fx67llDortmundOdds.setMatchId(oldOdds.getMatchId());
         fx67llDortmundOdds.setOddsCode(oldOdds.getOddsCode());
         fx67llDortmundOdds.setActiveFlag(oldOdds.getActiveFlag());

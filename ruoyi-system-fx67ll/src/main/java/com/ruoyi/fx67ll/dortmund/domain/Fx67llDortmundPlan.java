@@ -83,12 +83,6 @@ public class Fx67llDortmundPlan extends BaseEntity {
     private BigDecimal calculatedExpectedPrincipal;
 
     /**
-     * 按关联组合自动计算的预计倍率
-     */
-    @Excel(name = "自动预计倍率")
-    private BigDecimal calculatedExpectedOdds;
-
-    /**
      * 按关联组合自动计算的预计回报
      */
     @Excel(name = "自动预计回报")
@@ -283,14 +277,6 @@ public class Fx67llDortmundPlan extends BaseEntity {
         this.calculatedExpectedPrincipal = calculatedExpectedPrincipal;
     }
 
-    public BigDecimal getCalculatedExpectedOdds() {
-        return calculatedExpectedOdds;
-    }
-
-    public void setCalculatedExpectedOdds(BigDecimal calculatedExpectedOdds) {
-        this.calculatedExpectedOdds = calculatedExpectedOdds;
-    }
-
     public BigDecimal getCalculatedExpectedReturn() {
         return calculatedExpectedReturn;
     }
@@ -465,7 +451,6 @@ public class Fx67llDortmundPlan extends BaseEntity {
                 .append("combinationIds", getCombinationIds())
                 .append("combinationVerificationStatus", getCombinationVerificationStatus())
                 .append("calculatedExpectedPrincipal", getCalculatedExpectedPrincipal())
-                .append("calculatedExpectedOdds", getCalculatedExpectedOdds())
                 .append("calculatedExpectedReturn", getCalculatedExpectedReturn())
                 .append("summaryContent", getSummaryContent())
                 .append("summaryUpdateFlag", getSummaryUpdateFlag())

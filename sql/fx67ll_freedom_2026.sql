@@ -106,7 +106,8 @@ CREATE TABLE `fx67ll_dortmund_match` (
   `match_venue` varchar(233) DEFAULT '' COMMENT '球队主场名称（随主队主场维护，用于比赛场地展示与筛选）',
   `match_status` char(1) NOT NULL DEFAULT '0' COMMENT '比赛状态（字典码：0-正常，1-关闭，沿用sys_notice_status，表示资料状态；默认0）',
   `analysis_count` int(11) unsigned NOT NULL DEFAULT 0 COMMENT 'AI分析次数（统计该比赛已生成的分析报告数量，只由服务端维护）',
-  `match_result` char(1) DEFAULT NULL COMMENT '比赛结果（字典码：0-主队胜，1-平局，2-客队胜，3-让球胜，4-让球平，5-让球负；未产生赛果时为空）',
+  `match_result` char(1) DEFAULT NULL COMMENT '比赛结果（字典码：0-主队胜，1-平局，2-客队胜；未产生赛果时为空）',
+  `odds_result` varchar(23) DEFAULT NULL COMMENT '倍率赛果（逗号分隔的倍率类型编码：HW-主胜、DR-平、AW-客胜、HH-让分主胜、HD-让分平、HA-让分客胜；可多选）',
   `match_remark` varchar(1023) DEFAULT '' COMMENT '比赛业务备注（如轮次、特殊说明）',
   `user_id` bigint(20) NOT NULL COMMENT '用户ID',
   `create_by` varchar(64) DEFAULT '' COMMENT '记录创建者用户名',
@@ -318,7 +319,7 @@ CREATE TABLE `fx67ll_dortmund_return_combination` (
   `adopted_flag` char(1) NOT NULL DEFAULT 'N' COMMENT '是否采用（复用sys_yes_no）',
   `review_by` varchar(64) DEFAULT NULL COMMENT '最近决定采用状态的用户名',
   `review_time` datetime DEFAULT NULL COMMENT '最近决定采用状态的时间',
-  `verification_status` char(1) DEFAULT NULL COMMENT '赛果核验状态（复用sys_yes_no：Y-核验成功，N-核验失败，空-未核验）',
+  `verification_status` char(1) DEFAULT NULL COMMENT '赛果核验状态（复用sys_yes_no：Y-已达成，N-未达成，空-未核验）',
   `verify_by` varchar(64) DEFAULT NULL COMMENT '最近执行赛果核验的用户名',
   `verify_time` datetime DEFAULT NULL COMMENT '最近执行赛果核验的时间',
   `combination_remark` mediumtext COMMENT '完整业务分析内容及组合处理备注（不含AI治理元数据）',
@@ -402,13 +403,12 @@ CREATE TABLE `fx67ll_dortmund_plan` (
   `plan_id` bigint(20) NOT NULL AUTO_INCREMENT COMMENT '方案计划唯一标识（主键）',
   `plan_content` varchar(1023) NOT NULL COMMENT '正文',
   `plan_expected_principal` decimal(24,2) DEFAULT NULL COMMENT '方案预计本金（手工修正值；空表示使用关联组合自动汇总的预计本金，最多22位整数与2位小数）',
-  `plan_expected_odds` decimal(24,6) DEFAULT NULL COMMENT '方案预计倍率（手工覆盖值；空表示使用自动预计倍率，最多18位整数与6位小数）',
+  `plan_expected_odds` decimal(24,6) DEFAULT NULL COMMENT '方案预计倍率（仅手工填写或由关联组合带出后修正；空表示尚未填写，最多18位整数与6位小数）',
   `plan_expected_return` decimal(24,2) DEFAULT NULL COMMENT '方案预计回报（手工覆盖值；空表示使用自动预计回报，最多22位整数与2位小数）',
   `plan_actual_principal` decimal(24,2) NOT NULL COMMENT '方案实际本金（仅手工填写，必填，最多22位整数与2位小数）',
   `plan_actual_return` decimal(24,2) NOT NULL COMMENT '方案实际回报（仅手工填写，必填，允许为0，最多22位整数与2位小数）',
   `plan_actual_odds` decimal(24,6) NOT NULL COMMENT '方案实际倍率（仅手工填写，必填，允许为0，最多18位整数与6位小数）',
   `calculated_expected_principal` decimal(24,2) DEFAULT NULL COMMENT '按关联组合自动计算的预计本金，写入前校验上限',
-  `calculated_expected_odds` decimal(24,6) DEFAULT NULL COMMENT '按关联组合自动计算的预计倍率，写入前校验上限',
   `calculated_expected_return` decimal(24,2) DEFAULT NULL COMMENT '按关联组合自动计算的预计回报，写入前校验上限',
   `summary_content` mediumtext COMMENT '最近一次成功保存的方案计划摘要正文',
   `summary_update_flag` char(1) NOT NULL DEFAULT 'Y' COMMENT '摘要更新标记（Y-需要刷新，N-与当前数据一致）',
@@ -597,9 +597,6 @@ insert into sys_dict_type values(24, 'AI分析统一状态',       'fx67ll_ai_an
 insert into sys_dict_data values(56, 1,  '胜',       '0',       'fx67ll_match_result',         '',   '',     'N', '0', 'admin', sysdate(), '', null, '胜');
 insert into sys_dict_data values(57, 2,  '平',       '1',       'fx67ll_match_result',         '',   '',     'N', '0', 'admin', sysdate(), '', null, '平');
 insert into sys_dict_data values(58, 3,  '负',       '2',       'fx67ll_match_result',         '',   '',     'N', '0', 'admin', sysdate(), '', null, '负');
-insert into sys_dict_data values(78, 4,  '让球胜',   '3',       'fx67ll_match_result',         '',   '',     'N', '0', 'admin', sysdate(), '', null, '让球胜');
-insert into sys_dict_data values(79, 5,  '让球平',   '4',       'fx67ll_match_result',         '',   '',     'N', '0', 'admin', sysdate(), '', null, '让球平');
-insert into sys_dict_data values(80, 6,  '让球负',   '5',       'fx67ll_match_result',         '',   '',     'N', '0', 'admin', sysdate(), '', null, '让球负');
 
 -- 比赛/赛季等通用管理枚举项插入值
 insert into sys_dict_data values(59, 1,  '进行中',   '0',       'fx67ll_dortmund_status',         '',   '',     'N', '0', 'admin', sysdate(), '', null, '进行中');
@@ -643,5 +640,4 @@ INSERT INTO `fx67ll_dortmund_extra` (`extra_id`,`extra_money`,`is_win`,`win_mone
 (4,'-4285','N','-970.00','0','500000','2026年Q3投资失败记录','0',1,'fx67ll','2026-10-19 14:37:49','fx67ll','2026-10-20 16:26:31','0'),
 (5,'-4515','N','-230.00','0','500000','不做好记录就永远都是凭感觉┐(´-｀)┌','0',1,'fx67ll','2026-10-25 01:47:44','fx67ll','2026-10-27 10:50:17','0'),
 (6,'-4741','N','-226.00','0','500000','后续不再主观判断，全部改为AI理性分析方式_(:ι」∠)_','0',1,'fx67ll','2026-11-20 00:00:00','fx67ll','2026-11-20 00:00:00','0');
-
 

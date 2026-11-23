@@ -182,6 +182,7 @@ public class DeepSeekReturnCombinationAnalyzer implements ReturnCombinationAiAna
                         + DortmundModuleConfig.Retrieval.MAX_QUERIES
                         + " queries total, at most one per match, each <=260 Chinese characters.",
                 "matchId must come from input.odds. purpose is a short factor category such as INJURY, LINEUP, FORM, SCHEDULE, MOTIVATION, VENUE or WEATHER.",
+                "When input.hideOdds is true or absent, every non-null odds field is the literal placeholder Do not be affected by actual odds data. Treat it only as proof that the selection exists; never infer odds level, probability, value or amount. When false, real odds are market context only and must not alter frozen selections or calculations.",
                 "Queries must be concrete, time-bounded and team-specific when appropriate. Do not return URLs, search results, candidates, odds or calculated amounts.",
                 "dataAsOf is the frozen business snapshot time. Prefer current, near-kickoff evidence and do not treat stale information as current fact.",
                 "recencyDays must be 1 to 365 when present. locale must be a short BCP-47 value such as zh-CN or en-US. region is a short optional region label.",
@@ -205,6 +206,7 @@ public class DeepSeekReturnCombinationAnalyzer implements ReturnCombinationAiAna
                         + DortmundModuleConfig.Return.MAX_COMBINATION_MATCHES + " unique matches.",
                 "selectionType is HW, DR, AW, HH, HD or HA. matchId and selectionType must come from input.odds. Never invent matches, teams, tags, info points, evidence, URLs or facts.",
                 "The input context, especially teamTags, is incomplete user-maintained context rather than a complete team dossier. Frozen matches, odds, allowable selections, inputAmount and targetAmount are immutable; external or retrieved facts may only affect reasoning, weights, confidence and risk notes.",
+                "When input.hideOdds is true or absent, every non-null odds field is the literal placeholder Do not be affected by actual odds data. Treat it only as selection availability and never infer odds level, probability or value from it. When input.hideOdds is false, real odds are optional market context only; never calculate or return combined odds, return, deviation or any amount.",
                 "Each evidence factor: {factorCode,matchId,factorType,sourceType,sourceRef,observation,impact,conflictGroup,weightImpact,confidence}.",
                 "Do not provide sourceTier or freshnessClass for evidence factors; the backend derives them from frozen evidence and ignores model-supplied values.",
                 "sourceType must be SUPPLIED, RETRIEVAL or MANUAL_WEIGHT. sourceRef must exactly equal an evidenceCode from evidenceCatalog or retrievedEvidence; never use a URL as sourceRef.",

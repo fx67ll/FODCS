@@ -69,10 +69,10 @@ public class Fx67llDortmundReturnCombinationExportResponse {
 
     private String toVerificationStatusLabel(String status) {
         if ("Y".equals(status)) {
-            return "核验成功";
+            return "已达成";
         }
         if ("N".equals(status)) {
-            return "核验失败";
+            return "未达成";
         }
         return "未核验";
     }

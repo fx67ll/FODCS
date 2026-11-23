@@ -25,6 +25,7 @@
         <result property="awayTeamName" column="away_team_name"/>
         <result property="matchTime" column="match_time"/>
         <result property="matchResult" column="match_result"/>
+        <result property="oddsResult" column="odds_result"/>
         <result property="matchVenue" column="match_venue"/>
         <result property="createBy" column="create_by"/>
         <result property="createTime" column="create_time"/>
@@ -49,6 +50,7 @@
                at.team_name as away_team_name,
                m.match_time,
                m.match_result,
+               m.odds_result,
                m.match_venue,
                concat(coalesce(ht.team_name, ''), ' vs ', coalesce(at.team_name, ''), ' ',
                       date_format(m.match_time, '%Y-%m-%d %H:%i:%s')) as match_summary,

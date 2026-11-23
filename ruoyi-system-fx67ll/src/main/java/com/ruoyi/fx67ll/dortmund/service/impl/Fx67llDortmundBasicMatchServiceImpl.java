@@ -1,8 +1,11 @@
 package com.ruoyi.fx67ll.dortmund.service.impl;
 
 import java.math.BigDecimal;
+import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Locale;
 import java.util.Objects;
+import java.util.Set;
 
 import com.ruoyi.common.exception.ServiceException;
 import com.ruoyi.common.utils.DateUtils;
@@ -35,7 +38,7 @@ import org.springframework.transaction.annotation.Transactional;
 /**
  * 比赛记录Service业务层处理
  * <p>
- * 比赛是赛季、主客队、信息点和赔率的聚合根。新增可在同一事务内创建赛季/球队/首条有效赔率/信息点；
+ * 比赛是赛季、主客队、信息点和倍率的聚合根。新增可在同一事务内创建赛季/球队/首条有效倍率/信息点；
  * 修改禁止改变比赛编码或嵌套新建，赛果变化会使关联方案摘要失效。
  *
  * @author ruoyi
@@ -196,7 +199,9 @@ public class Fx67llDortmundBasicMatchServiceImpl implements IFx67llDortmundBasic
             fx67llDortmundBasicMatch.setMatchCode(matchCode.trim());
         }
         checkMatchFields(fx67llDortmundBasicMatch);
-        boolean matchResultChanged = !Objects.equals(oldMatch.getMatchResult(), fx67llDortmundBasicMatch.getMatchResult());
+        // 常规赛果和倍率赛果都属于赛果事实；任一变化都需要失效摘要与历史核验结论。
+        boolean matchResultChanged = !Objects.equals(oldMatch.getMatchResult(), fx67llDortmundBasicMatch.getMatchResult())
+                || !Objects.equals(oldMatch.getOddsResult(), fx67llDortmundBasicMatch.getOddsResult());
         fx67llDortmundBasicMatch.setAnalysisCount(null);
         // 归属与创建审计只允许由服务端维护，防止客户端通过修改请求转移数据或篡改创建信息。
         fx67llDortmundBasicMatch.setUserId(oldMatch.getUserId());
@@ -354,15 +359,45 @@ public class Fx67llDortmundBasicMatchServiceImpl implements IFx67llDortmundBasic
                 fx67llDortmundBasicMatch.getMatchVenue(), "比赛场地", DortmundModuleConfig.Field.MATCH_VENUE));
         fx67llDortmundBasicMatch.setMatchStatus(DortmundFieldValidator.validateEnum(
                 fx67llDortmundBasicMatch.getMatchStatus(), "比赛状态", true, "0", "1"));
-        // 0/1/2 为常规胜平负，3/4/5 为让球胜平负；让球值不写比赛表，由倍率记录保存。
+        // 比赛结果只保留常规胜平负；让球等倍率命中结果写入独立的 odds_result 字段。
         fx67llDortmundBasicMatch.setMatchResult(DortmundFieldValidator.validateEnum(
                 fx67llDortmundBasicMatch.getMatchResult(), "比赛结果", false,
-                "0", "1", "2", "3", "4", "5"));
+                "0", "1", "2"));
+        fx67llDortmundBasicMatch.setOddsResult(normalizeOddsResult(fx67llDortmundBasicMatch.getOddsResult()));
         fx67llDortmundBasicMatch.setMatchRemark(DortmundFieldValidator.optionalText(
                 fx67llDortmundBasicMatch.getMatchRemark(), "比赛备注", DortmundModuleConfig.Field.MATCH_REMARK));
         if (fx67llDortmundBasicMatch.getMatchTime() == null) {
             throw new ServiceException("比赛开球时间不能为空！");
         }
+    }
+
+    /**
+     * 标准化倍率赛果。
+     * <p>前端多选后以逗号串提交；服务端兼容中文逗号、大小写和重复值，并按固定类型集合校验，
+     * 避免非法编码进入核验链路。没有有效令牌时按未登记处理。</p>
+     *
+     * @param value 原始倍率赛果文本
+     * @return 标准英文逗号串或 null
+     */
+    private String normalizeOddsResult(String value) {
+        String normalized = DortmundFieldValidator.optionalText(
+                value, "倍率赛果", DortmundModuleConfig.Field.MATCH_ODDS_RESULT);
+        if (normalized == null) {
+            return null;
+        }
+        Set<String> tokens = new LinkedHashSet<>();
+        for (String rawToken : normalized.split(DortmundModuleConfig.Match.ODDS_RESULT_SPLIT_REGEX)) {
+            String token = rawToken.trim().toUpperCase(Locale.ROOT);
+            if (token.isEmpty()) {
+                continue;
+            }
+            if (!DortmundModuleConfig.Match.ODDS_RESULT_TYPES.contains(token)) {
+                throw new ServiceException("倍率赛果取值不正确，允许值为：HW/DR/AW/HH/HD/HA！");
+            }
+            tokens.add(token);
+        }
+        return tokens.isEmpty() ? null
+                : String.join(DortmundModuleConfig.Match.ODDS_RESULT_SEPARATOR, tokens);
     }
 
     /**

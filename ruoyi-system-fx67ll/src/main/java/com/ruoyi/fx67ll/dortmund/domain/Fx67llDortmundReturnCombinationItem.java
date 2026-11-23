@@ -77,8 +77,11 @@ public class Fx67llDortmundReturnCombinationItem extends BaseEntity {
     @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
     private Date matchTime;
 
-    /** 人工登记的比赛结果（非表字段，由组合明细联表补齐，用于赛果核验） */
+    /** 人工登记的比赛结果（非表字段，由组合明细联表补齐，用于结果页展示；核验使用 oddsResult） */
     private String matchResult;
+
+    /** 人工登记的倍率赛果（非表字段，逗号分隔；回报组合核验只读取该字段） */
+    private String oddsResult;
 
     /** 球队主场（非表字段，由组合明细联表补齐） */
     private String matchVenue;
@@ -241,6 +244,14 @@ public class Fx67llDortmundReturnCombinationItem extends BaseEntity {
         this.matchResult = matchResult;
     }
 
+    public String getOddsResult() {
+        return oddsResult;
+    }
+
+    public void setOddsResult(String oddsResult) {
+        this.oddsResult = oddsResult;
+    }
+
     public String getMatchVenue() {
         return matchVenue;
     }
@@ -271,6 +282,7 @@ public class Fx67llDortmundReturnCombinationItem extends BaseEntity {
                 .append("awayTeamName", getAwayTeamName())
                 .append("matchTime", getMatchTime())
                 .append("matchResult", getMatchResult())
+                .append("oddsResult", getOddsResult())
                 .append("matchVenue", getMatchVenue())
                 .append("createBy", getCreateBy())
                 .append("createTime", getCreateTime())
