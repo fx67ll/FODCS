@@ -1,7 +1,7 @@
 -- =====================================================
 -- 球队管理表 批量导入数据脚本
 -- 适用表：fx67ll_dortmund_team
--- 数据范围：2026-2027赛季五大联赛 + 2026赛季日职J1/J2
+-- 数据范围：2026-2027赛季五大联赛 + 2026赛季日职J1/J2 + 欧战知名强队（欧冠/欧联/欧协联）
 -- 排序规则：全局统一排序，team_sort 从1开始逐条递增
 -- 说明：必填字段完整填充，logo地址已按规则填充，user_id默认1
 -- =====================================================
@@ -193,3 +193,31 @@ VALUES
 ('RENOFA_YAMAGUCHI', '山口雷法足球俱乐部', '山口雷法', 'Renofa Yamaguchi FC', 'https://vip.fx67ll.com/vip-api/getRandomAvatar?isNeedMoreMosaic=Y&avatarBlockNum=4&avatarPadding=59', '山口县立球场', '日本', '中下游队,保级队', '0', 134, '', 1, '', '', '0'),
 ('KAGOSHIMA_UTD', '鹿儿岛联足球俱乐部', '鹿儿岛联', 'Kagoshima United FC', 'https://vip.fx67ll.com/vip-api/getRandomAvatar?isNeedMoreMosaic=Y&avatarBlockNum=7&avatarPadding=48', '鹿儿岛县立球场', '日本', '保级队,升班马', '0', 135, '', 1, '', '', '0'),
 ('FC_RYUKYU', '琉球FC足球俱乐部', '琉球FC', 'FC Ryukyu', 'https://vip.fx67ll.com/vip-api/getRandomAvatar?isNeedMoreMosaic=Y&avatarBlockNum=10&avatarPadding=51', '冲绳县综合球场', '日本', '保级队,中下游队', '0', 136, '', 1, '', '', '0');
+
+-- ------------------------------
+-- 八、欧战知名强队（五大联赛外，欧冠/欧联/欧协联参赛队）
+-- ------------------------------
+INSERT INTO `fx67ll_dortmund_team` 
+(`team_code`, `team_name`, `team_name_short`, `team_name_en`, `team_logo_url`, `team_venue`, `team_country`, `team_tag`, `team_status`, `team_sort`, `team_remark`, `user_id`, `create_by`, `update_by`, `del_flag`)
+VALUES
+('PORTO', '波尔图足球俱乐部', '波尔图', 'FC Porto', 'https://vip.fx67ll.com/vip-api/getRandomAvatar?isNeedMoreMosaic=Y&avatarBlockNum=4&avatarPadding=43', '巨龙球场', '葡萄牙', '葡超霸主,老牌劲旅,欧战常客', '0', 137, '', 1, '', '', '0'),
+('BENFICA', '本菲卡足球俱乐部', '本菲卡', 'SL Benfica', 'https://vip.fx67ll.com/vip-api/getRandomAvatar?isNeedMoreMosaic=Y&avatarBlockNum=5&avatarPadding=42', '光明球场', '葡萄牙', '葡超豪门,欧战常客,青训强队', '0', 138, '', 1, '', '', '0'),
+('SPORTING_CP', '葡萄牙体育足球俱乐部', '葡体', 'Sporting CP', 'https://vip.fx67ll.com/vip-api/getRandomAvatar?isNeedMoreMosaic=Y&avatarBlockNum=6&avatarPadding=41', '何塞·阿尔瓦拉德球场', '葡萄牙', '老牌劲旅,青训摇篮,欧战常客', '0', 139, '', 1, '', '', '0'),
+('AJAX', '阿贾克斯足球俱乐部', '阿贾克斯', 'AFC Ajax', 'https://vip.fx67ll.com/vip-api/getRandomAvatar?isNeedMoreMosaic=Y&avatarBlockNum=12&avatarPadding=57', '约翰·克鲁伊夫竞技场', '荷兰', '荷甲豪门,青训摇篮,欧战常客', '0', 140, '', 1, '', '', '0'),
+('PSV_EINDHOVEN', '埃因霍温足球俱乐部', '埃因霍温', 'PSV Eindhoven', 'https://vip.fx67ll.com/vip-api/getRandomAvatar?isNeedMoreMosaic=Y&avatarBlockNum=11&avatarPadding=58', '飞利浦体育场', '荷兰', '荷甲劲旅,欧战常客,青训强队', '0', 141, '', 1, '', '', '0'),
+('FEYENOORD', '费耶诺德足球俱乐部', '费耶诺德', 'Feyenoord Rotterdam', 'https://vip.fx67ll.com/vip-api/getRandomAvatar?isNeedMoreMosaic=Y&avatarBlockNum=10&avatarPadding=56', '德奎普球场', '荷兰', '荷甲劲旅,老牌劲旅,欧战常客', '0', 142, '', 1, '', '', '0'),
+('CELTIC', '凯尔特人足球俱乐部', '凯尔特人', 'Celtic FC', 'https://vip.fx67ll.com/vip-api/getRandomAvatar?isNeedMoreMosaic=Y&avatarBlockNum=9&avatarPadding=47', '凯尔特人公园球场', '苏格兰', '苏超霸主,老牌豪门,欧战常客', '0', 143, '', 1, '', '', '0'),
+('RANGERS', '格拉斯哥流浪者足球俱乐部', '流浪者', 'Rangers FC', 'https://vip.fx67ll.com/vip-api/getRandomAvatar?isNeedMoreMosaic=Y&avatarBlockNum=8&avatarPadding=46', '埃布罗克斯球场', '苏格兰', '苏超双雄,老牌劲旅,欧战常客', '0', 144, '', 1, '', '', '0'),
+('GALATASARAY', '加拉塔萨雷足球俱乐部', '加拉塔萨雷', 'Galatasaray SK', 'https://vip.fx67ll.com/vip-api/getRandomAvatar?isNeedMoreMosaic=Y&avatarBlockNum=7&avatarPadding=51', '土耳其电信竞技场', '土耳其', '土超霸主,魔鬼主场,欧战常客', '0', 145, '', 1, '', '', '0'),
+('FENERBAHCE', '费内巴切足球俱乐部', '费内巴切', 'Fenerbahçe SK', 'https://vip.fx67ll.com/vip-api/getRandomAvatar?isNeedMoreMosaic=Y&avatarBlockNum=6&avatarPadding=51', '萨拉焦格卢球场', '土耳其', '土超三强,老牌劲旅,欧战常客', '0', 146, '', 1, '', '', '0'),
+('BESIKTAS', '贝西克塔斯足球俱乐部', '贝西克塔斯', 'Beşiktaş JK', 'https://vip.fx67ll.com/vip-api/getRandomAvatar?isNeedMoreMosaic=Y&avatarBlockNum=5&avatarPadding=51', '沃达丰公园球场', '土耳其', '土超三强,老牌劲旅,欧战常客', '0', 147, '', 1, '', '', '0'),
+('CLUB_BRUGGE', '布鲁日足球俱乐部', '布鲁日', 'Club Brugge KV', 'https://vip.fx67ll.com/vip-api/getRandomAvatar?isNeedMoreMosaic=Y&avatarBlockNum=4&avatarPadding=49', '扬·布雷德尔球场', '比利时', '比甲霸主,欧冠常客,老牌劲旅', '0', 148, '', 1, '', '', '0'),
+('ANDERLECHT', '安德莱赫特足球俱乐部', '安德莱赫特', 'RSC Anderlecht', 'https://vip.fx67ll.com/vip-api/getRandomAvatar?isNeedMoreMosaic=Y&avatarBlockNum=12&avatarPadding=48', '洛托公园球场', '比利时', '比甲豪门,老牌劲旅,欧战常客', '0', 149, '', 1, '', '', '0'),
+('SALZBURG', '萨尔茨堡红牛足球俱乐部', '萨尔茨堡', 'RB Salzburg', 'https://vip.fx67ll.com/vip-api/getRandomAvatar?isNeedMoreMosaic=Y&avatarBlockNum=11&avatarPadding=44', '红牛竞技场', '奥地利', '奥超霸主,青训强队,欧冠常客', '0', 150, '', 1, '', '', '0'),
+('OLYMPIACOS', '奥林匹亚科斯足球俱乐部', '奥林匹亚科斯', 'Olympiacos FC', 'https://vip.fx67ll.com/vip-api/getRandomAvatar?isNeedMoreMosaic=Y&avatarBlockNum=10&avatarPadding=44', '卡雷斯卡基斯球场', '希腊', '希超霸主,老牌劲旅,欧战常客', '0', 151, '', 1, '', '', '0'),
+('RED_STAR', '贝尔格莱德红星足球俱乐部', '红星', 'Red Star Belgrade', 'https://vip.fx67ll.com/vip-api/getRandomAvatar?isNeedMoreMosaic=Y&avatarBlockNum=9&avatarPadding=49', '拉伊科·马蒂奇球场', '塞尔维亚', '欧冠冠军,老牌劲旅,欧战常客', '0', 152, '', 1, '', '', '0'),
+('PARTIZAN', '贝尔格莱德游击队足球俱乐部', '游击队', 'FK Partizan', 'https://vip.fx67ll.com/vip-api/getRandomAvatar?isNeedMoreMosaic=Y&avatarBlockNum=8&avatarPadding=49', '游击队体育场', '塞尔维亚', '塞超双雄,老牌劲旅,欧战常客', '0', 153, '', 1, '', '', '0'),
+('DYNAMO_KYIV', '基辅迪纳摩足球俱乐部', '基辅迪纳摩', 'FC Dynamo Kyiv', 'https://vip.fx67ll.com/vip-api/getRandomAvatar?isNeedMoreMosaic=Y&avatarBlockNum=7&avatarPadding=47', '基辅奥林匹克体育场', '乌克兰', '乌超霸主,老牌劲旅,欧战常客', '0', 154, '', 1, '', '', '0'),
+('SHAKHTAR', '顿涅茨克矿工足球俱乐部', '矿工', 'FC Shakhtar Donetsk', 'https://vip.fx67ll.com/vip-api/getRandomAvatar?isNeedMoreMosaic=Y&avatarBlockNum=12&avatarPadding=43', '顿巴斯竞技场', '乌克兰', '乌超强队,欧战常客,青训强队', '0', 155, '', 1, '', '', '0'),
+('BASEL', '巴塞尔足球俱乐部', '巴塞尔', 'FC Basel 1893', 'https://vip.fx67ll.com/vip-api/getRandomAvatar?isNeedMoreMosaic=Y&avatarBlockNum=11&avatarPadding=43', '圣雅各布公园球场', '瑞士', '瑞超霸主,老牌劲旅,欧战常客', '0', 156, '', 1, '', '', '0'),
+('COPENHAGEN', '哥本哈根足球俱乐部', '哥本哈根', 'FC Copenhagen', 'https://vip.fx67ll.com/vip-api/getRandomAvatar?isNeedMoreMosaic=Y&avatarBlockNum=10&avatarPadding=43', '帕肯球场', '丹麦', '丹超霸主,欧冠常客,老牌劲旅', '0', 157, '', 1, '', '', '0');
