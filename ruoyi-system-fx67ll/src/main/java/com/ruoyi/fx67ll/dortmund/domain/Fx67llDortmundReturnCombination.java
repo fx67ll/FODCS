@@ -116,6 +116,12 @@ public class Fx67llDortmundReturnCombination extends BaseEntity {
     /** 审核结束时间（非表列，按 review_time 做闭区间筛选） */
     private String endReviewTime;
 
+    /** 更新开始时间（非表列，按 update_time 做闭区间筛选） */
+    private String beginUpdateTime;
+
+    /** 更新结束时间（非表列，按 update_time 做闭区间筛选） */
+    private String endUpdateTime;
+
     /** 列表排序字段，服务端白名单校验（非表列） */
     private String sortField;
 
@@ -389,6 +395,22 @@ public class Fx67llDortmundReturnCombination extends BaseEntity {
         this.endReviewTime = endReviewTime;
     }
 
+    public String getBeginUpdateTime() {
+        return beginUpdateTime;
+    }
+
+    public void setBeginUpdateTime(String beginUpdateTime) {
+        this.beginUpdateTime = beginUpdateTime;
+    }
+
+    public String getEndUpdateTime() {
+        return endUpdateTime;
+    }
+
+    public void setEndUpdateTime(String endUpdateTime) {
+        this.endUpdateTime = endUpdateTime;
+    }
+
     public String getSortField() {
         return sortField;
     }
@@ -438,6 +460,8 @@ public class Fx67llDortmundReturnCombination extends BaseEntity {
                 .append("verifyTime", getVerifyTime())
                 .append("beginReviewTime", getBeginReviewTime())
                 .append("endReviewTime", getEndReviewTime())
+                .append("beginUpdateTime", getBeginUpdateTime())
+                .append("endUpdateTime", getEndUpdateTime())
                 .append("unverifiedOnly", getUnverifiedOnly())
                 .append("images", getImages())
                 .append("planLinked", getPlanLinked())

@@ -199,7 +199,8 @@ public class DeepSeekReturnCombinationAnalyzer implements ReturnCombinationAiAna
         systemMessage.put("role", "system");
         systemMessage.put("content", String.join("\n",
                 "You are a football parlay risk analyst. Return strict JSON only and no markdown.",
-                "Required top level: {schemaVersion:'2.1',taskType:'DORTMUND_RETURN_COMBINATION',analysisContent,candidates}.",
+                "Required top level: {schemaVersion:'2.1',taskType:'DORTMUND_RETURN_COMBINATION',aiSource,analysisContent,candidates}.",
+                "aiSource is required and must be the actual model/source identifier of the model producing this response. DEEPSEEK and DOUBAO are examples only; do not copy an example when it is not your own source. Use a short uppercase ASCII identifier and never use a generic AI label. The backend prepends it to every saved title, so do not add a source tag inside candidate titles.",
                 "Each candidate: {title,reason,confidence,riskNotes,evidenceChain:[factors],selections:[selections]}. title, reason, confidence and riskNotes are required. Generate 1 to "
                         + DortmundModuleConfig.Return.MAX_PERSISTED_CANDIDATES + " candidates, each with "
                         + DortmundModuleConfig.Return.MIN_COMBINATION_MATCHES + " to "

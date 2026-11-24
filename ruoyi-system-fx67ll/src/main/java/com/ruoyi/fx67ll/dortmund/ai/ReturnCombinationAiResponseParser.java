@@ -2,6 +2,7 @@ package com.ruoyi.fx67ll.dortmund.ai;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
 
 import com.alibaba.fastjson2.JSON;
 import com.alibaba.fastjson2.JSONArray;
@@ -17,7 +18,7 @@ import org.springframework.stereotype.Component;
  * 编排结果交给本解析器，不应在业务Service中重复解析JSON。
  * <p>
  * 【通用AI接入点】通用AI模块返回的标准化正文仍统一经过本解析器；供应商响应envelope、
- * 模型、Prompt、Token和费用字段不得进入业务结果。
+ * 模型参数、Prompt、Token和费用字段不得进入业务结果，仅保留AI自报来源标识用于标题辨识。
  *
  * @author fx67ll
  * @date 2026-11-16
@@ -172,6 +173,8 @@ public class ReturnCombinationAiResponseParser {
         ReturnCombinationAiAnalysisPort.ReturnCombinationAiOutput output =
                 new ReturnCombinationAiAnalysisPort.ReturnCombinationAiOutput();
         output.setAnalysisContent(responseBody.getString("analysisContent"));
+        // 来源模型由AI响应自行声明，统一归一化为标题可用的短标识，禁止退化为通用“AI”。
+        output.setAiSource(normalizeAiSource(responseBody.getString("aiSource")));
         List<ReturnCombinationAiAnalysisPort.Candidate> candidates = new ArrayList<>();
         for (int i = 0; i < candidateArray.size(); i++) {
             JSONObject item = candidateArray.getJSONObject(i);
@@ -192,6 +195,28 @@ public class ReturnCombinationAiResponseParser {
         }
         output.setCandidates(candidates);
         return output;
+    }
+
+    /**
+     * 归一化AI声明的来源模型标识。
+     * <p>允许 DEEPSEEK、DOUBAO、deepseek-chat 等供应商或模型标识；统一转大写并把空白替换为连字符。
+     * 该字段只用于组合标题辨识，不接受中文说明、URL或任意长文本。</p>
+     */
+    private String normalizeAiSource(String value) {
+        if (isBlank(value)) {
+            throw new ServiceException("AI结果缺少aiSource来源模型标识！");
+        }
+        String normalized = value.trim();
+        if (normalized.startsWith("【") && normalized.endsWith("】") && normalized.length() > 2) {
+            normalized = normalized.substring(1, normalized.length() - 1);
+        }
+        normalized = normalized.replaceAll("\\s+", "-").toUpperCase(Locale.ROOT);
+        if ("AI".equals(normalized)
+                || normalized.length() > DortmundModuleConfig.Return.MAX_AI_SOURCE_LENGTH
+                || !normalized.matches(DortmundModuleConfig.Return.AI_SOURCE_PATTERN)) {
+            throw new ServiceException("AI结果aiSource来源模型标识不正确，请返回实际模型短标识（如DEEPSEEK或DOUBAO），不得使用通用AI！");
+        }
+        return normalized;
     }
 
     private List<ReturnCombinationAiAnalysisPort.EvidenceFactor> parseEvidenceChain(JSONArray factorArray) {

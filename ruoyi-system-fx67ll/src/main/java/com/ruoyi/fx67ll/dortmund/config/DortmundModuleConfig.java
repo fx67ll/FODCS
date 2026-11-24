@@ -59,6 +59,12 @@ public final class DortmundModuleConfig {
         public static final int MAX_WEIGHT_IMPACT = 100;
         /** 批次快照结构版本。 */
         public static final String SNAPSHOT_VERSION = "2.2";
+        /** AI结果返回的来源模型标识最大长度，避免标题前缀被异常文本占用。 */
+        public static final int MAX_AI_SOURCE_LENGTH = 32;
+        /** AI来源模型短标识允许的字符范围；由AI按自身实际来源填写，不接受通用“AI”或多段说明。 */
+        public static final String AI_SOURCE_PATTERN = "[A-Z0-9][A-Z0-9._+-]*";
+        /** AI来源标识写入组合标题的公共格式，由每次AI响应自行返回 DEEPSEEK、DOUBAO 等实际来源。 */
+        public static final String AI_SOURCE_TITLE_FORMAT = "【%s】";
     }
 
     /**
@@ -521,7 +527,7 @@ public final class DortmundModuleConfig {
         public static final String[] SELECTION_TYPES = {"HW", "DR", "AW", "HH", "HD", "HA"};
         public static final String[] RETURN_SORT_FIELDS = {
                 "combinedOdds", "estimatedReturn", "deviationAmount", "matchCount",
-                "reviewTime", "aiConfidence", "createTime"
+                "reviewTime", "aiConfidence", "createTime", "combinationId"
         };
     }
 

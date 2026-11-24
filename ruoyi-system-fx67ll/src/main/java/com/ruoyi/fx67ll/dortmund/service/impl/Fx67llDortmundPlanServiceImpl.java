@@ -509,8 +509,7 @@ public class Fx67llDortmundPlanServiceImpl implements IFx67llDortmundPlanService
         // 回读真实关系，避免前端提交的组合集合与数据库当前状态不一致。
         List<Long> combinationIds = selectPlanCombinationIds(plan.getPlanId());
         plan.setCombinationIds(combinationIds);
-        plan.setCombinationVerificationStatus(resolvePlanVerificationStatus(combinationIds,
-                loadCombinationVerificationStatuses(combinationIds)));
+        fillPlanCombinationVerification(plan, combinationIds, loadCombinationVerificationStatuses(combinationIds));
         // 预计倍率由用户手工填写；手工预计本金/回报为空时回退到组合派生值。
         plan.setEffectiveExpectedPrincipal(plan.getPlanExpectedPrincipal() == null
                 ? plan.getCalculatedExpectedPrincipal() : plan.getPlanExpectedPrincipal());
@@ -851,8 +850,7 @@ public class Fx67llDortmundPlanServiceImpl implements IFx67llDortmundPlanService
             plan.setMatchCount(matches == null ? 0 : matches.size());
             List<Long> combinationIds = combinationIdsByPlan.get(plan.getPlanId());
             plan.setCombinationIds(combinationIds == null ? new ArrayList<>() : combinationIds);
-            plan.setCombinationVerificationStatus(resolvePlanVerificationStatus(combinationIds,
-                    verificationStatusByCombination));
+            fillPlanCombinationVerification(plan, combinationIds, verificationStatusByCombination);
             // 预计倍率由用户手工填写；手工预计本金/回报为空时回退到组合派生值。
             plan.setEffectiveExpectedPrincipal(plan.getPlanExpectedPrincipal() == null
                     ? plan.getCalculatedExpectedPrincipal() : plan.getPlanExpectedPrincipal());
@@ -913,6 +911,38 @@ public class Fx67llDortmundPlanServiceImpl implements IFx67llDortmundPlanService
         }
         return allSuccess ? DortmundModuleConfig.Contract.VERIFICATION_SUCCESS
                 : DortmundModuleConfig.Contract.VERIFICATION_UNVERIFIED;
+    }
+
+    /**
+     * 汇总并写入方案关联组合的核验数量和总体状态。
+     * 成功、失败均以组合当前核验结论为准，其余情况（含状态缺失）统一计入未核验，
+     * 保证前端三项统计之和始终等于方案实际关联组合数。
+     *
+     * @param plan            方案计划
+     * @param combinationIds  关联组合主键集合
+     * @param statusMap       组合核验状态映射
+     */
+    private void fillPlanCombinationVerification(Fx67llDortmundPlan plan, List<Long> combinationIds,
+                                                 Map<Long, String> statusMap) {
+        int successCount = 0;
+        int failedCount = 0;
+        int unverifiedCount = 0;
+        if (combinationIds != null) {
+            for (Long combinationId : combinationIds) {
+                String status = statusMap == null ? null : statusMap.get(combinationId);
+                if (DortmundModuleConfig.Contract.VERIFICATION_SUCCESS.equals(status)) {
+                    successCount++;
+                } else if (DortmundModuleConfig.Contract.VERIFICATION_FAILED.equals(status)) {
+                    failedCount++;
+                } else {
+                    unverifiedCount++;
+                }
+            }
+        }
+        plan.setCombinationSuccessCount(successCount);
+        plan.setCombinationFailedCount(failedCount);
+        plan.setCombinationUnverifiedCount(unverifiedCount);
+        plan.setCombinationVerificationStatus(resolvePlanVerificationStatus(combinationIds, statusMap));
     }
 
     /**

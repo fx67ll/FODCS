@@ -150,6 +150,7 @@ import static com.ruoyi.fx67ll.dortmund.config.DortmundModuleConfig.Retrieval.MA
 import static com.ruoyi.fx67ll.dortmund.config.DortmundModuleConfig.Retrieval.MAX_RESULTS_PER_QUERY;
 import static com.ruoyi.fx67ll.dortmund.config.DortmundModuleConfig.Return.MAX_BATCH_ADOPT_COUNT;
 import static com.ruoyi.fx67ll.dortmund.config.DortmundModuleConfig.Return.MAX_BATCH_VERIFY_COUNT;
+import static com.ruoyi.fx67ll.dortmund.config.DortmundModuleConfig.Return.AI_SOURCE_TITLE_FORMAT;
 import static com.ruoyi.fx67ll.dortmund.config.DortmundModuleConfig.Return.MAX_CLIENT_REQUEST_ID_LENGTH;
 import static com.ruoyi.fx67ll.dortmund.config.DortmundModuleConfig.Return.MAX_CONFIDENCE;
 import static com.ruoyi.fx67ll.dortmund.config.DortmundModuleConfig.Return.MAX_ANALYSIS_MATCHES;
@@ -554,10 +555,11 @@ public class Fx67llDortmundReturnCombinationServiceImpl implements IFx67llDortmu
         resultExample.put("schemaVersion", MANUAL_AI_CONTRACT_VERSION);
         resultExample.put("taskType", ReturnCombinationAiResponseParser.TASK_TYPE);
         resultExample.put("taskId", "{{taskId}}");
+        resultExample.put("aiSource", "DEEPSEEK");
         resultExample.put("analysisContent", "中文分析摘要：说明候选组合如何满足预定义与补充业务目标。");
         JSONArray resultCandidates = new JSONArray();
         JSONObject resultCandidate = new JSONObject();
-        resultCandidate.put("title", "候选组合标题");
+        resultCandidate.put("title", String.format(AI_SOURCE_TITLE_FORMAT, "DEEPSEEK") + "候选组合标题");
         resultCandidate.put("reason", "候选组合的简要选择理由");
         resultCandidate.put("confidence", 78);
         resultCandidate.put("riskNotes", "候选风险与信息缺口说明，可省略。");
@@ -598,9 +600,12 @@ public class Fx67llDortmundReturnCombinationServiceImpl implements IFx67llDortmu
         task.put("instruction", "将{{taskId}}替换为当前批次编码；input中的比赛、倍率、金额和业务目标已冻结且不可改写；"
                 + "input.hideOdds为true或缺失时，odds中的倍率统一为固定占位文本，只表示该场存在对应选择，禁止据此推断倍率高低或价值；"
                 + "为false时提供真实倍率，只能作为市场参考，不得改写冻结倍率或代替后端复算。"
+                + "必须在顶层aiSource中声明你自身的实际来源模型短标识（DEEPSEEK或DOUBAO仅为格式示例，不得照抄），不得填写通用AI；"
+                + "每条candidate.title必须以“" + String.format(AI_SOURCE_TITLE_FORMAT, "实际aiSource") + "”开头，"
+                + "括号内必须与顶层aiSource完全一致。"
                 + "但input不是完整球队档案，teamTags仅是用户线索。必须主动检索截至分析时的最新伤停、首发、状态、赛程、动机、"
                 + "场地、天气、裁判、战术与市场信息，冲突或缺失必须写入riskNotes并降低confidence。"
-                + "严格按responseContract返回单个JSON对象，不得返回供应商、模型、Token、费用或自行计算的金额字段。");
+                + "严格按responseContract返回单个JSON对象，不得返回供应商密钥、模型参数、Token、费用或自行计算的金额字段。");
         task.put("exportPrompt", buildManualExportPrompt());
         JSONObject responseContract = new JSONObject();
         responseContract.put("schemaVersion", MANUAL_AI_CONTRACT_VERSION);
@@ -610,6 +615,7 @@ public class Fx67llDortmundReturnCombinationServiceImpl implements IFx67llDortmu
         requiredFields.add("schemaVersion");
         requiredFields.add("taskType");
         requiredFields.add("taskId");
+        requiredFields.add("aiSource");
         requiredFields.add("analysisContent");
         requiredFields.add("candidates");
         responseContract.put("requiredTopLevelFields", requiredFields);
@@ -804,7 +810,7 @@ public class Fx67llDortmundReturnCombinationServiceImpl implements IFx67llDortmu
         addManualField(fields, "响应契约", "responseContract.taskId", "当前批次编码", "string", true,
                 "导入结果taskId必须与该值完全一致。", "RET202611180001");
         addManualField(fields, "响应契约", "responseContract.requiredTopLevelFields", "顶层必填字段", "array<string>", true,
-                "结果JSON必须包含的五个顶层字段。", "[\"schemaVersion\",\"taskType\",\"taskId\",\"analysisContent\",\"candidates\"]");
+                "结果JSON必须包含的六个顶层字段。", "[\"schemaVersion\",\"taskType\",\"taskId\",\"aiSource\",\"analysisContent\",\"candidates\"]");
         addManualField(fields, "响应契约", "responseContract.candidateRules", "候选规则", "array<string>", true,
                 "候选数量、选择数量、matchId、selectionType、权重和禁止字段等强制规则。", "candidates必须为1至10条...");
         addManualField(fields, "响应契约", "responseContract.selectionTypes", "选择类型字典", "object", true,
@@ -827,12 +833,14 @@ public class Fx67llDortmundReturnCombinationServiceImpl implements IFx67llDortmu
                 "固定为DORTMUND_RETURN_COMBINATION。", "DORTMUND_RETURN_COMBINATION");
         addManualField(fields, "结果顶层", "taskId", "批次编码", "string", true,
                 "必须等于导出任务的taskId，即当前批次编码。", "RET202611180001");
+        addManualField(fields, "结果顶层", "aiSource", "AI来源模型", "string", true,
+                "由第三方AI自行声明实际来源模型短标识，如DEEPSEEK或DOUBAO；不得填写通用AI。每条候选标题必须使用同一标识作为前缀，后端负责最终校验与幂等保留。", "DEEPSEEK");
         addManualField(fields, "结果顶层", "analysisContent", "整体分析摘要", "string", true,
                 "中文分析摘要，说明候选如何同时满足预定义和补充业务目标；不得包含金额计算结果。", "综合球队标签、赛季信息点和倍率结构...");
         addManualField(fields, "结果顶层", "candidates", "候选组合数组", "array<object>", true,
                 "1至10条候选；每条候选包含标题、理由、可选复核信息和1至8个比赛选择。", "见候选字段");
         addManualField(fields, "候选", "candidates[].title", "候选标题", "string", true,
-                "简短中文标题，突出组合策略，不要求包含金额或倍率。", "主场稳定型两场组合");
+                "必须以“【实际aiSource】”开头，括号内与顶层aiSource完全一致；其后接简短中文标题，突出组合策略，不要求包含金额或倍率。", "【DEEPSEEK】主场稳定型两场组合");
         addManualField(fields, "候选", "candidates[].reason", "候选理由", "string", true,
                 "说明该组合如何满足业务目标、标签和信息点，不得只写“综合判断”。", "两场均具备主场稳定性证据...");
         addManualField(fields, "候选", "candidates[].confidence", "候选置信度", "number", false,
@@ -899,9 +907,10 @@ public class Fx67llDortmundReturnCombinationServiceImpl implements IFx67llDortmu
                 + "4. generationMode=A时，由你依据研究结果给出0.0000至1.0000、最多四位小数的appliedWeight；该权重只表达评估倾向，不参与任何金额计算。\n"
                 + "5. 必须同时满足input.businessObjectives、input.supplementaryObjectives和preferenceDimensions；补充目标不得覆盖或弱化预定义目标，偏好不得突破硬边界。\n"
                 + "6. analysisContent使用中文，说明研究范围、关键事实、冲突、组合取舍和偏好匹配；每条selection.reason写明该场支持因素、反向风险及信息来源类型或名称；每条candidate.riskNotes必须存在，无重大风险时写“未发现重大新增风险”并说明信息时点。\n"
-                + "7. 不承诺收益或保本；不得输出自行计算的组合倍率、预计回报、偏差、金额、供应商、模型、Token或费用字段。\n"
+                + "7. 不承诺收益或保本；不得输出自行计算的组合倍率、预计回报、偏差、金额、供应商密钥、模型参数、Token或费用字段。\n"
+                + "8. 顶层aiSource必须填写你自身的实际来源模型短标识；DEEPSEEK或DOUBAO仅为格式示例，不得照抄。使用大写字母、数字、点、下划线、加号或连字符，不得填写通用AI。每条candidate.title必须以“" + String.format(AI_SOURCE_TITLE_FORMAT, "实际aiSource") + "”开头，括号内必须与顶层aiSource完全一致；后端会按同一来源做幂等校验和保留。\n"
                 + "四、严格输出\n"
-                + "只返回一个JSON对象，不要Markdown代码围栏或解释文字。顶层仅使用schemaVersion、taskType、taskId、analysisContent、candidates；"
+                + "只返回一个JSON对象，不要Markdown代码围栏或解释文字。顶层仅使用schemaVersion、taskType、taskId、aiSource、analysisContent、candidates；"
                 + "candidate仅使用title、reason、confidence、riskNotes、selections；selection仅使用matchId、selectionType、appliedWeight、reason。"
                 + "schemaVersion=1.0，taskType=DORTMUND_RETURN_COMBINATION，taskId必须等于导出任务中的taskId，confidence为0至"
                 + MAX_CONFIDENCE + "的整数。不得增加证据链、检索编码、URL数组或任何契约外字段。";
@@ -917,8 +926,10 @@ public class Fx67llDortmundReturnCombinationServiceImpl implements IFx67llDortmu
                 + "{" + quote + "schemaVersion" + quote + ":" + quote + "1.0" + quote + ","
                 + quote + "taskType" + quote + ":" + quote + "DORTMUND_RETURN_COMBINATION" + quote + ","
                 + quote + "taskId" + quote + ":" + quote + "当前任务taskId" + quote + ","
+                + quote + "aiSource" + quote + ":" + quote + "DEEPSEEK" + quote + ","
                 + quote + "analysisContent" + quote + ":" + quote + "中文综合分析摘要" + quote + ","
-                + quote + "candidates" + quote + ":[{" + quote + "title" + quote + ":" + quote + "候选标题" + quote + ","
+                + quote + "candidates" + quote + ":[{" + quote + "title" + quote + ":" + quote
+                + String.format(AI_SOURCE_TITLE_FORMAT, "DEEPSEEK") + "候选标题" + quote + ","
                 + quote + "reason" + quote + ":" + quote + "候选整体理由" + quote + ","
                 + quote + "confidence" + quote + ":78," + quote + "riskNotes" + quote + ":"
                 + quote + "信息缺口、冲突与风险" + quote + ","
@@ -927,7 +938,10 @@ public class Fx67llDortmundReturnCombinationServiceImpl implements IFx67llDortmu
                 + quote + "appliedWeight" + quote + ":0.8000," + quote + "reason" + quote + ":"
                 + quote + "本场选择依据、反向风险与来源类型" + quote + "}]}]}。\n"
                 + "再次强调：input是冻结业务事实而非完整球队档案；odds中的占位文本只表示选择存在，禁止据此推断倍率价值；"
-                + "你必须主动检索最新真实信息，所有外部事实只能影响判断，不得改写冻结数据或金额。";
+                + "你必须主动检索最新真实信息，所有外部事实只能影响判断，不得改写冻结数据或金额；"
+                + "aiSource必须填写你自身的实际来源模型短标识，示例值不得照抄，不得填写通用AI；"
+                + "每条candidate.title必须以“" + String.format(AI_SOURCE_TITLE_FORMAT, "实际aiSource") + "”开头，"
+                + "括号内与顶层aiSource完全一致。";
     }
 
     /**
@@ -944,9 +958,12 @@ public class Fx67llDortmundReturnCombinationServiceImpl implements IFx67llDortmu
                 + "4. 每条候选保留 title、reason 和 selections；selections 必须为 " + MIN_COMBINATION_MATCHES
                 + "-" + MAX_COMBINATION_MATCHES + " 条，同一候选内 matchId 不得重复。\n"
                 + "5. selectionType 只能为 HW、DR、AW、HH、HD 或 HA；appliedWeight 必须在 0.0000-1.0000 且最多四位小数。\n"
-                + "6. 不得新增不存在的比赛或选择，不得编造理由，不得返回组合倍率、预计回报、偏差、金额、供应商、模型、Token 或费用字段。\n"
+                + "6. 不得新增不存在的比赛或选择，不得编造理由，不得返回组合倍率、预计回报、偏差、金额、供应商密钥、模型参数、Token 或费用字段。\n"
                 + "7. 如果原结果缺少必要字段，只能依据原分析内容补齐结构；无法确定的内容应删除对应候选，而不是编造。\n"
-                + "8. 若原结果包含 confidence 或 riskNotes，可原样保留；它们是可选复核字段。";
+                + "8. 若原结果包含 confidence 或 riskNotes，可原样保留；它们是可选复核字段。\n"
+                + "9. 顶层 aiSource 必须保留或补为原分析AI自身的实际来源模型短标识；示例值不得照抄，不得填写通用 AI。"
+                + "每条 candidate.title 必须以“" + String.format(AI_SOURCE_TITLE_FORMAT, "实际aiSource") + "”开头，"
+                + "括号内与顶层 aiSource 完全一致；缺少前缀时只补前缀，不改动原分析标题正文。";
     }
 
     /**
@@ -1341,7 +1358,7 @@ public class Fx67llDortmundReturnCombinationServiceImpl implements IFx67llDortmu
         } else {
             objectives.add("AI Mode由第三方AI在平台外完成信息补充和权重判断，须独立确定每个选择的0至1评估权重（最多四位小数）并说明理由。");
         }
-        objectives.add("人工任务仅接受1.0结构化结果；不得返回供应商、模型、Token、费用或平台内部证据编码。");
+        objectives.add("人工任务仅接受1.0结构化结果；除顶层aiSource来源模型短标识外，不得返回供应商密钥、模型参数、Token、费用或平台内部证据编码。");
         objectives.add("appliedWeight只用于说明AI评估倾向，禁止用它计算组合倍率、预计回报、偏差或任何金额。");
         return objectives;
     }
@@ -1405,6 +1422,7 @@ public class Fx67llDortmundReturnCombinationServiceImpl implements IFx67llDortmu
         requiredFields.add("schemaVersion");
         requiredFields.add("taskType");
         requiredFields.add("taskId");
+        requiredFields.add("aiSource");
         requiredFields.add("analysisContent");
         requiredFields.add("candidates");
         contract.put("requiredTopLevelFields", requiredFields);
@@ -1425,10 +1443,11 @@ public class Fx67llDortmundReturnCombinationServiceImpl implements IFx67llDortmu
         example.put("schemaVersion", MANUAL_AI_CONTRACT_VERSION);
         example.put("taskType", ReturnCombinationAiResponseParser.TASK_TYPE);
         example.put("taskId", generation.getGenerationCode());
+        example.put("aiSource", "DEEPSEEK");
         example.put("analysisContent", "简要中文分析摘要");
         JSONArray candidates = new JSONArray();
         JSONObject candidate = new JSONObject();
-        candidate.put("title", "候选组合标题");
+        candidate.put("title", String.format(AI_SOURCE_TITLE_FORMAT, "DEEPSEEK") + "候选组合标题");
         candidate.put("reason", "组合简要理由");
         candidate.put("confidence", 78);
         candidate.put("riskNotes", "可选：说明信息缺口、冲突证据或不确定性。");
@@ -1453,6 +1472,9 @@ public class Fx67llDortmundReturnCombinationServiceImpl implements IFx67llDortmu
         JSONArray candidateRules = new JSONArray();
         candidateRules.add("candidates必须为1至" + ReturnCombinationAiResponseParser.MAX_MANUAL_CANDIDATES
                 + "条，每条必须包含title、reason和selections。");
+        candidateRules.add("顶层aiSource必须由AI自行填写实际来源模型短标识；DEEPSEEK或DOUBAO仅为示例，不得照抄，不得填写通用AI。"
+                + "每条candidate.title必须以“" + String.format(AI_SOURCE_TITLE_FORMAT, "实际aiSource")
+                + "”开头，括号内必须与顶层aiSource完全一致。");
         candidateRules.add("必须同时满足input.businessObjectives和input.supplementaryObjectives，补充目标不得覆盖预定义目标。");
         candidateRules.add("businessContext中的球队标签为原始标签列表，不得假定固定标签体系；信息点与来源事实不得虚构。");
         candidateRules.add("selections必须为" + MIN_COMBINATION_MATCHES + "至" + MAX_COMBINATION_MATCHES
@@ -1831,6 +1853,12 @@ public class Fx67llDortmundReturnCombinationServiceImpl implements IFx67llDortmu
         combination.setUpdateTime(now);
         if (fx67llDortmundReturnCombinationMapper.updateVerificationResult(combination) != 1) {
             throw new ServiceException("回报组合赛果核验状态更新失败，请刷新后重试！");
+        }
+        // 核验只允许改变核验字段；落库后再次读取采用状态，检测触发器或后续SQL误写并回滚整笔事务。
+        Fx67llDortmundReturnCombination persisted = fx67llDortmundReturnCombinationMapper
+                .selectFx67llDortmundReturnCombinationByCombinationIdForUpdate(combination.getCombinationId());
+        if (persisted == null || !YES.equals(persisted.getAdoptedFlag())) {
+            throw new ServiceException("赛果核验检测到采用状态异常，已回滚本次操作，请刷新后重试！");
         }
         Fx67llDortmundReturnVerificationResult result = new Fx67llDortmundReturnVerificationResult();
         result.setCombinationId(combination.getCombinationId());
@@ -2255,6 +2283,10 @@ public class Fx67llDortmundReturnCombinationServiceImpl implements IFx67llDortmu
         if (output == null || output.getCandidates() == null) {
             return Collections.emptyList();
         }
+        String aiSource = output.getAiSource();
+        if (blank(aiSource)) {
+            throw new ServiceException("AI结果缺少aiSource来源模型标识！");
+        }
         Map<Long, Fx67llDortmundOdds> oddsMap = new HashMap<>();
         for (Fx67llDortmundOdds odds : oddsList) {
             oddsMap.put(odds.getMatchId(), odds);
@@ -2263,7 +2295,7 @@ public class Fx67llDortmundReturnCombinationServiceImpl implements IFx67llDortmu
         for (ReturnCombinationAiAnalysisPort.Candidate candidate : output.getCandidates()) {
             try {
                 PreparedCombination prepared = prepareOne(
-                        candidate, request, oddsMap, evidenceBundle, evidenceRequired, dataAsOf);
+                        candidate, request, oddsMap, evidenceBundle, evidenceRequired, dataAsOf, aiSource);
                 if (prepared != null) {
                     unique.putIfAbsent(prepared.signature, prepared);
                 }
@@ -2284,7 +2316,7 @@ public class Fx67llDortmundReturnCombinationServiceImpl implements IFx67llDortmu
      */
     private PreparedCombination prepareOne(ReturnCombinationAiAnalysisPort.Candidate candidate,
             Fx67llDortmundReturnGenerateRequest request, Map<Long, Fx67llDortmundOdds> oddsMap,
-            EvidenceBundle evidenceBundle, boolean evidenceRequired, Date dataAsOf) {
+            EvidenceBundle evidenceBundle, boolean evidenceRequired, Date dataAsOf, String aiSource) {
         if (candidate == null || blank(candidate.getTitle()) || candidate.getTitle().length() > MAX_COMBINATION_TITLE_LENGTH
                 || blank(candidate.getReason()) || candidate.getReason().length() > MAX_COMBINATION_REASON_LENGTH
                 || candidate.getSelections() == null || candidate.getSelections().isEmpty()
@@ -2390,7 +2422,8 @@ public class Fx67llDortmundReturnCombinationServiceImpl implements IFx67llDortmu
         }
         Fx67llDortmundReturnCombination combination = new Fx67llDortmundReturnCombination();
         combination.setCombinationCode(createCode("C"));
-        combination.setCombinationTitle(candidate.getTitle().trim());
+        // AI响应自行声明实际来源模型；后端统一格式化为标题前缀，当前响应已带同一前缀时不重复拼接。
+        combination.setCombinationTitle(buildAiSourcedTitle(candidate.getTitle(), aiSource));
         combination.setCombinationReason(limit(candidate.getReason(), MAX_COMBINATION_REASON_LENGTH));
         combination.setCombinationRemark(candidate.getAnalysisContent());
         combination.setAiConfidence(candidate.getConfidence());
@@ -2409,6 +2442,20 @@ public class Fx67llDortmundReturnCombinationServiceImpl implements IFx67llDortmu
         result.combination = combination;
         result.items = items;
         return result;
+    }
+
+    /**
+     * 将AI声明的来源模型写入候选标题开头。
+     * <p>当前全部候选均来自重建表后的新任务，不兼容历史通用来源前缀；标题已携带同一来源前缀时原样保留，
+     * 避免当前响应重复拼接。该前缀只用于辨识AI来源，不参与组合签名、去重、倍率、金额或权限判断。</p>
+     */
+    private String buildAiSourcedTitle(String title, String aiSource) {
+        String value = title.trim();
+        String prefix = String.format(AI_SOURCE_TITLE_FORMAT, aiSource);
+        if (value.startsWith(prefix)) {
+            return limit(value, MAX_COMBINATION_TITLE_LENGTH);
+        }
+        return limit(prefix + value, MAX_COMBINATION_TITLE_LENGTH);
     }
 
     /**
@@ -3485,10 +3532,12 @@ public class Fx67llDortmundReturnCombinationServiceImpl implements IFx67llDortmu
         result.put("schemaVersion", contractVersion);
         result.put("taskType", AI_SCENE_CODE);
         if (output == null) {
+            result.put("aiSource", null);
             result.put("analysisContent", null);
             result.put("candidates", new JSONArray());
             return result.toJSONString();
         }
+        result.put("aiSource", output.getAiSource());
         result.put("analysisContent", output.getAnalysisContent());
         JSONArray candidates = new JSONArray();
         if (output.getCandidates() != null) {

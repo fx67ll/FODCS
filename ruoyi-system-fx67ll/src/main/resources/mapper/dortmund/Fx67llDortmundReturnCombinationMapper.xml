@@ -107,6 +107,13 @@
             <if test="generationMode != null and generationMode != ''">and g.generation_mode = #{generationMode}</if>
             <if test="generationStatus != null and generationStatus != ''">and g.generation_status = #{generationStatus}</if>
             <if test="adoptedFlag != null and adoptedFlag != ''">and c.adopted_flag = #{adoptedFlag}</if>
+            <!-- U 表示未核验（NULL），Y/N 对应已达成/未达成；与sys_yes_no字典语义保持一致。 -->
+            <if test='verificationStatus != null and verificationStatus != ""'>
+                <choose>
+                    <when test='verificationStatus == "U"'>and c.verification_status is null</when>
+                    <otherwise>and c.verification_status = #{verificationStatus}</otherwise>
+                </choose>
+            </if>
             <if test="unverifiedOnly != null and unverifiedOnly">and c.verification_status is null</if>
             <if test="userId != null">and c.user_id = #{userId}</if>
             <if test="matchId != null">
@@ -127,6 +134,10 @@
             <!-- 审核时间与创建时间使用相同闭区间语义；前端传时分秒时不再截断到自然日。 -->
             <if test="beginReviewTime != null and beginReviewTime != '' and endReviewTime != null and endReviewTime != ''">
                 and c.review_time between #{beginReviewTime} and #{endReviewTime}
+            </if>
+            <!-- 更新时间沿用时分秒闭区间语义，便于定位最近被采用或核验的组合记录。 -->
+            <if test="beginUpdateTime != null and beginUpdateTime != '' and endUpdateTime != null and endUpdateTime != ''">
+                and c.update_time between #{beginUpdateTime} and #{endUpdateTime}
             </if>
         </where>
         <choose>
@@ -159,6 +170,10 @@
                 order by c.ai_confidence
                 <choose><when test="sortOrder == 'asc'">asc</when><otherwise>desc</otherwise></choose>,
                 c.combination_id desc
+            </when>
+            <when test="sortField == 'combinationId'">
+                order by c.combination_id
+                <choose><when test="sortOrder == 'asc'">asc</when><otherwise>desc</otherwise></choose>
             </when>
             <otherwise>
                 order by c.create_time

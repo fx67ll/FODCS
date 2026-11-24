@@ -130,6 +130,12 @@ public class Fx67llDortmundBasicMatch extends BaseEntity {
     private String oddsResult;
 
     /**
+     * 倍率赛果筛选令牌（非表列）。
+     * 每个元素匹配以逗号分隔的 odds_result 中的单个标准值；U 为“未登记”查询哨兵。
+     */
+    private List<String> oddsResultFilters;
+
+    /**
      * 比赛业务备注（如轮次、特殊说明）
      */
     @Excel(name = "比赛业务备注", readConverterExp = "如=轮次、特殊说明")
@@ -376,6 +382,14 @@ public class Fx67llDortmundBasicMatch extends BaseEntity {
         return oddsResult;
     }
 
+    public List<String> getOddsResultFilters() {
+        return oddsResultFilters;
+    }
+
+    public void setOddsResultFilters(List<String> oddsResultFilters) {
+        this.oddsResultFilters = oddsResultFilters;
+    }
+
     public void setMatchRemark(String matchRemark) {
         this.matchRemark = matchRemark;
     }
@@ -505,6 +519,7 @@ public class Fx67llDortmundBasicMatch extends BaseEntity {
                 .append("adoptedCombinationCount", getAdoptedCombinationCount())
                 .append("matchResult", getMatchResult())
                 .append("oddsResult", getOddsResult())
+                .append("oddsResultFilters", getOddsResultFilters())
                 .append("matchRemark", getMatchRemark())
                 .append("newSeason", getNewSeason())
                 .append("newHomeTeam", getNewHomeTeam())

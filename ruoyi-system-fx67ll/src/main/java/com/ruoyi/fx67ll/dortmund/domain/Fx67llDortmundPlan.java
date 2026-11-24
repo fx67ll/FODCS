@@ -77,6 +77,21 @@ public class Fx67llDortmundPlan extends BaseEntity {
     private String combinationVerificationStatus;
 
     /**
+     * 关联回报组合中已达成数量（非表字段，用于列表和卡片统计）
+     */
+    private Integer combinationSuccessCount;
+
+    /**
+     * 关联回报组合中未达成数量（非表字段，用于列表和卡片统计）
+     */
+    private Integer combinationFailedCount;
+
+    /**
+     * 关联回报组合中未核验数量（非表字段，用于列表和卡片统计）
+     */
+    private Integer combinationUnverifiedCount;
+
+    /**
      * 按关联组合自动计算的预计本金
      */
     @Excel(name = "自动预计本金")
@@ -269,6 +284,30 @@ public class Fx67llDortmundPlan extends BaseEntity {
         this.combinationVerificationStatus = combinationVerificationStatus;
     }
 
+    public Integer getCombinationSuccessCount() {
+        return combinationSuccessCount;
+    }
+
+    public void setCombinationSuccessCount(Integer combinationSuccessCount) {
+        this.combinationSuccessCount = combinationSuccessCount;
+    }
+
+    public Integer getCombinationFailedCount() {
+        return combinationFailedCount;
+    }
+
+    public void setCombinationFailedCount(Integer combinationFailedCount) {
+        this.combinationFailedCount = combinationFailedCount;
+    }
+
+    public Integer getCombinationUnverifiedCount() {
+        return combinationUnverifiedCount;
+    }
+
+    public void setCombinationUnverifiedCount(Integer combinationUnverifiedCount) {
+        this.combinationUnverifiedCount = combinationUnverifiedCount;
+    }
+
     public BigDecimal getCalculatedExpectedPrincipal() {
         return calculatedExpectedPrincipal;
     }
@@ -450,6 +489,9 @@ public class Fx67llDortmundPlan extends BaseEntity {
                 .append("planActualPrincipal", getPlanActualPrincipal())
                 .append("combinationIds", getCombinationIds())
                 .append("combinationVerificationStatus", getCombinationVerificationStatus())
+                .append("combinationSuccessCount", getCombinationSuccessCount())
+                .append("combinationFailedCount", getCombinationFailedCount())
+                .append("combinationUnverifiedCount", getCombinationUnverifiedCount())
                 .append("calculatedExpectedPrincipal", getCalculatedExpectedPrincipal())
                 .append("calculatedExpectedReturn", getCalculatedExpectedReturn())
                 .append("summaryContent", getSummaryContent())

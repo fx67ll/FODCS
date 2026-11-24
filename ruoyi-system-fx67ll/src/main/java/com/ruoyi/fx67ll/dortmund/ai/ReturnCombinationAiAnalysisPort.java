@@ -8,7 +8,8 @@ import com.ruoyi.fx67ll.dortmund.domain.Fx67llDortmundReturnPreferenceDimensions
 /**
  * Dortmund回报组合AI分析业务边界
  * <p>
- * 仅传递业务输入、业务输出与供应商无关的调用审计信息，不持久化供应商、模型、Prompt、Token或费用等治理元数据
+ * 仅传递业务输入、业务输出与供应商无关的调用审计信息，不持久化供应商、模型参数、Prompt、Token或费用等治理元数据；
+ * AI自报的轻量来源标识仅用于组合标题辨识，不参与业务计算。
  * <p>
  * 【通用AI接入点】本端口是回报组合业务与模型编排之间唯一允许的依赖边界。通用AI模块接入时，
  * 只替换本端口实现；业务输入、证据编码、响应契约和落库事务不得随供应商变化。
@@ -563,6 +564,9 @@ public interface ReturnCombinationAiAnalysisPort {
 
         private String analysisContent;
 
+        /** AI在响应中自行声明的来源模型标识，仅用于组合标题辨识，不参与业务计算。 */
+        private String aiSource;
+
         /** 供应商无关的AI调用链路引用；由适配器可选回填，不承载模型或费用等治理元数据 */
         private String aiRunRef;
 
@@ -580,6 +584,14 @@ public interface ReturnCombinationAiAnalysisPort {
 
         public void setAnalysisContent(String analysisContent) {
             this.analysisContent = analysisContent;
+        }
+
+        public String getAiSource() {
+            return aiSource;
+        }
+
+        public void setAiSource(String aiSource) {
+            this.aiSource = aiSource;
         }
 
         public String getAiRunRef() {
