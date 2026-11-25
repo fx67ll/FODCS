@@ -53,6 +53,20 @@ public interface Fx67llDortmundBasicMatchMapper
     public int updateFx67llDortmundBasicMatch(Fx67llDortmundBasicMatch fx67llDortmundBasicMatch);
 
     /**
+     * 仅更新比赛常规赛果和倍率赛果，供 APP 移动端赛果补录使用。
+     * <p>显式写入空值以支持撤销误录；比赛编排字段保持不变。</p>
+     *
+     * @param matchId     比赛记录主键
+     * @param matchResult 常规赛果
+     * @param oddsResult  倍率赛果
+     * @param updateBy    更新人
+     * @return 结果
+     */
+    public int updateMatchResultsForApp(@Param("matchId") Long matchId,
+            @Param("matchResult") String matchResult, @Param("oddsResult") String oddsResult,
+            @Param("updateBy") String updateBy);
+
+    /**
      * 删除比赛记录
      * 
      * @param matchId 比赛记录主键

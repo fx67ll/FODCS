@@ -10,6 +10,7 @@
         <result property="seasonId" column="season_id"/>
         <result property="seasonName" column="season_name"/>
         <result property="matchId" column="match_id"/>
+        <result property="matchCode" column="match_code"/>
         <result property="matchTime" column="match_time"/>
         <result property="homeTeamName" column="home_team_name"/>
         <result property="awayTeamName" column="away_team_name"/>
@@ -37,6 +38,7 @@
                p.season_id,
                s.season_name as season_name,
                p.match_id,
+               m.match_code  as match_code,
                m.match_time  as match_time,
                ht.team_name  as home_team_name,
                at.team_name  as away_team_name,

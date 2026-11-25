@@ -1,5 +1,6 @@
 package com.ruoyi.web.controller.fx67ll.dortmund;
 
+import java.io.IOException;
 import java.util.List;
 import javax.servlet.http.HttpServletResponse;
 
@@ -13,6 +14,7 @@ import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import com.ruoyi.common.annotation.Log;
 import com.ruoyi.common.core.controller.BaseController;
@@ -21,6 +23,7 @@ import com.ruoyi.common.enums.BusinessType;
 import com.ruoyi.fx67ll.dortmund.domain.Fx67llDortmundExtra;
 import com.ruoyi.fx67ll.dortmund.domain.Fx67llDortmundExtraMergeBody;
 import com.ruoyi.fx67ll.dortmund.service.IFx67llDortmundExtraService;
+import com.ruoyi.fx67ll.dortmund.util.DortmundExportUtils;
 import com.ruoyi.common.utils.poi.ExcelUtil;
 import com.ruoyi.common.core.page.TableDataInfo;
 
@@ -33,6 +36,12 @@ import com.ruoyi.common.core.page.TableDataInfo;
 @RestController
 @RequestMapping("/dortmund/extra")
 public class Fx67llDortmundExtraController extends BaseController {
+    /** 外快盈亏导出字段白名单，金额保留数据库文本精度。 */
+    private static final String[] EXPORT_COLUMNS = {
+            "extraId", "extraMoney", "isWin", "winMoney", "seedMoney", "saveMoney", "targetMoney",
+            "extraRemark", "delFlag", "userId", "createBy", "createTime", "updateBy", "updateTime"
+    };
+
     @Autowired
     private IFx67llDortmundExtraService fx67llDortmundExtraService;
 
@@ -65,8 +74,15 @@ public class Fx67llDortmundExtraController extends BaseController {
     @PreAuthorize("@ss.hasPermi('dortmund:extra:export')")
     @Log(title = "导出外快盈亏记录列表", businessType = BusinessType.EXPORT)
     @PostMapping("/export")
-    public void export(HttpServletResponse response, Fx67llDortmundExtra fx67llDortmundExtra) {
+    public void export(HttpServletResponse response, Fx67llDortmundExtra fx67llDortmundExtra,
+            @RequestParam(value = "exportType", required = false, defaultValue = "excel") String exportType)
+            throws IOException {
         List<Fx67llDortmundExtra> list = fx67llDortmundExtraService.selectFx67llDortmundExtraList(fx67llDortmundExtra);
+        if (DortmundExportUtils.isStructured(exportType)) {
+            DortmundExportUtils.export(response, "dortmund-extra", exportType,
+                    "fx67ll_dortmund_extra", EXPORT_COLUMNS, list);
+            return;
+        }
         ExcelUtil<Fx67llDortmundExtra> util = new ExcelUtil<Fx67llDortmundExtra>(Fx67llDortmundExtra.class);
         util.exportExcel(response, list, "外快盈亏记录数据");
     }

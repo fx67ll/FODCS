@@ -1,9 +1,14 @@
 package com.ruoyi.fx67ll.dortmund.service.impl;
 
 import java.math.BigDecimal;
+import java.security.SecureRandom;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 
@@ -12,6 +17,7 @@ import com.ruoyi.common.utils.DateUtils;
 import com.ruoyi.common.utils.SecurityUtils;
 import com.ruoyi.fx67ll.dortmund.config.DortmundModuleConfig;
 import com.ruoyi.fx67ll.dortmund.domain.Fx67llDortmundBasicMatch;
+import com.ruoyi.fx67ll.dortmund.domain.Fx67llDortmundBasicMatchExcel;
 import com.ruoyi.fx67ll.dortmund.domain.Fx67llDortmundBasicSeason;
 import com.ruoyi.fx67ll.dortmund.domain.Fx67llDortmundBasicTeam;
 import com.ruoyi.fx67ll.dortmund.domain.Fx67llDortmundInfoPoint;
@@ -46,6 +52,12 @@ import org.springframework.transaction.annotation.Transactional;
  */
 @Service
 public class Fx67llDortmundBasicMatchServiceImpl implements IFx67llDortmundBasicMatchService {
+    /** 比赛 JSON 单次导入上限，避免超大请求在单事务内长时间占用连接。 */
+    private static final int MAX_IMPORT_ROWS = 1000;
+
+    /** 自动生成比赛编码的随机源；仅用于补足日期后的六位随机段。 */
+    private static final SecureRandom MATCH_CODE_RANDOM = new SecureRandom();
+
     @Autowired
     private Fx67llDortmundBasicMatchMapper fx67llDortmundBasicMatchMapper;
 
@@ -225,6 +237,42 @@ public class Fx67llDortmundBasicMatchServiceImpl implements IFx67llDortmundBasic
     }
 
     /**
+     * APP 端只更新常规赛果和倍率赛果。
+     * <p>
+     * 移动端不允许通过本接口修改比赛编排字段，避免表单不完整时覆盖赛季、主客队或开赛时间。
+     * 两个赛果均按 Web 端相同规则校验和标准化；任一结果变化时，将关联方案标记为摘要待刷新，
+     * 并把引用该比赛的回报组合核验结论重置为未核验，保证下游统计不会继续使用过期事实。
+     * </p>
+     *
+     * @param matchId     比赛记录主键
+     * @param matchResult 常规赛果，可为空表示清除
+     * @param oddsResult  倍率赛果，可为空表示清除
+     * @return 更新条数
+     */
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public int updateMatchResultsForApp(Long matchId, String matchResult, String oddsResult) {
+        if (matchId == null) {
+            throw new ServiceException("比赛主键不能为空！");
+        }
+        Fx67llDortmundBasicMatch oldMatch = requireMatchAccessible(matchId);
+        String normalizedMatchResult = DortmundFieldValidator.validateEnum(
+                matchResult, "比赛结果", false, "0", "1", "2");
+        String normalizedOddsResult = normalizeOddsResult(oddsResult);
+        boolean resultChanged = !Objects.equals(oldMatch.getMatchResult(), normalizedMatchResult)
+                || !Objects.equals(oldMatch.getOddsResult(), normalizedOddsResult);
+
+        int rows = fx67llDortmundBasicMatchMapper.updateMatchResultsForApp(
+                matchId, normalizedMatchResult, normalizedOddsResult, SecurityUtils.getUsername());
+        if (rows > 0 && resultChanged) {
+            fx67llDortmundPlanMapper.markSummaryUpdateByMatchId(matchId);
+            fx67llDortmundReturnCombinationMapper.resetVerificationByMatchId(
+                    matchId, SecurityUtils.getUsername());
+        }
+        return rows;
+    }
+
+    /**
      * 批量删除比赛记录
      *
      * @param matchIds 需要删除的比赛记录主键
@@ -256,6 +304,227 @@ public class Fx67llDortmundBasicMatchServiceImpl implements IFx67llDortmundBasic
         requireMatchAccessible(matchId);
         checkMatchReferenceBeforeDelete(matchId);
         return fx67llDortmundBasicMatchMapper.deleteFx67llDortmundBasicMatchByMatchId(matchId);
+    }
+
+    /**
+     * 批量导入确认后的 JSON 比赛条目。
+     * <p>先解析全部条目再写库，一次性返回所有序号错误，避免事务中部分成功造成用户误以为导入完整。
+     * 赛季、球队及其他可见比赛均在当前登录用户的数据范围内解析。</p>
+     *
+     * @param rows 前端预览并勾选的业务交换行
+     * @return 导入成功条数
+     */
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public int importFx67llDortmundBasicMatchJson(List<Fx67llDortmundBasicMatchExcel> rows) {
+        return importFx67llDortmundBasicMatchRows(rows);
+    }
+
+    /**
+     * 比赛导入公共实现。
+     *
+     * @param rows 待导入行
+     * @return 导入成功条数
+     */
+    private int importFx67llDortmundBasicMatchRows(List<Fx67llDortmundBasicMatchExcel> rows) {
+        if (rows == null || rows.isEmpty()) {
+            throw new ServiceException("导入文件中没有可处理的数据！");
+        }
+        if (rows.size() > MAX_IMPORT_ROWS) {
+            throw new ServiceException("单次最多导入" + MAX_IMPORT_ROWS + "条比赛记录！");
+        }
+
+        // 导入引用与列表、详情共用同一数据范围：普通用户不能借 JSON 导入绑定他人赛季或球队。
+        List<Fx67llDortmundBasicSeason> seasons = fx67llDortmundBasicSeasonService
+                .selectFx67llDortmundBasicSeasonListForCurrentUser(new Fx67llDortmundBasicSeason());
+        List<Fx67llDortmundBasicTeam> teams = fx67llDortmundBasicTeamService
+                .selectFx67llDortmundBasicTeamListForCurrentUser(new Fx67llDortmundBasicTeam());
+        // 比赛编码和“赛季 + 主客队 + 开赛时间”在数据库均为全局唯一，
+        // 因此重复校验必须读取全量比赛，不能只检查当前用户自己的数据。
+        List<Fx67llDortmundBasicMatch> existingMatches = fx67llDortmundBasicMatchMapper
+                .selectFx67llDortmundBasicMatchList(new Fx67llDortmundBasicMatch());
+
+        Set<String> existingCodes = new HashSet<>();
+        Set<String> existingBusinessKeys = new HashSet<>();
+        for (Fx67llDortmundBasicMatch match : existingMatches) {
+            if (match.getMatchCode() != null) {
+                existingCodes.add(match.getMatchCode().trim());
+            }
+            existingBusinessKeys.add(buildMatchBusinessKey(match.getSeasonId(), match.getHomeTeamId(),
+                    match.getAwayTeamId(), match.getMatchTime()));
+        }
+
+        List<String> errors = new ArrayList<>();
+        List<Fx67llDortmundBasicMatch> prepared = new ArrayList<>();
+        Set<String> importCodes = new HashSet<>();
+        Set<String> importBusinessKeys = new HashSet<>();
+        for (int index = 0; index < rows.size(); index++) {
+            int rowNumber = index + 1;
+            try {
+                Fx67llDortmundBasicMatch match = resolveMatchImportRow(rows.get(index), seasons, teams,
+                        existingCodes, importCodes);
+                String businessKey = buildMatchBusinessKey(match.getSeasonId(), match.getHomeTeamId(),
+                        match.getAwayTeamId(), match.getMatchTime());
+                if (existingBusinessKeys.contains(businessKey)) {
+                    throw new ServiceException("该赛季、主客队和开赛时间已存在比赛，请勿重复导入");
+                }
+                if (!importBusinessKeys.add(businessKey)) {
+                    throw new ServiceException("同一文件内存在重复的赛季、主客队和开赛时间");
+                }
+                prepared.add(match);
+            } catch (ServiceException e) {
+                errors.add("第" + rowNumber + "条：" + e.getMessage());
+            }
+        }
+        if (!errors.isEmpty()) {
+            throw new ServiceException("比赛导入校验失败：" + String.join("；", errors));
+        }
+
+        int imported = 0;
+        for (Fx67llDortmundBasicMatch match : prepared) {
+            imported += insertFx67llDortmundBasicMatch(match);
+        }
+        return imported;
+    }
+
+    /**
+     * 将一条 JSON 比赛数据解析为可写入的比赛对象。
+     *
+     * @param row JSON 比赛条目
+     * @param seasons 当前用户可见赛季
+     * @param teams 当前用户可见球队
+     * @param existingCodes 数据库已有比赛编码
+     * @param importCodes 当前文件已占用比赛编码
+     * @return 待写入比赛
+     */
+    private Fx67llDortmundBasicMatch resolveMatchImportRow(Fx67llDortmundBasicMatchExcel row,
+            List<Fx67llDortmundBasicSeason> seasons, List<Fx67llDortmundBasicTeam> teams,
+            Set<String> existingCodes, Set<String> importCodes) {
+        if (row == null) {
+            throw new ServiceException("数据行不能为空");
+        }
+        String seasonName = trim(row.getSeasonName());
+        if (seasonName == null) {
+            throw new ServiceException("赛季名称不能为空");
+        }
+        if (row.getMatchTime() == null) {
+            throw new ServiceException("比赛开球时间不能为空");
+        }
+
+        Fx67llDortmundBasicSeason season = findSeasonByName(seasons, seasonName);
+        Fx67llDortmundBasicTeam homeTeam = findTeam(teams, row.getHomeTeamCode(), row.getHomeTeamName(), "主队");
+        Fx67llDortmundBasicTeam awayTeam = findTeam(teams, row.getAwayTeamCode(), row.getAwayTeamName(), "客队");
+        if (Objects.equals(homeTeam.getTeamId(), awayTeam.getTeamId())) {
+            throw new ServiceException("主队和客队不能是同一支球队");
+        }
+
+        String matchCode = trim(row.getMatchCode());
+        if (matchCode == null) {
+            matchCode = generateImportMatchCode(row.getMatchTime(), existingCodes, importCodes);
+        } else if (existingCodes.contains(matchCode) || importCodes.contains(matchCode)) {
+            throw new ServiceException("比赛编码“" + matchCode + "”已存在");
+        }
+        importCodes.add(matchCode);
+
+        Fx67llDortmundBasicMatch match = new Fx67llDortmundBasicMatch();
+        match.setMatchCode(matchCode);
+        match.setSeasonId(season.getSeasonId());
+        match.setHomeTeamId(homeTeam.getTeamId());
+        match.setAwayTeamId(awayTeam.getTeamId());
+        match.setMatchTime(row.getMatchTime());
+        match.setMatchVenue(trim(row.getMatchVenue()) == null ? homeTeam.getTeamVenue() : trim(row.getMatchVenue()));
+        match.setMatchStatus(trim(row.getMatchStatus()) == null ? "0" : trim(row.getMatchStatus()));
+        match.setMatchResult(trim(row.getMatchResult()));
+        match.setOddsResult(trim(row.getOddsResult()));
+        match.setMatchRemark(trim(row.getMatchRemark()));
+        return match;
+    }
+
+    /**
+     * 按完整名称查找当前用户可见赛季。
+     */
+    private Fx67llDortmundBasicSeason findSeasonByName(List<Fx67llDortmundBasicSeason> seasons, String seasonName) {
+        Fx67llDortmundBasicSeason matched = null;
+        if (seasons != null) {
+            for (Fx67llDortmundBasicSeason season : seasons) {
+                if (seasonName.equals(trim(season.getSeasonName()))) {
+                    if (matched != null) {
+                        throw new ServiceException("赛季名称“" + seasonName + "”不唯一，请先处理重复赛季");
+                    }
+                    matched = season;
+                }
+            }
+        }
+        if (matched == null) {
+            throw new ServiceException("未找到赛季“" + seasonName + "”");
+        }
+        return matched;
+    }
+
+    /**
+     * 优先按球队编码精确匹配，编码为空时按名称唯一匹配。
+     */
+    private Fx67llDortmundBasicTeam findTeam(List<Fx67llDortmundBasicTeam> teams, String teamCode,
+            String teamName, String label) {
+        String code = trim(teamCode);
+        String name = trim(teamName);
+        if (code == null && name == null) {
+            throw new ServiceException(label + "编码或名称不能为空");
+        }
+        Fx67llDortmundBasicTeam matched = null;
+        if (teams != null) {
+            for (Fx67llDortmundBasicTeam team : teams) {
+                boolean matchedRow = code != null
+                        ? code.equals(trim(team.getTeamCode()))
+                        : name.equals(trim(team.getTeamName())) || name.equals(trim(team.getTeamNameShort()))
+                                || name.equals(trim(team.getTeamNameEn()));
+                if (!matchedRow) {
+                    continue;
+                }
+                if (matched != null && !Objects.equals(matched.getTeamId(), team.getTeamId())) {
+                    throw new ServiceException(label + "“" + (code == null ? name : code) + "”匹配到多支球队，请改用唯一编码");
+                }
+                matched = team;
+            }
+        }
+        if (matched == null) {
+            throw new ServiceException("未找到" + label + "“" + (code == null ? name : code) + "”");
+        }
+        return matched;
+    }
+
+    /**
+     * 生成全局唯一且不超过 23 个字符的比赛编码。
+     */
+    private String generateImportMatchCode(java.util.Date matchTime, Set<String> existingCodes, Set<String> importCodes) {
+        String datePart = DateUtils.parseDateToStr("yyyyMMdd", matchTime);
+        for (int attempt = 0; attempt < 20; attempt++) {
+            String candidate = "MATCH-" + datePart + "-" + String.format("%06d", MATCH_CODE_RANDOM.nextInt(1000000));
+            if (!existingCodes.contains(candidate) && !importCodes.contains(candidate)) {
+                return candidate;
+            }
+        }
+        throw new ServiceException("自动生成比赛编码失败，请在文件中手工填写唯一编码");
+    }
+
+    /**
+     * 构造比赛业务唯一键，用于在导入前检查文件内和数据库内重复。
+     */
+    private String buildMatchBusinessKey(Long seasonId, Long homeTeamId, Long awayTeamId, java.util.Date matchTime) {
+        return (seasonId == null ? "" : seasonId) + "|" + (homeTeamId == null ? "" : homeTeamId) + "|"
+                + (awayTeamId == null ? "" : awayTeamId) + "|"
+                + (matchTime == null ? "" : DateUtils.parseDateToStr("yyyy-MM-dd HH:mm:ss", matchTime));
+    }
+
+    /**
+     * 去除首尾空白，空串统一转换为 null。
+     */
+    private String trim(String value) {
+        if (value == null) {
+            return null;
+        }
+        String trimmed = value.trim();
+        return trimmed.isEmpty() ? null : trimmed;
     }
 
     /**

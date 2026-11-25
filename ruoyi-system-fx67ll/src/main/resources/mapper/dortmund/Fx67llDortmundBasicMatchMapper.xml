@@ -251,6 +251,19 @@
         where match_id = #{matchId}
     </update>
 
+    <!--
+      APP 移动端赛果补录只更新两个赛果字段。
+      结果显式赋值，允许用户清空误录；update_time 由数据库当前时间生成，避免依赖客户端时间。
+    -->
+    <update id="updateMatchResultsForApp">
+        update fx67ll_dortmund_match
+        set match_result = #{matchResult},
+            odds_result = #{oddsResult},
+            update_by = #{updateBy},
+            update_time = now()
+        where match_id = #{matchId}
+    </update>
+
     <delete id="deleteFx67llDortmundBasicMatchByMatchId" parameterType="Long">
         delete
         from fx67ll_dortmund_match

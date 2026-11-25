@@ -1,5 +1,6 @@
 package com.ruoyi.web.controller.fx67ll.dortmund;
 
+import java.io.IOException;
 import java.util.List;
 import javax.servlet.http.HttpServletResponse;
 
@@ -12,6 +13,7 @@ import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import com.ruoyi.common.annotation.Log;
 import com.ruoyi.common.core.controller.BaseController;
@@ -19,6 +21,7 @@ import com.ruoyi.common.core.domain.AjaxResult;
 import com.ruoyi.common.enums.BusinessType;
 import com.ruoyi.fx67ll.dortmund.domain.Fx67llDortmundBasicTeam;
 import com.ruoyi.fx67ll.dortmund.service.IFx67llDortmundBasicTeamService;
+import com.ruoyi.fx67ll.dortmund.util.DortmundExportUtils;
 import com.ruoyi.common.utils.poi.ExcelUtil;
 import com.ruoyi.common.core.page.TableDataInfo;
 
@@ -31,6 +34,13 @@ import com.ruoyi.common.core.page.TableDataInfo;
 @RestController
 @RequestMapping("/dortmund/team")
 public class Fx67llDortmundBasicTeamController extends BaseController {
+    /** 球队导出字段白名单，JSON 使用业务字段名，SQL 自动转换为下划线列名。 */
+    private static final String[] EXPORT_COLUMNS = {
+            "teamId", "teamCode", "teamName", "teamNameShort", "teamNameEn", "teamLogoUrl",
+            "teamVenue", "teamCountry", "teamTag", "teamStatus", "teamSort", "teamRemark",
+            "userId", "createBy", "createTime", "updateBy", "updateTime", "delFlag"
+    };
+
     @Autowired
     private IFx67llDortmundBasicTeamService fx67llDortmundBasicTeamService;
 
@@ -52,9 +62,17 @@ public class Fx67llDortmundBasicTeamController extends BaseController {
     @PreAuthorize("@ss.hasPermi('dortmund:team:export')")
     @Log(title = "球队管理", businessType = BusinessType.EXPORT)
     @PostMapping("/export")
-    public void export(HttpServletResponse response, Fx67llDortmundBasicTeam fx67llDortmundBasicTeam) {
+    public void export(HttpServletResponse response, Fx67llDortmundBasicTeam fx67llDortmundBasicTeam,
+            @RequestParam(value = "exportType", required = false, defaultValue = "excel") String exportType)
+            throws IOException {
         List<Fx67llDortmundBasicTeam> list = fx67llDortmundBasicTeamService
                 .selectFx67llDortmundBasicTeamListForCurrentUser(fx67llDortmundBasicTeam);
+        // JSON 与 SQL 使用同一批当前用户可见、符合页面筛选的数据，避免另建导出查询造成口径漂移。
+        if (DortmundExportUtils.isStructured(exportType)) {
+            DortmundExportUtils.export(response, "dortmund-team", exportType,
+                    "fx67ll_dortmund_team", EXPORT_COLUMNS, list);
+            return;
+        }
         ExcelUtil<Fx67llDortmundBasicTeam> util = new ExcelUtil<Fx67llDortmundBasicTeam>(Fx67llDortmundBasicTeam.class);
         util.exportExcel(response, list, "球队管理数据");
     }

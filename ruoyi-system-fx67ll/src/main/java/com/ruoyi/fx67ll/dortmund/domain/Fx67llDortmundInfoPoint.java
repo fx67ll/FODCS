@@ -48,6 +48,11 @@ public class Fx67llDortmundInfoPoint extends BaseEntity {
     private Long matchId;
 
     /**
+     * M类型所属比赛编码（关联查询，用于列表辨识和 Excel 交换）
+     */
+    private String matchCode;
+
+    /**
      * 比赛开球时间（关联查询）
      */
     @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
@@ -220,6 +225,14 @@ public class Fx67llDortmundInfoPoint extends BaseEntity {
 
     public Long getMatchId() {
         return matchId;
+    }
+
+    public String getMatchCode() {
+        return matchCode;
+    }
+
+    public void setMatchCode(String matchCode) {
+        this.matchCode = matchCode;
     }
 
     public Date getMatchTime() {
@@ -414,6 +427,7 @@ public class Fx67llDortmundInfoPoint extends BaseEntity {
                 .append("seasonId", getSeasonId())
                 .append("seasonName", getSeasonName())
                 .append("matchId", getMatchId())
+                .append("matchCode", getMatchCode())
                 .append("matchTime", getMatchTime())
                 .append("homeTeamName", getHomeTeamName())
                 .append("awayTeamName", getAwayTeamName())

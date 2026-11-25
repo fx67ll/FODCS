@@ -3,6 +3,7 @@ package com.ruoyi.fx67ll.dortmund.service;
 import java.util.List;
 
 import com.ruoyi.fx67ll.dortmund.domain.Fx67llDortmundInfoPoint;
+import com.ruoyi.fx67ll.dortmund.domain.Fx67llDortmundInfoPointExcel;
 
 /**
  * 统一信息点Service接口
@@ -76,4 +77,25 @@ public interface IFx67llDortmundInfoPointService {
      * @return 信息点集合
      */
     public List<Fx67llDortmundInfoPoint> selectFx67llDortmundInfoPointValidListByMatchId(Long matchId);
+
+    /**
+     * 查询信息点导出数据。
+     * <p>
+     * 在标准列表结果上为 T 类型补齐当前有效球队关系，保证导出文件可直接携带球队编码。
+     *
+     * @param query 信息点查询条件
+     * @return 带球队关系的信息点集合
+     */
+    public List<Fx67llDortmundInfoPoint> selectFx67llDortmundInfoPointExportList(Fx67llDortmundInfoPoint query);
+
+    /**
+     * 批量导入前端预览并确认的标准 JSON 信息点。
+     * <p>
+     * T 类型按赛季名称和球队编码解析关系，M 类型按比赛编码定位比赛；
+     * 所有条目先完成校验再统一写入，任一条错误都会给出带条目序号的原因并回滚整批。
+     *
+     * @param rows 标准 JSON 信息点条目
+     * @return 导入成功条数
+     */
+    public int importFx67llDortmundInfoPointJson(List<Fx67llDortmundInfoPointExcel> rows);
 }

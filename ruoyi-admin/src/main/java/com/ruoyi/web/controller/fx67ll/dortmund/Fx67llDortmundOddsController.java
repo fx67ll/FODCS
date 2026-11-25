@@ -1,5 +1,6 @@
 package com.ruoyi.web.controller.fx67ll.dortmund;
 
+import java.io.IOException;
 import java.util.List;
 import javax.servlet.http.HttpServletResponse;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -11,6 +12,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import com.ruoyi.common.annotation.Log;
 import com.ruoyi.common.annotation.RepeatSubmit;
@@ -22,6 +24,7 @@ import com.ruoyi.common.utils.poi.ExcelUtil;
 import com.ruoyi.fx67ll.dortmund.domain.Fx67llDortmundOdds;
 import com.ruoyi.fx67ll.dortmund.domain.Fx67llDortmundOddsExportResponse;
 import com.ruoyi.fx67ll.dortmund.service.IFx67llDortmundOddsService;
+import com.ruoyi.fx67ll.dortmund.util.DortmundExportUtils;
 
 /**
  * Dortmund倍率记录Controller
@@ -32,6 +35,15 @@ import com.ruoyi.fx67ll.dortmund.service.IFx67llDortmundOddsService;
 @RestController
 @RequestMapping("/dortmund/odds")
 public class Fx67llDortmundOddsController extends BaseController {
+    /** 倍率版本导出字段白名单，包含六类倍率与权重及审计字段。 */
+    private static final String[] EXPORT_COLUMNS = {
+            "oddsId", "matchId", "oddsCode", "sourceTime", "handicapValue", "homeWinOdds", "homeWinWeight",
+            "drawOdds", "drawWeight", "awayWinOdds", "awayWinWeight", "handicapHomeWinOdds",
+            "handicapHomeWinWeight", "handicapDrawOdds", "handicapDrawWeight", "handicapAwayWinOdds",
+            "handicapAwayWinWeight", "activeFlag", "oddsRemark", "userId", "createBy", "createTime",
+            "updateBy", "updateTime", "delFlag"
+    };
+
     @Autowired
     private IFx67llDortmundOddsService fx67llDortmundOddsService;
 
@@ -112,8 +124,15 @@ public class Fx67llDortmundOddsController extends BaseController {
     @PreAuthorize("@ss.hasPermi('dortmund:odds:export')")
     @Log(title = "Dortmund倍率记录", businessType = BusinessType.EXPORT)
     @PostMapping("/export")
-    public void export(HttpServletResponse response, Fx67llDortmundOdds query) {
+    public void export(HttpServletResponse response, Fx67llDortmundOdds query,
+            @RequestParam(value = "exportType", required = false, defaultValue = "excel") String exportType)
+            throws IOException {
         List<Fx67llDortmundOdds> list = fx67llDortmundOddsService.selectFx67llDortmundOddsList(query);
+        if (DortmundExportUtils.isStructured(exportType)) {
+            DortmundExportUtils.export(response, "dortmund-odds", exportType,
+                    "fx67ll_dortmund_odds", EXPORT_COLUMNS, list);
+            return;
+        }
         List<Fx67llDortmundOddsExportResponse> exportList = new java.util.ArrayList<>();
         for (Fx67llDortmundOdds item : list) {
             exportList.add(new Fx67llDortmundOddsExportResponse(item));

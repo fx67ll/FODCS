@@ -1,5 +1,6 @@
 package com.ruoyi.web.controller.fx67ll.dortmund;
 
+import java.io.IOException;
 import java.util.List;
 import javax.servlet.http.HttpServletResponse;
 
@@ -12,6 +13,7 @@ import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import com.ruoyi.common.annotation.Log;
 import com.ruoyi.common.core.controller.BaseController;
@@ -19,6 +21,7 @@ import com.ruoyi.common.core.domain.AjaxResult;
 import com.ruoyi.common.enums.BusinessType;
 import com.ruoyi.fx67ll.dortmund.domain.Fx67llDortmundBasicSeason;
 import com.ruoyi.fx67ll.dortmund.service.IFx67llDortmundBasicSeasonService;
+import com.ruoyi.fx67ll.dortmund.util.DortmundExportUtils;
 import com.ruoyi.common.utils.poi.ExcelUtil;
 import com.ruoyi.common.core.page.TableDataInfo;
 
@@ -31,6 +34,12 @@ import com.ruoyi.common.core.page.TableDataInfo;
 @RestController
 @RequestMapping("/dortmund/season")
 public class Fx67llDortmundBasicSeasonController extends BaseController {
+    /** 赛季导出字段白名单，不含任何页面派生展示字段。 */
+    private static final String[] EXPORT_COLUMNS = {
+            "seasonId", "seasonCode", "seasonName", "seasonStartDate", "seasonEndDate", "seasonStatus",
+            "seasonSort", "seasonRemark", "userId", "createBy", "createTime", "updateBy", "updateTime", "delFlag"
+    };
+
     @Autowired
     private IFx67llDortmundBasicSeasonService fx67llDortmundBasicSeasonService;
 
@@ -52,9 +61,16 @@ public class Fx67llDortmundBasicSeasonController extends BaseController {
     @PreAuthorize("@ss.hasPermi('dortmund:season:export')")
     @Log(title = "赛季管理", businessType = BusinessType.EXPORT)
     @PostMapping("/export")
-    public void export(HttpServletResponse response, Fx67llDortmundBasicSeason fx67llDortmundBasicSeason) {
+    public void export(HttpServletResponse response, Fx67llDortmundBasicSeason fx67llDortmundBasicSeason,
+            @RequestParam(value = "exportType", required = false, defaultValue = "excel") String exportType)
+            throws IOException {
         List<Fx67llDortmundBasicSeason> list = fx67llDortmundBasicSeasonService
                 .selectFx67llDortmundBasicSeasonListForCurrentUser(fx67llDortmundBasicSeason);
+        if (DortmundExportUtils.isStructured(exportType)) {
+            DortmundExportUtils.export(response, "dortmund-season", exportType,
+                    "fx67ll_dortmund_season", EXPORT_COLUMNS, list);
+            return;
+        }
         ExcelUtil<Fx67llDortmundBasicSeason> util = new ExcelUtil<Fx67llDortmundBasicSeason>(Fx67llDortmundBasicSeason.class);
         util.exportExcel(response, list, "赛季管理数据");
     }

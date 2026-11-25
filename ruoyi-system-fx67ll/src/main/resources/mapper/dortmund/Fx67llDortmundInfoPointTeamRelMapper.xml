@@ -10,6 +10,7 @@
         <result property="teamId" column="team_id"/>
         <result property="relationStatus" column="relation_status"/>
         <result property="teamName" column="team_name"/>
+        <result property="teamCode" column="team_code"/>
         <result property="createBy" column="create_by"/>
         <result property="createTime" column="create_time"/>
         <result property="updateBy" column="update_by"/>
@@ -22,6 +23,7 @@
                r.team_id,
                r.relation_status,
                t.team_name as team_name,
+               t.team_code as team_code,
                r.create_by,
                r.create_time,
                r.update_by,

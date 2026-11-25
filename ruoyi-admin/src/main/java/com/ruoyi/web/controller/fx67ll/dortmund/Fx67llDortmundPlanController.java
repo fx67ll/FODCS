@@ -1,5 +1,6 @@
 package com.ruoyi.web.controller.fx67ll.dortmund;
 
+import java.io.IOException;
 import java.util.List;
 import javax.servlet.http.HttpServletResponse;
 
@@ -12,6 +13,7 @@ import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import com.ruoyi.common.annotation.Log;
 import com.ruoyi.common.annotation.RepeatSubmit;
@@ -20,6 +22,7 @@ import com.ruoyi.common.core.domain.AjaxResult;
 import com.ruoyi.common.enums.BusinessType;
 import com.ruoyi.fx67ll.dortmund.domain.Fx67llDortmundPlan;
 import com.ruoyi.fx67ll.dortmund.service.IFx67llDortmundPlanService;
+import com.ruoyi.fx67ll.dortmund.util.DortmundExportUtils;
 import com.ruoyi.common.utils.poi.ExcelUtil;
 import com.ruoyi.common.core.page.TableDataInfo;
 
@@ -32,6 +35,14 @@ import com.ruoyi.common.core.page.TableDataInfo;
 @RestController
 @RequestMapping("/dortmund/plan")
 public class Fx67llDortmundPlanController extends BaseController {
+    /** 方案计划导出字段白名单，保留预计/实际与摘要字段。 */
+    private static final String[] EXPORT_COLUMNS = {
+            "planId", "planContent", "planExpectedPrincipal", "planExpectedOdds", "planExpectedReturn",
+            "planActualPrincipal", "planActualReturn", "planActualOdds", "calculatedExpectedPrincipal",
+            "calculatedExpectedReturn", "summaryContent", "summaryUpdateFlag", "summaryUpdateTime",
+            "planRemark", "userId", "createBy", "createTime", "updateBy", "updateTime", "delFlag"
+    };
+
     @Autowired
     private IFx67llDortmundPlanService fx67llDortmundPlanService;
 
@@ -52,8 +63,15 @@ public class Fx67llDortmundPlanController extends BaseController {
     @PreAuthorize("@ss.hasPermi('dortmund:plan:export')")
     @Log(title = "方案计划", businessType = BusinessType.EXPORT)
     @PostMapping("/export")
-    public void export(HttpServletResponse response, Fx67llDortmundPlan fx67llDortmundPlan) {
+    public void export(HttpServletResponse response, Fx67llDortmundPlan fx67llDortmundPlan,
+            @RequestParam(value = "exportType", required = false, defaultValue = "excel") String exportType)
+            throws IOException {
         List<Fx67llDortmundPlan> list = fx67llDortmundPlanService.selectFx67llDortmundPlanList(fx67llDortmundPlan);
+        if (DortmundExportUtils.isStructured(exportType)) {
+            DortmundExportUtils.export(response, "dortmund-plan", exportType,
+                    "fx67ll_dortmund_plan", EXPORT_COLUMNS, list);
+            return;
+        }
         ExcelUtil<Fx67llDortmundPlan> util = new ExcelUtil<Fx67llDortmundPlan>(Fx67llDortmundPlan.class);
         util.exportExcel(response, list, "方案计划数据");
     }

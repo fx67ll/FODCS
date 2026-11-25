@@ -2,7 +2,11 @@ package com.ruoyi.fx67ll.dortmund.service.impl;
 
 import java.util.ArrayList;
 import java.util.Date;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Locale;
+import java.util.Objects;
+import java.util.Set;
 
 import com.ruoyi.common.core.domain.entity.SysRole;
 import com.ruoyi.common.exception.ServiceException;
@@ -11,6 +15,7 @@ import com.ruoyi.common.utils.SecurityUtils;
 import com.ruoyi.fx67ll.dortmund.domain.Fx67llDortmundBasicMatch;
 import com.ruoyi.fx67ll.dortmund.domain.Fx67llDortmundBasicSeason;
 import com.ruoyi.fx67ll.dortmund.domain.Fx67llDortmundInfoPoint;
+import com.ruoyi.fx67ll.dortmund.domain.Fx67llDortmundInfoPointExcel;
 import com.ruoyi.fx67ll.dortmund.domain.Fx67llDortmundInfoPointTeamRel;
 import com.ruoyi.fx67ll.dortmund.domain.Fx67llDortmundBasicTeam;
 import com.ruoyi.fx67ll.dortmund.mapper.Fx67llDortmundBasicMatchMapper;
@@ -42,6 +47,9 @@ import static com.ruoyi.fx67ll.dortmund.config.DortmundModuleConfig.Field.INFO_T
  */
 @Service
 public class Fx67llDortmundInfoPointServiceImpl implements IFx67llDortmundInfoPointService {
+    /** 信息点 JSON 单次导入上限，防止超大请求在单事务中占用过多资源。 */
+    private static final int MAX_IMPORT_ROWS = 1000;
+
     @Autowired
     private Fx67llDortmundInfoPointMapper fx67llDortmundInfoPointMapper;
 
@@ -85,6 +93,229 @@ public class Fx67llDortmundInfoPointServiceImpl implements IFx67llDortmundInfoPo
             fx67llDortmundInfoPoint.setUserId(SecurityUtils.getUserId());
         }
         return fx67llDortmundInfoPointMapper.selectFx67llDortmundInfoPointList(fx67llDortmundInfoPoint);
+    }
+
+    /**
+     * 查询信息点导出数据。
+     * <p>
+     * 标准列表不返回球队关系，导出 Excel 需要球队编码作为可回填的业务键，因此这里仅为 T 类型
+     * 补齐关系行；M 类型不额外查询。
+     *
+     * @param query 信息点查询条件
+     * @return 带球队关系的信息点集合
+     */
+    @Override
+    public List<Fx67llDortmundInfoPoint> selectFx67llDortmundInfoPointExportList(Fx67llDortmundInfoPoint query) {
+        List<Fx67llDortmundInfoPoint> list = selectFx67llDortmundInfoPointList(query);
+        if (list != null) {
+            for (Fx67llDortmundInfoPoint infoPoint : list) {
+                fillTeamRels(infoPoint);
+            }
+        }
+        return list;
+    }
+
+    /**
+     * 批量导入前端预览并确认的标准 JSON 信息点。
+     * <p>
+     * 导入沿用手工新增的服务校验与球队关系写入逻辑。为避免部分成功，先解析全部条目并收集错误，
+     * 全部通过后再统一写入；任一条失败都会回滚整批，并返回带条目序号的中文原因。
+     *
+     * @param rows 标准 JSON 信息点条目
+     * @return 导入成功条数
+     */
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public int importFx67llDortmundInfoPointJson(List<Fx67llDortmundInfoPointExcel> rows) {
+        if (rows == null || rows.isEmpty()) {
+            throw new ServiceException("导入数据不能为空！");
+        }
+        if (rows.size() > MAX_IMPORT_ROWS) {
+            throw new ServiceException("单次最多导入" + MAX_IMPORT_ROWS + "条信息点！");
+        }
+
+        // 赛季与球队引用必须与当前用户列表口径一致，避免通过导入绑定无权访问的基础资料。
+        List<Fx67llDortmundBasicSeason> seasons = fx67llDortmundBasicSeasonService
+                .selectFx67llDortmundBasicSeasonListForCurrentUser(new Fx67llDortmundBasicSeason());
+        List<Fx67llDortmundBasicTeam> teams = fx67llDortmundBasicTeamService
+                .selectFx67llDortmundBasicTeamListForCurrentUser(new Fx67llDortmundBasicTeam());
+        List<Fx67llDortmundBasicMatch> matches = loadVisibleMatches();
+
+        List<String> errors = new ArrayList<>();
+        List<Fx67llDortmundInfoPoint> prepared = new ArrayList<>();
+        for (int index = 0; index < rows.size(); index++) {
+            int rowNumber = index + 1;
+            try {
+                prepared.add(resolveInfoPointImportRow(rows.get(index), seasons, teams, matches));
+            } catch (ServiceException e) {
+                errors.add("第" + rowNumber + "条：" + e.getMessage());
+            }
+        }
+        if (!errors.isEmpty()) {
+            throw new ServiceException("信息点导入校验失败：" + String.join("；", errors));
+        }
+
+        int imported = 0;
+        for (Fx67llDortmundInfoPoint infoPoint : prepared) {
+            imported += insertFx67llDortmundInfoPoint(infoPoint);
+        }
+        return imported;
+    }
+
+    /**
+     * 将一条标准 JSON 信息点数据转换为信息点对象。
+     */
+    private Fx67llDortmundInfoPoint resolveInfoPointImportRow(Fx67llDortmundInfoPointExcel row,
+            List<Fx67llDortmundBasicSeason> seasons, List<Fx67llDortmundBasicTeam> teams,
+            List<Fx67llDortmundBasicMatch> matches) {
+        if (row == null) {
+            throw new ServiceException("数据行不能为空");
+        }
+        String type = trim(row.getInfoPointType());
+        type = type == null ? null : type.toUpperCase(Locale.ROOT);
+        if (!"T".equals(type) && !"M".equals(type)) {
+            throw new ServiceException("信息点类型只能为 T 或 M");
+        }
+
+        Fx67llDortmundInfoPoint infoPoint = new Fx67llDortmundInfoPoint();
+        infoPoint.setInfoPointType(type);
+        if ("T".equals(type)) {
+            String seasonName = trim(row.getSeasonName());
+            if (seasonName == null) {
+                throw new ServiceException("T 类型必须填写赛季名称");
+            }
+            Fx67llDortmundBasicSeason season = findSeasonByName(seasons, seasonName);
+            infoPoint.setSeasonId(season.getSeasonId());
+            infoPoint.setTeamIds(resolveTeamCodes(teams, row.getTeamCodes()));
+        } else {
+            String matchCode = trim(row.getMatchCode());
+            if (matchCode == null) {
+                throw new ServiceException("M 类型必须填写比赛编码");
+            }
+            Fx67llDortmundBasicMatch match = findMatchByCode(matches, matchCode);
+            infoPoint.setMatchId(match.getMatchId());
+        }
+
+        infoPoint.setPointTitle(trim(row.getPointTitle()));
+        infoPoint.setPointContent(trim(row.getPointContent()));
+        infoPoint.setSourceName(trim(row.getSourceName()));
+        infoPoint.setSourceUrl(trim(row.getSourceUrl()));
+        infoPoint.setSourcePublishTime(row.getSourcePublishTime());
+        infoPoint.setCollectTime(row.getCollectTime() == null ? DateUtils.getNowDate() : row.getCollectTime());
+        infoPoint.setEffectiveStartTime(row.getEffectiveStartTime());
+        infoPoint.setEffectiveEndTime(row.getEffectiveEndTime());
+        if (infoPoint.getEffectiveStartTime() != null && infoPoint.getEffectiveEndTime() != null
+                && infoPoint.getEffectiveStartTime().after(infoPoint.getEffectiveEndTime())) {
+            throw new ServiceException("生效时间不能晚于失效时间");
+        }
+        // JSON 导入与手工新增共用同一枚举语义，禁止将未知状态写入业务表。
+        infoPoint.setPointStatus(DortmundFieldValidator.validateEnum(
+                trim(row.getPointStatus()) == null ? "0" : trim(row.getPointStatus()),
+                "信息点状态", true, "0", "1"));
+        infoPoint.setAllowPublic(DortmundFieldValidator.validateEnum(
+                trim(row.getAllowPublic()) == null ? "0" : trim(row.getAllowPublic()),
+                "是否可公开", true, "0", "1"));
+        infoPoint.setPointRemark(trim(row.getPointRemark()));
+        // 标题、内容、来源和采集时间等基础字段在此一并校验，确保所有错误都能在预校验阶段
+        // 以“第 N 条”的形式返回，而不是等到逐条插入时才抛出缺少序号的异常。
+        checkInfoPointFields(infoPoint);
+        return infoPoint;
+    }
+
+    /**
+     * 按完整名称查找当前用户可见赛季。
+     */
+    private Fx67llDortmundBasicSeason findSeasonByName(List<Fx67llDortmundBasicSeason> seasons, String seasonName) {
+        Fx67llDortmundBasicSeason matched = null;
+        if (seasons != null) {
+            for (Fx67llDortmundBasicSeason season : seasons) {
+                if (seasonName.equals(trim(season.getSeasonName()))) {
+                    if (matched != null) {
+                        throw new ServiceException("赛季名称“" + seasonName + "”不唯一，请先处理重复赛季");
+                    }
+                    matched = season;
+                }
+            }
+        }
+        if (matched == null) {
+            throw new ServiceException("未找到赛季“" + seasonName + "”");
+        }
+        return matched;
+    }
+
+    /**
+     * 将球队编码串解析为去重后的球队主键数组。
+     */
+    private Long[] resolveTeamCodes(List<Fx67llDortmundBasicTeam> teams, String teamCodes) {
+        String value = trim(teamCodes);
+        if (value == null) {
+            throw new ServiceException("T 类型必须填写关联球队编码");
+        }
+        Set<Long> teamIds = new HashSet<>();
+        for (String rawCode : value.split("[,，;；、\\s]+")) {
+            String code = trim(rawCode);
+            if (code == null) {
+                continue;
+            }
+            Fx67llDortmundBasicTeam matched = null;
+            if (teams != null) {
+                for (Fx67llDortmundBasicTeam team : teams) {
+                    if (code.equals(trim(team.getTeamCode()))) {
+                        matched = team;
+                        break;
+                    }
+                }
+            }
+            if (matched == null) {
+                throw new ServiceException("未找到球队编码“" + code + "”");
+            }
+            teamIds.add(matched.getTeamId());
+        }
+        if (teamIds.isEmpty()) {
+            throw new ServiceException("T 类型至少要填写一支球队编码");
+        }
+        return teamIds.toArray(new Long[0]);
+    }
+
+    /**
+     * 按比赛编码精确查找当前用户可见比赛。
+     */
+    private Fx67llDortmundBasicMatch findMatchByCode(List<Fx67llDortmundBasicMatch> matches, String matchCode) {
+        Fx67llDortmundBasicMatch matched = null;
+        if (matches != null) {
+            for (Fx67llDortmundBasicMatch match : matches) {
+                if (matchCode.equals(trim(match.getMatchCode()))) {
+                    matched = match;
+                    break;
+                }
+            }
+        }
+        if (matched == null) {
+            throw new ServiceException("未找到比赛编码“" + matchCode + "”");
+        }
+        return matched;
+    }
+
+    /**
+     * 读取当前用户数据范围内的比赛，用于 M 类型信息点引用。
+     */
+    private List<Fx67llDortmundBasicMatch> loadVisibleMatches() {
+        Fx67llDortmundBasicMatch query = new Fx67llDortmundBasicMatch();
+        if (!hasAllDataScope()) {
+            query.setUserId(SecurityUtils.getUserId());
+        }
+        return fx67llDortmundBasicMatchMapper.selectFx67llDortmundBasicMatchList(query);
+    }
+
+    /**
+     * 去除首尾空白，空串统一转换为 null。
+     */
+    private String trim(String value) {
+        if (value == null) {
+            return null;
+        }
+        String trimmed = value.trim();
+        return trimmed.isEmpty() ? null : trimmed;
     }
 
     /**

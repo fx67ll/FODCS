@@ -38,6 +38,11 @@ public class Fx67llDortmundInfoPointTeamRel extends BaseEntity {
      */
     private String teamName;
 
+    /**
+     * 球队业务编码（关联查询，用于 Excel 交换和稳定识别）
+     */
+    private String teamCode;
+
     public void setRelationId(Long relationId) {
         this.relationId = relationId;
     }
@@ -78,6 +83,14 @@ public class Fx67llDortmundInfoPointTeamRel extends BaseEntity {
         this.teamName = teamName;
     }
 
+    public String getTeamCode() {
+        return teamCode;
+    }
+
+    public void setTeamCode(String teamCode) {
+        this.teamCode = teamCode;
+    }
+
     @Override
     public String toString() {
         return new ToStringBuilder(this, ToStringStyle.MULTI_LINE_STYLE)
@@ -86,6 +99,7 @@ public class Fx67llDortmundInfoPointTeamRel extends BaseEntity {
                 .append("teamId", getTeamId())
                 .append("relationStatus", getRelationStatus())
                 .append("teamName", getTeamName())
+                .append("teamCode", getTeamCode())
                 .append("createBy", getCreateBy())
                 .append("createTime", getCreateTime())
                 .append("updateBy", getUpdateBy())

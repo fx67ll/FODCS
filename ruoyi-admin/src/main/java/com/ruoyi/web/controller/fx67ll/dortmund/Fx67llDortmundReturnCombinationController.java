@@ -1,5 +1,6 @@
 package com.ruoyi.web.controller.fx67ll.dortmund;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import javax.servlet.http.HttpServletResponse;
@@ -34,6 +35,7 @@ import com.ruoyi.fx67ll.dortmund.domain.Fx67llDortmundReturnManualImportRequest;
 import com.ruoyi.fx67ll.dortmund.domain.Fx67llDortmundReturnManualTask;
 import com.ruoyi.fx67ll.dortmund.domain.Fx67llDortmundReturnManualTemplate;
 import com.ruoyi.fx67ll.dortmund.service.IFx67llDortmundReturnCombinationService;
+import com.ruoyi.fx67ll.dortmund.util.DortmundExportUtils;
 
 /**
  * Dortmund回报组合Controller
@@ -44,6 +46,21 @@ import com.ruoyi.fx67ll.dortmund.service.IFx67llDortmundReturnCombinationService
 @RestController
 @RequestMapping("/dortmund/return")
 public class Fx67llDortmundReturnCombinationController extends BaseController {
+    /** 组合导出字段白名单；证据链体积大且仅服务自动AI复核，不纳入通用数据导出。 */
+    private static final String[] COMBINATION_EXPORT_COLUMNS = {
+            "combinationId", "generationId", "combinationCode", "combinationTitle", "combinationReason",
+            "combinedOdds", "estimatedReturn", "deviationAmount", "adoptedFlag", "reviewBy", "reviewTime",
+            "verificationStatus", "verifyBy", "verifyTime", "combinationRemark", "aiConfidence", "riskNotes",
+            "userId", "createBy", "createTime", "updateBy", "updateTime"
+    };
+    /** 批次导出仅保留业务可见字段，不暴露请求快照、模型调用快照与租约治理信息。 */
+    private static final String[] GENERATION_EXPORT_COLUMNS = {
+            "generationId", "generationCode", "generationMode", "inputAmount", "targetAmount",
+            "generationStatus", "generationRemark", "generatedCount", "startedTime", "finishedTime",
+            "userId", "resultSource", "manualImportBy", "manualImportTime", "dataAsOf",
+            "createBy", "createTime", "updateBy", "updateTime"
+    };
+
     @Autowired
     private IFx67llDortmundReturnCombinationService fx67llDortmundReturnCombinationService;
 
@@ -141,6 +158,50 @@ public class Fx67llDortmundReturnCombinationController extends BaseController {
     public TableDataInfo list(Fx67llDortmundReturnCombination query) {
         startPage();
         return getDataTable(fx67llDortmundReturnCombinationService.selectCombinationList(query));
+    }
+
+    /**
+     * APP 查询回报组合卡片列表。
+     * <p>沿用当前登录用户的数据范围；分页参数由 APP 专用分页工具解析，不依赖管理端菜单权限。</p>
+     */
+    @GetMapping("/getReturnCombinationListForApp")
+    public TableDataInfo getReturnCombinationListForApp(Fx67llDortmundReturnCombination query) {
+        startPageForApp();
+        return getDataTable(fx67llDortmundReturnCombinationService.selectCombinationList(query));
+    }
+
+    /**
+     * APP 查询回报组合详情。
+     * <p>详情复用 Web 端业务组装逻辑；若账号没有管理端图片查询权限，APP 仍补齐当前组合有效图片，
+     * 保证移动端图片上传区能够展示真实状态。图片操作本身仍由服务层校验数据范围与采用状态。</p>
+     */
+    @GetMapping("/getReturnCombinationInfoForApp/{combinationId:\\d+}")
+    public AjaxResult getReturnCombinationInfoForApp(@PathVariable("combinationId") Long combinationId) {
+        Fx67llDortmundReturnCombination detail =
+                fx67llDortmundReturnCombinationService.selectCombinationById(combinationId);
+        if (detail.getImages() == null) {
+            detail.setImages(fx67llDortmundReturnCombinationService.selectImagesByCombinationId(combinationId));
+        }
+        return success(detail);
+    }
+
+    /**
+     * APP 核验单条已采用回报组合。
+     */
+    @Log(title = "APP 回报组合赛果核验", businessType = BusinessType.UPDATE)
+    @PostMapping("/verifyReturnCombinationForApp/{combinationId:\\d+}")
+    public AjaxResult verifyReturnCombinationForApp(@PathVariable("combinationId") Long combinationId) {
+        return success(fx67llDortmundReturnCombinationService.verifyCombination(combinationId));
+    }
+
+    /**
+     * APP 为已采用回报组合上传图片。
+     */
+    @Log(title = "APP 回报组合图片", businessType = BusinessType.INSERT)
+    @PostMapping("/uploadReturnImageForApp/{combinationId:\\d+}")
+    public AjaxResult uploadReturnImageForApp(@PathVariable("combinationId") Long combinationId,
+            @RequestParam("file") MultipartFile file) throws Exception {
+        return success(fx67llDortmundReturnCombinationService.uploadCombinationImage(combinationId, file));
     }
 
     /**
@@ -258,8 +319,15 @@ public class Fx67llDortmundReturnCombinationController extends BaseController {
     @PreAuthorize("@ss.hasPermi('dortmund:return:export')")
     @Log(title = "Dortmund回报组合", businessType = BusinessType.EXPORT)
     @PostMapping("/export")
-    public void export(HttpServletResponse response, Fx67llDortmundReturnCombination query) {
+    public void export(HttpServletResponse response, Fx67llDortmundReturnCombination query,
+            @RequestParam(value = "exportType", required = false, defaultValue = "excel") String exportType)
+            throws IOException {
         List<Fx67llDortmundReturnCombination> list = fx67llDortmundReturnCombinationService.selectCombinationList(query);
+        if (DortmundExportUtils.isStructured(exportType)) {
+            DortmundExportUtils.export(response, "dortmund-return-combination", exportType,
+                    "fx67ll_dortmund_return_combination", COMBINATION_EXPORT_COLUMNS, list);
+            return;
+        }
         List<Fx67llDortmundReturnCombinationExportResponse> exportList = new ArrayList<>();
         for (Fx67llDortmundReturnCombination item : list) {
             exportList.add(new Fx67llDortmundReturnCombinationExportResponse(item));
@@ -276,9 +344,16 @@ public class Fx67llDortmundReturnCombinationController extends BaseController {
     @PreAuthorize("@ss.hasPermi('dortmund:return:export')")
     @Log(title = "Dortmund回报组合批次", businessType = BusinessType.EXPORT)
     @PostMapping("/generation/export")
-    public void exportGenerations(HttpServletResponse response, Fx67llDortmundReturnGeneration query) {
+    public void exportGenerations(HttpServletResponse response, Fx67llDortmundReturnGeneration query,
+            @RequestParam(value = "exportType", required = false, defaultValue = "excel") String exportType)
+            throws IOException {
         List<Fx67llDortmundReturnGeneration> list =
                 fx67llDortmundReturnCombinationService.selectGenerationList(query);
+        if (DortmundExportUtils.isStructured(exportType)) {
+            DortmundExportUtils.export(response, "dortmund-return-generation", exportType,
+                    "fx67ll_dortmund_return_generation", GENERATION_EXPORT_COLUMNS, list);
+            return;
+        }
         List<Fx67llDortmundReturnGenerationExportResponse> exportList = new ArrayList<>();
         for (Fx67llDortmundReturnGeneration item : list) {
             exportList.add(new Fx67llDortmundReturnGenerationExportResponse(
