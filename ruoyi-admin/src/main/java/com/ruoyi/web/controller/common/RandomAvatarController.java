@@ -11,7 +11,6 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
 import javax.imageio.ImageIO;
-import javax.imageio.stream.ImageOutputStream;
 
 import java.awt.*;
 import java.awt.image.BufferedImage;
@@ -19,6 +18,9 @@ import java.awt.image.BufferedImage;
 import java.text.SimpleDateFormat;
 import java.util.*;
 import java.util.List;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.ThreadLocalRandom;
 
 /**
  * 生成随机马赛克头像
@@ -74,87 +76,110 @@ public class RandomAvatarController {
     private final static int COLOR_LIMIT = 256;
 
     /**
+     * 服务端头像缓存上限。球队列表一页会并发加载多张Logo，按参数缓存可避免翻页时重复绘图。
+     */
+    private final static int AVATAR_CACHE_LIMIT = 512;
+
+    /**
+     * 图片尺寸与马赛克块数量边界。限制异常参数，防止超大画布造成内存或CPU抖动。
+     */
+    private final static int MIN_IMAGE_SIZE = 64;
+    private final static int MAX_IMAGE_SIZE = 1024;
+    private final static int MIN_BLOCK_NUM = 4;
+    private final static int MAX_BLOCK_NUM = 24;
+    private final static int MAX_PADDING = 200;
+
+    /**
+     * 按访问顺序淘汰的线程安全头像缓存，仅缓存带 avatarSeed 的稳定图片。
+     */
+    private final static Map<String, byte[]> AVATAR_CACHE = Collections.synchronizedMap(
+            new LinkedHashMap<String, byte[]>(64, 0.75f, true) {
+                private static final long serialVersionUID = 1L;
+
+                @Override
+                protected boolean removeEldestEntry(Map.Entry<String, byte[]> eldest) {
+                    return size() > AVATAR_CACHE_LIMIT;
+                }
+            });
+
+    /**
+     * 同一种子的渲染锁。冷缓存下若同时到达大量相同Logo请求，只由一个线程生成图片，其余请求等待后复用缓存。
+     */
+    private final static ConcurrentMap<String, Object> AVATAR_RENDER_LOCKS = new ConcurrentHashMap<>();
+
+    /**
      * 保存路径
      */
 //    private final static String DIR = "D://headImg/";
 
     /**
-     * 直接返回随机马赛克图片流
+     * 直接返回随机马赛克图片流。
+     * <p>球队Logo通过 avatarSeed 请求稳定图片；带缓存的响应允许浏览器复用，未传种子时仍保持随机语义。
+     * Logo属于可缓存的只读资源，接口不在应用层按IP计数拒绝请求，避免翻页、刷新或页面切换时出现限流失败。
+     * 所有数值参数均做边界收敛，同一种子的冷缓存并发请求只渲染一次，避免大量重复请求形成图像编码风暴。</p>
      */
-    @RateLimiter(time = 60, count = 20, limitType = LimitType.IP)
     @GetMapping("/getRandomAvatar")
     public void getAvatar(HttpServletRequest request, HttpServletResponse response) throws IOException {
+        String avatarSeed = normalizeSeed(request.getParameter("avatarSeed"));
+        int avatarWidth = parseBoundedInt(request.getParameter("avatarWidth"), IMG_WIDTH,
+                MIN_IMAGE_SIZE, MAX_IMAGE_SIZE);
+        int avatarHeight = parseBoundedInt(request.getParameter("avatarHeight"), IMG_HEIGHT,
+                MIN_IMAGE_SIZE, MAX_IMAGE_SIZE);
+        int avatarBlockNum = parseBoundedInt(request.getParameter("avatarBlockNum"), BLOCK_NUM,
+                MIN_BLOCK_NUM, MAX_BLOCK_NUM);
+        int avatarPadding = parseBoundedInt(request.getParameter("avatarPadding"), PADDING,
+                0, MAX_PADDING);
+        int minSide = Math.min(avatarWidth, avatarHeight);
+        if (avatarPadding * 2 >= minSide) {
+            avatarPadding = Math.max(0, minSide / 6);
+        }
+        String mosaicMode = normalizeMosaicMode(request.getParameter("isNeedMoreMosaic"));
 
-        String avatarWidthValue = request.getParameter("avatarWidth");
-        String avatarHeightValue = request.getParameter("avatarHeight");
-        String avatarPaddingValue = request.getParameter("avatarPadding");
-        String avatarBlockNumValue = request.getParameter("avatarBlockNum");
-        String isNeedMoreMosaic = request.getParameter("isNeedMoreMosaic");
+        String cacheKey = avatarSeed == null ? null
+                : avatarSeed + "|" + avatarWidth + "|" + avatarHeight + "|"
+                + avatarPadding + "|" + avatarBlockNum + "|" + mosaicMode;
+        byte[] avatar = cacheKey == null ? null : AVATAR_CACHE.get(cacheKey);
+        if (avatar == null) {
+            avatar = cacheKey == null
+                    ? renderAvatar(ThreadLocalRandom.current(), avatarWidth, avatarHeight,
+                            avatarPadding, avatarBlockNum, mosaicMode)
+                    : renderStableAvatar(cacheKey, avatarSeed, avatarWidth, avatarHeight,
+                            avatarPadding, avatarBlockNum, mosaicMode);
+        }
 
-        int avatarWidth = avatarWidthValue != null && !avatarWidthValue.isEmpty() ? Integer.parseInt(avatarWidthValue) : IMG_WIDTH;
-        int avatarHeight = avatarHeightValue != null && !avatarHeightValue.isEmpty() ? Integer.parseInt(avatarHeightValue) : IMG_HEIGHT;
-        int avatarPadding = avatarPaddingValue != null && !avatarPaddingValue.isEmpty() ? Integer.parseInt(avatarPaddingValue) : PADDING;
-        int avatarBlockNum = avatarBlockNumValue != null && !avatarBlockNumValue.isEmpty() ? Integer.parseInt(avatarBlockNumValue) : BLOCK_NUM;
-        String isNeedMoreMosaicDefault = isNeedMoreMosaic != null && !isNeedMoreMosaic.isEmpty() ? isNeedMoreMosaic : "F";
-
-        // 设置输出文件格式
         response.setContentType("image/png");
+        response.setContentLength(avatar.length);
+        response.setHeader("Cache-Control", avatarSeed == null
+                ? "no-store" : "public, max-age=86400, immutable");
+        try (OutputStream outputStream = response.getOutputStream()) {
+            outputStream.write(avatar);
+        }
+    }
 
-        // 得到图片缓冲区
-        BufferedImage bi = new BufferedImage(avatarWidth, avatarHeight, BufferedImage.TYPE_INT_RGB);
-
-        // 得到它的绘制环境(这张图片的笔)
-        Graphics2D g2 = (Graphics2D) bi.getGraphics();
-
-        // 设置背景颜色
-        g2.setColor(BACK_GROUND_COLOR);
-        g2.fillRect(0, 0, avatarWidth, avatarHeight);
-
-        // 随机颜色
-        Color mainColor = getRandomColor();
-
-        // 随机生成有效块坐标集合
-        double randomRadioNum = 0;
+    /**
+     * 生成并缓存稳定种子头像。
+     * <p>同一缓存键使用独立渲染锁，避免高并发冷启动时重复绘图；缓存命中后直接返回同一组PNG字节。</p>
+     */
+    private static byte[] renderStableAvatar(String cacheKey, String avatarSeed, int avatarWidth,
+                                             int avatarHeight, int avatarPadding, int avatarBlockNum,
+                                             String mosaicMode) throws IOException {
+        Object renderLock = AVATAR_RENDER_LOCKS.computeIfAbsent(cacheKey, key -> new Object());
         try {
-            randomRadioNum = randomDecimalNumber(isNeedMoreMosaicDefault);
-        } catch (Exception e) {
-            e.printStackTrace();
+            synchronized (renderLock) {
+                byte[] cachedAvatar = AVATAR_CACHE.get(cacheKey);
+                if (cachedAvatar != null) {
+                    return cachedAvatar;
+                }
+                long randomSeed = avatarSeed.hashCode() * 31L + avatarWidth * 17L + avatarHeight * 13L
+                        + avatarPadding * 7L + avatarBlockNum * 3L + mosaicMode.hashCode();
+                byte[] renderedAvatar = renderAvatar(new Random(randomSeed), avatarWidth, avatarHeight,
+                        avatarPadding, avatarBlockNum, mosaicMode);
+                AVATAR_CACHE.put(cacheKey, renderedAvatar);
+                return renderedAvatar;
+            }
+        } finally {
+            AVATAR_RENDER_LOCKS.remove(cacheKey, renderLock);
         }
-        System.out.println("randomRadioNum:" + randomRadioNum);
-        try {
-            logNowTime();
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-        System.out.println("========================================");
-        List<Point> pointList = getRandomPointList(randomRadioNum, avatarBlockNum);
-
-        // 填充图形
-        fillGraph(g2, pointList, mainColor, avatarWidth, avatarHeight, avatarPadding, avatarBlockNum);
-
-        // 下面都是关于流处理的流程
-        // 获取绘制好的图片的InputStream对象
-        InputStream in = null;
-        try {
-            in = getImageStream(bi);
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-        OutputStream outputStream = new BufferedOutputStream(response.getOutputStream());
-        // 创建存放文件内容的数组
-        byte[] buff = new byte[1024];
-        // 所读取的内容使用n来接收
-        int n;
-        // 当没有读取完时,继续读取,循环
-        while ((n = in.read(buff)) != -1) {
-            // 将字节数组的数据全部写入到输出流中
-            outputStream.write(buff, 0, n);
-        }
-        // 强制将缓存区的数据进行输出
-        outputStream.flush();
-        // 关流
-        outputStream.close();
-        in.close();
     }
 
     /**
@@ -314,23 +339,86 @@ public class RandomAvatarController {
     }
 
     /**
+     * 渲染头像并直接返回PNG字节。
+     * <p>由调用方负责在带 avatarSeed 的场景缓存结果；图形上下文使用后立即释放，避免频繁翻页时积累本地资源。</p>
+     */
+    private static byte[] renderAvatar(Random random, int avatarWidth, int avatarHeight,
+                                       int avatarPadding, int avatarBlockNum, String mosaicMode)
+            throws IOException {
+        BufferedImage image = new BufferedImage(avatarWidth, avatarHeight, BufferedImage.TYPE_INT_RGB);
+        Graphics2D graphics = image.createGraphics();
+        try {
+            graphics.setColor(BACK_GROUND_COLOR);
+            graphics.fillRect(0, 0, avatarWidth, avatarHeight);
+            Color mainColor = getRandomColor(random);
+            double randomRadioNum = randomDecimalNumber(mosaicMode, random);
+            List<Point> pointList = getRandomPointList(randomRadioNum, avatarBlockNum, random);
+            fillGraph(graphics, pointList, mainColor, avatarWidth, avatarHeight,
+                    avatarPadding, avatarBlockNum);
+            ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
+            if (!ImageIO.write(image, "png", outputStream)) {
+                throw new IOException("生成头像图片失败");
+            }
+            return outputStream.toByteArray();
+        } finally {
+            graphics.dispose();
+        }
+    }
+
+    /**
+     * 解析带上下界的整数参数。非法值回退默认值，越界值收敛到边界。
+     */
+    private static int parseBoundedInt(String rawValue, int defaultValue, int minValue, int maxValue) {
+        if (rawValue == null || rawValue.trim().isEmpty()) {
+            return defaultValue;
+        }
+        try {
+            int value = Integer.parseInt(rawValue.trim());
+            return Math.max(minValue, Math.min(maxValue, value));
+        } catch (NumberFormatException ignored) {
+            return defaultValue;
+        }
+    }
+
+    /**
+     * 规范化稳定头像种子，空值表示继续生成一次性随机头像。
+     */
+    private static String normalizeSeed(String seed) {
+        if (seed == null) {
+            return null;
+        }
+        String value = seed.trim();
+        if (value.isEmpty()) {
+            return null;
+        }
+        return value.length() > 64 ? value.substring(0, 64) : value;
+    }
+
+    /**
+     * 马赛克密度只接受 F/Y/N，其他值按随机模式处理。
+     */
+    private static String normalizeMosaicMode(String mode) {
+        if ("Y".equalsIgnoreCase(mode) || "N".equalsIgnoreCase(mode)) {
+            return mode.toUpperCase();
+        }
+        return "F";
+    }
+
+    /**
      * 将BufferedImage转为InputStream
      *
      * @param bi 图片文件
      * @return is 文件流
      */
     private static InputStream getImageStream(BufferedImage bi) throws Exception {
-        InputStream is = null;
-        ByteArrayOutputStream baos = new ByteArrayOutputStream();
-        ImageOutputStream imos;
-        try {
-            imos = ImageIO.createImageOutputStream(baos);
-            ImageIO.write(bi, "png", imos);
-            is = new ByteArrayInputStream(baos.toByteArray());
+        try (ByteArrayOutputStream baos = new ByteArrayOutputStream()) {
+            if (!ImageIO.write(bi, "png", baos)) {
+                throw new IOException("图片转流失败");
+            }
+            return new ByteArrayInputStream(baos.toByteArray());
         } catch (IOException e) {
             throw new Exception("图片转流失败");
         }
-        return is;
     }
 
     /**
@@ -373,22 +461,28 @@ public class RandomAvatarController {
      * @throws Exception
      */
     private static Double randomDecimalNumber(String isNeedMoreMosaic) throws Exception {
-        try {
-            Random random = new Random();
-            Double randomDecimal = random.nextDouble() * 0.65 + 0.2;
-            Double lowDecimal = new Double("0.4");
-            Double highDecimal = new Double("0.6");
-            randomDecimal = Math.round(randomDecimal * 100) / 100.0;
-            if (isNeedMoreMosaic.equals("Y") && randomDecimal.compareTo(highDecimal) < 0) {
-                return randomDecimalNumber(isNeedMoreMosaic);
-            } else if (isNeedMoreMosaic.equals("N") && randomDecimal.compareTo(lowDecimal) > 0) {
-                return randomDecimalNumber(isNeedMoreMosaic);
-            } else {
-                return randomDecimal;
+        return randomDecimalNumber(isNeedMoreMosaic, ThreadLocalRandom.current());
+    }
+
+    /**
+     * 按指定随机源生成马赛克密度，避免递归并在稳定种子下得到可复现结果。
+     */
+    private static double randomDecimalNumber(String isNeedMoreMosaic, Random random) {
+        String mode = normalizeMosaicMode(isNeedMoreMosaic);
+        for (int attempt = 0; attempt < 32; attempt++) {
+            double value = Math.round((random.nextDouble() * 0.65 + 0.2) * 100) / 100.0;
+            if ("Y".equals(mode) && value < 0.6) {
+                continue;
             }
-        } catch (Exception e) {
-            throw new Exception("获取随机数异常");
+            if ("N".equals(mode) && value > 0.4) {
+                continue;
+            }
+            return value;
         }
+        if ("Y".equals(mode)) {
+            return 0.72;
+        }
+        return "N".equals(mode) ? 0.3 : 0.55;
     }
 
     /**
@@ -436,10 +530,17 @@ public class RandomAvatarController {
      * @return List<Point> 列表
      */
     private static List<Point> getRandomPointList(double radio, Integer blockNum) {
+        return getRandomPointList(radio, blockNum, ThreadLocalRandom.current());
+    }
+
+    /**
+     * 使用调用方随机源生成对称马赛克坐标，保证同一 avatarSeed 的图形可复现。
+     */
+    private static List<Point> getRandomPointList(double radio, Integer blockNum, Random random) {
         ArrayList<Point> points = new ArrayList<>();
         for (int i = 0; i < blockNum / 2; i++) {
             for (int j = 0; j < blockNum; j++) {
-                if (Math.random() < radio) {
+                if (random.nextDouble() < radio) {
                     points.add(new Point(i, j));
                 }
             }
@@ -447,7 +548,7 @@ public class RandomAvatarController {
         addReversePoints(points, blockNum);
         if (blockNum % 2 == 1) {
             for (int i = 0; i < blockNum; i++) {
-                if (Math.random() < radio) {
+                if (random.nextDouble() < radio) {
                     points.add(new Point(blockNum / 2, i));
                 }
             }
@@ -461,13 +562,22 @@ public class RandomAvatarController {
      * @return Color对象
      */
     private static Color getRandomColor() {
-        int r, g, b;
-        do {
-            r = new Random().nextInt(COLOR_LIMIT);
-            g = new Random().nextInt(COLOR_LIMIT);
-            b = new Random().nextInt(COLOR_LIMIT);
-        } while (evaluateColor(r, g, b));
-        return new Color(r, g, b);
+        return getRandomColor(ThreadLocalRandom.current());
+    }
+
+    /**
+     * 从指定随机源挑选高辨识度主色。
+     */
+    private static Color getRandomColor(Random random) {
+        for (int attempt = 0; attempt < COLOR_LIMIT; attempt++) {
+            int r = random.nextInt(COLOR_LIMIT);
+            int g = random.nextInt(COLOR_LIMIT);
+            int b = random.nextInt(COLOR_LIMIT);
+            if (!evaluateColor(r, g, b, random)) {
+                return new Color(r, g, b);
+            }
+        }
+        return new Color(46, 204, 113);
     }
 
     /**
@@ -476,13 +586,18 @@ public class RandomAvatarController {
      * @return boolean
      */
     private static boolean evaluateColor(int r, int g, int b) {
+        return evaluateColor(r, g, b, ThreadLocalRandom.current());
+    }
+
+    /**
+     * 评价颜色品质，只需任意两种颜色差值大于随机阈值即可。
+     */
+    private static boolean evaluateColor(int r, int g, int b, Random random) {
         int rg = Math.abs(r - g);
         int rb = Math.abs(r - b);
         int gb = Math.abs(g - b);
         int max = rg > rb ? (rg > gb ? rg : gb) : (rb > gb ? rb : gb);
-        int randomColorNum = new Random().nextInt(100) + 1;
-        System.out.println("randomColorNum:" + randomColorNum);
-        return max < randomColorNum;
+        return max < random.nextInt(100) + 1;
     }
 
     /**
