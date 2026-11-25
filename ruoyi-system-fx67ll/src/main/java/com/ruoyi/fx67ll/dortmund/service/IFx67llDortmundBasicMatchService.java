@@ -2,6 +2,7 @@ package com.ruoyi.fx67ll.dortmund.service;
 
 import java.util.List;
 import com.ruoyi.fx67ll.dortmund.domain.Fx67llDortmundBasicMatch;
+import com.ruoyi.fx67ll.dortmund.domain.Fx67llDortmundOdds;
 import com.ruoyi.fx67ll.dortmund.domain.Fx67llDortmundBasicMatchExcel;
 import com.ruoyi.fx67ll.dortmund.domain.Fx67llDortmundExtra;
 
@@ -29,6 +30,16 @@ public interface IFx67llDortmundBasicMatchService
      * @return 当前用户可访问的比赛详情
      */
     public Fx67llDortmundBasicMatch selectFx67llDortmundBasicMatchDetailForCurrentUser(Long matchId);
+
+    /**
+     * 按当前用户数据范围查询比赛当前有效倍率版本。
+     * <p>移动端赛果录入只读展示让分值；无有效版本时返回 null，由界面展示空状态，
+     * 不能把“尚未维护倍率”当作接口异常。</p>
+     *
+     * @param matchId 比赛记录主键
+     * @return 当前有效倍率记录；未维护时返回 null
+     */
+    public Fx67llDortmundOdds selectActiveOddsForCurrentUser(Long matchId);
 
     /**
      * 查询比赛记录列表

@@ -147,6 +147,16 @@ public class Fx67llDortmundBasicMatchController extends BaseController {
     }
 
     /**
+     * APP 查询比赛当前有效倍率版本。
+     * <p>仅返回当前登录用户可访问比赛的有效倍率；未维护有效版本时 data 为 null，
+     * 供移动端展示“暂无有效倍率版本”，不依赖管理端倍率菜单权限。</p>
+     */
+    @GetMapping("/getActiveOddsForApp/{matchId}")
+    public AjaxResult getActiveOddsForApp(@PathVariable("matchId") Long matchId) {
+        return success(fx67llDortmundBasicMatchService.selectActiveOddsForCurrentUser(matchId));
+    }
+
+    /**
      * APP 补录或修正比赛赛果。
      * <p>只接受 matchId、matchResult、oddsResult 的业务语义，其他编排字段不会被写入。</p>
      */

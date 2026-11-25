@@ -109,6 +109,30 @@ public class Fx67llDortmundBasicMatchServiceImpl implements IFx67llDortmundBasic
     }
 
     /**
+     * 按当前用户数据范围查询比赛当前有效倍率版本。
+     * <p>先校验比赛归属，再读取唯一有效倍率；没有有效版本时返回 null，
+     * 多条有效版本仍视为数据异常并阻断，避免移动端展示不确定的冻结数据。</p>
+     *
+     * @param matchId 比赛记录主键
+     * @return 当前有效倍率记录；未维护时返回 null
+     */
+    @Override
+    public Fx67llDortmundOdds selectActiveOddsForCurrentUser(Long matchId) {
+        requireMatchAccessible(matchId);
+        int activeCount = fx67llDortmundOddsMapper.countActiveOddsByMatchId(matchId);
+        if (activeCount > 1) {
+            throw new ServiceException("该比赛存在多条有效倍率记录，请先调整至仅一条有效倍率！");
+        }
+        if (activeCount == 0) {
+            return null;
+        }
+        Fx67llDortmundOdds odds = fx67llDortmundOddsMapper.selectActiveFx67llDortmundOddsByMatchId(matchId);
+        // 比赛归属与倍率归属必须同时可访问，防止异常归档数据把他人倍率带到当前用户详情中。
+        DortmundDataScope.requireAccessible(odds == null ? null : odds.getUserId(), "有效倍率记录不存在或没有访问权限！");
+        return odds;
+    }
+
+    /**
      * 查询比赛记录列表
      *
      * @param fx67llDortmundBasicMatch 比赛记录
