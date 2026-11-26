@@ -1604,6 +1604,8 @@ public class Fx67llDortmundReturnCombinationServiceImpl implements IFx67llDortmu
         if (query == null) {
             query = new Fx67llDortmundReturnCombination();
         }
+        query.setAdoptedFlag(normalizeListSentinel(query.getAdoptedFlag()));
+        query.setVerificationStatus(normalizeListSentinel(query.getVerificationStatus()));
         query.setBeginCreateTime(normalizeDateBoundary(query.getBeginCreateTime(), true));
         query.setEndCreateTime(normalizeDateBoundary(query.getEndCreateTime(), false));
         query.setBeginReviewTime(normalizeDateBoundary(query.getBeginReviewTime(), true));
@@ -1621,6 +1623,21 @@ public class Fx67llDortmundReturnCombinationServiceImpl implements IFx67llDortmu
             value.setImages(null);
         }
         return result;
+    }
+
+    /**
+     * 归一化列表筛选哨兵。兼容旧客户端可能提交字面量 null/ALL，
+     * 二者均表示不附加该维度条件，避免被当作真实业务值查成空结果。
+     */
+    private String normalizeListSentinel(String value) {
+        if (blank(value)) {
+            return null;
+        }
+        String normalized = value.trim();
+        if ("ALL".equalsIgnoreCase(normalized) || "NULL".equalsIgnoreCase(normalized)) {
+            return null;
+        }
+        return normalized.toUpperCase(Locale.ROOT);
     }
 
     /**

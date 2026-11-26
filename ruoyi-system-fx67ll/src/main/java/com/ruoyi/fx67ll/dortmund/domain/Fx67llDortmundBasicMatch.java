@@ -136,6 +136,12 @@ public class Fx67llDortmundBasicMatch extends BaseEntity {
     private List<String> oddsResultFilters;
 
     /**
+     * 仅查询待补录记录（非表列）：常规赛果或倍率赛果至少一项未登记。
+     * 移动端列表默认使用该口径，管理端不传此参数时保持原有筛选语义。
+     */
+    private Boolean pendingRegistration;
+
+    /**
      * 比赛业务备注（如轮次、特殊说明）
      */
     @Excel(name = "比赛业务备注", readConverterExp = "如=轮次、特殊说明")
@@ -390,6 +396,14 @@ public class Fx67llDortmundBasicMatch extends BaseEntity {
         this.oddsResultFilters = oddsResultFilters;
     }
 
+    public Boolean getPendingRegistration() {
+        return pendingRegistration;
+    }
+
+    public void setPendingRegistration(Boolean pendingRegistration) {
+        this.pendingRegistration = pendingRegistration;
+    }
+
     public void setMatchRemark(String matchRemark) {
         this.matchRemark = matchRemark;
     }
@@ -520,6 +534,7 @@ public class Fx67llDortmundBasicMatch extends BaseEntity {
                 .append("matchResult", getMatchResult())
                 .append("oddsResult", getOddsResult())
                 .append("oddsResultFilters", getOddsResultFilters())
+                .append("pendingRegistration", getPendingRegistration())
                 .append("matchRemark", getMatchRemark())
                 .append("newSeason", getNewSeason())
                 .append("newHomeTeam", getNewHomeTeam())

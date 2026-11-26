@@ -127,6 +127,21 @@
                     <otherwise>and m.match_result = #{matchResult}</otherwise>
                 </choose>
             </if>
+            <!-- 移动端默认待补录口径：常规赛果或倍率赛果至少一项缺失，二者取并集。 -->
+            <if test="pendingRegistration != null and pendingRegistration">
+                and (
+                    (m.match_result is null or trim(m.match_result) = ''
+                    or trim(m.match_result) not in ('0', '1', '2'))
+                    or
+                    (m.odds_result is null or trim(m.odds_result) = ''
+                    or (find_in_set('HW', replace(upper(trim(m.odds_result)), '，', ',')) = 0
+                    and find_in_set('DR', replace(upper(trim(m.odds_result)), '，', ',')) = 0
+                    and find_in_set('AW', replace(upper(trim(m.odds_result)), '，', ',')) = 0
+                    and find_in_set('HH', replace(upper(trim(m.odds_result)), '，', ',')) = 0
+                    and find_in_set('HD', replace(upper(trim(m.odds_result)), '，', ',')) = 0
+                    and find_in_set('HA', replace(upper(trim(m.odds_result)), '，', ',')) = 0))
+                )
+            </if>
             <!-- 倍率赛果可多选且落库为逗号分隔串，按单个令牌匹配，避免整串精确比较漏查。 -->
             <if test="oddsResultFilters != null and oddsResultFilters.size() > 0">
                 and (
