@@ -95,6 +95,10 @@ public class DortmundRuntimeProperties {
         private String url;
         private String apiKey;
         private String model;
+        private boolean thinkingEnabled = DortmundModuleConfig.Ai.DEFAULT_THINKING_ENABLED;
+        private String reasoningEffort = DortmundModuleConfig.Ai.DEFAULT_REASONING_EFFORT;
+        private double analysisTemperature = DortmundModuleConfig.Ai.ANALYSIS_TEMPERATURE;
+        private double plannerTemperature = DortmundModuleConfig.Ai.PLANNER_TEMPERATURE;
         private int maxTokens = DortmundModuleConfig.Ai.ANALYSIS_MAX_TOKENS;
         private int plannerMaxTokens = DortmundModuleConfig.Ai.PLANNER_MAX_TOKENS;
         private int connectTimeoutSeconds = DortmundModuleConfig.Ai.CONNECT_TIMEOUT_SECONDS;
@@ -124,6 +128,38 @@ public class DortmundRuntimeProperties {
 
         public void setModel(String model) {
             this.model = model;
+        }
+
+        public boolean isThinkingEnabled() {
+            return thinkingEnabled;
+        }
+
+        public void setThinkingEnabled(boolean thinkingEnabled) {
+            this.thinkingEnabled = thinkingEnabled;
+        }
+
+        public String getReasoningEffort() {
+            return reasoningEffort;
+        }
+
+        public void setReasoningEffort(String reasoningEffort) {
+            this.reasoningEffort = reasoningEffort;
+        }
+
+        public double getAnalysisTemperature() {
+            return analysisTemperature;
+        }
+
+        public void setAnalysisTemperature(double analysisTemperature) {
+            this.analysisTemperature = analysisTemperature;
+        }
+
+        public double getPlannerTemperature() {
+            return plannerTemperature;
+        }
+
+        public void setPlannerTemperature(double plannerTemperature) {
+            this.plannerTemperature = plannerTemperature;
         }
 
         public int getMaxTokens() {
@@ -175,6 +211,18 @@ public class DortmundRuntimeProperties {
         }
 
         private void normalize() {
+            if (analysisTemperature < 0D || analysisTemperature > 2D) {
+                analysisTemperature = DortmundModuleConfig.Ai.ANALYSIS_TEMPERATURE;
+            }
+            if (plannerTemperature < 0D || plannerTemperature > 2D) {
+                plannerTemperature = DortmundModuleConfig.Ai.PLANNER_TEMPERATURE;
+            }
+            String normalizedEffort = reasoningEffort == null ? "" : reasoningEffort.trim().toLowerCase();
+            if (!"low".equals(normalizedEffort) && !"high".equals(normalizedEffort)
+                    && !"max".equals(normalizedEffort)) {
+                normalizedEffort = DortmundModuleConfig.Ai.DEFAULT_REASONING_EFFORT;
+            }
+            reasoningEffort = normalizedEffort;
             if (maxTokens <= 0) {
                 maxTokens = DortmundModuleConfig.Ai.ANALYSIS_MAX_TOKENS;
             }
@@ -200,7 +248,10 @@ public class DortmundRuntimeProperties {
     public static class Retrieval {
         private String url;
         private String apiKey;
+        private boolean dedicatedEnabled = DortmundModuleConfig.Retrieval.DEFAULT_DEDICATED_ENABLED;
+        private String collectionId;
         private int maxResults = DortmundModuleConfig.Retrieval.MAX_RESULTS_PER_QUERY;
+        private int nativeSearchMaxTokens = DortmundModuleConfig.Retrieval.NATIVE_SEARCH_MAX_TOKENS;
         private int timeoutSeconds = DortmundModuleConfig.Retrieval.DEFAULT_TIMEOUT_SECONDS;
 
         public String getUrl() {
@@ -219,12 +270,36 @@ public class DortmundRuntimeProperties {
             this.apiKey = apiKey;
         }
 
+        public boolean isDedicatedEnabled() {
+            return dedicatedEnabled;
+        }
+
+        public void setDedicatedEnabled(boolean dedicatedEnabled) {
+            this.dedicatedEnabled = dedicatedEnabled;
+        }
+
+        public String getCollectionId() {
+            return collectionId;
+        }
+
+        public void setCollectionId(String collectionId) {
+            this.collectionId = collectionId;
+        }
+
         public int getMaxResults() {
             return maxResults;
         }
 
         public void setMaxResults(int maxResults) {
             this.maxResults = maxResults;
+        }
+
+        public int getNativeSearchMaxTokens() {
+            return nativeSearchMaxTokens;
+        }
+
+        public void setNativeSearchMaxTokens(int nativeSearchMaxTokens) {
+            this.nativeSearchMaxTokens = nativeSearchMaxTokens;
         }
 
         public int getTimeoutSeconds() {
@@ -238,6 +313,9 @@ public class DortmundRuntimeProperties {
         private void normalize() {
             if (maxResults <= 0) {
                 maxResults = DortmundModuleConfig.Retrieval.MAX_RESULTS_PER_QUERY;
+            }
+            if (nativeSearchMaxTokens <= 0) {
+                nativeSearchMaxTokens = DortmundModuleConfig.Retrieval.NATIVE_SEARCH_MAX_TOKENS;
             }
             if (timeoutSeconds < DortmundModuleConfig.Retrieval.MIN_TIMEOUT_SECONDS) {
                 timeoutSeconds = DortmundModuleConfig.Retrieval.MIN_TIMEOUT_SECONDS;

@@ -264,6 +264,10 @@ public class Fx67llDortmundReturnCombinationServiceImpl implements IFx67llDortmu
 
     private int retrievalTimeoutSeconds;
 
+    private long planTimeoutMillis;
+
+    private long analysisTimeoutMillis;
+
     private int generationLeaseSeconds;
 
     private int generationMaxAttempts;
@@ -285,6 +289,12 @@ public class Fx67llDortmundReturnCombinationServiceImpl implements IFx67llDortmu
     public void initGenerationLeaseGuard() {
         // 运行参数统一从模块类型化配置读取，避免服务、调度器与适配器各自维护默认值。
         retrievalTimeoutSeconds = dortmundRuntimeProperties.getAi().getRetrieval().getTimeoutSeconds();
+        int planTimeoutSeconds = dortmundRuntimeProperties.getAi().getDeepseek().getPlanTimeoutSeconds();
+        planTimeoutMillis = planTimeoutSeconds > 0
+                ? planTimeoutSeconds * 1000L : PLAN_TIMEOUT_MILLIS;
+        int analysisTimeoutSeconds = dortmundRuntimeProperties.getAi().getDeepseek().getAnalysisTimeoutSeconds();
+        analysisTimeoutMillis = analysisTimeoutSeconds > 0
+                ? analysisTimeoutSeconds * 1000L : ANALYSIS_TIMEOUT_MILLIS;
         DortmundRuntimeProperties.Generation generation =
                 dortmundRuntimeProperties.getReturn().getGeneration();
         generationLeaseSeconds = generation.getLeaseSeconds();
@@ -460,9 +470,9 @@ public class Fx67llDortmundReturnCombinationServiceImpl implements IFx67llDortmu
     private int minimumGenerationLeaseSeconds() {
         int retrievalSeconds = retrievalTimeoutSeconds > 0
                 ? retrievalTimeoutSeconds : DEFAULT_TIMEOUT_SECONDS;
-        long budgetSeconds = PLAN_TIMEOUT_MILLIS / 1000L
+        long budgetSeconds = planTimeoutMillis / 1000L
                 + (long) MAX_QUERIES * retrievalSeconds
-                + ANALYSIS_TIMEOUT_MILLIS / 1000L
+                + analysisTimeoutMillis / 1000L
                 + LEASE_MARGIN_SECONDS;
         return budgetSeconds > Integer.MAX_VALUE ? Integer.MAX_VALUE : (int) budgetSeconds;
     }
@@ -1198,7 +1208,7 @@ public class Fx67llDortmundReturnCombinationServiceImpl implements IFx67llDortmu
             if ("A".equals(request.getGenerationMode())) {
                 // 【通用AI接入点】自动链路只通过端口发起证据规划，通用AI模块不得绕过计划校验。
                 if (!returnEvidenceRetrievalPort.isConfigured()) {
-                    throw new ServiceException("AI模式需要配置证据检索服务，请设置DORTMUND_AI_RETRIEVAL_URL！");
+                    throw new ServiceException("AI模式需要配置证据检索，请检查专用检索地址或DeepSeek对话接口配置！");
                 }
                 if (fx67llDortmundReturnGenerationMapper.startEvidenceWork(
                         generation.getGenerationId(), workerId) != 1) {
@@ -1211,7 +1221,7 @@ public class Fx67llDortmundReturnCombinationServiceImpl implements IFx67llDortmu
                     throw new ServiceException("自动AI规划输入快照保存失败！");
                 }
                 ReturnCombinationAiAnalysisPort.ReturnCombinationAiInvocation planInvocation =
-                        buildAiInvocation(generation, AI_OPERATION_PLAN, PLAN_TIMEOUT_MILLIS,
+                        buildAiInvocation(generation, AI_OPERATION_PLAN, planTimeoutMillis,
                                 true, MAX_QUERIES, MAX_RESULTS_PER_QUERY);
                 long planStartedAt = System.currentTimeMillis();
                 ReturnCombinationAiAnalysisPort.ReturnCombinationEvidencePlan plan =
@@ -1243,7 +1253,7 @@ public class Fx67llDortmundReturnCombinationServiceImpl implements IFx67llDortmu
                 throw new ServiceException("自动AI分析输入快照保存失败！");
             }
             ReturnCombinationAiAnalysisPort.ReturnCombinationAiInvocation analysisInvocation =
-                    buildAiInvocation(generation, AI_OPERATION_ANALYZE, ANALYSIS_TIMEOUT_MILLIS,
+                    buildAiInvocation(generation, AI_OPERATION_ANALYZE, analysisTimeoutMillis,
                             false, 0, 0);
             long analysisStartedAt = System.currentTimeMillis();
             ReturnCombinationAiAnalysisPort.ReturnCombinationAiOutput output =

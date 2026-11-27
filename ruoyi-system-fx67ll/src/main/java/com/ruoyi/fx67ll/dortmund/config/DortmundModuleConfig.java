@@ -71,6 +71,10 @@ public final class DortmundModuleConfig {
      * 自动 AI 模型调用与输出预算。
      */
     public static final class Ai {
+        /** 思考模式默认开启，使用模型服务端推理能力提升复杂业务判断质量。 */
+        public static final boolean DEFAULT_THINKING_ENABLED = true;
+        /** 思考强度默认值；仅使用供应商明确支持的 low/high/max。 */
+        public static final String DEFAULT_REASONING_EFFORT = "high";
         /** 最终分析输出 Token；为 23 场上下文、10 条候选和完整证据解释预留空间。 */
         public static final int ANALYSIS_MAX_TOKENS = 32768;
         /** 证据规划输出 Token；覆盖最多 23 条有界查询。 */
@@ -112,10 +116,14 @@ public final class DortmundModuleConfig {
      * 受控证据检索边界。
      */
     public static final class Retrieval {
+        /** 默认关闭专用检索网关，改走 DeepSeek 对话内置联网检索，避免按次计费的独立检索调用。 */
+        public static final boolean DEFAULT_DEDICATED_ENABLED = false;
         /** 单次规划允许的最大查询数。与分析比赛池独立配置，便于分别收紧检索成本。 */
         public static final int MAX_QUERIES = 23;
         /** 单条查询检索结果上限，为重复、空正文和低质量来源预留筛除空间。 */
         public static final int MAX_RESULTS_PER_QUERY = 8;
+        /** DeepSeek 内置联网检索单次确认回复的输出 Token 上限。 */
+        public static final int NATIVE_SEARCH_MAX_TOKENS = 4096;
         /** 单条检索默认读取超时（秒）。 */
         public static final int DEFAULT_TIMEOUT_SECONDS = 30;
         /** 读取超时下限（秒），避免误配过小值中断正常检索。 */

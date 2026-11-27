@@ -79,7 +79,7 @@ public class DeepSeekReturnCombinationAnalyzer implements ReturnCombinationAiAna
         // 【通用AI接入点】迁移后保留本方法入参、出参与最大输出预算语义，只替换模型调用实现。
         int maxTokens = resolveAnalysisMaxTokens();
         String rawResponse = postCompletion(buildAnalysisMessages(input), maxTokens,
-                DortmundModuleConfig.Ai.ANALYSIS_TEMPERATURE, invocation);
+                resolveAnalysisTemperature(), invocation);
         ReturnCombinationAiOutput output = parseAnalysisResponse(rawResponse);
         output.setAiRunRef(extractRunRef(rawResponse));
         return output;
@@ -93,7 +93,7 @@ public class DeepSeekReturnCombinationAnalyzer implements ReturnCombinationAiAna
         // 【通用AI接入点】通用AI模块接管规划时，仍须返回有界queries，由业务层做覆盖与格式校验。
         int plannerTokens = resolvePlannerMaxTokens();
         String rawResponse = postCompletion(buildPlanMessages(input), plannerTokens,
-                DortmundModuleConfig.Ai.PLANNER_TEMPERATURE, invocation);
+                resolvePlannerTemperature(), invocation);
         ReturnCombinationEvidencePlan plan = parsePlanResponse(rawResponse);
         plan.setAiRunRef(extractRunRef(rawResponse));
         return plan;
@@ -117,10 +117,30 @@ public class DeepSeekReturnCombinationAnalyzer implements ReturnCombinationAiAna
         return configured > 0 ? configured : DortmundModuleConfig.Ai.PLANNER_MAX_TOKENS;
     }
 
+    /** 思考模式默认开启；关闭时仍保留原有低温度采样，便于规划和分析保持确定性。 */
+    private double resolveAnalysisTemperature() {
+        double configured = dortmundRuntimeProperties.getAi().getDeepseek().getAnalysisTemperature();
+        return isTemperatureValid(configured) ? configured : DortmundModuleConfig.Ai.ANALYSIS_TEMPERATURE;
+    }
+
+    private double resolvePlannerTemperature() {
+        double configured = dortmundRuntimeProperties.getAi().getDeepseek().getPlannerTemperature();
+        return isTemperatureValid(configured) ? configured : DortmundModuleConfig.Ai.PLANNER_TEMPERATURE;
+    }
+
+    private boolean isTemperatureValid(double temperature) {
+        return !Double.isNaN(temperature) && temperature >= 0D && temperature <= 2D;
+    }
+
     /** 发送单次模型请求；阶段预算优先于部署默认读取超时，超时统一映射为可重试业务错误。 */
     private String postCompletion(List<JSONObject> messages, int maxTokens, double temperature,
             ReturnCombinationAiInvocation invocation) {
         JSONObject request = new JSONObject();
+        boolean thinkingEnabled = dortmundRuntimeProperties.getAi().getDeepseek().isThinkingEnabled();
+        request.put("thinking", JSONObject.of("type", thinkingEnabled ? "enabled" : "disabled"));
+        if (thinkingEnabled) {
+            request.put("reasoning_effort", dortmundRuntimeProperties.getAi().getDeepseek().getReasoningEffort());
+        }
         request.put("model", deepSeekModel);
         request.put("temperature", temperature);
         request.put("max_tokens", maxTokens);
@@ -144,13 +164,7 @@ public class DeepSeekReturnCombinationAnalyzer implements ReturnCombinationAiAna
         } catch (HttpStatusCodeException e) {
             int statusCode = e.getRawStatusCode();
             log.error("DeepSeek分析请求失败，HTTP状态码：{}，响应：{}", statusCode, limitLog(e.getResponseBodyAsString()));
-            if (statusCode == 401 || statusCode == 403) {
-                throw new ServiceException("DeepSeek分析鉴权失败，请检查接口密钥配置！");
-            }
-            if (statusCode == 429) {
-                throw new ServiceException("DeepSeek分析请求过于频繁，请稍后重试！");
-            }
-            throw new ServiceException("DeepSeek分析请求失败，HTTP状态码：" + statusCode + "！");
+            throw new ServiceException(DeepSeekApiErrorMessages.forRequest("DeepSeek分析", statusCode));
         } catch (ResourceAccessException e) {
             if (hasTimeoutCause(e)) {
                 long elapsedMillis = System.currentTimeMillis() - startedAt;
