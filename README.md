@@ -5,10 +5,14 @@ fx67ll One Data Center Server
 
 ---
 
+## 0.12.17.20261127
+* `Dortmund自动AI` DeepSeek调用新增思考模式与思考强度配置，默认开启 `high`；规划、分析和内置检索统一按Chat Completions契约发送，关闭后恢复温度采样
+* `Dortmund自动AI` 证据检索新增专用检索开关，默认关闭并复用DeepSeek对话内置 `deepseek_web_search`，不触发独立Search API按次计费；开启后使用专用网关，并支持可选 `collectionId`
+* DeepSeek `400/401/402/403/408/413/422/429/500/503/504` 错误统一映射为可操作中文提示，原始响应只写入受控日志；部署YAML补齐Token、温度、超时、检索与开关配置
+
 ## 0.12.16.20261126
 * `Dortmund比赛`APP 列表新增 `pendingRegistration` 查询字段：常规赛果或倍率赛果至少一项未登记时命中，供移动端“待补录”默认口径使用；管理端不传该字段时保持原筛选语义
 * `Dortmund回报组合`列表统一归一化 `adoptedFlag`、`verificationStatus` 的 `ALL/null` 历史哨兵，避免空值被当作真实业务值查询；未新增数据库字段、表、索引或字典项
-* 完成 `ruoyi-system-fx67ll` Maven 编译验证，并同步确认比赛与回报组合 APP 查询参数契约
 
 ## 0.12.15.20261125
 * `Dortmund比赛`新增标准 JSON 导入接口，单次最多 1000 条、文件不超过 10MB，先整批校验再写入，任一条失败事务回滚并返回带条目序号的中文原因；移除 Excel 比赛导入入口
