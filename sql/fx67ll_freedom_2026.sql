@@ -74,7 +74,7 @@ CREATE TABLE `fx67ll_dortmund_team` (
   `team_name_en` varchar(233) NOT NULL COMMENT '球队英文全称（如Borussia Dortmund）',
   `team_logo_url` varchar(1023) NOT NULL COMMENT '球队Logo图片URL地址',
   `team_venue` varchar(233) NOT NULL COMMENT '球队主场（如伊杜纳信号公园球场）',
-  `team_country` varchar(23) NOT NULL COMMENT '球队所属国家/地区（如德国、英格兰）',
+  `team_country` varchar(23) NOT NULL COMMENT '球队所属地区/联赛（如德甲、英超、日职；同一国家多级联赛时填写具体联赛）',
   `team_tag` varchar(1023) NOT NULL COMMENT '球队标签（如主场龙、客场虫，只做展示）',
   `team_status` char(1) NOT NULL DEFAULT '0' COMMENT '球队状态（字典码：0-启用，1-停用）',
   `team_sort` int(4) DEFAULT 0 COMMENT '球队展示排序（升序排列，数值越小越靠前）',
@@ -89,8 +89,8 @@ CREATE TABLE `fx67ll_dortmund_team` (
   UNIQUE KEY `uk_team_code` (`team_code`) COMMENT '球队编码全局唯一索引（不参与 user_id 隔离）',
   KEY `idx_team_status` (`team_status`) COMMENT '球队状态索引（加速筛选启用/停用球队）',
   KEY `idx_team_sort` (`team_sort`) COMMENT '球队排序索引（加速前端展示排序）',
-  KEY `idx_team_country` (`team_country`) COMMENT '球队国家索引（加速按国家筛选球队）',
-  KEY `idx_user_id_country` (`user_id`, `team_country`) COMMENT '用户+国家组合索引（优化按用户筛选某国家球队）'
+  KEY `idx_team_country` (`team_country`) COMMENT '球队地区/联赛索引（加速按联赛筛选球队）',
+  KEY `idx_user_id_country` (`user_id`, `team_country`) COMMENT '用户+地区/联赛组合索引（优化按用户筛选某联赛球队）'
 ) ENGINE=innodb DEFAULT CHARSET=utf8mb4 COMMENT='球队管理表';
 
 -- ----------------------------
