@@ -60,9 +60,9 @@ public class Fx67llDortmundBasicTeam extends BaseEntity {
     private String teamVenue;
 
     /**
-     * 球队所属国家/地区（如德国、英格兰）
+     * 球队所属地区/联赛（如德甲、英超、日职；同一国家多级联赛时填写具体联赛）
      */
-    @Excel(name = "球队所属国家/地区", readConverterExp = "如=德国、英格兰")
+    @Excel(name = "球队地区/联赛", readConverterExp = "如=德甲、英超、日职")
     private String teamCountry;
 
     /**

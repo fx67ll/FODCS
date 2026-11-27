@@ -64,7 +64,7 @@ public class Fx67llDortmundBasicMatch extends BaseEntity {
     /** 主队所属地区/联赛（关联球队表查询，用于前端联赛主题，不落比赛表）。 */
     private String homeTeamCountry;
 
-    /** 主队编码（关联球队表查询，用于精确区分同一地区下的 J1/J2 球队）。 */
+    /** 主队编码（关联球队表查询，仅用于身份识别与导出，不参与联赛主题推断）。 */
     private String homeTeamCode;
 
     /**
@@ -82,7 +82,7 @@ public class Fx67llDortmundBasicMatch extends BaseEntity {
     /** 客队所属地区/联赛（关联球队表查询，用于前端联赛主题，不落比赛表）。 */
     private String awayTeamCountry;
 
-    /** 客队编码（关联球队表查询，用于精确区分同一地区下的 J1/J2 球队）。 */
+    /** 客队编码（关联球队表查询，仅用于身份识别与导出，不参与联赛主题推断）。 */
     private String awayTeamCode;
 
     /**

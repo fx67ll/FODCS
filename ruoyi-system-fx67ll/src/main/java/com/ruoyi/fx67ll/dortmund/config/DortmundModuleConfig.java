@@ -71,35 +71,68 @@ public final class DortmundModuleConfig {
      * 自动 AI 模型调用与输出预算。
      */
     public static final class Ai {
-        /** 思考模式默认开启，使用模型服务端推理能力提升复杂业务判断质量。 */
+        /**
+         * 思考模式默认开启，使用模型服务端推理能力提升复杂业务判断质量；关闭后减少耗时，
+         * 并恢复温度参数对输出确定性的控制。
+         */
         public static final boolean DEFAULT_THINKING_ENABLED = true;
-        /** 思考强度默认值；仅使用供应商明确支持的 low/high/max。 */
+        /**
+         * 思考强度默认 high，在分析质量和长链路耗时之间取中位；仅接受 low/high/max，
+         * 非法值在启动时回落 high。
+         */
         public static final String DEFAULT_REASONING_EFFORT = "high";
-        /** 最终分析输出 Token；为 23 场上下文、10 条候选和完整证据解释预留空间。 */
+        /**
+         * 最终分析输出 Token 下限；为 23 场上下文、10 条候选、完整证据解释和 JSON 外层结构预留空间。
+         * 启动时低于该值会自动抬高，避免候选正文被截断。
+         */
         public static final int ANALYSIS_MAX_TOKENS = 49152;
-        /** 证据规划输出 Token；覆盖最多 23 条有界查询。 */
+        /**
+         * 证据规划输出 Token 下限；覆盖最多 23 条有界查询、检索理由和计划摘要。
+         * 启动时不得低于该值，且不得超过最终分析 Token。
+         */
         public static final int PLANNER_MAX_TOKENS = 16384;
-        /** 最终分析阶段预算（秒）。 */
+        /**
+         * 最终分析阶段预算（秒），默认 420 秒；也是运行时安全下限，自动 worker 实际消费并计入最低租约。
+         */
         public static final int ANALYSIS_TIMEOUT_SECONDS = 420;
         /** 最终分析阶段预算（毫秒），供调用契约直接使用。 */
         public static final long ANALYSIS_TIMEOUT_MILLIS = ANALYSIS_TIMEOUT_SECONDS * 1000L;
-        /** 证据规划阶段预算（秒）。 */
+        /**
+         * 证据规划阶段预算（秒），默认 150 秒；也是运行时安全下限，自动 worker 实际消费并计入最低租约。
+         */
         public static final int PLAN_TIMEOUT_SECONDS = 150;
         /** 证据规划阶段预算（毫秒），供调用契约直接使用。 */
         public static final long PLAN_TIMEOUT_MILLIS = PLAN_TIMEOUT_SECONDS * 1000L;
-        /** 模型网关连接超时（秒）。 */
+        /**
+         * 模型网关连接超时（秒），默认 10 秒；启动时最低保留 5 秒，避免过小值直接中断建连。
+         */
         public static final int CONNECT_TIMEOUT_SECONDS = 10;
-        /** 部署默认读取超时（秒）；调用阶段预算优先。 */
+        /**
+         * 部署读取兜底超时（秒），默认 480 秒；仅当调用未提供阶段预算时使用，启动时不得低于该值，
+         * 也不得小于规划或分析阶段预算。
+         */
         public static final int DEFAULT_READ_TIMEOUT_SECONDS = 480;
-        /** 最终分析温度，低温度降低契约漂移。 */
+        /**
+         * 最终分析温度，默认 0.2；仅在关闭思考模式后生效，合法范围为 0-2，越界时启动回落默认值。
+         * 低温度用于降低契约漂移。
+         */
         public static final double ANALYSIS_TEMPERATURE = 0.2D;
-        /** 规划温度，进一步降低查询计划漂移。 */
+        /**
+         * 规划温度，默认 0.1；仅在关闭思考模式后生效，合法范围为 0-2，越界时启动回落默认值。
+         * 更低温度用于减少查询计划漂移。
+         */
         public static final double PLANNER_TEMPERATURE = 0.1D;
-        /** 按读取超时缓存的客户端上限，防止动态预算造成无界增长。 */
+        /**
+         * 按读取超时缓存的客户端上限；阶段预算变化时复用有限模板，防止缓存随动态预算无界增长。
+         */
         public static final int MAX_CACHED_REST_TEMPLATES = 8;
-        /** AI 调用引用长度，与数据库 ai_*_run_ref varchar(128) 对齐。 */
+        /**
+         * AI 调用引用最大长度，与数据库 ai_*_run_ref varchar(128) 对齐；超长值在落库前拒绝。
+         */
         public static final int MAX_AI_RUN_REF_LENGTH = 128;
-        /** 异常日志响应正文上限。 */
+        /**
+         * 异常日志响应正文上限；只保留定位所需片段，避免日志膨胀和敏感内容外泄。
+         */
         public static final int MAX_LOG_RESPONSE_CHARS = 500;
 
         /**
@@ -116,23 +149,44 @@ public final class DortmundModuleConfig {
      * 受控证据检索边界。
      */
     public static final class Retrieval {
-        /** 默认关闭专用检索网关，改走 DeepSeek 对话内置联网检索，避免按次计费的独立检索调用。 */
+        /**
+         * 默认关闭专用检索网关，改走 DeepSeek 对话内置联网检索，避免独立检索按成功请求计费；
+         * 显式开启后才要求专用 URL。
+         */
         public static final boolean DEFAULT_DEDICATED_ENABLED = false;
-        /** 单次规划允许的最大查询数。与分析比赛池独立配置，便于分别收紧检索成本。 */
+        /**
+         * 单次规划允许的最大查询数，默认与分析比赛池一致为 23；每场最多一条查询，
+         * 在证据覆盖和串行检索耗时之间取平衡。
+         */
         public static final int MAX_QUERIES = 23;
-        /** 单条查询检索结果上限，为重复、空正文和低质量来源预留筛除空间。 */
+        /**
+         * 单条查询检索结果上限，默认 8；为重复、空正文、低质量和超长来源预留筛除空间。
+         */
         public static final int MAX_RESULTS_PER_QUERY = 8;
-        /** DeepSeek 内置联网检索单次确认回复的输出 Token 上限。 */
+        /**
+         * DeepSeek 内置联网检索单次确认回复的输出 Token 上限，默认 6144；
+         * 需覆盖引用摘要和工具调用说明，同时限制单次检索成本。
+         */
         public static final int NATIVE_SEARCH_MAX_TOKENS = 6144;
-        /** 单条检索默认读取超时（秒）。 */
+        /**
+         * 单条检索默认读取超时（秒），默认 45；启动时最低 30 秒，避免误配过小值中断正常检索。
+         */
         public static final int DEFAULT_TIMEOUT_SECONDS = 45;
-        /** 读取超时下限（秒），避免误配过小值中断正常检索。 */
+        /**
+         * 检索读取超时下限（秒），默认 30；低于该值的配置自动抬高。
+         */
         public static final int MIN_TIMEOUT_SECONDS = 30;
-        /** 检索网关连接超时（秒）。 */
+        /**
+         * 检索网关连接超时（秒），固定 10 秒；连接阶段与读取阶段分开保护，避免慢建连长期占用 worker。
+         */
         public static final int CONNECT_TIMEOUT_SECONDS = 10;
-        /** 检索响应字符上限，用于阻止异常超大响应。 */
+        /**
+         * 检索响应字符上限，固定 4 MiB；超限按受控异常处理，阻止异常超大响应拖垮内存和日志。
+         */
         public static final int MAX_RESPONSE_CHARS = 4 * 1024 * 1024;
-        /** 检索新鲜度允许的最大回溯天数。 */
+        /**
+         * 检索新鲜度最大回溯天数，默认 365；覆盖完整赛季历史，同时阻止过旧证据进入当前分析。
+         */
         public static final int MAX_RECENCY_DAYS = 365;
         /** 检索区域标签最大长度。 */
         public static final int MAX_REGION_LENGTH = 32;
@@ -152,21 +206,39 @@ public final class DortmundModuleConfig {
      * 异步 worker、租约、重试与图片清理。
      */
     public static final class Worker {
-        /** 最低租约：规划 150 秒 + 23 次串行检索 + 分析 420 秒 + 收尾 240 秒。 */
+        /**
+         * 最低串行租约：规划 150 秒 + 23 次检索 × 45 秒 + 分析 420 秒 + 收尾 240 秒 = 1845 秒；
+         * 调整任一阶段预算或检索超时后必须重新计算。
+         */
         public static final int MIN_LEASE_SECONDS = 1845;
-        /** 默认租约，在最低串行预算外再保留 600 秒收敛余量。 */
+        /**
+         * 默认租约，在最低串行预算外保留 555 秒收敛余量；低于运行时最低预算时自动抬高并告警。
+         */
         public static final int DEFAULT_LEASE_SECONDS = 2400;
-        /** 租约中为落库、状态写入、网络抖动和时钟偏差预留的余量（秒）。 */
+        /**
+         * 租约中为落库、状态写入、网络抖动和时钟偏差预留的 240 秒；不得从最坏链路预算中省略。
+         */
         public static final int LEASE_MARGIN_SECONDS = 240;
-        /** 单个批次最大尝试次数。 */
+        /**
+         * 单个批次最大尝试次数，默认 3，即首次执行后最多重试两次；用于覆盖瞬时网络和供应商繁忙，
+         * 不用于掩盖确定性契约错误。
+         */
         public static final int MAX_ATTEMPTS = 3;
-        /** 失败后的重试间隔（秒）。 */
+        /**
+         * 失败后的重试间隔（秒），默认 60；给限流恢复留出冷却窗口，同时避免高频重试放大上游压力。
+         */
         public static final int RETRY_DELAY_SECONDS = 60;
-        /** 待执行批次扫描间隔（毫秒）。 */
+        /**
+         * 待执行批次扫描间隔（毫秒），默认 15000；与单批容量配合，在吞吐和数据库扫描开销之间取平衡。
+         */
         public static final long DISPATCH_INTERVAL_MILLIS = 15000L;
-        /** 调度器首次执行延迟（毫秒）。 */
+        /**
+         * 调度器首次执行延迟（毫秒），默认 5000；等待应用上下文和 HTTP 客户端预热。
+         */
         public static final long DISPATCH_INITIAL_DELAY_MILLIS = 5000L;
-        /** 单次扫描最多领取的批次数。 */
+        /**
+         * 单次扫描最多领取的批次数，默认 5；限制单轮占用，单个慢请求不会占满全部执行线程。
+         */
         public static final int DISPATCH_BATCH_SIZE = 5;
         /** 临时图片保留小时数。 */
         public static final int IMAGE_TEMP_HOURS = 24;
