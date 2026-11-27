@@ -222,3 +222,43 @@ VALUES
 ('SHAKHTAR', '顿涅茨克矿工足球俱乐部', '矿工', 'FC Shakhtar Donetsk', 'https://vip.fx67ll.com/vip-api/getRandomAvatar?isNeedMoreMosaic=Y&avatarBlockNum=12&avatarPadding=43&avatarSeed=SHAKHTAR', '顿巴斯竞技场', '乌克兰', '乌超强队,欧战常客,青训强队', '0', 155, '', 1, '', '', '0'),
 ('BASEL', '巴塞尔足球俱乐部', '巴塞尔', 'FC Basel 1893', 'https://vip.fx67ll.com/vip-api/getRandomAvatar?isNeedMoreMosaic=Y&avatarBlockNum=11&avatarPadding=43&avatarSeed=BASEL', '圣雅各布公园球场', '瑞士', '瑞超霸主,老牌劲旅,欧战常客', '0', 156, '', 1, '', '', '0'),
 ('COPENHAGEN', '哥本哈根足球俱乐部', '哥本哈根', 'FC Copenhagen', 'https://vip.fx67ll.com/vip-api/getRandomAvatar?isNeedMoreMosaic=Y&avatarBlockNum=10&avatarPadding=43&avatarSeed=COPENHAGEN', '帕肯球场', '丹麦', '丹超霸主,欧冠常客,老牌劲旅', '0', 157, '', 1, '', '', '0');
+
+-- ------------------------------
+-- 九、其他竞彩热门联赛（德乙/英冠/荷甲）
+-- ------------------------------
+INSERT INTO `fx67ll_dortmund_team` 
+(`team_code`, `team_name`, `team_name_short`, `team_name_en`, `team_logo_url`, `team_venue`, `team_country`, `team_tag`, `team_status`, `team_sort`, `team_remark`, `user_id`, `create_by`, `update_by`, `del_flag`)
+VALUES
+-- 德乙
+('ST_PAULI', '圣保利足球俱乐部', '圣保利', 'FC St. Pauli', 'https://vip.fx67ll.com/vip-api/getRandomAvatar?isNeedMoreMosaic=Y&avatarBlockNum=4&avatarPadding=45&avatarSeed=ST_PAULI', '米勒门球场', '德乙', '德乙劲旅,球迷文化,主场龙', '0', 158, '', 1, '', '', '0'),
+('NUERNBERG', '纽伦堡足球俱乐部', '纽伦堡', '1. FC Nürnberg', 'https://vip.fx67ll.com/vip-api/getRandomAvatar?isNeedMoreMosaic=Y&avatarBlockNum=5&avatarPadding=48&avatarSeed=NUERNBERG', '根德体育场', '德乙', '老牌劲旅,冲甲热门', '0', 159, '', 1, '', '', '0'),
+('HANNOVER_96', '汉诺威96足球俱乐部', '汉诺威', 'Hannover 96', 'https://vip.fx67ll.com/vip-api/getRandomAvatar?isNeedMoreMosaic=Y&avatarBlockNum=6&avatarPadding=52&avatarSeed=HANNOVER_96', 'HDI竞技场', '德乙', '降班马,冲甲热门', '0', 160, '', 1, '', '', '0'),
+('DUESSELDORF', '杜塞尔多夫足球俱乐部', '杜塞', 'Fortuna Düsseldorf', 'https://vip.fx67ll.com/vip-api/getRandomAvatar?isNeedMoreMosaic=Y&avatarBlockNum=7&avatarPadding=47&avatarSeed=DUESSELDORF', '水星娱乐竞技场', '德乙', '冲甲热门,攻势足球', '0', 161, '', 1, '', '', '0'),
+('KAISERSLAUTERN', '凯泽斯劳滕足球俱乐部', '凯泽', '1. FC Kaiserslautern', 'https://vip.fx67ll.com/vip-api/getRandomAvatar?isNeedMoreMosaic=Y&avatarBlockNum=8&avatarPadding=55&avatarSeed=KAISERSLAUTERN', '弗里茨·瓦尔特球场', '德乙', '老牌劲旅,升班马', '0', 162, '', 1, '', '', '0'),
+('KARLSRUHER_SC', '卡尔斯鲁厄足球俱乐部', '卡尔斯鲁厄', 'Karlsruher SC', 'https://vip.fx67ll.com/vip-api/getRandomAvatar?isNeedMoreMosaic=Y&avatarBlockNum=9&avatarPadding=44&avatarSeed=KARLSRUHER_SC', 'BBBank野生动物园球场', '德乙', '中游混子,攻势足球', '0', 163, '', 1, '', '', '0'),
+('MAGDEBURG', '马格德堡足球俱乐部', '马格德堡', '1. FC Magdeburg', 'https://vip.fx67ll.com/vip-api/getRandomAvatar?isNeedMoreMosaic=Y&avatarBlockNum=10&avatarPadding=57&avatarSeed=MAGDEBURG', 'MDCC竞技场', '德乙', '中游混子,主场龙', '0', 164, '', 1, '', '', '0'),
+('ROSTOCK', '汉莎罗斯托克足球俱乐部', '罗斯托克', 'F.C. Hansa Rostock', 'https://vip.fx67ll.com/vip-api/getRandomAvatar?isNeedMoreMosaic=Y&avatarBlockNum=11&avatarPadding=49&avatarSeed=ROSTOCK', '波罗的海球场', '德乙', '保级队,老牌劲旅', '0', 165, '', 1, '', '', '0'),
+('WEHEN_WIESBADEN', '韦恩威斯巴登足球俱乐部', '韦恩', 'SV Wehen Wiesbaden', 'https://vip.fx67ll.com/vip-api/getRandomAvatar?isNeedMoreMosaic=Y&avatarBlockNum=12&avatarPadding=53&avatarSeed=WEHEN_WIESBADEN', 'BRITA竞技场', '德乙', '保级队,防守反击', '0', 166, '', 1, '', '', '0'),
+('OSNABRUECK', '奥斯纳布吕克足球俱乐部', '奥斯纳', 'VfL Osnabrück', 'https://vip.fx67ll.com/vip-api/getRandomAvatar?isNeedMoreMosaic=Y&avatarBlockNum=4&avatarPadding=58&avatarSeed=OSNABRUECK', '布雷默布里策球场', '德乙', '升班马,保级队', '0', 167, '', 1, '', '', '0'),
+-- 英冠
+('BURNLEY', '伯恩利足球俱乐部', '伯恩利', 'Burnley FC', 'https://vip.fx67ll.com/vip-api/getRandomAvatar?isNeedMoreMosaic=Y&avatarBlockNum=5&avatarPadding=42&avatarSeed=BURNLEY', '特夫摩尔球场', '英冠', '降班马,冲超热门', '0', 168, '', 1, '', '', '0'),
+('SHEFFIELD_UTD', '谢菲尔德联足球俱乐部', '谢菲联', 'Sheffield United FC', 'https://vip.fx67ll.com/vip-api/getRandomAvatar?isNeedMoreMosaic=Y&avatarBlockNum=6&avatarPadding=56&avatarSeed=SHEFFIELD_UTD', '布拉莫巷球场', '英冠', '降班马,冲超热门', '0', 169, '', 1, '', '', '0'),
+('NORWICH', '诺维奇足球俱乐部', '诺维奇', 'Norwich City FC', 'https://vip.fx67ll.com/vip-api/getRandomAvatar?isNeedMoreMosaic=Y&avatarBlockNum=7&avatarPadding=46&avatarSeed=NORWICH', '卡罗路球场', '英冠', '升降机,冲超热门', '0', 170, '', 1, '', '', '0'),
+('WATFORD', '沃特福德足球俱乐部', '沃特福德', 'Watford FC', 'https://vip.fx67ll.com/vip-api/getRandomAvatar?isNeedMoreMosaic=Y&avatarBlockNum=8&avatarPadding=59&avatarSeed=WATFORD', '维卡拉格路球场', '英冠', '升降机,冲超热门', '0', 171, '', 1, '', '', '0'),
+('WEST_BROM', '西布罗姆维奇足球俱乐部', '西布朗', 'West Bromwich Albion FC', 'https://vip.fx67ll.com/vip-api/getRandomAvatar?isNeedMoreMosaic=Y&avatarBlockNum=9&avatarPadding=48&avatarSeed=WEST_BROM', '山楂球场', '英冠', '老牌劲旅,冲超梯队', '0', 172, '', 1, '', '', '0'),
+('MIDDLESBROUGH', '米德尔斯堡足球俱乐部', '米堡', 'Middlesbrough FC', 'https://vip.fx67ll.com/vip-api/getRandomAvatar?isNeedMoreMosaic=Y&avatarBlockNum=10&avatarPadding=43&avatarSeed=MIDDLESBROUGH', '河畔球场', '英冠', '冲超梯队,中游混子', '0', 173, '', 1, '', '', '0'),
+('BLACKBURN', '布莱克本流浪者足球俱乐部', '布莱克本', 'Blackburn Rovers FC', 'https://vip.fx67ll.com/vip-api/getRandomAvatar?isNeedMoreMosaic=Y&avatarBlockNum=11&avatarPadding=54&avatarSeed=BLACKBURN', '埃伍德公园球场', '英冠', '老牌劲旅,中游混子', '0', 174, '', 1, '', '', '0'),
+('STOKE_CITY', '斯托克城足球俱乐部', '斯托克城', 'Stoke City FC', 'https://vip.fx67ll.com/vip-api/getRandomAvatar?isNeedMoreMosaic=Y&avatarBlockNum=12&avatarPadding=47&avatarSeed=STOKE_CITY', 'bet365球场', '英冠', '高空轰炸,中游混子', '0', 175, '', 1, '', '', '0'),
+('BRISTOL_CITY', '布里斯托尔城足球俱乐部', '布城', 'Bristol City FC', 'https://vip.fx67ll.com/vip-api/getRandomAvatar?isNeedMoreMosaic=Y&avatarBlockNum=4&avatarPadding=51&avatarSeed=BRISTOL_CITY', '阿斯顿加特球场', '英冠', '中游混子,主场龙', '0', 176, '', 1, '', '', '0'),
+('BIRMINGHAM', '伯明翰足球俱乐部', '伯明翰', 'Birmingham City FC', 'https://vip.fx67ll.com/vip-api/getRandomAvatar?isNeedMoreMosaic=Y&avatarBlockNum=5&avatarPadding=55&avatarSeed=BIRMINGHAM', '圣安德鲁斯球场', '英冠', '中下游队,保级狂魔', '0', 177, '', 1, '', '', '0'),
+('CARDIFF_CITY', '卡迪夫城足球俱乐部', '卡迪夫', 'Cardiff City FC', 'https://vip.fx67ll.com/vip-api/getRandomAvatar?isNeedMoreMosaic=Y&avatarBlockNum=6&avatarPadding=44&avatarSeed=CARDIFF_CITY', '卡迪夫城运动场', '英冠', '中游混子,防守反击', '0', 178, '', 1, '', '', '0'),
+('QPR', '女王公园巡游者足球俱乐部', 'QPR', 'Queens Park Rangers FC', 'https://vip.fx67ll.com/vip-api/getRandomAvatar?isNeedMoreMosaic=Y&avatarBlockNum=7&avatarPadding=58&avatarSeed=QPR', '洛夫图斯路球场', '英冠', '中游混子,伦敦球队', '0', 179, '', 1, '', '', '0'),
+-- 荷甲（补充非三强的竞彩热门队）
+('AZ_ALKMAAR', '阿尔克马尔足球俱乐部', '阿尔克马尔', 'AZ Alkmaar', 'https://vip.fx67ll.com/vip-api/getRandomAvatar?isNeedMoreMosaic=Y&avatarBlockNum=8&avatarPadding=42&avatarSeed=AZ_ALKMAAR', 'AFAS体育场', '荷甲', '欧战资格,荷甲劲旅', '0', 180, '', 1, '', '', '0'),
+('FC_TWENTE', '特温特足球俱乐部', '特温特', 'FC Twente', 'https://vip.fx67ll.com/vip-api/getRandomAvatar?isNeedMoreMosaic=Y&avatarBlockNum=9&avatarPadding=56&avatarSeed=FC_TWENTE', '赫罗尔斯城堡球场', '荷甲', '欧战资格,荷甲劲旅', '0', 181, '', 1, '', '', '0'),
+('FC_UTRECHT', '乌德勒支足球俱乐部', '乌德勒支', 'FC Utrecht', 'https://vip.fx67ll.com/vip-api/getRandomAvatar?isNeedMoreMosaic=Y&avatarBlockNum=10&avatarPadding=49&avatarSeed=FC_UTRECHT', '加尔根沃德球场', '荷甲', '中游混子,荷甲劲旅', '0', 182, '', 1, '', '', '0'),
+('SC_HEERENVEEN', '海伦芬足球俱乐部', '海伦芬', 'SC Heerenveen', 'https://vip.fx67ll.com/vip-api/getRandomAvatar?isNeedMoreMosaic=Y&avatarBlockNum=11&avatarPadding=45&avatarSeed=SC_HEERENVEEN', '阿布斯特拉球场', '荷甲', '中游混子,主场龙', '0', 183, '', 1, '', '', '0'),
+('SPARTA_RDAM', '鹿特丹斯巴达足球俱乐部', '斯巴达', 'Sparta Rotterdam', 'https://vip.fx67ll.com/vip-api/getRandomAvatar?isNeedMoreMosaic=Y&avatarBlockNum=12&avatarPadding=52&avatarSeed=SPARTA_RDAM', '斯巴达城堡球场', '荷甲', '中游混子,老牌劲旅', '0', 184, '', 1, '', '', '0'),
+('GAE', '前进之鹰足球俱乐部', '前进之鹰', 'Go Ahead Eagles', 'https://vip.fx67ll.com/vip-api/getRandomAvatar?isNeedMoreMosaic=Y&avatarBlockNum=4&avatarPadding=57&avatarSeed=GAE', '德阿德霍斯特球场', '荷甲', '保级队,升班马', '0', 185, '', 1, '', '', '0'),
+('NEC_NIJMEGEN', '奈梅亨足球俱乐部', '奈梅亨', 'NEC Nijmegen', 'https://vip.fx67ll.com/vip-api/getRandomAvatar?isNeedMoreMosaic=Y&avatarBlockNum=5&avatarPadding=43&avatarSeed=NEC_NIJMEGEN', '戈菲特球场', '荷甲', '中游混子,攻势足球', '0', 186, '', 1, '', '', '0'),
+('FORTUNA_SITTARD', '福图纳锡塔德足球俱乐部', '福图纳', 'Fortuna Sittard', 'https://vip.fx67ll.com/vip-api/getRandomAvatar?isNeedMoreMosaic=Y&avatarBlockNum=6&avatarPadding=50&avatarSeed=FORTUNA_SITTARD', '幸运星球场', '荷甲', '保级队,中下游队', '0', 187, '', 1, '', '', '0'),
