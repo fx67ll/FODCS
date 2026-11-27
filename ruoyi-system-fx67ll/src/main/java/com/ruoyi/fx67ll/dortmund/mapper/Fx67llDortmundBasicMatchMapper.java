@@ -67,6 +67,20 @@ public interface Fx67llDortmundBasicMatchMapper
             @Param("updateBy") String updateBy);
 
     /**
+     * 导入比赛结果时仅更新请求中明确提供的赛果字段。
+     * <p>null 表示保留原值，空字符串表示清除误录；其他编排字段保持不变。</p>
+     *
+     * @param matchId     比赛主键
+     * @param matchResult 常规赛果；null 表示不修改
+     * @param oddsResult  倍率赛果；null 表示不修改
+     * @param updateBy    更新人
+     * @return 结果
+     */
+    public int updateMatchResultsForImport(@Param("matchId") Long matchId,
+            @Param("matchResult") String matchResult, @Param("oddsResult") String oddsResult,
+            @Param("updateBy") String updateBy);
+
+    /**
      * 删除比赛记录
      * 
      * @param matchId 比赛记录主键

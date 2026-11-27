@@ -3,6 +3,8 @@ package com.ruoyi.fx67ll.dortmund.service;
 import java.util.List;
 
 import com.ruoyi.fx67ll.dortmund.domain.Fx67llDortmundReturnCombination;
+import com.ruoyi.fx67ll.dortmund.domain.Fx67llDortmundReturnAsyncCleanupResult;
+import com.ruoyi.fx67ll.dortmund.domain.Fx67llDortmundReturnAsyncMonitor;
 import com.ruoyi.fx67ll.dortmund.domain.Fx67llDortmundReturnGenerateRequest;
 import com.ruoyi.fx67ll.dortmund.domain.Fx67llDortmundReturnGeneration;
 import com.ruoyi.fx67ll.dortmund.domain.Fx67llDortmundReturnManualImportRequest;
@@ -94,6 +96,33 @@ public interface IFx67llDortmundReturnCombinationService {
      * @return 生成批次详情
      */
     public Fx67llDortmundReturnGeneration selectGenerationById(Long generationId, String sortField, String sortOrder);
+
+    /**
+     * 查询异步分析任务监控快照。
+     * <p>只读取状态、租约和耗时字段，不加载请求快照、证据计划和AI结果大字段。</p>
+     *
+     * @param limit 运行中与异常任务各自返回的最大条数
+     * @return 聚合指标与任务列表
+     */
+    public Fx67llDortmundReturnAsyncMonitor selectAsyncTaskMonitor(int limit);
+
+    /**
+     * 管理员手动停止一条处理中异步任务。
+     * <p>停止先写终态并清空租约，worker下一次协作检查或条件写入时会安全退出。</p>
+     *
+     * @param generationId 生成批次主键
+     * @return 停止后的批次快照
+     */
+    public Fx67llDortmundReturnGeneration stopAsyncGeneration(Long generationId);
+
+    /**
+     * 清理异常异步任务。
+     * <p>先回收租约过期且尝试耗尽的处理中任务，再删除超过保留期且没有组合或证据依赖的失败任务；
+     * 有依赖或受单次清理上限保护的任务保留，并由调用方展示受保护数量。</p>
+     *
+     * @return 清理统计
+     */
+    public Fx67llDortmundReturnAsyncCleanupResult cleanupAsyncGenerations();
 
     /**
      * 查询回报组合列表

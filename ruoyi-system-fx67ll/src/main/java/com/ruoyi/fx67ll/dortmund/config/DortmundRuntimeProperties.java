@@ -64,7 +64,8 @@ public class DortmundRuntimeProperties {
         ai.deepseek.normalize();
         ai.retrieval.normalize();
         returnSettings.generation.normalize(DortmundModuleConfig.Retrieval.MAX_QUERIES,
-                ai.retrieval.timeoutSeconds);
+                ai.retrieval.timeoutSeconds, ai.deepseek.planTimeoutSeconds,
+                ai.deepseek.analysisTimeoutSeconds);
         returnSettings.image.normalize();
     }
 
@@ -223,24 +224,29 @@ public class DortmundRuntimeProperties {
                 normalizedEffort = DortmundModuleConfig.Ai.DEFAULT_REASONING_EFFORT;
             }
             reasoningEffort = normalizedEffort;
-            if (maxTokens <= 0) {
-                maxTokens = DortmundModuleConfig.Ai.ANALYSIS_MAX_TOKENS;
+            maxTokens = enforceMinimum("dortmund.ai.deepseek.max-tokens", maxTokens,
+                    DortmundModuleConfig.Ai.ANALYSIS_MAX_TOKENS);
+            plannerMaxTokens = enforceMinimum("dortmund.ai.deepseek.planner-max-tokens", plannerMaxTokens,
+                    DortmundModuleConfig.Ai.PLANNER_MAX_TOKENS);
+            plannerMaxTokens = Math.min(plannerMaxTokens, maxTokens);
+            connectTimeoutSeconds = enforceMinimum("dortmund.ai.deepseek.connect-timeout-seconds",
+                    connectTimeoutSeconds, 5);
+            analysisTimeoutSeconds = enforceMinimum("dortmund.ai.deepseek.analysis-timeout-seconds",
+                    analysisTimeoutSeconds, DortmundModuleConfig.Ai.ANALYSIS_TIMEOUT_SECONDS);
+            planTimeoutSeconds = enforceMinimum("dortmund.ai.deepseek.plan-timeout-seconds",
+                    planTimeoutSeconds, DortmundModuleConfig.Ai.PLAN_TIMEOUT_SECONDS);
+            readTimeoutSeconds = enforceMinimum("dortmund.ai.deepseek.read-timeout-seconds",
+                    readTimeoutSeconds, Math.max(analysisTimeoutSeconds, planTimeoutSeconds));
+            readTimeoutSeconds = Math.max(readTimeoutSeconds,
+                    DortmundModuleConfig.Ai.DEFAULT_READ_TIMEOUT_SECONDS);
+        }
+
+        private int enforceMinimum(String key, int value, int minimum) {
+            if (value < minimum) {
+                log.warn("{}={}低于安全下限{}，运行时使用安全下限。", key, value, minimum);
+                return minimum;
             }
-            if (plannerMaxTokens <= 0) {
-                plannerMaxTokens = Math.min(maxTokens, DortmundModuleConfig.Ai.PLANNER_MAX_TOKENS);
-            }
-            if (connectTimeoutSeconds <= 0) {
-                connectTimeoutSeconds = DortmundModuleConfig.Ai.CONNECT_TIMEOUT_SECONDS;
-            }
-            if (readTimeoutSeconds <= 0) {
-                readTimeoutSeconds = DortmundModuleConfig.Ai.DEFAULT_READ_TIMEOUT_SECONDS;
-            }
-            if (analysisTimeoutSeconds <= 0) {
-                analysisTimeoutSeconds = DortmundModuleConfig.Ai.ANALYSIS_TIMEOUT_SECONDS;
-            }
-            if (planTimeoutSeconds <= 0) {
-                planTimeoutSeconds = DortmundModuleConfig.Ai.PLAN_TIMEOUT_SECONDS;
-            }
+            return value;
         }
     }
 
@@ -314,10 +320,14 @@ public class DortmundRuntimeProperties {
             if (maxResults <= 0) {
                 maxResults = DortmundModuleConfig.Retrieval.MAX_RESULTS_PER_QUERY;
             }
-            if (nativeSearchMaxTokens <= 0) {
+            if (nativeSearchMaxTokens < DortmundModuleConfig.Retrieval.NATIVE_SEARCH_MAX_TOKENS) {
+                log.warn("dortmund.ai.retrieval.native-search-max-tokens={}低于安全下限{}，运行时使用安全下限。",
+                        nativeSearchMaxTokens, DortmundModuleConfig.Retrieval.NATIVE_SEARCH_MAX_TOKENS);
                 nativeSearchMaxTokens = DortmundModuleConfig.Retrieval.NATIVE_SEARCH_MAX_TOKENS;
             }
             if (timeoutSeconds < DortmundModuleConfig.Retrieval.MIN_TIMEOUT_SECONDS) {
+                log.warn("dortmund.ai.retrieval.timeout-seconds={}低于安全下限{}，运行时使用安全下限。",
+                        timeoutSeconds, DortmundModuleConfig.Retrieval.MIN_TIMEOUT_SECONDS);
                 timeoutSeconds = DortmundModuleConfig.Retrieval.MIN_TIMEOUT_SECONDS;
             }
         }
@@ -402,11 +412,16 @@ public class DortmundRuntimeProperties {
             this.dispatchInitialDelayMs = dispatchInitialDelayMs;
         }
 
-        private void normalize(int maxQueries, int retrievalTimeoutSeconds) {
-            int minimumLease = DortmundModuleConfig.Ai.PLAN_TIMEOUT_SECONDS
+        private void normalize(int maxQueries, int retrievalTimeoutSeconds,
+                int planTimeoutSeconds, int analysisTimeoutSeconds) {
+            int effectivePlanTimeout = Math.max(planTimeoutSeconds,
+                    DortmundModuleConfig.Ai.PLAN_TIMEOUT_SECONDS);
+            int effectiveAnalysisTimeout = Math.max(analysisTimeoutSeconds,
+                    DortmundModuleConfig.Ai.ANALYSIS_TIMEOUT_SECONDS);
+            int minimumLease = effectivePlanTimeout
                     + Math.max(maxQueries, DortmundModuleConfig.Return.MAX_ANALYSIS_MATCHES)
                     * retrievalTimeoutSeconds
-                    + DortmundModuleConfig.Ai.ANALYSIS_TIMEOUT_SECONDS
+                    + effectiveAnalysisTimeout
                     + DortmundModuleConfig.Worker.LEASE_MARGIN_SECONDS;
             if (leaseSeconds < minimumLease) {
                 log.warn("dortmund.return.generation.lease-seconds={}低于最小串行预算{}秒，运行时使用最小值。",

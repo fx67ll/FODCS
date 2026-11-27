@@ -2,6 +2,7 @@ package com.ruoyi.fx67ll.dortmund.mapper;
 
 import java.util.List;
 
+import com.ruoyi.fx67ll.dortmund.domain.Fx67llDortmundReturnAsyncMonitor;
 import com.ruoyi.fx67ll.dortmund.domain.Fx67llDortmundReturnGeneration;
 import org.apache.ibatis.annotations.Param;
 
@@ -112,4 +113,58 @@ public interface Fx67llDortmundReturnGenerationMapper {
     public int updateEvidenceStatus(@Param("generationId") Long generationId,
             @Param("workerId") String workerId, @Param("status") String status,
             @Param("error") String error);
+
+    /**
+     * 查询轻量异步任务聚合指标，不读取任何大文本快照。
+     */
+    public Fx67llDortmundReturnAsyncMonitor selectAsyncTaskSummary();
+
+    /**
+     * 查询当前处理中任务，供监控面板展示；不返回请求、证据和AI结果快照。
+     */
+    public List<Fx67llDortmundReturnGeneration> selectRunningAsyncTasks(@Param("limit") int limit);
+
+    /**
+     * 查询失败任务和租约过期的处理中任务，供管理员定位异常。
+     */
+    public List<Fx67llDortmundReturnGeneration> selectAbnormalAsyncTasks(@Param("limit") int limit);
+
+    /**
+     * 检查任务是否仍由当前worker持有且处于处理中，用于停止后的协作式中断。
+     */
+    public int countOwnedProcessingGeneration(@Param("generationId") Long generationId,
+            @Param("workerId") String workerId);
+
+    /**
+     * 管理员手动停止处理中任务；清空租约后worker的后续条件写入将自动失效。
+     */
+    public int adminStopGeneration(@Param("generationId") Long generationId,
+            @Param("remark") String remark, @Param("updateBy") String updateBy);
+
+    /**
+     * 将租约过期且尝试次数耗尽的处理中任务转为终态失败。
+     */
+    public int markExhaustedAsyncTasksFailed(@Param("remark") String remark);
+
+    /**
+     * 统计指定时间前结束的失败任务。
+     */
+    public int countFailedGenerationsBefore(@Param("before") java.util.Date before);
+
+    /**
+     * 统计指定时间前结束且没有组合或证据依赖、可安全删除的失败任务。
+     */
+    public int countCleanupEligibleGenerations(@Param("before") java.util.Date before);
+
+    /**
+     * 查询可安全删除的失败任务主键，单次受数量上限约束。
+     */
+    public List<Long> selectCleanupEligibleGenerationIds(@Param("before") java.util.Date before,
+            @Param("limit") int limit);
+
+    /**
+     * 删除仍满足失败终态、时间阈值且无组合/证据依赖的任务，防止检查后被并发引用。
+     */
+    public int deleteCleanupEligibleGeneration(@Param("generationId") Long generationId,
+            @Param("before") java.util.Date before);
 }

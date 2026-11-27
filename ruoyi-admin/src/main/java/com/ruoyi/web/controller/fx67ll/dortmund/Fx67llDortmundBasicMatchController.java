@@ -98,6 +98,19 @@ public class Fx67llDortmundBasicMatchController extends BaseController {
     }
 
     /**
+     * 批量导入既有比赛的赛果与倍率记录。
+     * <p>请求行仅按比赛编码定位当前用户可维护的比赛，不创建新比赛或修改编排字段；
+     * 赛果与倍率记录在同一事务内写入，任一条失败整批回滚。</p>
+     */
+    @PreAuthorize("@ss.hasPermi('dortmund:match:edit')")
+    @Log(title = "比赛结果 JSON 导入", businessType = BusinessType.IMPORT)
+    @PostMapping("/importResultJson")
+    public AjaxResult importResultJson(@RequestBody List<Fx67llDortmundBasicMatchExcel> rows) {
+        int imported = fx67llDortmundBasicMatchService.importFx67llDortmundBasicMatchResultJson(rows);
+        return success("比赛结果与倍率记录导入成功，共 " + imported + " 条");
+    }
+
+    /**
      * 获取比赛记录详细信息
      */
     @PreAuthorize("@ss.hasPermi('dortmund:match:query')")

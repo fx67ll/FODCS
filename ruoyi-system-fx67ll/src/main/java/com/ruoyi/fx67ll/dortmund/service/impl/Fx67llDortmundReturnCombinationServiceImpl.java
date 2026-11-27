@@ -64,6 +64,8 @@ import com.ruoyi.fx67ll.dortmund.domain.Fx67llDortmundInfoPointTeamRel;
 import com.ruoyi.fx67ll.dortmund.domain.Fx67llDortmundOdds;
 import com.ruoyi.fx67ll.dortmund.domain.Fx67llDortmundReturnCombination;
 import com.ruoyi.fx67ll.dortmund.domain.Fx67llDortmundReturnCombinationItem;
+import com.ruoyi.fx67ll.dortmund.domain.Fx67llDortmundReturnAsyncCleanupResult;
+import com.ruoyi.fx67ll.dortmund.domain.Fx67llDortmundReturnAsyncMonitor;
 import com.ruoyi.fx67ll.dortmund.domain.Fx67llDortmundReturnGenerateRequest;
 import com.ruoyi.fx67ll.dortmund.domain.Fx67llDortmundReturnGeneration;
 import com.ruoyi.fx67ll.dortmund.domain.Fx67llDortmundReturnEvidence;
@@ -203,6 +205,12 @@ public class Fx67llDortmundReturnCombinationServiceImpl implements IFx67llDortmu
     private static final String EVIDENCE_SOURCE_MANUAL_WEIGHT = "MANUAL_WEIGHT";
     private static final String MANUAL_IMPORT_MODE_REPLACE = "REPLACE";
     private static final String MANUAL_IMPORT_MODE_APPEND = "APPEND";
+    /** 监控面板单类任务最多返回条数，避免一次刷新读取过多任务行。 */
+    private static final int ASYNC_MONITOR_TASK_LIMIT = 50;
+    /** 失败任务保留期；保留窗口内仍允许人工导出和回填。 */
+    private static final int ASYNC_CLEANUP_RETENTION_HOURS = 24;
+    /** 单次管理员清理最多删除的失败任务数。 */
+    private static final int ASYNC_CLEANUP_DELETE_LIMIT = 200;
     private static final Set<String> SORT_FIELDS = new HashSet<>();
     private static final Set<String> SELECTION_TYPES = new HashSet<>();
     private static final Set<String> PREFERENCE_CODES = new HashSet<>();
@@ -1198,6 +1206,7 @@ public class Fx67llDortmundReturnCombinationServiceImpl implements IFx67llDortmu
             return;
         }
         try {
+            assertGenerationExecutionActive(generation.getGenerationId());
             GenerationSnapshot snapshot = parseGenerationSnapshot(generation.getRequestSnapshot());
             Fx67llDortmundReturnGenerateRequest request = snapshot.request;
             List<Fx67llDortmundOdds> oddsList = snapshot.odds;
@@ -1220,6 +1229,7 @@ public class Fx67llDortmundReturnCombinationServiceImpl implements IFx67llDortmu
                         generation.getGenerationId(), workerId, planInputSnapshot) != 1) {
                     throw new ServiceException("自动AI规划输入快照保存失败！");
                 }
+                assertGenerationExecutionActive(generation.getGenerationId());
                 ReturnCombinationAiAnalysisPort.ReturnCombinationAiInvocation planInvocation =
                         buildAiInvocation(generation, AI_OPERATION_PLAN, planTimeoutMillis,
                                 true, MAX_QUERIES, MAX_RESULTS_PER_QUERY);
@@ -1239,7 +1249,9 @@ public class Fx67llDortmundReturnCombinationServiceImpl implements IFx67llDortmu
                         JSON.toJSONString(callTraces)) != 1) {
                     throw new ServiceException("自动AI证据检索计划保存失败！");
                 }
-                evidenceBundle.addAll(retrieveEvidence(queries));
+                assertGenerationExecutionActive(generation.getGenerationId());
+                evidenceBundle.addAll(retrieveEvidence(generation.getGenerationId(), queries));
+                assertGenerationExecutionActive(generation.getGenerationId());
                 if (fx67llDortmundReturnGenerationMapper.updateEvidenceStatus(
                         generation.getGenerationId(), workerId, EVIDENCE_STATUS_READY, null) != 1) {
                     throw new ServiceException("自动AI证据检索状态写入失败！");
@@ -1252,6 +1264,7 @@ public class Fx67llDortmundReturnCombinationServiceImpl implements IFx67llDortmu
                     generation.getGenerationId(), workerId, analysisInputSnapshot) != 1) {
                 throw new ServiceException("自动AI分析输入快照保存失败！");
             }
+            assertGenerationExecutionActive(generation.getGenerationId());
             ReturnCombinationAiAnalysisPort.ReturnCombinationAiInvocation analysisInvocation =
                     buildAiInvocation(generation, AI_OPERATION_ANALYZE, analysisTimeoutMillis,
                             false, 0, 0);
@@ -1261,6 +1274,7 @@ public class Fx67llDortmundReturnCombinationServiceImpl implements IFx67llDortmu
             long analysisDuration = System.currentTimeMillis() - analysisStartedAt;
             callTraces.add(buildAiCallTrace(analysisInvocation, "SUCCESS", analysisDuration,
                     output == null ? null : output.getAiRunRef()));
+            assertGenerationExecutionActive(generation.getGenerationId());
             List<PreparedCombination> prepared = prepareCombinations(
                     output, request, oddsList, evidenceBundle, true, generation.getDataAsOf());
             if (prepared.isEmpty()) {
@@ -1268,6 +1282,9 @@ public class Fx67llDortmundReturnCombinationServiceImpl implements IFx67llDortmu
             }
             persistSuccess(generation, prepared, output, evidenceBundle, analysisInputSnapshot,
                     JSON.toJSONString(callTraces));
+        } catch (GenerationStoppedException e) {
+            // 管理员停止后不再写失败/重试状态，避免覆盖已经写入的终态和停止备注。
+            log.info("回报组合异步任务已停止，生成批次ID：{}，原因：{}", generationId, e.getMessage());
         } catch (Exception e) {
             handleGenerationFailure(generation, e);
         }
@@ -1535,6 +1552,26 @@ public class Fx67llDortmundReturnCombinationServiceImpl implements IFx67llDortmu
         return null;
     }
 
+    /**
+     * 在长链路阶段之间校验任务仍由当前worker持有。
+     * <p>数据库校验使其他节点上的管理员停止也能及时生效；正在阻塞的HTTP调用只能等待自身超时后退出。</p>
+     */
+    private void assertGenerationExecutionActive(Long generationId) {
+        if (fx67llDortmundReturnGenerationMapper.countOwnedProcessingGeneration(
+                generationId, workerId) != 1) {
+            throw new GenerationStoppedException("任务已被手动停止或租约已失效");
+        }
+    }
+
+    /** 协作式停止信号，不参与自动重试与失败备注写回。 */
+    private static class GenerationStoppedException extends RuntimeException {
+        private static final long serialVersionUID = 1L;
+
+        GenerationStoppedException(String message) {
+            super(message);
+        }
+    }
+
     /** 按尝试次数写回失败状态；未耗尽时释放租约并延迟重试，耗尽后结束批次并保留受控原因。 */
     private void handleGenerationFailure(Fx67llDortmundReturnGeneration generation, Exception error) {
         String message = error == null || blank(error.getMessage())
@@ -1601,6 +1638,94 @@ public class Fx67llDortmundReturnCombinationServiceImpl implements IFx67llDortmu
         }
         value.setCombinations(selectCombinationListByGeneration(generationId, sortField, sortOrder));
         return value;
+    }
+
+    /**
+     * 查询异步分析任务监控快照。
+     * <p>聚合查询只扫描状态和耗时字段，任务列表不读取请求、证据计划和AI结果快照；
+     * 面板刷新频率由前端控制，后端不主动推动额外轮询。</p>
+     */
+    @Override
+    public Fx67llDortmundReturnAsyncMonitor selectAsyncTaskMonitor(int limit) {
+        int safeLimit = Math.max(1, Math.min(limit, ASYNC_MONITOR_TASK_LIMIT));
+        Fx67llDortmundReturnAsyncMonitor monitor =
+                fx67llDortmundReturnGenerationMapper.selectAsyncTaskSummary();
+        if (monitor == null) {
+            monitor = new Fx67llDortmundReturnAsyncMonitor();
+        }
+        monitor.setGeneratedAt(DateUtils.getNowDate());
+        monitor.setRunningTasks(fx67llDortmundReturnGenerationMapper
+                .selectRunningAsyncTasks(safeLimit));
+        monitor.setAbnormalTasks(fx67llDortmundReturnGenerationMapper
+                .selectAbnormalAsyncTasks(safeLimit));
+        return monitor;
+    }
+
+    /**
+     * 管理员手动停止处理中异步任务。
+     * <p>状态与租约在一次条件更新中关闭，运行节点之后的证据保存、分析结果落库和成功写入都无法通过原租约校验。</p>
+     */
+    @Override
+    public Fx67llDortmundReturnGeneration stopAsyncGeneration(Long generationId) {
+        if (generationId == null) {
+            throw new ServiceException("回报组合批次编号不能为空！");
+        }
+        String username = SecurityUtils.getUsername();
+        String remark = limit("管理员" + username + "手动停止异步分析任务。", MAX_GENERATION_MESSAGE_LENGTH);
+        int updated = fx67llDortmundReturnGenerationMapper.adminStopGeneration(
+                generationId, remark, username);
+        if (updated != 1) {
+            throw new ServiceException("异步任务已结束或不在处理中，请刷新监控面板！");
+        }
+        Fx67llDortmundReturnGeneration stopped = fx67llDortmundReturnGenerationMapper
+                .selectFx67llDortmundReturnGenerationByGenerationId(generationId);
+        if (stopped != null) {
+            stopped.setRequestSnapshot(null);
+        }
+        return stopped;
+    }
+
+    /**
+     * 管理员清理异常异步任务。
+     * <p>先回收租约过期且尝试耗尽的处理中任务；随后只删除超过保留期且不存在组合或证据依赖的失败任务。
+     * 组合与证据表使用 ON DELETE RESTRICT，本方法不绕过外键，也不删除仍可人工回填的近期失败任务。</p>
+     */
+    @Override
+    public Fx67llDortmundReturnAsyncCleanupResult cleanupAsyncGenerations() {
+        Date cleanupBefore = new Date(System.currentTimeMillis()
+                - ASYNC_CLEANUP_RETENTION_HOURS * MILLIS_PER_HOUR);
+        Fx67llDortmundReturnAsyncCleanupResult result = new Fx67llDortmundReturnAsyncCleanupResult();
+        result.setCleanupBefore(cleanupBefore);
+        result.setStaleMarkedFailedCount(fx67llDortmundReturnGenerationMapper
+                .markExhaustedAsyncTasksFailed("异步任务租约过期且尝试次数耗尽，已由管理员清理转为失败。"));
+
+        List<Long> candidates = fx67llDortmundReturnGenerationMapper
+                .selectCleanupEligibleGenerationIds(cleanupBefore, ASYNC_CLEANUP_DELETE_LIMIT);
+        int deleted = 0;
+        for (Long candidateId : candidates) {
+            try {
+                if (fx67llDortmundReturnGenerationMapper
+                        .deleteCleanupEligibleGeneration(candidateId, cleanupBefore) == 1) {
+                    deleted++;
+                }
+            } catch (org.springframework.dao.DataIntegrityViolationException e) {
+                // 预检后并发产生组合或证据引用时由外键兜底，保留任务并计入跳过数量。
+                log.warn("清理回报组合失败任务时发现并发依赖，已保留生成批次ID：{}", candidateId);
+            }
+        }
+        result.setDeletedCount(deleted);
+        Fx67llDortmundReturnAsyncMonitor afterCleanup = fx67llDortmundReturnGenerationMapper
+                .selectAsyncTaskSummary();
+        int remainingFailedCount = afterCleanup == null || afterCleanup.getFailedCount() == null
+                ? 0 : afterCleanup.getFailedCount().intValue();
+        // 清理后按“是否已超过保留期”重新拆分，避免把本次刚转为失败的租约异常任务误算成保留期内任务。
+        int retainedOldCount = fx67llDortmundReturnGenerationMapper
+                .countFailedGenerationsBefore(cleanupBefore);
+        result.setRetainedCount(Math.max(0, remainingFailedCount - retainedOldCount));
+        // 超期未删除既可能来自组合/证据依赖，也可能来自单次清理上限；统一计入受保护数量。
+        result.setSkippedDependencyCount(Math.max(0, retainedOldCount));
+        result.setRemainingFailedCount(remainingFailedCount);
+        return result;
     }
 
     /**
@@ -3492,13 +3617,15 @@ public class Fx67llDortmundReturnCombinationServiceImpl implements IFx67llDortmu
      * <p>
      * 单场查询必须至少产出一条有效证据，否则自动AI无法完成“检索事实支持权重”的完整证据链。
      */
-    private List<Fx67llDortmundReturnEvidence> retrieveEvidence(
+    private List<Fx67llDortmundReturnEvidence> retrieveEvidence(Long generationId,
             List<ReturnCombinationAiAnalysisPort.EvidenceQuery> queries) {
         List<Fx67llDortmundReturnEvidence> result = new ArrayList<>();
         Date retrievedAt = DateUtils.getNowDate();
         for (ReturnCombinationAiAnalysisPort.EvidenceQuery query : queries) {
+            assertGenerationExecutionActive(generationId);
             List<ReturnEvidenceRetrievalPort.RetrievalResult> retrievalResults =
                     returnEvidenceRetrievalPort.retrieve(query, MAX_RESULTS_PER_QUERY);
+            assertGenerationExecutionActive(generationId);
             Set<String> contentHashes = new HashSet<>();
             int accepted = 0;
             if (retrievalResults != null) {

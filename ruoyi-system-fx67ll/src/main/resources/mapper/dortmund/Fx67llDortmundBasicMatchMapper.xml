@@ -279,6 +279,21 @@
         where match_id = #{matchId}
     </update>
 
+    <!--
+      JSON 结果导入只更新明确提供且非空的赛果字段：null 或空白保持原值，
+      避免未出现在 AI 结果中的字段被意外清空；当前接口不支持通过空字符串清空赛果。
+    -->
+    <update id="updateMatchResultsForImport">
+        update fx67ll_dortmund_match
+        <set>
+            <if test="matchResult != null">match_result = #{matchResult},</if>
+            <if test="oddsResult != null">odds_result = #{oddsResult},</if>
+            update_by = #{updateBy},
+            update_time = now()
+        </set>
+        where match_id = #{matchId}
+    </update>
+
     <delete id="deleteFx67llDortmundBasicMatchByMatchId" parameterType="Long">
         delete
         from fx67ll_dortmund_match

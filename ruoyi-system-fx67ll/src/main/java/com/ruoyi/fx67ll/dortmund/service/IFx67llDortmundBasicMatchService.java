@@ -113,4 +113,14 @@ public interface IFx67llDortmundBasicMatchService
      * @return 导入成功条数
      */
     public int importFx67llDortmundBasicMatchJson(List<Fx67llDortmundBasicMatchExcel> rows);
+
+    /**
+     * 批量导入既有比赛的赛果与倍率记录。
+     * <p>仅按 matchCode 定位当前用户可维护的比赛，不创建或改动比赛编排字段；
+     * 赛果变化沿用统一失效规则，倍率记录在同一事务内写入。</p>
+     *
+     * @param rows 用户确认写入的比赛结果条目
+     * @return 导入成功条数
+     */
+    public int importFx67llDortmundBasicMatchResultJson(List<Fx67llDortmundBasicMatchExcel> rows);
 }

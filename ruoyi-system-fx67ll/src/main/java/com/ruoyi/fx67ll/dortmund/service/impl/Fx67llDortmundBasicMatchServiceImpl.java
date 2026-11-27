@@ -3,6 +3,8 @@ package com.ruoyi.fx67ll.dortmund.service.impl;
 import java.math.BigDecimal;
 import java.security.SecureRandom;
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashSet;
@@ -21,6 +23,7 @@ import com.ruoyi.fx67ll.dortmund.domain.Fx67llDortmundBasicMatchExcel;
 import com.ruoyi.fx67ll.dortmund.domain.Fx67llDortmundBasicSeason;
 import com.ruoyi.fx67ll.dortmund.domain.Fx67llDortmundBasicTeam;
 import com.ruoyi.fx67ll.dortmund.domain.Fx67llDortmundInfoPoint;
+import com.ruoyi.fx67ll.dortmund.domain.Fx67llDortmundMatchMultiplierImport;
 import com.ruoyi.fx67ll.dortmund.domain.Fx67llDortmundOdds;
 import com.ruoyi.fx67ll.dortmund.domain.Fx67llDortmundPlanMatchRel;
 import com.ruoyi.fx67ll.dortmund.mapper.Fx67llDortmundBasicMatchMapper;
@@ -33,10 +36,12 @@ import com.ruoyi.fx67ll.dortmund.service.IFx67llDortmundBasicMatchService;
 import com.ruoyi.fx67ll.dortmund.service.IFx67llDortmundBasicSeasonService;
 import com.ruoyi.fx67ll.dortmund.service.IFx67llDortmundBasicTeamService;
 import com.ruoyi.fx67ll.dortmund.service.IFx67llDortmundInfoPointService;
+import com.ruoyi.fx67ll.dortmund.service.IFx67llDortmundOddsService;
 import com.ruoyi.fx67ll.dortmund.support.DortmundDataScope;
 import com.ruoyi.fx67ll.dortmund.support.DortmundFieldValidator;
 import com.ruoyi.fx67ll.dortmund.support.DortmundWeightCodec;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.dao.DuplicateKeyException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -57,6 +62,12 @@ public class Fx67llDortmundBasicMatchServiceImpl implements IFx67llDortmundBasic
 
     /** 自动生成比赛编码的随机源；仅用于补足日期后的六位随机段。 */
     private static final SecureRandom MATCH_CODE_RANDOM = new SecureRandom();
+
+    /** 单场比赛一次导入的倍率记录上限，避免异常 JSON 放大事务和校验开销。 */
+    private static final int MAX_MULTIPLIERS_PER_MATCH = 5;
+
+    /** 自动生成倍率编码的随机源；与手工新增保持相同的可读编码结构。 */
+    private static final SecureRandom MULTIPLIER_CODE_RANDOM = new SecureRandom();
 
     @Autowired
     private Fx67llDortmundBasicMatchMapper fx67llDortmundBasicMatchMapper;
@@ -84,6 +95,11 @@ public class Fx67llDortmundBasicMatchServiceImpl implements IFx67llDortmundBasic
 
     @Autowired
     private Fx67llDortmundReturnCombinationMapper fx67llDortmundReturnCombinationMapper;
+
+    /** 倍率记录通过现有服务完成字段校验、当前版本切换和审计字段填充。 */
+    @Autowired
+    @Lazy
+    private IFx67llDortmundOddsService fx67llDortmundOddsService;
 
     /**
      * 查询比赛记录
@@ -345,6 +361,204 @@ public class Fx67llDortmundBasicMatchServiceImpl implements IFx67llDortmundBasic
     }
 
     /**
+     * 批量导入既有比赛的赛果和倍率记录。
+     * <p>matchCode 是唯一定位依据；未出现、null 或空白的赛果字段保持原值，当前接口不提供清空能力。
+     * 倍率记录复用倍率服务执行六类数值、权重和当前有效版本校验，任一失败整批回滚。</p>
+     *
+     * @param rows 用户确认写入的比赛结果条目
+     * @return 导入成功条数
+     */
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public int importFx67llDortmundBasicMatchResultJson(List<Fx67llDortmundBasicMatchExcel> rows) {
+        if (rows == null || rows.isEmpty()) {
+            throw new ServiceException("导入文件中没有可处理的数据！");
+        }
+        if (rows.size() > MAX_IMPORT_ROWS) {
+            throw new ServiceException("单次最多导入" + MAX_IMPORT_ROWS + "条比赛结果！");
+        }
+
+        List<Fx67llDortmundBasicMatch> accessibleMatches = selectFx67llDortmundBasicMatchListForCurrentUser(
+                new Fx67llDortmundBasicMatch());
+        Map<String, Fx67llDortmundBasicMatch> matchByCode = new HashMap<>();
+        for (Fx67llDortmundBasicMatch match : accessibleMatches) {
+            String code = trim(match.getMatchCode());
+            if (code != null) {
+                matchByCode.put(code, match);
+            }
+        }
+
+        List<String> errors = new ArrayList<>();
+        List<PreparedResultImport> prepared = new ArrayList<>();
+        Set<String> importCodes = new HashSet<>();
+        for (int index = 0; index < rows.size(); index++) {
+            int rowNumber = index + 1;
+            Fx67llDortmundBasicMatchExcel row = rows.get(index);
+            try {
+                if (row == null) {
+                    throw new ServiceException("数据行不能为空");
+                }
+                String matchCode = trim(row.getMatchCode());
+                if (matchCode == null) {
+                    throw new ServiceException("比赛编码不能为空");
+                }
+                if (!importCodes.add(matchCode)) {
+                    throw new ServiceException("同一文件内比赛编码“" + matchCode + "”重复");
+                }
+                Fx67llDortmundBasicMatch match = matchByCode.get(matchCode);
+                if (match == null) {
+                    throw new ServiceException("未找到当前账号可维护的比赛编码“" + matchCode + "”");
+                }
+
+                boolean matchResultProvided = trim(row.getMatchResult()) != null;
+                String rawMultiplierResult = trim(row.getOddsResult()) != null
+                        ? row.getOddsResult() : row.getMultiplierResult();
+                boolean multiplierResultProvided = trim(rawMultiplierResult) != null;
+                String normalizedMatchResult = matchResultProvided
+                        ? DortmundFieldValidator.validateEnum(row.getMatchResult(), "比赛结果", false,
+                                "0", "1", "2")
+                        : null;
+                String normalizedMultiplierResult = multiplierResultProvided
+                        ? normalizeOddsResult(rawMultiplierResult) : null;
+                List<Fx67llDortmundMatchMultiplierImport> multipliers = rows.get(index).getMultipliers() == null
+                        ? Collections.emptyList() : rows.get(index).getMultipliers();
+                checkImportMultiplierCount(multipliers);
+
+                boolean resultChanged = (matchResultProvided
+                        && !Objects.equals(match.getMatchResult(), normalizedMatchResult))
+                        || (multiplierResultProvided
+                                && !Objects.equals(match.getOddsResult(), normalizedMultiplierResult));
+                if (!resultChanged && multipliers.isEmpty()) {
+                    throw new ServiceException("赛果没有变化，且未提供倍率记录");
+                }
+                prepared.add(new PreparedResultImport(match, rowNumber, matchResultProvided,
+                        normalizedMatchResult, multiplierResultProvided, normalizedMultiplierResult,
+                        multipliers, resultChanged));
+            } catch (ServiceException e) {
+                errors.add("第" + rowNumber + "条：" + e.getMessage());
+            }
+        }
+        if (!errors.isEmpty()) {
+            throw new ServiceException("比赛结果导入校验失败：" + String.join("；", errors));
+        }
+
+        int imported = 0;
+        for (PreparedResultImport row : prepared) {
+            int updated = 0;
+            if (row.matchResultProvided || row.multiplierResultProvided) {
+                updated = fx67llDortmundBasicMatchMapper.updateMatchResultsForImport(
+                        row.match.getMatchId(), row.matchResult, row.multiplierResult,
+                        SecurityUtils.getUsername());
+            }
+            if (updated > 0 && row.resultChanged) {
+                fx67llDortmundPlanMapper.markSummaryUpdateByMatchId(row.match.getMatchId());
+                fx67llDortmundReturnCombinationMapper.resetVerificationByMatchId(
+                        row.match.getMatchId(), SecurityUtils.getUsername());
+            }
+            insertImportedMultipliers(row.match, row.multipliers, row.rowNumber);
+            imported++;
+        }
+        return imported;
+    }
+
+    /**
+     * 校验导入倍率记录数量，避免异常 JSON 在单事务内无限放大。
+     */
+    private void checkImportMultiplierCount(List<Fx67llDortmundMatchMultiplierImport> multipliers) {
+        if (multipliers == null || multipliers.isEmpty()) {
+            return;
+        }
+        if (multipliers.size() > MAX_MULTIPLIERS_PER_MATCH) {
+            throw new ServiceException("单场比赛最多导入" + MAX_MULTIPLIERS_PER_MATCH + "条倍率记录");
+        }
+        for (Fx67llDortmundMatchMultiplierImport multiplier : multipliers) {
+            if (multiplier == null) {
+                throw new ServiceException("倍率记录不能为空");
+            }
+        }
+    }
+
+    /**
+     * 将一组导入倍率记录转换为现有倍率服务可校验的业务对象并写入。
+     */
+    private void insertImportedMultipliers(Fx67llDortmundBasicMatch match,
+            List<Fx67llDortmundMatchMultiplierImport> multipliers, int rowNumber) {
+        if (multipliers == null || multipliers.isEmpty()) {
+            return;
+        }
+        for (int index = 0; index < multipliers.size(); index++) {
+            Fx67llDortmundMatchMultiplierImport source = multipliers.get(index);
+            try {
+                fx67llDortmundOddsService.insertFx67llDortmundOdds(
+                        buildImportedOdds(source, match.getMatchId(), index));
+            } catch (ServiceException e) {
+                throw new ServiceException("第" + rowNumber + "条比赛的第" + (index + 1)
+                        + "条倍率记录无效：" + e.getMessage());
+            }
+        }
+    }
+
+    /**
+     * 构造导入倍率对象；编码、来源时间和有效状态缺失时使用安全默认值。
+     */
+    private Fx67llDortmundOdds buildImportedOdds(Fx67llDortmundMatchMultiplierImport source,
+            Long matchId, int index) {
+        Date now = DateUtils.getNowDate();
+        Date sourceTime = source.getSourceTime() == null ? now : source.getSourceTime();
+        String multiplierCode = trim(source.getMultiplierCode());
+        if (multiplierCode == null) {
+            multiplierCode = generateImportMultiplierCode(sourceTime);
+        }
+
+        Fx67llDortmundOdds odds = new Fx67llDortmundOdds();
+        odds.setMatchId(matchId);
+        odds.setOddsCode(multiplierCode);
+        odds.setSourceTime(sourceTime);
+        odds.setHandicapValue(source.getHandicapValue());
+        odds.setHomeWinOdds(source.getHomeWinMultiplier());
+        odds.setDrawOdds(source.getDrawMultiplier());
+        odds.setAwayWinOdds(source.getAwayWinMultiplier());
+        odds.setHandicapHomeWinOdds(source.getHandicapHomeWinMultiplier());
+        odds.setHandicapDrawOdds(source.getHandicapDrawMultiplier());
+        odds.setHandicapAwayWinOdds(source.getHandicapAwayWinMultiplier());
+        odds.setHomeWinWeight(source.getHomeWinWeight());
+        odds.setDrawWeight(source.getDrawWeight());
+        odds.setAwayWinWeight(source.getAwayWinWeight());
+        odds.setHandicapHomeWinWeight(source.getHandicapHomeWinWeight());
+        odds.setHandicapDrawWeight(source.getHandicapDrawWeight());
+        odds.setHandicapAwayWinWeight(source.getHandicapAwayWinWeight());
+        odds.setActiveFlag(normalizeImportActiveFlag(source.getActiveFlag(), index));
+        odds.setOddsRemark(source.getMultiplierRemark());
+        return odds;
+    }
+
+    /**
+     * 缺省时仅首条导入记录作为当前有效版本，其余保留为历史版本。
+     */
+    private String normalizeImportActiveFlag(String value, int index) {
+        String normalized = trim(value);
+        if (normalized == null) {
+            return index == 0 ? "Y" : "N";
+        }
+        String upper = normalized.toUpperCase(Locale.ROOT);
+        if ("Y".equals(upper) || "1".equals(upper) || "TRUE".equals(upper)) {
+            return "Y";
+        }
+        if ("N".equals(upper) || "0".equals(upper) || "FALSE".equals(upper)) {
+            return "N";
+        }
+        throw new ServiceException("倍率记录有效状态只能为 Y 或 N");
+    }
+
+    /**
+     * 生成不超过 23 个字符的导入倍率编码。
+     */
+    private String generateImportMultiplierCode(Date sourceTime) {
+        String datePart = DateUtils.parseDateToStr("yyyyMMdd", sourceTime);
+        return "ODDS-" + datePart + "-" + String.format("%06d", MULTIPLIER_CODE_RANDOM.nextInt(1000000));
+    }
+
+    /**
      * 比赛导入公共实现。
      *
      * @param rows 待导入行
@@ -379,13 +593,14 @@ public class Fx67llDortmundBasicMatchServiceImpl implements IFx67llDortmundBasic
         }
 
         List<String> errors = new ArrayList<>();
-        List<Fx67llDortmundBasicMatch> prepared = new ArrayList<>();
+        List<PreparedMatchImport> prepared = new ArrayList<>();
         Set<String> importCodes = new HashSet<>();
         Set<String> importBusinessKeys = new HashSet<>();
         for (int index = 0; index < rows.size(); index++) {
             int rowNumber = index + 1;
+            Fx67llDortmundBasicMatchExcel row = rows.get(index);
             try {
-                Fx67llDortmundBasicMatch match = resolveMatchImportRow(rows.get(index), seasons, teams,
+                Fx67llDortmundBasicMatch match = resolveMatchImportRow(row, seasons, teams,
                         existingCodes, importCodes);
                 String businessKey = buildMatchBusinessKey(match.getSeasonId(), match.getHomeTeamId(),
                         match.getAwayTeamId(), match.getMatchTime());
@@ -395,7 +610,10 @@ public class Fx67llDortmundBasicMatchServiceImpl implements IFx67llDortmundBasic
                 if (!importBusinessKeys.add(businessKey)) {
                     throw new ServiceException("同一文件内存在重复的赛季、主客队和开赛时间");
                 }
-                prepared.add(match);
+                List<Fx67llDortmundMatchMultiplierImport> multipliers = row.getMultipliers() == null
+                        ? Collections.emptyList() : row.getMultipliers();
+                checkImportMultiplierCount(multipliers);
+                prepared.add(new PreparedMatchImport(match, multipliers, rowNumber));
             } catch (ServiceException e) {
                 errors.add("第" + rowNumber + "条：" + e.getMessage());
             }
@@ -405,8 +623,12 @@ public class Fx67llDortmundBasicMatchServiceImpl implements IFx67llDortmundBasic
         }
 
         int imported = 0;
-        for (Fx67llDortmundBasicMatch match : prepared) {
-            imported += insertFx67llDortmundBasicMatch(match);
+        for (PreparedMatchImport row : prepared) {
+            int inserted = insertFx67llDortmundBasicMatch(row.match);
+            imported += inserted;
+            if (inserted > 0) {
+                insertImportedMultipliers(row.match, row.multipliers, row.rowNumber);
+            }
         }
         return imported;
     }
@@ -459,7 +681,7 @@ public class Fx67llDortmundBasicMatchServiceImpl implements IFx67llDortmundBasic
         match.setMatchVenue(trim(row.getMatchVenue()) == null ? homeTeam.getTeamVenue() : trim(row.getMatchVenue()));
         match.setMatchStatus(trim(row.getMatchStatus()) == null ? "0" : trim(row.getMatchStatus()));
         match.setMatchResult(trim(row.getMatchResult()));
-        match.setOddsResult(trim(row.getOddsResult()));
+        match.setOddsResult(trim(row.getOddsResult() != null ? row.getOddsResult() : row.getMultiplierResult()));
         match.setMatchRemark(trim(row.getMatchRemark()));
         return match;
     }
@@ -803,6 +1025,50 @@ public class Fx67llDortmundBasicMatchServiceImpl implements IFx67llDortmundBasic
                 .selectFx67llDortmundPlanMatchRelList(relQuery);
         if (relList != null && !relList.isEmpty()) {
             throw new ServiceException("比赛已被方案计划引用，不能删除");
+        }
+    }
+
+    /**
+     * 比赛记录导入的预校验结果，保留条目序号用于关联倍率写入错误。
+     */
+    private static class PreparedMatchImport {
+        private final Fx67llDortmundBasicMatch match;
+        private final List<Fx67llDortmundMatchMultiplierImport> multipliers;
+        private final int rowNumber;
+
+        private PreparedMatchImport(Fx67llDortmundBasicMatch match,
+                List<Fx67llDortmundMatchMultiplierImport> multipliers, int rowNumber) {
+            this.match = match;
+            this.multipliers = multipliers;
+            this.rowNumber = rowNumber;
+        }
+    }
+
+    /**
+     * 比赛结果导入的预校验结果；null 赛果表示保持原值。
+     */
+    private static class PreparedResultImport {
+        private final Fx67llDortmundBasicMatch match;
+        private final int rowNumber;
+        private final boolean matchResultProvided;
+        private final String matchResult;
+        private final boolean multiplierResultProvided;
+        private final String multiplierResult;
+        private final List<Fx67llDortmundMatchMultiplierImport> multipliers;
+        private final boolean resultChanged;
+
+        private PreparedResultImport(Fx67llDortmundBasicMatch match, int rowNumber,
+                boolean matchResultProvided, String matchResult, boolean multiplierResultProvided,
+                String multiplierResult, List<Fx67llDortmundMatchMultiplierImport> multipliers,
+                boolean resultChanged) {
+            this.match = match;
+            this.rowNumber = rowNumber;
+            this.matchResultProvided = matchResultProvided;
+            this.matchResult = matchResult;
+            this.multiplierResultProvided = multiplierResultProvided;
+            this.multiplierResult = multiplierResult;
+            this.multipliers = multipliers;
+            this.resultChanged = resultChanged;
         }
     }
 }

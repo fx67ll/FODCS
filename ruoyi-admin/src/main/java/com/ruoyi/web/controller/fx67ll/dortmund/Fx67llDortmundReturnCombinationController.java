@@ -314,6 +314,39 @@ public class Fx67llDortmundReturnCombinationController extends BaseController {
     }
 
     /**
+     * 查询异步分析任务监控快照。
+     * <p>仅管理员可查看跨用户运行状态、租约和异常任务；接口不返回任何大文本业务快照。</p>
+     */
+    @PreAuthorize("@ss.hasRole('admin')")
+    @GetMapping("/generation/async-monitor")
+    public AjaxResult asyncMonitor(
+            @RequestParam(value = "limit", required = false, defaultValue = "50") int limit) {
+        return success(fx67llDortmundReturnCombinationService.selectAsyncTaskMonitor(limit));
+    }
+
+    /**
+     * 管理员手动停止处理中的异步分析任务。
+     */
+    @PreAuthorize("@ss.hasRole('admin')")
+    @Log(title = "Dortmund回报组合异步任务停止", businessType = BusinessType.UPDATE)
+    @RepeatSubmit
+    @PostMapping("/generation/{generationId:\\d+}/stop")
+    public AjaxResult stopAsyncGeneration(@PathVariable("generationId") Long generationId) {
+        return success(fx67llDortmundReturnCombinationService.stopAsyncGeneration(generationId));
+    }
+
+    /**
+     * 管理员清理过期异常任务；有组合或证据依赖的失败任务会保留。
+     */
+    @PreAuthorize("@ss.hasRole('admin')")
+    @Log(title = "Dortmund回报组合异步任务清理", businessType = BusinessType.CLEAN)
+    @RepeatSubmit
+    @PostMapping("/generation/async-cleanup")
+    public AjaxResult cleanupAsyncGenerations() {
+        return success(fx67llDortmundReturnCombinationService.cleanupAsyncGenerations());
+    }
+
+    /**
      * 导出回报组合列表
      */
     @PreAuthorize("@ss.hasPermi('dortmund:return:export')")

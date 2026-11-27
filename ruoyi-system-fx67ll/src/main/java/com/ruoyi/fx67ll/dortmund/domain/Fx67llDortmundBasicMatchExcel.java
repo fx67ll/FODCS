@@ -1,6 +1,7 @@
 package com.ruoyi.fx67ll.dortmund.domain;
 
 import java.util.Date;
+import java.util.List;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
 import com.ruoyi.common.annotation.Excel;
@@ -62,6 +63,12 @@ public class Fx67llDortmundBasicMatchExcel {
     @Excel(name = "倍率赛果", width = 24,
             prompt = "选填；多个值用英文逗号分隔，可选 HW/DR/AW/HH/HD/HA")
     private String oddsResult;
+
+    /** 倍率赛果的导入别名；与 oddsResult 同时存在时以 oddsResult 为准 */
+    private String multiplierResult;
+
+    /** 随比赛同步导入的倍率记录；按顺序写入，新比赛首条默认作为当前有效版本 */
+    private List<Fx67llDortmundMatchMultiplierImport> multipliers;
 
     /** 比赛业务备注 */
     @Excel(name = "比赛备注", width = 40)
@@ -179,6 +186,22 @@ public class Fx67llDortmundBasicMatchExcel {
 
     public void setOddsResult(String oddsResult) {
         this.oddsResult = oddsResult;
+    }
+
+    public String getMultiplierResult() {
+        return multiplierResult;
+    }
+
+    public void setMultiplierResult(String multiplierResult) {
+        this.multiplierResult = multiplierResult;
+    }
+
+    public List<Fx67llDortmundMatchMultiplierImport> getMultipliers() {
+        return multipliers;
+    }
+
+    public void setMultipliers(List<Fx67llDortmundMatchMultiplierImport> multipliers) {
+        this.multipliers = multipliers;
     }
 
     public String getMatchRemark() {

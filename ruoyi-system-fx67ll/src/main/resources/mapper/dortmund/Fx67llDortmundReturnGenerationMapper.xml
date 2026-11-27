@@ -418,4 +418,158 @@
           and worker_id = #{workerId}
           and generation_status = '0'
     </update>
+
+    <select id="selectAsyncTaskSummary" resultType="Fx67llDortmundReturnAsyncMonitor">
+        select count(1) as totalCount,
+               coalesce(sum(case when generation_status = '0' then 1 else 0 end), 0) as runningCount,
+               coalesce(sum(case when generation_status = '1' then 1 else 0 end), 0) as successCount,
+               coalesce(sum(case when generation_status = '2' then 1 else 0 end), 0) as failedCount,
+               coalesce(sum(case when generation_status = '3' then 1 else 0 end), 0) as manualPendingCount,
+               coalesce(sum(case when generation_status = '0'
+                                      and lease_expire_time is not null
+                                      and lease_expire_time &lt; now() then 1 else 0 end), 0) as staleRunningCount,
+               coalesce(sum(case when generation_status = '0'
+                                      and (lease_expire_time is null or lease_expire_time &lt; now())
+                                      and next_retry_time is not null
+                                      and next_retry_time &gt; now() then 1 else 0 end), 0) as retryWaitingCount,
+               coalesce(sum(case when create_time &gt;= date_sub(now(), interval 1 day) then 1 else 0 end), 0)
+                   as recent24hCount,
+               round(avg(case when generation_status in ('1', '2') and finished_time is not null
+                              then timestampdiff(second, started_time, finished_time) end), 1)
+                   as averageDurationSeconds,
+               max(case when generation_status in ('1', '2') and finished_time is not null
+                        then timestampdiff(second, started_time, finished_time) end)
+                   as maxDurationSeconds
+        from fx67ll_dortmund_return_generation
+    </select>
+
+    <sql id="asyncMonitorGenerationColumns">
+        generation_id,
+        generation_code,
+        generation_mode,
+        input_amount,
+        target_amount,
+        generation_status,
+        generation_remark,
+        generated_count,
+        started_time,
+        finished_time,
+        user_id,
+        worker_id,
+        lease_expire_time,
+        attempt_count,
+        max_attempts,
+        next_retry_time,
+        result_source,
+        manual_import_by,
+        manual_import_time,
+        data_as_of,
+        ai_evidence_status,
+        ai_evidence_error,
+        create_by,
+        create_time,
+        update_by,
+        update_time
+    </sql>
+
+    <select id="selectRunningAsyncTasks" resultMap="Fx67llDortmundReturnGenerationResult">
+        select <include refid="asyncMonitorGenerationColumns"/>
+        from fx67ll_dortmund_return_generation
+        where generation_status = '0'
+        order by lease_expire_time is null, lease_expire_time, create_time
+        limit #{limit}
+    </select>
+
+    <select id="selectAbnormalAsyncTasks" resultMap="Fx67llDortmundReturnGenerationResult">
+        select <include refid="asyncMonitorGenerationColumns"/>
+        from fx67ll_dortmund_return_generation
+        where generation_status = '2'
+           or (generation_status = '0'
+               and lease_expire_time is not null
+               and lease_expire_time &lt; now())
+        order by case when generation_status = '0' then 0 else 1 end,
+                 coalesce(finished_time, lease_expire_time, update_time, create_time) desc
+        limit #{limit}
+    </select>
+
+    <select id="countOwnedProcessingGeneration" resultType="java.lang.Integer">
+        select count(1)
+        from fx67ll_dortmund_return_generation
+        where generation_id = #{generationId}
+          and worker_id = #{workerId}
+          and generation_status = '0'
+    </select>
+
+    <update id="adminStopGeneration">
+        update fx67ll_dortmund_return_generation
+        set generation_status = '2',
+            generation_remark = #{remark},
+            finished_time = now(),
+            worker_id = null,
+            lease_expire_time = null,
+            next_retry_time = null,
+            ai_evidence_status = case when generation_mode = 'A' then 'F' else ai_evidence_status end,
+            update_by = #{updateBy},
+            update_time = now()
+        where generation_id = #{generationId}
+          and generation_status = '0'
+    </update>
+
+    <update id="markExhaustedAsyncTasksFailed">
+        update fx67ll_dortmund_return_generation
+        set generation_status = '2',
+            generation_remark = #{remark},
+            finished_time = now(),
+            worker_id = null,
+            lease_expire_time = null,
+            next_retry_time = null,
+            ai_evidence_status = case when generation_mode = 'A' then 'F' else ai_evidence_status end,
+            update_time = now()
+        where generation_status = '0'
+          and lease_expire_time is not null
+          and lease_expire_time &lt; now()
+          and attempt_count &gt;= max_attempts
+    </update>
+
+    <select id="countFailedGenerationsBefore" resultType="java.lang.Integer">
+        select count(1)
+        from fx67ll_dortmund_return_generation
+        where generation_status = '2'
+          and coalesce(finished_time, update_time, create_time) &lt; #{before}
+    </select>
+
+    <select id="countCleanupEligibleGenerations" resultType="java.lang.Integer">
+        select count(1)
+        from fx67ll_dortmund_return_generation g
+        where g.generation_status = '2'
+          and coalesce(g.finished_time, g.update_time, g.create_time) &lt; #{before}
+          and not exists (select 1 from fx67ll_dortmund_return_combination c
+                          where c.generation_id = g.generation_id)
+          and not exists (select 1 from fx67ll_dortmund_return_evidence e
+                          where e.generation_id = g.generation_id)
+    </select>
+
+    <select id="selectCleanupEligibleGenerationIds" resultType="java.lang.Long">
+        select g.generation_id
+        from fx67ll_dortmund_return_generation g
+        where g.generation_status = '2'
+          and coalesce(g.finished_time, g.update_time, g.create_time) &lt; #{before}
+          and not exists (select 1 from fx67ll_dortmund_return_combination c
+                          where c.generation_id = g.generation_id)
+          and not exists (select 1 from fx67ll_dortmund_return_evidence e
+                          where e.generation_id = g.generation_id)
+        order by coalesce(g.finished_time, g.update_time, g.create_time), g.generation_id
+        limit #{limit}
+    </select>
+
+    <delete id="deleteCleanupEligibleGeneration">
+        delete from fx67ll_dortmund_return_generation
+        where generation_id = #{generationId}
+          and generation_status = '2'
+          and coalesce(finished_time, update_time, create_time) &lt; #{before}
+          and not exists (select 1 from fx67ll_dortmund_return_combination c
+                          where c.generation_id = #{generationId})
+          and not exists (select 1 from fx67ll_dortmund_return_evidence e
+                          where e.generation_id = #{generationId})
+    </delete>
 </mapper>
